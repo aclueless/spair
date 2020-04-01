@@ -25,17 +25,22 @@ impl spair::Component for State {
                     .render("The initial value is ")
                     .render(self.value);
             })
-            .button(|b| button(b, "-", comp.handler(State::decrement)))
+            .r#static(Button("-", comp.handler(State::decrement)))
             .render(self.value)
-            .button(|b| button(b, "+", comp.handler(State::increment)));
+            .r#static(Button("+", comp.handler(State::increment)));
     }
 }
 
-fn button<H: spair::Click>(b: spair::Element<State>, text: &str, h: H) {
-    b.static_attributes()
-        .on_click(h)
-        .static_nodes()
-        .r#static(text);
+struct Button<H>(&'static str, H);
+impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
+    fn render<'a>(self, nodes: spair::StaticNodes<'a, State>) -> spair::StaticNodes<'a, State> {
+        nodes.button(|b| {
+            b.static_attributes()
+                .on_click(self.1)
+                .static_nodes()
+                .r#static(self.0);
+        })
+    }
 }
 
 #[wasm_bindgen(start)]

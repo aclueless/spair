@@ -193,9 +193,14 @@ impl<'s> spair::Render<State> for Main<'s> {
                         .render("Mark all as complete");
                 })
                 .ul(|u| {
-                    u.static_attributes()
-                        .class("todo-list")
-                        .list(self.0.items.iter().enumerate().filter(|(_, item)| item.visible(&self.0.filter)), &self.0)
+                    u.static_attributes().class("todo-list").list(
+                        self.0
+                            .items
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, item)| item.visible(&self.0.filter)),
+                        &self.0,
+                    )
                 });
         })
     }

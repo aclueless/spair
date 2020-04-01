@@ -101,7 +101,7 @@ impl<C: Component> RcComp<C> {
             .0
             .try_borrow_mut()
             .expect_throw("Expect no borrowing at the first render");
-        
+
         if instance.root_element.is_empty() {
             // In cases that the router not cause any render yet, such as Routes = ()
             instance.render(&comp);

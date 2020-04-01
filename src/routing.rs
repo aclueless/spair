@@ -1,6 +1,6 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 pub trait Routes<C>
 where
@@ -13,8 +13,10 @@ where
     }
 }
 
-impl<C> Routes<C> for () where
-    C: crate::component::Component,{
+impl<C> Routes<C> for ()
+where
+    C: crate::component::Component,
+{
     fn url(&self) -> String {
         String::new()
     }
@@ -35,7 +37,8 @@ impl Router {
         C: crate::component::Component,
     {
         let _current_url = Rc::new(RefCell::new(String::new()));
-        let location = get_new_location(&_current_url).expect_throw("Why the first url not invalid?");
+        let location =
+            get_new_location(&_current_url).expect_throw("Why the first url not invalid?");
         C::Routes::routing(location, comp);
 
         let _pop_state_closure = register_pop_state_event(_current_url.clone(), comp.clone());
@@ -49,14 +52,18 @@ impl Router {
 
 fn get_new_location(current_url: &Rc<RefCell<String>>) -> Option<web_sys::Location> {
     let location = crate::utils::window().location();
-        let new_url = location.href().expect_throw("Unable to get window.location.href");
-        let mut current_url = current_url.try_borrow_mut().expect_throw("Multiple mutable borrow on current_url");
-        if *current_url != new_url {
-            *current_url = new_url;
-            Some(location)
-        }else{
-            None
-        }
+    let new_url = location
+        .href()
+        .expect_throw("Unable to get window.location.href");
+    let mut current_url = current_url
+        .try_borrow_mut()
+        .expect_throw("Multiple mutable borrow on current_url");
+    if *current_url != new_url {
+        *current_url = new_url;
+        Some(location)
+    } else {
+        None
+    }
 }
 
 fn register_event_listener_on_window(event: &str, listener: &js_sys::Function) {
