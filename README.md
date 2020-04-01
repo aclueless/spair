@@ -4,20 +4,26 @@ A framework for **S**ingle **P**age **A**pplication **i**n **R**ust. Inspired by
 
 This project is in its early stage, breaking changes are expected.
 
-# Examples
+## Examples
 
 See in `/examples`
 
-## Run examples
+### Run examples
+
+You need
+
+* [Rust](https://www.rust-lang.org/) with `wasm32-unknown-unknown` target.
+* `cargo install wasm-pack`
+* `cargo install basic-http-server` or use your favorite file-server
 
 In an example folder:
 
     wasm-pack build --dev --target web
-    basic-http-server // installed by `cargo install basic-http-server` or serve with you favorite file server
+    basic-http-server // or your favorite file-server
 
 Open your browser and visit the correct url. By default, `basic-http-server` serves at `http://127.0.0.1:4000`.
 
-# How Spair works
+## How Spair works
 
 Spair works similar to [Simi](https://gitlab.com/limira-rs/simi). The big difference is that Simi needs procedural macros to implement the idea, but Spair does not need any macros. That said, a procedural macro/macros can help transform HTML-like code into Spair's Rust code. Such macros were not implemented yet.
 
@@ -71,6 +77,6 @@ impl spair::Component for State {
 ```
 When Spair iterates through an element's child nodes if the expected element was not found, it will be created, and marked as `JustCreated`. Every static attributes and static nodes will only be executed on a `JustCreated` element. Every normal-mode attributes and normal-mode nodes will always be executed.
 
-# Notes
+## Notes
 
 HTML's tags and attributes are implemented as methods in Spair. Names that are conflicted with Rust's keywords are implemented using raw identifers such as `r#type`, `r#for`...
