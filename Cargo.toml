@@ -1,8 +1,13 @@
 [package]
 name = "spair"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["aclueless <61309385+aclueless@users.noreply.github.com>"]
 edition = "2018"
+description = "A framework for single-page application in Rust"
+categories = ["wasm", "web-programming"]
+keywords = ["SPA", "wasm", "framework"]
+repository = "https://github.com/aclueless/spair"
+license = "MPL-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
