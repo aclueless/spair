@@ -190,7 +190,7 @@ where
                 text_area.set_value(value);
             } else {
                 log::warn!(
-                    ".value is called on an element that is not <input>, <select>, <textarea>"
+                    ".value() is called on an element that is not <input>, <select>, <textarea>"
                 );
             }
         }
@@ -253,7 +253,6 @@ where
         bool => set_bool_attribute [
             checked
             disabled
-            hidden
             readonly
         ]
     }

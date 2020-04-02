@@ -24,16 +24,14 @@ impl NodeList {
         extra: &super::Extra<'a, C>,
         status: super::ElementStatus,
     ) -> super::ElementHandle<'a, C> {
-        let rs = match self
+        match self
             .0
             .get_mut(extra.index)
             .expect_throw("Expect an element node at the given index")
         {
             Node::Element(element) => element.create_handle(extra.comp, status),
             _ => panic!("Why not an element?"),
-        };
-
-        rs
+        }
     }
 
     fn element<'a, C>(

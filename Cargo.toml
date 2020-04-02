@@ -8,6 +8,7 @@ categories = ["wasm", "web-programming"]
 keywords = ["SPA", "wasm", "framework"]
 repository = "https://github.com/aclueless/spair"
 license = "MPL-2.0"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

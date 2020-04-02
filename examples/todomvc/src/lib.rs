@@ -143,7 +143,7 @@ impl spair::Component for State {
 
 struct Header;
 impl spair::Render<State> for Header {
-    fn render<'a>(self, nodes: spair::Nodes<'a, State>) -> spair::Nodes<'a, State> {
+    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
         let comp = nodes.comp();
         nodes.header(|h| {
             h.static_attributes()
@@ -167,7 +167,7 @@ impl spair::Render<State> for Header {
 
 struct Main<'s>(&'s State);
 impl<'s> spair::Render<State> for Main<'s> {
-    fn render<'a>(self, nodes: spair::Nodes<'a, State>) -> spair::Nodes<'a, State> {
+    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
         let comp = nodes.comp();
         let todo_count = self.0.items.len();
         let all_completed = self.0.items.iter().all(|item| item.completed);
@@ -208,7 +208,7 @@ impl<'s> spair::Render<State> for Main<'s> {
 
 struct Footer<'s>(&'s State);
 impl<'s> spair::Render<State> for Footer<'s> {
-    fn render<'a>(self, nodes: spair::Nodes<'a, State>) -> spair::Nodes<'a, State> {
+    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
         let comp = nodes.comp();
         let list_empty = self.0.items.len() == 0;
         let item_left = self.0.items.iter().filter(|item| !item.completed).count();
@@ -281,7 +281,7 @@ impl<'s> spair::Render<State> for Footer<'s> {
 
 struct Info;
 impl spair::Render<State> for Info {
-    fn render<'a>(self, nodes: spair::Nodes<'a, State>) -> spair::Nodes<'a, State> {
+    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
         nodes.footer(|f| {
             f.static_attributes()
                 .class("info")
