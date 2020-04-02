@@ -197,11 +197,6 @@ where
         self
     }
 
-    // fn hidden(self, value: bool) -> Self {
-    //     self.ws_html_element().set_hidden(value);
-    //     self
-    // }
-
     fn id(self, id: &str) -> Self {
         self.ws_element().set_id(id);
         self

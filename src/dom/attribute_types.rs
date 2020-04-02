@@ -1,6 +1,7 @@
 mod sealed {
     pub trait AsStr {}
 }
+
 pub trait AsStr: sealed::AsStr {
     fn as_str(&self) -> &str;
 }
