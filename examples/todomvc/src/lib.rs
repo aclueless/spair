@@ -382,5 +382,5 @@ fn get_value(i: web_sys::HtmlInputElement) -> Option<String> {
 pub fn start_todo_mvc() {
     wasm_logger::init(wasm_logger::Config::default());
     let state = State::from_store();
-    spair::application::start(state, "root");
+    spair::start(state, "root");
 }

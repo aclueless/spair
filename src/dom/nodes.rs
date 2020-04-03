@@ -50,7 +50,7 @@ impl NodeList {
         self.get_element(extra, status)
     }
 
-    pub(super) fn clear_after(&mut self, index: usize, parent: &web_sys::Node) {
+    pub fn clear_after(&mut self, index: usize, parent: &web_sys::Node) {
         if index < self.0.len() {
             if index == 0 {
                 parent.set_text_content(None);
@@ -63,7 +63,7 @@ impl NodeList {
         }
     }
 
-    pub(super) fn item_for_list<'a, C>(
+    pub fn item_for_list<'a, C>(
         &'a mut self,
         tag: &str,
         extra: &super::Extra<'a, C>,
@@ -229,11 +229,11 @@ impl Default for MatchIf {
 }
 
 impl MatchIf {
-    pub(super) fn clear(&mut self, parent: &web_sys::Node) {
+    pub fn clear(&mut self, parent: &web_sys::Node) {
         self.nodes.clear(parent);
     }
 
-    pub(super) fn append_to(&self, parent: &web_sys::Node) {
+    pub fn append_to(&self, parent: &web_sys::Node) {
         self.nodes.append_to(parent);
         parent
             .append_child(&self.end_node)
@@ -277,7 +277,7 @@ pub(crate) struct NodeListHandle<'a, C> {
 }
 
 impl<'a, C> NodeListHandle<'a, C> {
-    pub(super) fn from_handle(mut handle: super::ElementHandle<'a, C>) -> Self {
+    pub fn from_handle(mut handle: super::ElementHandle<'a, C>) -> Self {
         handle.extra.index = 0;
         Self {
             parent: handle.element.ws_element.as_ref(),

@@ -14,7 +14,7 @@ pub struct Context<'a, C> {
 }
 
 impl<'a, C> Context<'a, C> {
-    pub(crate) fn new(comp: &'a Comp<C>, element: crate::dom::ElementHandle<'a, C>) -> Self {
+    pub fn new(comp: &'a Comp<C>, element: crate::dom::ElementHandle<'a, C>) -> Self {
         Self { comp, element }
     }
     pub fn into_parts(self) -> (&'a Comp<C>, crate::dom::ElementHandle<'a, C>) {
@@ -22,7 +22,7 @@ impl<'a, C> Context<'a, C> {
     }
 }
 
-pub(crate) struct RcComp<C>(Rc<RefCell<CompInstance<C>>>);
+pub struct RcComp<C>(Rc<RefCell<CompInstance<C>>>);
 pub struct Comp<C>(Weak<RefCell<CompInstance<C>>>);
 
 struct CompInstance<C> {
@@ -85,7 +85,7 @@ impl<C: Component> Checklist<C> {
 }
 
 impl<C: Component> RcComp<C> {
-    pub(crate) fn new(state: C, root: web_sys::Element) -> Self {
+    pub fn new(state: C, root: web_sys::Element) -> Self {
         Self(Rc::new(RefCell::new(CompInstance {
             state,
             root_element: crate::dom::Element::from_ws_element(root),
@@ -93,7 +93,7 @@ impl<C: Component> RcComp<C> {
         })))
     }
 
-    pub(crate) fn first_render(&self) {
+    pub fn first_render(&self) {
         use crate::routing::Routes;
         let comp = Comp(Rc::downgrade(&self.0));
         let router = C::Routes::router(&comp);
@@ -118,7 +118,7 @@ impl<C> Clone for Comp<C> {
 }
 
 impl<C: Component> Comp<C> {
-    pub(crate) fn update<Cl>(&self, fn_update: &impl Fn(&mut C) -> Cl)
+    pub fn update<Cl>(&self, fn_update: &impl Fn(&mut C) -> Cl)
     where
         Cl: Into<Checklist<C>>,
     {
@@ -187,7 +187,7 @@ impl<C: Component> Comp<C> {
 }
 
 impl<C: Component> CompInstance<C> {
-    pub(crate) fn render(&mut self, comp: &Comp<C>) {
+    pub fn render(&mut self, comp: &Comp<C>) {
         self.state.render(self.root_element.create_context(comp));
     }
 

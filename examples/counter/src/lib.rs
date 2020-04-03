@@ -47,5 +47,5 @@ impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
 pub fn start_counter() {
     wasm_logger::init(wasm_logger::Config::default());
     let state = State { value: 42 };
-    spair::application::start(state, "root");
+    spair::start(state, "root");
 }

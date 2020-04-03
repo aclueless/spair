@@ -1,9 +1,9 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 pub struct Element {
-    pub(super) ws_element: web_sys::Element,
-    pub(super) attributes: super::AttributeList,
-    pub(super) nodes: super::NodeList,
+    pub ws_element: web_sys::Element,
+    pub attributes: super::AttributeList,
+    pub nodes: super::NodeList,
 }
 
 impl Clone for Element {
@@ -25,7 +25,7 @@ impl Clone for Element {
 }
 
 impl Element {
-    pub(super) fn new(tag: &str) -> Self {
+    pub fn new(tag: &str) -> Self {
         Self {
             ws_element: crate::utils::document()
                 .create_element(tag)
@@ -47,7 +47,7 @@ impl Element {
         self.nodes.count() == 0
     }
 
-    pub(super) fn create_handle<'a, C>(
+    pub fn create_handle<'a, C>(
         &'a mut self,
         comp: &'a crate::component::Comp<C>,
         status: super::ElementStatus,
@@ -80,13 +80,13 @@ impl Element {
         )
     }
 
-    pub(super) fn append_to(&self, parent: &web_sys::Node) {
+    pub fn append_to(&self, parent: &web_sys::Node) {
         parent
             .append_child(self.ws_element.as_ref())
             .expect_throw("Unable to append child Element to its expected parent");
     }
 
-    pub(super) fn insert_before(
+    pub fn insert_before(
         &self,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
@@ -96,7 +96,7 @@ impl Element {
             .expect_throw("Unable to insert a child Element to its expected parent");
     }
 
-    pub(super) fn clear(&self, parent: &web_sys::Node) {
+    pub fn clear(&self, parent: &web_sys::Node) {
         parent
             .remove_child(self.ws_element.as_ref())
             .expect_throw("Unable to remove a child Element from its parent");
@@ -104,8 +104,8 @@ impl Element {
 }
 
 pub struct ElementHandle<'a, C> {
-    pub(super) element: &'a mut Element,
-    pub(super) extra: super::Extra<'a, C>,
+    pub element: &'a mut Element,
+    pub extra: super::Extra<'a, C>,
 }
 
 impl<'a, C> ElementHandle<'a, C> {

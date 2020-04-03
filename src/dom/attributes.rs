@@ -253,6 +253,7 @@ where
         bool => set_bool_attribute [
             checked
             disabled
+            hidden
             readonly
         ]
     }

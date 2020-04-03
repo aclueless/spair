@@ -122,5 +122,5 @@ impl spair::Render<State> for &Commit {
 pub fn start_fetch_example() {
     wasm_logger::init(wasm_logger::Config::default());
     let state = State { branch: None };
-    spair::application::start(state, "root");
+    spair::start(state, "root");
 }

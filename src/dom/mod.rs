@@ -6,6 +6,10 @@ mod element;
 mod nodes;
 
 use attribute_types::AsStr;
+
+// All items from these modules are visible here and in the super module (`dom`),
+// but `dom` are private, the `lib.rs` must selectively export items from `dom`
+// to expose to users.
 pub use attributes::*;
 pub use element::*;
 pub use nodes::*;
@@ -66,14 +70,14 @@ impl Text {
 }
 
 // A better name? Context?
-struct Extra<'a, C> {
+pub struct Extra<'a, C> {
     pub comp: &'a crate::component::Comp<C>,
     pub status: ElementStatus,
     pub index: usize,
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-enum ElementStatus {
+pub enum ElementStatus {
     JustCreated,
     Existing,
     JustCloned,
