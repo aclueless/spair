@@ -1,33 +1,35 @@
 # spair
 
-A framework for **S**ingle **P**age **A**pplication **i**n **R**ust. Inspired by Simi, Mika and Yew, some parts of source are copied from them.
+![Crates.io](https://img.shields.io/crates/v/spair)
+
+A framework for **S**ingle **P**age **A**pplication **i**n **R**ust. Inspired by [Simi], [Mika] and [Yew], some parts of source are copied from them.
 
 This project is in its early stage, breaking changes are expected.
 
-## Examples
+## Run examples
 
-See in `/examples`
+Prerequisites:
 
-### Run examples
-
-You need
-
-* [Rust](https://www.rust-lang.org/) with `wasm32-unknown-unknown` target.
+* [Rust] with `wasm32-unknown-unknown` target.
 * `cargo install wasm-pack`
 * `cargo install basic-http-server` or use your favorite file-server
 
-In an example folder:
+To build and serve (in an example folder):
 
     wasm-pack build --dev --target web
     basic-http-server // or your favorite file-server
 
 Open your browser and visit the correct url. By default, `basic-http-server` serves at http://localhost:4000.
 
+## Documentation
+
+Not yet. `/examples/*` is the best place to start now.
+
 ## How Spair works
 
-Spair works similar to [Simi](https://gitlab.com/limira-rs/simi). The big difference is that Simi needs procedural macros to implement the idea, but Spair does not need any macros. That said, a procedural macro/macros can help transform HTML-like code into Spair's Rust code. Such macros were not implemented yet.
+Spair works similar to [Simi]. The big difference is that Simi needs procedural macros to implement the idea, but Spair does not need any macros. That said, a procedural macro/macros can help transform HTML-like code into Spair's Rust code. Such macros were not implemented yet.
 
-The first render of a single page application need to render everything from an empty element. But on the second or subsequence renders, most (or all) of elements are already there. Why re-render, diffing and patching? Spair iterates through the existing elements and modifies them where changes are found.
+The first render of a single page application need to render everything from an empty DOM. But on the second or subsequence renders, most (or all) of elements are already there. Why re-render, diffing and patching? Spair modifies the current DOM, if the expected element is not found, Spair create it, otherwise, just modify where changes occurs.
 
 When implementing `spair::Component` on your application's State, the `spair::Component::render` method receive a `context` which contains a `comp: spair::Comp<C>` and an `element: spair::Element<C>`.
 
@@ -75,28 +77,35 @@ impl spair::Component for State {
     }
 }
 ```
-When Spair iterates through an element's child nodes if the expected element was not found, it will be created, and marked as `JustCreated`. Every static attributes and static nodes will only be executed on a `JustCreated` element. Every normal-mode attributes and normal-mode nodes will always be executed.
 
 ## Notes
 
 HTML's tags and attributes are implemented as methods in Spair. Names that are conflicted with Rust's keywords are implemented using raw identifers such as `r#type`, `r#for`...
 
-# What's done?
+## What's done?
 
 * Minimal features of the framework
-* Basic support for routing
-* All tag (?)
+* Some common events on html elements
 * Some attributes (enough for `examples/totomvc`)
+* Non-keyed-list
 * Keyed-list (behind `features=["keyed-list]`)
 * Basic support for `fetch`
-* Some common events on html elements
+* Basic support for routing
 
-# What's next?
+## What's next?
 
 (But don't expect soon)
 
 - [ ] Using Spair for some apps to stabilize API
 - [ ] Implement all attributes
+- [ ] Documentation
 - [ ] Implement `#[derive(spair::Routes)]`
 - [ ] Add support for child components
 - [ ] Some benchmarks
+- [ ] Proc macro to convert HTML-like or other short-clear syntax to Spair's Rust code.
+
+
+[Simi]: https://gitlab.com/limira-rs/simi
+[Mika]: https://gitlab.com/limira-rs/mika
+[Yew]: https://github.com/yewstack/yew
+[Rust]: https://www.rust-lang.org/
