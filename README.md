@@ -95,8 +95,8 @@ HTML's tags and attributes are implemented as methods in Spair. Names that are c
 
 (But don't expect soon)
 
-[ ] Using Spair for some apps to stabilize API
-[ ] Implement all attributes
-[ ] Implement `#[derive(spair::Routes)]`
-[ ] Add support for child components
-[ ] Some benchmarks
+- [ ] Using Spair for some apps to stabilize API
+- [ ] Implement all attributes
+- [ ] Implement `#[derive(spair::Routes)]`
+- [ ] Add support for child components
+- [ ] Some benchmarks
