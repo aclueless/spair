@@ -443,19 +443,27 @@ pub trait DomBuilder<C>: Sized {
     }
 
     create_methods_for_tags! {
-        a
-        button
-        div
-        footer
-        header h1 h2 h3 h4 h5 h6
-        input
-        label
-        li
-        p
-        section
-        span
-        strong
-        ul
+        a abbr address area article aside audio
+        b bdi bdo blockquote button /*br should be specialized*/
+        canvas caption cite code col colgroup
+        data datalist dd del details dfn dialog div dl dt
+        em embed
+        fieldset figcaption figure footer form
+        h1 h2 h3 h4 h5 h6 header hgroup /*hr should be specialized*/
+        i iframe img input ins
+        kbd
+        label legend li
+        main map mark menu meter
+        nav
+        object ol optgroup option output
+        p param picture pre progress
+        q
+        rp rt ruby
+        s samp section select slot small source span strong sub summary sup
+        table tbody td template textarea tfoot th thead time tr track
+        u ul
+        var video
+        wbr //should be specialized?
     }
 }
 
