@@ -196,12 +196,69 @@ where
         }
     }
 
+    fn checked(mut self, value: bool) -> Self {
+        if self.check_bool_attribute(value) {
+            let element = self.ws_element();
+            if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+                input.set_checked(value);
+            } else {
+                log::warn!(
+                    ".checked() is called on an element that is not <input>"
+                );
+            }
+        }
+        self
+    }
+
+    fn class_if(mut self, class_name: &str, class_on: bool) -> Self {
+        if self.check_bool_attribute(class_on) {
+            if class_on {
+                self.ws_element()
+                    .class_list()
+                    .add_1(class_name)
+                    .expect_throw("Unable to add class");
+            } else {
+                self.ws_element()
+                    .class_list()
+                    .remove_1(class_name)
+                    .expect_throw("Unable to remove class");
+            }
+        }
+        self
+    }
+
     fn focus(self, value: bool) -> Self {
         if value {
             self.ws_html_element()
                 .focus()
                 .expect_throw("Unable to set focus");
         }
+        self
+    }
+
+    fn r#for(mut self, value: &str) -> Self {
+        self.set_str_attribute("for", value);
+        self
+    }
+
+    fn href(mut self, value: C::Routes) -> Self {
+        use crate::routing::Routes;
+        self.set_str_attribute("href", &value.url());
+        self
+    }
+
+    fn href_str(mut self, value: &str) -> Self {
+        self.set_str_attribute("href", value);
+        self
+    }
+
+    fn id(self, id: &str) -> Self {
+        self.ws_element().set_id(id);
+        self
+    }
+
+    fn r#type(mut self, value: impl super::AsStr) -> Self {
+        self.set_str_attribute("type", value.as_str());
         self
     }
 
@@ -223,48 +280,6 @@ where
         self
     }
 
-    fn id(self, id: &str) -> Self {
-        self.ws_element().set_id(id);
-        self
-    }
-
-    fn r#type(mut self, value: impl super::AsStr) -> Self {
-        self.set_str_attribute("type", value.as_str());
-        self
-    }
-
-    fn r#for(mut self, value: &str) -> Self {
-        self.set_str_attribute("for", value);
-        self
-    }
-
-    fn class_if(mut self, class_name: &str, class_on: bool) -> Self {
-        if self.check_bool_attribute(class_on) {
-            if class_on {
-                self.ws_element()
-                    .class_list()
-                    .add_1(class_name)
-                    .expect_throw("Unable to add class");
-            } else {
-                self.ws_element()
-                    .class_list()
-                    .remove_1(class_name)
-                    .expect_throw("Unable to remove class");
-            }
-        }
-        self
-    }
-
-    fn href(mut self, value: C::Routes) -> Self {
-        use crate::routing::Routes;
-        self.set_str_attribute("href", &value.url());
-        self
-    }
-
-    fn href_str(mut self, value: &str) -> Self {
-        self.set_str_attribute("href", value);
-        self
-    }
 
     create_methods_for_events! {
         on_click Click,
@@ -277,7 +292,6 @@ where
 
     create_methods_for_attributes! {
         bool => set_bool_attribute [
-            checked
             disabled
             hidden
             readonly
