@@ -10,6 +10,12 @@ enum Filter {
     Completed,
 }
 
+impl Default for Filter {
+    fn default() -> Self {
+        Self::All
+    }
+}
+
 impl spair::Routes<State> for Filter {
     fn url(&self) -> String {
         match self {
@@ -28,8 +34,9 @@ impl spair::Routes<State> for Filter {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TodoItem {
+#[derive(Serialize, Deserialize)]
+struct TodoItem {
+    id: u32,
     title: String,
     completed: bool,
 }
@@ -45,34 +52,38 @@ impl TodoItem {
     }
 }
 
+#[derive(Default, Serialize, Deserialize)]
 struct State {
+    next_id: u32,
     items: Vec<TodoItem>,
-    editing: Option<usize>,
+
+    #[serde(skip)]
+    editing: Option<u32>,
+
+    #[serde(skip)]
     filter: Filter,
 }
 
 impl State {
     fn from_store() -> Self {
-        Self {
-            items: utils::read_items_from_storage(),
-            editing: None,
-            filter: Filter::All,
-        }
+        utils::read_data_from_storage()
     }
 
     fn save_to_local_storage(&self) {
-        utils::write_items_to_storage(&self.items);
+        utils::write_data_to_storage(self);
     }
 
     fn set_filter(&mut self, filter: Filter) {
         self.filter = filter;
     }
 
-    pub fn add_new_todo(&mut self, title: String) {
+    fn add_new_todo(&mut self, title: String) {
         self.items.push(TodoItem {
+            id: self.next_id,
             title,
             completed: false,
         });
+        self.next_id += 1;
         self.save_to_local_storage();
     }
 
@@ -83,8 +94,8 @@ impl State {
         self.save_to_local_storage();
     }
 
-    fn toggle(&mut self, index: usize) {
-        if let Some(item) = self.items.get_mut(index) {
+    fn toggle(&mut self, id: u32) {
+        if let Some(item) = self.items.iter_mut().find(|item| item.id == id) {
             item.completed = !item.completed;
             self.save_to_local_storage();
         }
@@ -95,29 +106,30 @@ impl State {
         self.save_to_local_storage();
     }
 
-    fn remove(&mut self, index: usize) {
-        self.items.remove(index);
+    fn remove(&mut self, id: u32) {
+        self.items.retain(|item| item.id != id);
         self.save_to_local_storage();
     }
 
-    fn start_editing(&mut self, index: usize) {
-        self.editing = Some(index);
+    fn start_editing(&mut self, id: u32) {
+        self.editing = Some(id);
     }
 
     fn end_editing(&mut self, title: Option<String>) {
-        let index = match self.editing {
-            Some(index) => index,
+        let id = match self.editing {
+            Some(id) => id,
             None => return,
         };
         match title {
             Some(title) => {
                 self.items
-                    .get_mut(index)
-                    .expect_throw("Why editing an invalid index?")
+                    .iter_mut()
+                    .find(|item| item.id == id)
+                    .expect_throw("Why editing item with an invalid id?")
                     .title = title;
                 self.save_to_local_storage();
             }
-            None => self.remove(index),
+            None => self.remove(id),
         }
         self.editing = None;
     }
@@ -193,13 +205,12 @@ impl<'s> spair::Render<State> for Main<'s> {
                         .render("Mark all as complete");
                 })
                 .ul(|u| {
-                    u.static_attributes().class("todo-list").list(
+                    u.static_attributes().class("todo-list").keyed_list(
+                        &self.0,
                         self.0
                             .items
                             .iter()
-                            .enumerate()
-                            .filter(|(_, item)| item.visible(&self.0.filter)),
-                        &self.0,
+                            .filter(|item| item.visible(&self.0.filter)),
                     )
                 });
         })
@@ -301,20 +312,20 @@ impl spair::Render<State> for Info {
     }
 }
 
-impl spair::ListItem<State> for (usize, &TodoItem) {
-    const ROOT_ELEMENT_TAG: &'static str = "li";
-    fn render(&self, li: spair::Element<State>, state: &State) {
-        self.1.render(self.0, li, state);
+impl spair::KeyedListItem<'_, State> for TodoItem {
+    type Key = u64;
+    fn key(&self) -> Self::Key {
+        self.id as u64
     }
 }
 
-impl TodoItem {
-    // We are using non-keyed list in this example, is it better to work on index rather than id?
-    fn render(&self, index: usize, li: spair::Element<State>, state: &State) {
-        // log::info!("render item at index = {}", index);
+impl spair::ListItem<State> for TodoItem {
+    const ROOT_ELEMENT_TAG: &'static str = "li";
+    fn render(&self, state: &State, li: spair::Element<State>) {
         let comp = li.comp();
         let comp = &comp;
-        let is_is_me = state.editing == Some(index);
+        let id = self.id;
+        let is_is_me = state.editing == Some(self.id);
         li.attributes()
             .class_if("completed", self.completed)
             .class_if("editing", is_is_me)
@@ -327,22 +338,20 @@ impl TodoItem {
                         i.static_attributes()
                             .class("toggle")
                             .r#type(spair::InputType::CheckBox)
-                            // Non-keyed list is in used, index will not need to be updated
-                            // hence, this is a static attribute
-                            .on_change(comp.handler(move |state| state.toggle(index)))
+                            .on_change(comp.handler(move |state| state.toggle(id)))
                             .attributes()
                             .checked(self.completed);
                     })
                     .label(|l| {
                         l.static_attributes()
-                            .on_double_click(comp.handler(move |state| state.start_editing(index)))
+                            .on_double_click(comp.handler(move |state| state.start_editing(id)))
                             .nodes()
                             .render(&self.title);
                     })
                     .button(|b| {
                         b.static_attributes()
                             .class("destroy")
-                            .on_click(comp.handler(move |state| state.remove(index)));
+                            .on_click(comp.handler(move |state| state.remove(id)));
                     });
             })
             .input(|i| {

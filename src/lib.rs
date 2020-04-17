@@ -1,3 +1,6 @@
+#[cfg(test)]
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
 mod application;
 mod component;
 mod dom;
@@ -8,15 +11,17 @@ mod routing;
 mod utils;
 
 pub use application::start;
-pub use component::{Component, Checklist, Context, Comp};
+pub use component::{Checklist, Comp, Component, Context};
 pub use dom::attribute_types::*;
-pub use dom::{ElementHandle as Element, Nodes, StaticNodes};
+#[cfg(feature = "keyed-list")]
+pub use dom::KeyedListItem;
+pub use dom::{ElementUpdater as Element, Nodes, StaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
-pub use fetch::{Request, FetchError};
+pub use fetch::{FetchError, Request};
 pub use renderable::*;
 pub use routing::Routes;
-pub use utils::*;
+pub use utils::{document, into_input, window};
 
 pub use web_sys::Location;
 

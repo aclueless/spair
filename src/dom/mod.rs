@@ -3,6 +3,8 @@ use wasm_bindgen::UnwrapThrowExt;
 pub mod attribute_types;
 mod attributes;
 mod element;
+#[cfg(feature = "keyed-list")]
+mod keyed_list;
 mod nodes;
 
 use attribute_types::AsStr;
@@ -12,10 +14,12 @@ use attribute_types::AsStr;
 // to expose to users.
 pub use attributes::*;
 pub use element::*;
+#[cfg(feature = "keyed-list")]
+pub use keyed_list::*;
 pub use nodes::*;
 
 // This is currently created by both `Nodes::Iter::update_text()` and `Nodes::Iter::static_text()`
-struct Text {
+pub struct Text {
     text: String,
     ws_node: web_sys::Node,
 }

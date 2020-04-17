@@ -1,6 +1,5 @@
 /// This module provides traits that help users define how their types should be rendered.
 /// Implementation for primitive types is also provided.
-
 use crate::dom::{Nodes, StaticNodes};
 
 pub trait Render<C> {
@@ -59,5 +58,5 @@ impl<C> StaticRender<C> for &String {
 
 pub trait ListItem<C> {
     const ROOT_ELEMENT_TAG: &'static str;
-    fn render(&self, item: crate::dom::ElementHandle<C>, state: &C);
+    fn render(&self, state: &C, item: crate::dom::ElementUpdater<C>);
 }

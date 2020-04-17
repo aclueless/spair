@@ -1,7 +1,13 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(Default, Clone)]
-pub struct NodeList(Vec<Node>);
+pub struct NodeList(pub Vec<Node>);
+
+impl std::fmt::Debug for NodeList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        f.write_fmt(format_args!("NodeList of {} items", self.0.len()))
+    }
+}
 
 impl NodeList {
     pub(crate) fn count(&self) -> usize {
@@ -23,13 +29,13 @@ impl NodeList {
         &'a mut self,
         extra: &super::Extra<'a, C>,
         status: super::ElementStatus,
-    ) -> super::ElementHandle<'a, C> {
+    ) -> super::ElementUpdater<'a, C> {
         match self
             .0
             .get_mut(extra.index)
             .expect_throw("Expect an element node at the given index")
         {
-            Node::Element(element) => element.create_handle(extra.comp, status),
+            Node::Element(element) => element.create_updater(extra.comp, status),
             _ => panic!("Why not an element?"),
         }
     }
@@ -40,7 +46,7 @@ impl NodeList {
         extra: &super::Extra<'a, C>,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
-    ) -> super::ElementHandle<'a, C> {
+    ) -> super::ElementUpdater<'a, C> {
         let status = if extra.index == self.0.len() {
             self.create_new_element(tag, parent, next_sibling);
             super::ElementStatus::JustCreated
@@ -68,7 +74,7 @@ impl NodeList {
         tag: &str,
         extra: &super::Extra<'a, C>,
         parent: &web_sys::Node,
-    ) -> super::ElementHandle<'a, C> {
+    ) -> super::ElementUpdater<'a, C> {
         let item_count = self.0.len();
         let status = if extra.index < item_count {
             super::ElementStatus::Existing
@@ -172,13 +178,40 @@ impl NodeList {
         text.insert_before(parent, next_sibling);
         self.0.push(Node::Text(text));
     }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list<'a, C>(
+        &'a mut self,
+        root_item_tag: &str,
+        parent: &'a web_sys::Node,
+        extra: &super::Extra<'a, C>,
+        exact_count_of_new_items: usize,
+    ) -> super::KeyedListUpdater<'a, C> {
+        if self.0.len() == 0 {
+            self.0.push(Node::KeyedList(super::KeyedList::default()));
+        }
+
+        match self
+            .0
+            .first_mut()
+            .expect_throw("Expect a keyed list as the first item of the node list")
+        {
+            Node::KeyedList(list) => {
+                list.create_updater(root_item_tag, exact_count_of_new_items, parent, extra)
+                // super::KeyedListUpdater::new(list, parent, extra.comp)
+            }
+            _ => panic!("Why not a keyed list?"),
+        }
+    }
 }
 
 #[derive(Clone)]
-enum Node {
+pub enum Node {
     Element(super::Element),
     Text(super::Text),
     MatchIf(MatchIf),
+    #[cfg(feature = "keyed-list")]
+    KeyedList(super::KeyedList),
 }
 
 impl Node {
@@ -187,6 +220,8 @@ impl Node {
             Node::Element(element) => element.clear(parent),
             Node::Text(text) => text.clear(parent),
             Node::MatchIf(mi) => mi.clear(parent),
+            #[cfg(feature = "keyed-list")]
+            Node::KeyedList(list) => list.clear(parent),
         }
     }
 
@@ -195,6 +230,8 @@ impl Node {
             Node::Element(element) => element.append_to(parent),
             Node::Text(text) => text.append_to(parent),
             Node::MatchIf(mi) => mi.append_to(parent),
+            #[cfg(feature = "keyed-list")]
+            Node::KeyedList(list) => list.append_to(parent),
         }
     }
 }
@@ -277,7 +314,7 @@ pub(crate) struct NodeListHandle<'a, C> {
 }
 
 impl<'a, C> NodeListHandle<'a, C> {
-    pub fn from_handle(mut handle: super::ElementHandle<'a, C>) -> Self {
+    pub fn from_handle(mut handle: super::ElementUpdater<'a, C>) -> Self {
         handle.extra.index = 0;
         Self {
             parent: handle.element.ws_element.as_ref(),
@@ -291,7 +328,7 @@ impl<'a, C> NodeListHandle<'a, C> {
 pub struct StaticNodes<'a, C>(NodeListHandle<'a, C>);
 
 impl<'a, C> StaticNodes<'a, C> {
-    pub(super) fn from_handle(handle: super::ElementHandle<'a, C>) -> Self {
+    pub(super) fn from_handle(handle: super::ElementUpdater<'a, C>) -> Self {
         Self(NodeListHandle::from_handle(handle))
     }
 
@@ -336,7 +373,7 @@ impl<'a, C> Nodes<'a, C> {
             next_sibling,
         })
     }
-    pub(super) fn from_handle(handle: super::ElementHandle<'a, C>) -> Self {
+    pub(super) fn from_handle(handle: super::ElementUpdater<'a, C>) -> Self {
         Self(NodeListHandle::from_handle(handle))
     }
 
@@ -376,7 +413,7 @@ impl<'a, C> Nodes<'a, C> {
 macro_rules! create_methods_for_tags {
     ($($tag:ident)+) => {
         $(
-            fn $tag(self, f: impl FnOnce(super::ElementHandle<C>)) -> Self {
+            fn $tag(self, f: impl FnOnce(super::ElementUpdater<C>)) -> Self {
                 self.render_element(stringify!($tag), f)
             }
         )+
@@ -388,7 +425,7 @@ pub trait DomBuilder<C>: Sized {
     fn done(self) {}
     fn require_render(&self) -> bool;
     fn next_index(&mut self) {}
-    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementHandle<C>;
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C>;
     fn get_match_if_and_increase_index(&mut self) -> MatchIfHandle<C>;
 
     fn match_if(mut self, f: impl FnOnce(MatchIfHandle<C>)) -> Self {
@@ -396,7 +433,7 @@ pub trait DomBuilder<C>: Sized {
         self
     }
 
-    fn render_element(mut self, tag: &str, f: impl FnOnce(super::ElementHandle<C>)) -> Self {
+    fn render_element(mut self, tag: &str, f: impl FnOnce(super::ElementUpdater<C>)) -> Self {
         if self.require_render() {
             f(self.get_element_and_increase_index(tag));
         } else {
@@ -431,7 +468,7 @@ impl<'a, C> DomBuilder<C> for StaticNodes<'a, C> {
         self.0.extra.index += 1;
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementHandle<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
         let e = self
             .0
             .nodes
@@ -452,7 +489,7 @@ impl<'a, C> DomBuilder<C> for Nodes<'a, C> {
         true
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementHandle<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
         let e = self
             .0
             .nodes

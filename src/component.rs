@@ -9,15 +9,15 @@ pub trait Component: 'static + Sized {
 }
 
 pub struct Context<'a, C> {
-    pub element: crate::dom::ElementHandle<'a, C>,
+    pub element: crate::dom::ElementUpdater<'a, C>,
     pub comp: &'a Comp<C>,
 }
 
 impl<'a, C> Context<'a, C> {
-    pub fn new(comp: &'a Comp<C>, element: crate::dom::ElementHandle<'a, C>) -> Self {
+    pub fn new(comp: &'a Comp<C>, element: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self { comp, element }
     }
-    pub fn into_parts(self) -> (&'a Comp<C>, crate::dom::ElementHandle<'a, C>) {
+    pub fn into_parts(self) -> (&'a Comp<C>, crate::dom::ElementUpdater<'a, C>) {
         (self.comp, self.element)
     }
 }
@@ -95,7 +95,8 @@ impl<C: Component> RcComp<C> {
 
     pub fn first_render(&self) {
         use crate::routing::Routes;
-        let comp = Comp(Rc::downgrade(&self.0));
+        // let comp = Comp(Rc::downgrade(&self.0));
+        let comp = self.comp();
         let router = C::Routes::router(&comp);
         let mut instance = self
             .0
@@ -108,6 +109,10 @@ impl<C: Component> RcComp<C> {
         }
 
         instance.router = router;
+    }
+
+    pub fn comp(&self) -> Comp<C> {
+        Comp(Rc::downgrade(&self.0))
     }
 }
 

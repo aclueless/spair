@@ -1,3 +1,8 @@
+#[cfg(feature = "keyed-list")]
+mod peekable_double_ended_iterator;
+#[cfg(feature = "keyed-list")]
+pub use peekable_double_ended_iterator::*;
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 pub fn window() -> web_sys::Window {

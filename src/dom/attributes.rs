@@ -6,7 +6,17 @@ enum Attribute {
     String(String),
 }
 
-#[derive(Default)]
+impl std::fmt::Debug for Attribute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        match self {
+            Self::EventListener(_) => f.write_str("EventListener(...)"),
+            Self::Bool(value) => value.fmt(f),
+            Self::String(value) => value.fmt(f),
+        }
+    }
+}
+
+#[derive(Default, Debug)]
 pub struct AttributeList(Vec<Attribute>);
 
 impl AttributeList {
@@ -53,10 +63,10 @@ impl AttributeList {
     }
 }
 
-pub struct StaticAttributes<'a, C>(super::ElementHandle<'a, C>);
+pub struct StaticAttributes<'a, C>(super::ElementUpdater<'a, C>);
 
 impl<'a, C> StaticAttributes<'a, C> {
-    pub(super) fn new(handle: super::ElementHandle<'a, C>) -> Self {
+    pub(super) fn new(handle: super::ElementUpdater<'a, C>) -> Self {
         Self(handle)
     }
 
@@ -72,18 +82,26 @@ impl<'a, C> StaticAttributes<'a, C> {
         super::Nodes::from_handle(self.0)
     }
 
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, state: &C)
+    pub fn list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
     where
         I: crate::renderable::ListItem<C>,
     {
-        self.0.list(items, state)
+        self.0.list(state, items)
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    where
+        for<'k> I: super::KeyedListItem<'k, C>,
+    {
+        self.0.keyed_list(state, items)
     }
 }
 
-pub struct Attributes<'a, C>(super::ElementHandle<'a, C>);
+pub struct Attributes<'a, C>(super::ElementUpdater<'a, C>);
 
 impl<'a, C> Attributes<'a, C> {
-    pub(super) fn new(handle: super::ElementHandle<'a, C>) -> Self {
+    pub(super) fn new(handle: super::ElementUpdater<'a, C>) -> Self {
         Self(handle)
     }
 
@@ -95,11 +113,19 @@ impl<'a, C> Attributes<'a, C> {
         super::Nodes::from_handle(self.0)
     }
 
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, state: &C)
+    pub fn list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
     where
         I: crate::renderable::ListItem<C>,
     {
-        self.0.list(items, state)
+        self.0.list(state, items)
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    where
+        for<'k> I: super::KeyedListItem<'k, C>,
+    {
+        self.0.keyed_list(state, items)
     }
 }
 
@@ -286,8 +312,8 @@ impl<'a, C> sealed::AttributeSetter for super::StaticAttributes<'a, C> {
             self.0.extra.index += 1;
             false
         } else {
-            // A cloned element requires its event handlers to be set because they may rely
-            // on their index or id...
+            // A cloned element requires its event handlers to be set because the events
+            // are not cloned.
             true
         }
     }
