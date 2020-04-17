@@ -202,9 +202,7 @@ where
             if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
                 input.set_checked(value);
             } else {
-                log::warn!(
-                    ".checked() is called on an element that is not <input>"
-                );
+                log::warn!(".checked() is called on an element that is not <input>");
             }
         }
         self
@@ -279,7 +277,6 @@ where
         }
         self
     }
-
 
     create_methods_for_events! {
         on_click Click,

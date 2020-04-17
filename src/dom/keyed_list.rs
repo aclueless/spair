@@ -235,22 +235,18 @@ impl<'a, C> KeyedListUpdater<'a, C> {
         loop {
             let mut count =
                 self.update_same_key_items_from_start(comp_state, &mut items_state_iter);
-            // log::info!("from start: {}", count);
 
             count += self.update_same_key_items_from_end(comp_state, &mut items_state_iter);
-            // log::info!("from end: {}", count);
 
             count += self.update_moved_forward_item(comp_state, &mut items_state_iter);
-            // log::info!("move forward: {}", count);
 
             count += self.update_moved_backward_item(comp_state, &mut items_state_iter);
-            // log::info!("move backward: {}", count);
 
             if count == 0 {
                 break;
             }
         }
-        // log::info!("middle");
+
         self.update_other_items_in_middle(comp_state, &mut items_state_iter);
     }
 
@@ -425,14 +421,11 @@ impl<'a, C> KeyedListUpdater<'a, C> {
         }
 
         if self.old.peek().is_none() {
-            // log::info!("Insert..................");
             self.insert_remain_items(comp_state, items_state_iter);
             return;
         }
 
         self.construct_old_elements_map_from_remaining_old_elements();
-
-        // log::info!("Old elements in map: {}", self.old_elements_map.len());
 
         // Using longest_increasing_subsequence find which elements should be moved around in the browser's DOM
         // and which should be stay still
@@ -444,14 +437,7 @@ impl<'a, C> KeyedListUpdater<'a, C> {
             .collect();
         longest_increasing_subsequence(&mut items_with_lis);
 
-        // log::info!("Old elements in map: {}", self.old_elements_map.len());
-
         self.remove_old_elements_that_still_in_old_elements_map();
-
-        // log::info!("Old elements in map: {}", self.old_elements_map.len());
-        // log::info!("items with lis: {}", items_with_lis.len());
-
-        // let mut items_left = items_with_lis.len();
 
         for ItemWithLis {
             item_state,
@@ -459,16 +445,10 @@ impl<'a, C> KeyedListUpdater<'a, C> {
             lis,
         } in items_with_lis.into_iter().rev()
         {
-            // log::info!("Items left: {}", items_left);
-            // log::info!("Item state: {:?} Old element {:?}", item_state, old_element);
-            // items_left -= 1;
-
             let (mut element, status) = match old_element {
                 Some(old_element) => (old_element.element, super::ElementStatus::Existing),
                 None => (self.template.clone(), super::ElementStatus::JustCloned),
             };
-
-            // log::info!("status: {:?}", status);
 
             item_state.render(comp_state, element.create_updater(self.comp, status));
             if !lis {
@@ -505,7 +485,7 @@ impl<'a, C> KeyedListUpdater<'a, C> {
 
     fn remove_all_old_items(&mut self) {
         self.parent.set_text_content(None);
-        for (_, item) in self.old.next() {
+        while let Some((_, item)) = self.old.next() {
             item.take()
                 .expect_throw("Why no item in old list? - remove_all_old_items");
         }
