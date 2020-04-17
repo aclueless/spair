@@ -21,7 +21,7 @@ In an example folder:
     wasm-pack build --dev --target web
     basic-http-server // or your favorite file-server
 
-Open your browser and visit the correct url. By default, `basic-http-server` serves at `http://127.0.0.1:4000`.
+Open your browser and visit the correct url. By default, `basic-http-server` serves at http://localhost:4000.
 
 ## How Spair works
 
@@ -80,3 +80,23 @@ When Spair iterates through an element's child nodes if the expected element was
 ## Notes
 
 HTML's tags and attributes are implemented as methods in Spair. Names that are conflicted with Rust's keywords are implemented using raw identifers such as `r#type`, `r#for`...
+
+# What's done?
+
+* Minimal features of the framework
+* Basic support for routing
+* All tag (?)
+* Some attributes (enough for `examples/totomvc`)
+* Keyed-list (behind `features=["keyed-list]`)
+* Basic support for `fetch`
+* Some common events on html elements
+
+# What's next?
+
+(But don't expect soon)
+
+[ ] Using Spair for some apps to stabilize API
+[ ] Implement all attributes
+[ ] Implement `#[derive(spair::Routes)]`
+[ ] Add support for child components
+[ ] Some benchmarks
