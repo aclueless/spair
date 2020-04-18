@@ -2,8 +2,11 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 enum Attribute {
     EventListener(Box<dyn crate::events::Listener>),
-    Bool(bool),
     String(String),
+    Bool(bool),
+    I32(i32),
+    U32(u32),
+    F64(f64),
 }
 
 impl std::fmt::Debug for Attribute {
@@ -12,6 +15,9 @@ impl std::fmt::Debug for Attribute {
             Self::EventListener(_) => f.write_str("EventListener(...)"),
             Self::Bool(value) => value.fmt(f),
             Self::String(value) => value.fmt(f),
+            Self::I32(value) => value.fmt(f),
+            Self::U32(value) => value.fmt(f),
+            Self::F64(value) => value.fmt(f),
         }
     }
 }
@@ -41,6 +47,59 @@ impl AttributeList {
                     true
                 }
                 _ => panic!("Why not an Attribute::Bool?"),
+            },
+        }
+    }
+
+    fn check_i32_attribute(&mut self, index: usize, value: i32) -> bool {
+        match self.0.get_mut(index) {
+            None => {
+                self.0.push(Attribute::I32(value));
+                true
+            }
+            Some(a) => match a {
+                Attribute::I32(old_value) if value == *old_value => false,
+                Attribute::I32(old_value) => {
+                    *old_value = value;
+                    true
+                }
+                _ => panic!("Why not an Attribute::I32?"),
+            },
+        }
+    }
+
+    fn check_u32_attribute(&mut self, index: usize, value: u32) -> bool {
+        match self.0.get_mut(index) {
+            None => {
+                self.0.push(Attribute::U32(value));
+                true
+            }
+            Some(a) => match a {
+                Attribute::U32(old_value) if value == *old_value => false,
+                Attribute::U32(old_value) => {
+                    *old_value = value;
+                    true
+                }
+                _ => panic!("Why not an Attribute::U32?"),
+            },
+        }
+    }
+
+    fn check_f64_attribute(&mut self, index: usize, value: f64) -> bool {
+        match self.0.get_mut(index) {
+            None => {
+                self.0.push(Attribute::F64(value));
+                true
+            }
+            Some(a) => match a {
+                Attribute::F64(old_value) if (value - *old_value).abs() < std::f64::EPSILON => {
+                    false
+                }
+                Attribute::F64(old_value) => {
+                    *old_value = value;
+                    true
+                }
+                _ => panic!("Why not an Attribute::F64?"),
             },
         }
     }
@@ -146,14 +205,66 @@ macro_rules! create_methods_for_events {
 }
 
 macro_rules! create_methods_for_attributes {
-    ($type:ty => $method_name:ident [$($attribute:ident)+]) => {
+    (
         $(
-            fn $attribute(mut self, value: $type) -> Self {
-                self.$method_name(stringify!($attribute), value);
-                self
+            $attribute_type:ident $method_name:ident $($attribute_name:literal)?
+        )+
+    ) => {
+        $(
+            create_methods_for_attributes! {
+                @each
+                $method_name $($attribute_name)? => $attribute_type
             }
         )+
-    }
+    };
+    (@each $method_name:ident => $attribute_type:ident) => {
+        create_methods_for_attributes! {
+            @each
+            $method_name stringify!($method_name) => $attribute_type
+        }
+    };
+    (@each $method_name:ident $attribute_name:expr => bool) => {
+        create_methods_for_attributes! {
+            @create
+            $method_name $attribute_name => bool => set_bool_attribute
+        }
+    };
+    (@each $method_name:ident $attribute_name:expr => u32) => {
+        create_methods_for_attributes! {
+            @create
+            $method_name $attribute_name => u32 => set_u32_attribute
+        }
+    };
+    (@each $method_name:ident $attribute_name:expr => i32) => {
+        create_methods_for_attributes! {
+            @create
+            $method_name $attribute_name => i32 => set_i32_attribute
+        }
+    };
+    (@each $method_name:ident $attribute_name:expr => f64) => {
+        create_methods_for_attributes! {
+            @create
+            $method_name $attribute_name => f64 => set_f64_attribute
+        }
+    };
+    (@each $method_name:ident $attribute_name:expr => str) => {
+        create_methods_for_attributes! {
+            @create
+            $method_name $attribute_name => &str => set_str_attribute
+        }
+    };
+    (@each $method_name:ident $attribute_name:expr => AsStr) => {
+        fn $method_name(mut self, value: impl super::AsStr) -> Self {
+            self.set_str_attribute($attribute_name, value.as_str());
+            self
+        }
+    };
+    (@create $method_name:ident $attribute_name:expr => $attribute_type:ty => $shared_method_name:ident) => {
+        fn $method_name(mut self, value: $attribute_type) -> Self {
+            self.$shared_method_name($attribute_name, value);
+            self
+        }
+    };
 }
 
 mod sealed {
@@ -165,6 +276,9 @@ mod sealed {
         // Check if the attribute need to be set (and store the new value for the next check)
         fn check_bool_attribute(&mut self, value: bool) -> bool;
         fn check_str_attribute(&mut self, value: &str) -> bool;
+        fn check_i32_attribute(&mut self, value: i32) -> bool;
+        fn check_u32_attribute(&mut self, value: u32) -> bool;
+        fn check_f64_attribute(&mut self, value: f64) -> bool;
     }
 }
 
@@ -194,6 +308,129 @@ where
                 .set_attribute(name, value)
                 .expect_throw("Unable to set string attribute");
         }
+    }
+
+    fn set_i32_attribute(&mut self, name: &str, value: i32) {
+        if self.check_i32_attribute(value) {
+            self.ws_element()
+                .set_attribute(name, &value.to_string())
+                .expect_throw("Unable to set string attribute");
+        }
+    }
+
+    fn set_u32_attribute(&mut self, name: &str, value: u32) {
+        if self.check_u32_attribute(value) {
+            self.ws_element()
+                .set_attribute(name, &value.to_string())
+                .expect_throw("Unable to set string attribute");
+        }
+    }
+
+    fn set_f64_attribute(&mut self, name: &str, value: f64) {
+        if self.check_f64_attribute(value) {
+            self.ws_element()
+                .set_attribute(name, &value.to_string())
+                .expect_throw("Unable to set string attribute");
+        }
+    }
+
+    create_methods_for_events! {
+        on_click Click,
+        on_double_click DoubleClick,
+        on_change Change,
+        on_key_press KeyPress,
+        on_blur Blur,
+        on_focus Focus,
+    }
+
+    create_methods_for_attributes! {
+        str     abbr
+        str     accept
+        str     accept_charset "accept-charset"
+        str     action
+        str     allow
+        str     allow_full_screen "allowfullscreen"
+        bool    allow_payment_request "allowpaymentrequest"
+        str     alt
+        AsStr   auto_complete "autocomplete"
+        bool    auto_play "autoplay"
+        str     cite
+        str     class
+        u32     cols
+        u32     col_span "colspan"
+        bool    controls
+        str     coords
+        AsStr   cross_origin "crossorigin"
+        str     data
+        str     date_time "datetime"
+        AsStr   decoding
+        bool    default
+        str     dir_name "dirname"
+        bool    disabled
+        str     download
+        AsStr   enc_type "enctype"
+        str     r#for "for"
+        str     form
+        str     form_action "formaction"
+        AsStr   form_enc_type "formenctype"
+        AsStr   form_method "formmethod"
+        bool    form_no_validate "formnovalidate"
+        AsStr   form_target "formtarget"
+        str     headers
+        u32     height
+        bool    hidden
+        f64     high
+        str     href_str "href" // method named `href` is used for routing
+        str     href_lang "hreflang"
+        bool    is_map "ismap"
+        AsStr   kind
+        str     label
+        bool    r#loop "loop"
+        f64     low
+        // ??   max: what type? split into multiple methods?
+        i32     max_length "maxlength"
+        str     media
+        AsStr   method
+        // ??   min: similar to max
+        i32     min_length "minlength"
+        bool    multiple
+        bool    muted
+        str     name
+        bool    no_validate "novalidate"
+        bool    open
+        f64     optimum
+        str     pattern
+        str     ping
+        str     placeholder
+        str     poster
+        bool    plays_inline "playsinline"
+        AsStr   pre_load "preload"
+        bool    read_only "readonly"
+        AsStr   referrer_policy "referrerpolicy"
+        str     rel
+        // ??     rellist
+        bool    required
+        bool    reversed
+        u32     rows
+        u32     row_span "rowspan"
+        // ?? sandbox
+        bool    selected
+        AsStr   scope
+        u32     size
+        str     sizes
+        u32     span
+        str     src
+        str     src_doc "srcdoc"
+        str     src_lang "srclang"
+        str     src_set "srcset"
+        i32     start
+        str     step
+        AsStr   target
+        str     title
+        AsStr   r#type "type"
+        str     use_map "usemap"
+        u32     width
+        AsStr   wrap
     }
 
     fn checked(mut self, value: bool) -> Self {
@@ -234,29 +471,14 @@ where
         self
     }
 
-    fn r#for(mut self, value: &str) -> Self {
-        self.set_str_attribute("for", value);
-        self
-    }
-
     fn href(mut self, value: C::Routes) -> Self {
         use crate::routing::Routes;
         self.set_str_attribute("href", &value.url());
         self
     }
 
-    fn href_str(mut self, value: &str) -> Self {
-        self.set_str_attribute("href", value);
-        self
-    }
-
     fn id(self, id: &str) -> Self {
         self.ws_element().set_id(id);
-        self
-    }
-
-    fn r#type(mut self, value: impl super::AsStr) -> Self {
-        self.set_str_attribute("type", value.as_str());
         self
     }
 
@@ -276,29 +498,6 @@ where
             }
         }
         self
-    }
-
-    create_methods_for_events! {
-        on_click Click,
-        on_double_click DoubleClick,
-        on_change Change,
-        on_key_press KeyPress,
-        on_blur Blur,
-        on_focus Focus,
-    }
-
-    create_methods_for_attributes! {
-        bool => set_bool_attribute [
-            disabled
-            hidden
-            readonly
-        ]
-    }
-    create_methods_for_attributes! {
-        &str => set_str_attribute [
-            class
-            placeholder
-        ]
     }
 }
 
@@ -346,6 +545,21 @@ impl<'a, C> sealed::AttributeSetter for super::StaticAttributes<'a, C> {
         self.0.extra.status == super::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
+
+    fn check_i32_attribute(&mut self, _value: i32) -> bool {
+        self.0.extra.status == super::ElementStatus::JustCreated
+        // no need to store the value for static attributes
+    }
+
+    fn check_u32_attribute(&mut self, _value: u32) -> bool {
+        self.0.extra.status == super::ElementStatus::JustCreated
+        // no need to store the value for static attributes
+    }
+
+    fn check_f64_attribute(&mut self, _value: f64) -> bool {
+        self.0.extra.status == super::ElementStatus::JustCreated
+        // no need to store the value for static attributes
+    }
 }
 
 impl<'a, C> AttributeSetter<C> for super::Attributes<'a, C>
@@ -390,6 +604,36 @@ impl<'a, C> sealed::AttributeSetter for super::Attributes<'a, C> {
             .element
             .attributes
             .check_str_attribute(self.0.extra.index, value);
+        self.0.extra.index += 1;
+        rs
+    }
+
+    fn check_i32_attribute(&mut self, value: i32) -> bool {
+        let rs = self
+            .0
+            .element
+            .attributes
+            .check_i32_attribute(self.0.extra.index, value);
+        self.0.extra.index += 1;
+        rs
+    }
+
+    fn check_u32_attribute(&mut self, value: u32) -> bool {
+        let rs = self
+            .0
+            .element
+            .attributes
+            .check_u32_attribute(self.0.extra.index, value);
+        self.0.extra.index += 1;
+        rs
+    }
+
+    fn check_f64_attribute(&mut self, value: f64) -> bool {
+        let rs = self
+            .0
+            .element
+            .attributes
+            .check_f64_attribute(self.0.extra.index, value);
         self.0.extra.index += 1;
         rs
     }
