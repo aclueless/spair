@@ -1,6 +1,7 @@
 # spair
 
 ![Crates.io](https://img.shields.io/crates/v/spair)
+![Build](https://github.com/aclueless/spair/workflows/Rust/badge.svg)
 
 A framework for **S**ingle **P**age **A**pplication **i**n **R**ust. Inspired by [Simi], [Mika] and [Yew], some parts of source are copied from them.
 
@@ -97,7 +98,6 @@ HTML's tags and attributes are implemented as methods in Spair. Names that are c
 (But don't expect soon)
 
 - [ ] Using Spair for some apps to stabilize API
-- [ ] Implement all attributes
 - [ ] Documentation
 - [ ] Implement `#[derive(spair::Routes)]`
 - [ ] Add support for child components
