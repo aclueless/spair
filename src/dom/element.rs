@@ -52,7 +52,7 @@ impl Element {
         &self.ws_element
     }
 
-    pub fn create_updater<'a, C>(
+    pub fn create_updater<'a, C: crate::component::Component>(
         &'a mut self,
         comp: &'a crate::component::Comp<C>,
         status: super::ElementStatus,
@@ -68,9 +68,10 @@ impl Element {
         }
     }
 
-    pub(crate) fn create_context<'a, C>(
+    pub(crate) fn create_context<'a, C: crate::component::Component>(
         &'a mut self,
         comp: &'a crate::component::Comp<C>,
+        child_components: &'a C::Components,
     ) -> crate::component::Context<'a, C> {
         crate::component::Context::new(
             comp,
@@ -82,6 +83,7 @@ impl Element {
                     super::ElementStatus::Existing
                 },
             ),
+            child_components,
         )
     }
 
@@ -104,12 +106,12 @@ impl Element {
     }
 }
 
-pub struct ElementUpdater<'a, C> {
+pub struct ElementUpdater<'a, C: crate::component::Component> {
     pub element: &'a mut Element,
     pub extra: super::Extra<'a, C>,
 }
 
-impl<'a, C> ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     pub fn comp(&self) -> crate::component::Comp<C> {
         self.extra.comp.clone()
     }
@@ -161,5 +163,18 @@ impl<'a, C> ElementUpdater<'a, C> {
                 .nodes
                 .keyed_list(I::ROOT_ELEMENT_TAG, parent, &self.extra, items.len());
         updater.update(state, items.into_iter());
+    }
+
+    pub fn component<CC: crate::component::Component>(
+        self,
+        child: &crate::component::ChildComp<CC>,
+    ) {
+        // if just created: replace child's root_element with this ws_element
+        // first render
+        // on the second subsequent render, do nothing.
+        if self.extra.status == super::ElementStatus::JustCreated {
+            child.mount_to(self.element.ws_element());
+            child.first_render();
+        }
     }
 }

@@ -122,9 +122,9 @@ impl AttributeList {
     }
 }
 
-pub struct StaticAttributes<'a, C>(super::ElementUpdater<'a, C>);
+pub struct StaticAttributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
 
-impl<'a, C> StaticAttributes<'a, C> {
+impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     pub(super) fn new(handle: super::ElementUpdater<'a, C>) -> Self {
         Self(handle)
     }
@@ -157,9 +157,9 @@ impl<'a, C> StaticAttributes<'a, C> {
     }
 }
 
-pub struct Attributes<'a, C>(super::ElementUpdater<'a, C>);
+pub struct Attributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
 
-impl<'a, C> Attributes<'a, C> {
+impl<'a, C: crate::component::Component> Attributes<'a, C> {
     pub(super) fn new(handle: super::ElementUpdater<'a, C>) -> Self {
         Self(handle)
     }
@@ -501,7 +501,7 @@ where
     }
 }
 
-impl<'a, C> AttributeSetter<C> for super::StaticAttributes<'a, C>
+impl<'a, C: crate::component::Component> AttributeSetter<C> for super::StaticAttributes<'a, C>
 where
     C: crate::component::Component,
 {
@@ -510,7 +510,9 @@ where
     }
 }
 
-impl<'a, C> sealed::AttributeSetter for super::StaticAttributes<'a, C> {
+impl<'a, C: crate::component::Component> sealed::AttributeSetter
+    for super::StaticAttributes<'a, C>
+{
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
         self.0.element.ws_element.unchecked_ref()
     }
@@ -562,7 +564,7 @@ impl<'a, C> sealed::AttributeSetter for super::StaticAttributes<'a, C> {
     }
 }
 
-impl<'a, C> AttributeSetter<C> for super::Attributes<'a, C>
+impl<'a, C: crate::component::Component> AttributeSetter<C> for super::Attributes<'a, C>
 where
     C: crate::component::Component,
 {
@@ -571,7 +573,7 @@ where
     }
 }
 
-impl<'a, C> sealed::AttributeSetter for super::Attributes<'a, C> {
+impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attributes<'a, C> {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
         self.0.element.ws_element.unchecked_ref()
     }

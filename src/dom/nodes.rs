@@ -25,7 +25,7 @@ impl NodeList {
         self.0.iter().for_each(|node| node.append_to(parent));
     }
 
-    fn get_element<'a, C>(
+    fn get_element<'a, C: crate::component::Component>(
         &'a mut self,
         extra: &super::Extra<'a, C>,
         status: super::ElementStatus,
@@ -40,7 +40,7 @@ impl NodeList {
         }
     }
 
-    fn element<'a, C>(
+    fn element<'a, C: crate::component::Component>(
         &'a mut self,
         tag: &str,
         extra: &super::Extra<'a, C>,
@@ -69,7 +69,7 @@ impl NodeList {
         }
     }
 
-    pub fn item_for_list<'a, C>(
+    pub fn item_for_list<'a, C: crate::component::Component>(
         &'a mut self,
         tag: &str,
         extra: &super::Extra<'a, C>,
@@ -110,7 +110,7 @@ impl NodeList {
         self.0.push(element);
     }
 
-    fn match_if<'a, C>(
+    fn match_if<'a, C: crate::component::Component>(
         &'a mut self,
         extra: &super::Extra<'a, C>,
         parent: &'a web_sys::Node,
@@ -180,7 +180,7 @@ impl NodeList {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<'a, C>(
+    pub fn keyed_list<'a, C: crate::component::Component>(
         &'a mut self,
         root_item_tag: &str,
         parent: &'a web_sys::Node,
@@ -278,13 +278,13 @@ impl MatchIf {
     }
 }
 
-pub struct MatchIfHandle<'a, C> {
+pub struct MatchIfHandle<'a, C: crate::component::Component> {
     parent: &'a web_sys::Node,
     mi: &'a mut MatchIf,
     comp: &'a crate::component::Comp<C>,
 }
 
-impl<'a, C> MatchIfHandle<'a, C> {
+impl<'a, C: crate::component::Component> MatchIfHandle<'a, C> {
     pub fn render_on_arm_index(mut self, index: usize) -> super::Nodes<'a, C> {
         let status = if Some(index) != self.mi.active_index {
             self.mi.nodes.clear(self.parent.as_ref());
@@ -306,14 +306,14 @@ impl<'a, C> MatchIfHandle<'a, C> {
     }
 }
 
-pub(crate) struct NodeListHandle<'a, C> {
+pub(crate) struct NodeListHandle<'a, C: crate::component::Component> {
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
     nodes: &'a mut super::NodeList,
     extra: super::Extra<'a, C>,
 }
 
-impl<'a, C> NodeListHandle<'a, C> {
+impl<'a, C: crate::component::Component> NodeListHandle<'a, C> {
     pub fn from_handle(mut handle: super::ElementUpdater<'a, C>) -> Self {
         handle.extra.index = 0;
         Self {
@@ -325,9 +325,9 @@ impl<'a, C> NodeListHandle<'a, C> {
     }
 }
 
-pub struct StaticNodes<'a, C>(NodeListHandle<'a, C>);
+pub struct StaticNodes<'a, C: crate::component::Component>(NodeListHandle<'a, C>);
 
-impl<'a, C> StaticNodes<'a, C> {
+impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
     pub(super) fn from_handle(handle: super::ElementUpdater<'a, C>) -> Self {
         Self(NodeListHandle::from_handle(handle))
     }
@@ -357,9 +357,9 @@ impl<'a, C> StaticNodes<'a, C> {
     }
 }
 
-pub struct Nodes<'a, C>(NodeListHandle<'a, C>);
+pub struct Nodes<'a, C: crate::component::Component>(NodeListHandle<'a, C>);
 
-impl<'a, C> Nodes<'a, C> {
+impl<'a, C: crate::component::Component> Nodes<'a, C> {
     pub(super) fn new(
         nodes: &'a mut super::NodeList,
         extra: super::Extra<'a, C>,
@@ -420,7 +420,7 @@ macro_rules! create_methods_for_tags {
     }
 }
 
-pub trait DomBuilder<C>: Sized {
+pub trait DomBuilder<C: crate::component::Component>: Sized {
     /// Use this method the compiler complains about expected `()` but found something else and you don't want to add `;`
     fn done(self) {}
     fn require_render(&self) -> bool;
@@ -467,7 +467,7 @@ pub trait DomBuilder<C>: Sized {
     }
 }
 
-impl<'a, C> DomBuilder<C> for StaticNodes<'a, C> {
+impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodes<'a, C> {
     fn require_render(&self) -> bool {
         self.0.extra.status == super::ElementStatus::JustCreated
     }
@@ -492,7 +492,7 @@ impl<'a, C> DomBuilder<C> for StaticNodes<'a, C> {
     }
 }
 
-impl<'a, C> DomBuilder<C> for Nodes<'a, C> {
+impl<'a, C: crate::component::Component> DomBuilder<C> for Nodes<'a, C> {
     fn require_render(&self) -> bool {
         true
     }

@@ -34,19 +34,24 @@ pub struct Signature {
 
 struct State {
     branch: Option<Branch>,
+    message: String,
 }
 
 impl State {
     fn set_data(&mut self, branch: Branch) {
         self.branch = Some(branch);
+        self.message = "".to_string();
     }
 
     fn reset(&mut self) {
         self.branch = None;
+        self.message = "Wait for your click".to_string();
     }
 
     fn start_fetching(&mut self) -> spair::Checklist<Self> {
-        let mut c = spair::Checklist::skip_fn_render();
+        self.message = "Clicked! Please wait for a moment".to_string();
+
+        let mut c = spair::Checklist::default();
         let request = spair::Request::get(
             "https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master",
         )
@@ -59,35 +64,39 @@ impl State {
     }
 
     fn fetch_error(&mut self, e: spair::FetchError) {
-        log::error!("{}", e);
+        self.message = e.to_string();
     }
 }
 
 impl spair::Component for State {
     type Routes = ();
+    type Components = ();
     fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_parts();
-        element.nodes().match_if(|arm| match self.branch.as_ref() {
-            Some(branch) => arm
-                .render_on_arm_index(0)
-                .render(branch)
-                .button(|b| {
-                    b.static_attributes()
-                        .on_click(comp.handler(State::reset))
-                        .static_nodes()
-                        .render("Reset");
-                })
-                .done(),
-            None => arm
-                .render_on_arm_index(1)
-                .button(|b| {
-                    b.static_attributes()
-                        .on_click(comp.handler(State::start_fetching))
-                        .static_nodes()
-                        .render("Click to fetch wasm-bindgen latest commit info");
-                })
-                .done(),
-        });
+        let (comp, element) = c.into_comp_element();
+        element
+            .nodes()
+            .match_if(|arm| match self.branch.as_ref() {
+                Some(branch) => arm
+                    .render_on_arm_index(0)
+                    .render(branch)
+                    .button(|b| {
+                        b.static_attributes()
+                            .on_click(comp.handler(State::reset))
+                            .static_nodes()
+                            .render("Reset");
+                    })
+                    .done(),
+                None => arm
+                    .render_on_arm_index(1)
+                    .button(|b| {
+                        b.static_attributes()
+                            .on_click(comp.handler(State::start_fetching))
+                            .static_nodes()
+                            .render("Click to fetch wasm-bindgen latest commit info");
+                    })
+                    .done(),
+            })
+            .p(|p| p.nodes().render(&self.message).done());
     }
 }
 
@@ -121,6 +130,9 @@ impl spair::Render<State> for &Commit {
 #[wasm_bindgen(start)]
 pub fn start_fetch_example() {
     wasm_logger::init(wasm_logger::Config::default());
-    let state = State { branch: None };
+    let state = State {
+        branch: None,
+        message: "Wait for your click".to_string(),
+    };
     spair::start(state, "root");
 }

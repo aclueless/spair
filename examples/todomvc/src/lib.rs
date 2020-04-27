@@ -137,8 +137,9 @@ impl State {
 
 impl spair::Component for State {
     type Routes = Filter;
+    type Components = ();
     fn render(&self, c: spair::Context<Self>) {
-        let (_, element) = c.into_parts();
+        let (_, element) = c.into_comp_element();
         element
             .nodes()
             .section(|s| {

@@ -1,13 +1,16 @@
 use crate::utils::PeekableDoubleEnded;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub trait KeyedListItem<'a, C>: crate::renderable::ListItem<C> {
+pub trait KeyedListItem<'a, C: crate::component::Component>:
+    crate::renderable::ListItem<C>
+{
     type Key: 'a + Into<Key> + PartialEq<Key>;
     fn key(&'a self) -> Self::Key;
 }
 
 impl<C, T> crate::renderable::ListItem<C> for &T
 where
+    C: crate::component::Component,
     T: crate::renderable::ListItem<C>,
 {
     const ROOT_ELEMENT_TAG: &'static str = T::ROOT_ELEMENT_TAG;
@@ -18,6 +21,7 @@ where
 
 impl<'a, C, T> KeyedListItem<'a, C> for &T
 where
+    C: crate::component::Component,
     T: KeyedListItem<'a, C>,
 {
     type Key = T::Key;
@@ -26,7 +30,7 @@ where
     }
 }
 
-trait UpdateItem<C>: crate::renderable::ListItem<C> {
+trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C> {
     fn update_existing_item(
         &self,
         comp_state: &C,
@@ -50,7 +54,7 @@ trait UpdateItem<C>: crate::renderable::ListItem<C> {
     }
 }
 
-impl<C, T: crate::renderable::ListItem<C>> UpdateItem<C> for T {}
+impl<C: crate::component::Component, T: crate::renderable::ListItem<C>> UpdateItem<C> for T {}
 
 #[derive(Default)]
 pub struct KeyedList {
@@ -74,7 +78,7 @@ impl Clone for KeyedList {
 }
 
 impl KeyedList {
-    pub fn create_updater<'a, C>(
+    pub fn create_updater<'a, C: crate::component::Component>(
         &'a mut self,
         root_item_tag: &str,
         new_item_count: usize,
@@ -169,7 +173,7 @@ impl PartialEq<Key> for u64 {
     }
 }
 
-pub struct KeyedListUpdater<'a, C> {
+pub struct KeyedListUpdater<'a, C: crate::component::Component> {
     comp: &'a crate::component::Comp<C>,
     parent: &'a web_sys::Node,
     old: crate::utils::PeekableDoubleEndedIterator<
@@ -185,7 +189,7 @@ pub struct KeyedListUpdater<'a, C> {
     require_init_template: bool,
 }
 
-impl<'a, C> KeyedListUpdater<'a, C> {
+impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     fn new(
         root_item_tag: &str,
         list: &'a mut KeyedList,
@@ -691,6 +695,7 @@ mod keyed_list_tests {
 
     impl crate::component::Component for () {
         type Routes = ();
+        type Components = ();
         fn render(&self, _: crate::component::Context<Self>) {}
     }
 
@@ -703,7 +708,8 @@ mod keyed_list_tests {
     impl PhantomApp {
         fn new() -> Self {
             let root = super::super::Element::new("div");
-            let _rc = crate::component::RcComp::new((), root.ws_element().clone());
+            let _rc =
+                crate::component::RcComp::with_state_and_element((), root.ws_element().clone());
             let comp = _rc.comp();
             Self { root, _rc, comp }
         }

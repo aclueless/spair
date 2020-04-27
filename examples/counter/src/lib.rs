@@ -16,8 +16,9 @@ impl State {
 
 impl spair::Component for State {
     type Routes = ();
+    type Components = ();
     fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_parts();
+        let (comp, element) = c.into_comp_element();
         element
             .static_nodes()
             .p(|p| {

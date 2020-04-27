@@ -74,7 +74,7 @@ impl Text {
 }
 
 // A better name? Context?
-pub struct Extra<'a, C> {
+pub struct Extra<'a, C: crate::component::Component> {
     pub comp: &'a crate::component::Comp<C>,
     pub status: ElementStatus,
     pub index: usize,

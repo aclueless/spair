@@ -11,7 +11,7 @@ mod routing;
 mod utils;
 
 pub use application::start;
-pub use component::{Checklist, Comp, Component, Context};
+pub use component::{Checklist, ChildComp, Comp, Component, Components, Context};
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
