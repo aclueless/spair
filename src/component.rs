@@ -368,8 +368,3 @@ impl<C: Component> From<C> for ChildComp<C> {
         RcComp::with_state_and_element(state, phantom_element)
     }
 }
-
-// pub trait RawWrapper<C: Component> {
-//     fn mount_to(&self, ws_element: web_sys::Element);
-//     fn render(&mut self, state: &C);
-// }

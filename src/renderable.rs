@@ -60,3 +60,24 @@ pub trait ListItem<C: crate::component::Component> {
     const ROOT_ELEMENT_TAG: &'static str;
     fn render(&self, state: &C, item: crate::dom::ElementUpdater<C>);
 }
+
+pub trait RawWrapper<C: crate::component::Component> {
+    fn ws_element(&self) -> &web_sys::Element;
+    fn mounted(&self) {}
+}
+
+// impl<C, T> StaticRender<C> for &T
+// where
+//     C: crate::component::Component,
+//     T: RawWrapper<C>,
+// {
+//     fn render(self, nodes: StaticNodes<C>) -> StaticNodes<C> {
+//         if nodes.require_render() {
+//             nodes.raw_element(self.ws_element());
+//             self.mounted();
+//         } else {
+//             nodes.next_index();
+//         }
+//         nodes
+//     }
+// }

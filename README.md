@@ -89,7 +89,7 @@ impl spair::Component for State {
 
 ### `Render` and `StaticRender`
 
-The code snippet in the previous section also demonstrates two methods: `.render()` and `.r#static()` that are bounded to `Render` and `StaticRender` traits respectively. Those traits are implemented for primitives like `i8`, `i16`, ..., `u64`, `f32`, `f64`, `bool`, `usize`, `isize`. They are simply converted to strings and render as text. You can implement `Render` and `StaticRender` for your own structs and pass them to `.render()` and `.r#static()`.
+The code snippet in the previous section also demonstrates two methods: `.render()` and `.r#static()` that are bounded to `Render` and `StaticRender` traits respectively. Those traits are implemented for primitives like `i8`, ..., `u64`, `f32`, `f64`, `bool`, `usize`, `isize`. They are simply converted to strings and rendered as text. You can implement `Render` and `StaticRender` for your own structs and pass them to `.render()` and `.r#static()`.
 
 The method `.render(value)` always render the `value` in normal mode. For example, `.static_nodes().render(value)` still update the `value` text despite you call `.render()` in static mode. Similarly, method `.r#static(value)` will always ignore updating the `value`, event you call it in normal mode.
 

@@ -203,6 +203,10 @@ impl NodeList {
             _ => panic!("Why not a keyed list?"),
         }
     }
+
+    fn insert_raw_wrapper(&mut self, element: super::Element) {
+        self.0.push(Node::Element(element))
+    }
 }
 
 #[derive(Clone)]
@@ -420,13 +424,20 @@ macro_rules! create_methods_for_tags {
     }
 }
 
-pub trait DomBuilder<C: crate::component::Component>: Sized {
+mod sealed {
+    pub trait DomBuilder<C: crate::component::Component> {
+        fn require_render(&self) -> bool;
+        fn just_created(&self) -> bool;
+        fn next_index(&mut self) {}
+        fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C>;
+        fn get_match_if_and_increase_index(&mut self) -> super::MatchIfHandle<C>;
+        fn insert_raw_wrapper(&mut self, element: crate::dom::Element);
+    }
+}
+
+pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder<C> {
     /// Use this method the compiler complains about expected `()` but found something else and you don't want to add `;`
     fn done(self) {}
-    fn require_render(&self) -> bool;
-    fn next_index(&mut self) {}
-    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C>;
-    fn get_match_if_and_increase_index(&mut self) -> MatchIfHandle<C>;
 
     fn match_if(mut self, f: impl FnOnce(MatchIfHandle<C>)) -> Self {
         f(self.get_match_if_and_increase_index());
@@ -465,10 +476,25 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
         var video
         wbr //should be specialized?
     }
+
+    fn raw_element(mut self, ws_element: &web_sys::Element) -> Self {
+        if self.just_created() {
+            // TODO: should raw element stores in its own variant?
+            let element = super::Element::from_ws_element(ws_element.clone());
+            self.insert_raw_wrapper(element);
+        }
+        self.next_index();
+
+        self
+    }
 }
 
-impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodes<'a, C> {
+impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodes<'a, C> {
     fn require_render(&self) -> bool {
+        self.0.extra.status == super::ElementStatus::JustCreated
+    }
+
+    fn just_created(&self) -> bool {
         self.0.extra.status == super::ElementStatus::JustCreated
     }
 
@@ -490,11 +516,23 @@ impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodes<'a, C> {
         self.0.extra.index += 1;
         mi
     }
+
+    fn insert_raw_wrapper(&mut self, element: super::Element) {
+        debug_assert_eq!(self.0.extra.index + 1, self.0.nodes.0.len());
+        element.insert_before(self.0.parent, self.0.next_sibling);
+        self.0.nodes.insert_raw_wrapper(element);
+    }
 }
 
-impl<'a, C: crate::component::Component> DomBuilder<C> for Nodes<'a, C> {
+impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodes<'a, C> {}
+
+impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'a, C> {
     fn require_render(&self) -> bool {
         true
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.extra.status == super::ElementStatus::JustCreated
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
@@ -511,4 +549,12 @@ impl<'a, C: crate::component::Component> DomBuilder<C> for Nodes<'a, C> {
         self.0.extra.index += 1;
         mi
     }
+
+    fn insert_raw_wrapper(&mut self, element: super::Element) {
+        debug_assert_eq!(self.0.extra.index + 1, self.0.nodes.0.len());
+        element.insert_before(self.0.parent, self.0.next_sibling);
+        self.0.nodes.insert_raw_wrapper(element);
+    }
 }
+
+impl<'a, C: crate::component::Component> DomBuilder<C> for Nodes<'a, C> {}
