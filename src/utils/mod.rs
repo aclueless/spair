@@ -17,3 +17,8 @@ pub fn into_input(et: web_sys::EventTarget) -> web_sys::HtmlInputElement {
     et.dyn_into()
         .expect_throw("Unable to convert event target to web_sys::HtmlInputElement")
 }
+
+pub fn into_select(et: web_sys::EventTarget) -> web_sys::HtmlSelectElement {
+    et.dyn_into()
+        .expect_throw("Unable to convert event target to web_sys::HtmlSelectElement")
+}

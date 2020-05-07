@@ -10,10 +10,11 @@ impl std::fmt::Debug for NodeList {
 }
 
 impl NodeList {
-    pub(crate) fn count(&self) -> usize {
+    pub fn count(&self) -> usize {
         self.0.len()
     }
-    fn clear_raw(&mut self) {
+
+    pub fn clear_raw_vec(&mut self) {
         self.0.clear()
     }
 
@@ -60,7 +61,7 @@ impl NodeList {
         if index < self.0.len() {
             if index == 0 {
                 parent.set_text_content(None);
-                self.clear_raw();
+                self.clear_raw_vec();
             } else {
                 self.0
                     .drain(index..)
@@ -207,6 +208,20 @@ impl NodeList {
     fn insert_raw_wrapper(&mut self, element: super::Element) {
         self.0.push(Node::Element(element))
     }
+
+    pub fn store_component_handle(&mut self, any: AnyComponentHandle) {
+        let any = Node::ComponentHandle(any);
+        if let Some(first) = self.0.first_mut() {
+            *first = any;
+        } else {
+            self.0.push(any);
+        }
+        // if self.0.is_empty() {
+        //     self.0.push(any);
+        // }else {
+        //     self.0[0] = any;
+        // }
+    }
 }
 
 #[derive(Clone)]
@@ -216,27 +231,52 @@ pub enum Node {
     MatchIf(MatchIf),
     #[cfg(feature = "keyed-list")]
     KeyedList(super::KeyedList),
+    ComponentHandle(AnyComponentHandle),
 }
 
 impl Node {
     fn clear(&mut self, parent: &web_sys::Node) {
         match self {
-            Node::Element(element) => element.clear(parent),
-            Node::Text(text) => text.clear(parent),
-            Node::MatchIf(mi) => mi.clear(parent),
+            Self::Element(element) => element.remove_from(parent),
+            Self::Text(text) => text.remove_from(parent),
+            Self::MatchIf(mi) => mi.clear(parent),
             #[cfg(feature = "keyed-list")]
-            Node::KeyedList(list) => list.clear(parent),
+            Self::KeyedList(list) => list.clear(parent),
+            Self::ComponentHandle(_) => {
+                // The component is the only child of an element
+                parent.set_text_content(None);
+                // And the NodeList drop the ComponentHandle in its.clear()
+            }
         }
     }
 
     fn append_to(&self, parent: &web_sys::Node) {
         match self {
-            Node::Element(element) => element.append_to(parent),
-            Node::Text(text) => text.append_to(parent),
-            Node::MatchIf(mi) => mi.append_to(parent),
+            Self::Element(element) => element.append_to(parent),
+            Self::Text(text) => text.append_to(parent),
+            Self::MatchIf(mi) => mi.append_to(parent),
             #[cfg(feature = "keyed-list")]
-            Node::KeyedList(list) => list.append_to(parent),
+            Self::KeyedList(list) => list.append_to(parent),
+            Self::ComponentHandle(_) => {
+                // TODO: Not sure what to do here???
+                unreachable!("Node::ComponentHandle::append_to() is unreachable???");
+            }
         }
+    }
+}
+
+pub struct AnyComponentHandle(Box<dyn std::any::Any>);
+
+impl Clone for AnyComponentHandle {
+    fn clone(&self) -> Self {
+        //
+        panic!("Spair does not support mounting a component inside a list item");
+    }
+}
+
+impl<C: crate::component::Component> From<crate::component::Comp<C>> for AnyComponentHandle {
+    fn from(ch: crate::component::Comp<C>) -> Self {
+        Self(Box::new(crate::component::ComponentHandle::from(ch)))
     }
 }
 

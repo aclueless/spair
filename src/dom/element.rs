@@ -52,6 +52,12 @@ impl Element {
         &self.ws_element
     }
 
+    // This is intended for use with child component
+    pub(crate) fn replace_ws_element(&mut self, ws_element: web_sys::Element) {
+        self.ws_element = ws_element;
+        self.nodes.append_to(self.ws_element.as_ref());
+    }
+
     pub fn create_updater<'a, C: crate::component::Component>(
         &'a mut self,
         comp: &'a crate::component::Comp<C>,
@@ -99,7 +105,7 @@ impl Element {
             .expect_throw("Unable to insert a child Element to its expected parent");
     }
 
-    pub fn clear(&self, parent: &web_sys::Node) {
+    pub fn remove_from(&self, parent: &web_sys::Node) {
         parent
             .remove_child(self.ws_element.as_ref())
             .expect_throw("Unable to remove a child Element from its parent");
@@ -172,9 +178,13 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         // if just created: replace child's root_element with this ws_element
         // first render
         // on the second subsequent render, do nothing.
-        if self.extra.status == super::ElementStatus::JustCreated {
+        if self.extra.status == super::ElementStatus::JustCreated
+            || child.comp_instance().not_mounted()
+        {
             child.mount_to(self.element.ws_element());
-            child.first_render();
+            self.element
+                .nodes
+                .store_component_handle(child.comp().into());
         }
     }
 }

@@ -58,7 +58,7 @@ impl Text {
             .expect_throw("Unable to insert a child Text to its expected parent");
     }
 
-    pub fn clear(&self, parent: &web_sys::Node) {
+    pub fn remove_from(&self, parent: &web_sys::Node) {
         parent
             .remove_child(&self.ws_node)
             .expect_throw("Unable to remove a child Text from its parent");
@@ -85,4 +85,9 @@ pub enum ElementStatus {
     JustCreated,
     Existing,
     JustCloned,
+}
+
+pub trait RawWrapper<C: crate::component::Component> {
+    fn ws_element(&self) -> &web_sys::Element;
+    fn mounted(&self) {}
 }

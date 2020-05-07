@@ -51,6 +51,19 @@ pub struct CompInstance<C: Component> {
     child_components: Option<C::Components>,
     root_element: crate::dom::Element,
     router: Option<crate::routing::Router>,
+    mount_status: MountStatus,
+}
+
+pub enum MountStatus {
+    // This is for a child component, when it was created but not mount yet.
+    Never,
+    // A child component that is attached to the DOM.
+    Mounted,
+    // A child component that is previously attached to the DOM but
+    // has been detached.
+    Unmounted,
+    // The main component always in this status.
+    AlwaysMounted,
 }
 
 #[must_use]
@@ -133,12 +146,32 @@ impl<C: Component> Checklist<C> {
 }
 
 impl<C: Component> RcComp<C> {
-    pub fn with_state_and_element(state: C, root: web_sys::Element) -> Self {
+    pub fn with_state_and_element(state: C, root: Option<web_sys::Element>) -> Self {
+        let (root_element, mount_status) = root
+            .map(|root| {
+                (
+                    crate::dom::Element::from_ws_element(root),
+                    MountStatus::AlwaysMounted,
+                )
+            })
+            .unwrap_or_else(|| {
+                // Just an element to create CompInstance, the element will be replace by the
+                // actual node when attaching to the DOM
+                (
+                    crate::dom::Element::new("div"),
+                    // crate::utils::document()
+                    //     .create_element("div")
+                    //     .expect_throw("Unable to create a div to use as a phantom node"),
+                    MountStatus::Never,
+                )
+            });
+
         let rc = Self(Rc::new(RefCell::new(CompInstance {
             state,
-            root_element: crate::dom::Element::from_ws_element(root),
+            root_element,
             router: None,
             child_components: None,
+            mount_status,
         })));
         {
             let comp = rc.comp();
@@ -151,7 +184,11 @@ impl<C: Component> RcComp<C> {
     pub fn first_render(&self) {
         use crate::routing::Routes;
         let comp = self.comp();
+
+        // The router may cause an update that mutably borrows the CompInstance
+        // Therefor this should be done before borrowing the instance.
         let router = C::Routes::router(&comp);
+
         let mut instance = self
             .0
             .try_borrow_mut()
@@ -177,6 +214,14 @@ impl<C: Component> Clone for Comp<C> {
 }
 
 impl<C: Component> Comp<C> {
+    fn set_mount_status_to_unmounted(&self) {
+        if let Some(instance) = self.0.upgrade() {
+            if let Ok(mut instance) = instance.try_borrow_mut() {
+                instance.mount_status = MountStatus::Unmounted;
+            }
+        }
+    }
+
     pub fn update<Cl>(&self, fn_update: &impl Fn(&mut C) -> Cl)
     where
         Cl: Into<Checklist<C>>,
@@ -185,10 +230,10 @@ impl<C: Component> Comp<C> {
             let this = self
                 .0
                 .upgrade()
-                .expect_throw("Expect the component instance alive when updating");
+                .expect_throw("Expect the component instance alive when updating - update()");
             let mut this = this
                 .try_borrow_mut()
-                .expect_throw("Multiple borrowing occurred on the component instance");
+                .expect_throw("Multiple borrowing occurred on the component instance - update()");
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
@@ -208,10 +253,10 @@ impl<C: Component> Comp<C> {
             let this = self
                 .0
                 .upgrade()
-                .expect_throw("Expect the component instance alive when updating");
-            let mut this = this
-                .try_borrow_mut()
-                .expect_throw("Multiple borrowing occurred on the component instance");
+                .expect_throw("Expect the component instance alive when updating - update_arg()");
+            let mut this = this.try_borrow_mut().expect_throw(
+                "Multiple borrowing occurred on the component instance - update_arg()",
+            );
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
@@ -228,13 +273,12 @@ impl<C: Component> Comp<C> {
         Cl: Into<Checklist<C>>,
     {
         let related_comp_updates = {
-            let this = self
-                .0
-                .upgrade()
-                .expect_throw("Expect the component instance alive when updating");
-            let mut this = this
-                .try_borrow_mut()
-                .expect_throw("Multiple borrowing occurred on the component instance");
+            let this = self.0.upgrade().expect_throw(
+                "Expect the component instance alive when updating - update_child_comps()",
+            );
+            let mut this = this.try_borrow_mut().expect_throw(
+                "Multiple borrowing occurred on the component instance - update_child_comps()",
+            );
 
             let (state, child_components) = this.state_and_child_components();
 
@@ -333,6 +377,13 @@ impl<C: Component> CompInstance<C> {
     pub fn state(&self) -> &C {
         &self.state
     }
+
+    pub(crate) fn not_mounted(&self) -> bool {
+        match self.mount_status {
+            MountStatus::Mounted => true,
+            _ => false,
+        }
+    }
 }
 
 pub trait Components<P: Component> {
@@ -346,11 +397,27 @@ impl<P: Component> Components<P> for () {
 pub type ChildComp<C> = RcComp<C>;
 
 impl<C: Component> ChildComp<C> {
+    // Attach the component to the given ws_element, and run the render
     pub(crate) fn mount_to(&self, ws_element: &web_sys::Element) {
-        self.0
+        let comp = self.comp();
+
+        let mut instance = self
+            .0
             .try_borrow_mut()
-            .expect_throw("Why unable to borrow a child component on attaching?")
-            .root_element = crate::dom::Element::from_ws_element(ws_element.clone());
+            .expect_throw("Why unable to borrow a child component on attaching?");
+
+        // TODO: This may cause problems
+        //  * When the component was detached from an element then
+        //      was attached to another element with mismatched attributes?
+        //  * When the component was detached and reattached to the
+        //      same element but somehow attributes are still mismatched?
+        //      because there is another component was attached in between?
+        instance.root_element.replace_ws_element(ws_element.clone());
+
+        instance.mount_status = MountStatus::Mounted;
+
+        // TODO: Allow an option to ignore render on re-mounted?
+        instance.render(&comp);
     }
 
     pub fn comp_instance(&self) -> std::cell::Ref<CompInstance<C>> {
@@ -360,11 +427,33 @@ impl<C: Component> ChildComp<C> {
 
 impl<C: Component> From<C> for ChildComp<C> {
     fn from(state: C) -> Self {
-        // Just an element to create CompInstance, the element will be replace by the
-        // actual node when attaching to the DOM
-        let phantom_element = crate::utils::document()
-            .create_element("div")
-            .expect_throw("Unable to create a div to use as a phantom node");
-        RcComp::with_state_and_element(state, phantom_element)
+        RcComp::with_state_and_element(state, None)
+    }
+}
+
+// A new struct instead of impl Drop on Comp because we only want
+// to set status to unmounted when removing it from its parent.
+pub struct ComponentHandle<C: Component>(Comp<C>);
+
+impl<C: Component> Drop for ComponentHandle<C> {
+    fn drop(&mut self) {
+        self.0.set_mount_status_to_unmounted();
+    }
+}
+
+impl<C: Component> From<Comp<C>> for ComponentHandle<C> {
+    fn from(comp: Comp<C>) -> Self {
+        Self(comp)
+    }
+}
+
+impl<C: Component> Drop for ChildComp<C> {
+    fn drop(&mut self) {
+        self.0
+            .try_borrow_mut()
+            .expect_throw("Why unable to borrow a child component in dropping?")
+            .root_element
+            .ws_element()
+            .set_text_content(None);
     }
 }

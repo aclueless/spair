@@ -107,7 +107,7 @@ impl KeyedList {
             item.as_ref()
                 .expect_throw("Item should exist - clear")
                 .1
-                .clear(parent)
+                .remove_from(parent)
         });
     }
 
@@ -483,7 +483,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     fn remove_old_elements_that_still_in_old_elements_map(&mut self) {
         let parent = self.parent;
         self.old_elements_map.drain().for_each(|(_, item)| {
-            item.element.clear(parent);
+            item.element.remove_from(parent);
         })
     }
 
@@ -501,7 +501,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             item.take()
                 .expect_throw("Why no item in old list? - remove_remain_items")
                 .1
-                .clear(parent);
+                .remove_from(parent);
         }
     }
 
@@ -708,8 +708,10 @@ mod keyed_list_tests {
     impl PhantomApp {
         fn new() -> Self {
             let root = super::super::Element::new("div");
-            let _rc =
-                crate::component::RcComp::with_state_and_element((), root.ws_element().clone());
+            let _rc = crate::component::RcComp::with_state_and_element(
+                (),
+                Some(root.ws_element().clone()),
+            );
             let comp = _rc.comp();
             Self { root, _rc, comp }
         }

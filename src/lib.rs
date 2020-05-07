@@ -15,13 +15,13 @@ pub use component::{Checklist, ChildComp, Comp, Component, Components, Context};
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
-pub use dom::{ElementUpdater as Element, Nodes, StaticNodes};
+pub use dom::{ElementUpdater as Element, Nodes, RawWrapper, StaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, Request};
 pub use renderable::*;
 pub use routing::Routes;
-pub use utils::{document, into_input, window};
+pub use utils::{document, into_input, window, into_select};
 
 pub use web_sys::Location;
 
