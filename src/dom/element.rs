@@ -142,6 +142,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     where
         I: crate::renderable::ListItem<C>,
     {
+        // Reset the index, because it may used by attributes
+        // TODO: Avoid this to eliminate the possibility of a bug appear in the future because of this?
+        //  * Maybe a solution is similar to keyed_list: Create its own updater
+        self.extra.index = 0;
+
         let parent = self.element.ws_element.as_ref();
         for item in items {
             let element =
