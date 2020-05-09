@@ -71,6 +71,7 @@ impl Element {
         ElementUpdater {
             element: self,
             extra,
+            select_value: None,
         }
     }
 
@@ -115,6 +116,7 @@ impl Element {
 pub struct ElementUpdater<'a, C: crate::component::Component> {
     pub element: &'a mut Element,
     pub extra: super::Extra<'a, C>,
+    pub select_value: Option<String>,
 }
 
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
@@ -157,6 +159,14 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             self.extra.index += 1;
         }
         self.element.nodes.clear_after(self.extra.index, parent);
+
+        // Finishing the hack for select_value
+        if let Some(value) = self.select_value {
+            self.element
+                .ws_element()
+                .unchecked_ref::<web_sys::HtmlSelectElement>()
+                .set_value(&value);
+        }
     }
 
     #[cfg(feature = "keyed-list")]
@@ -174,6 +184,14 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
                 .nodes
                 .keyed_list(I::ROOT_ELEMENT_TAG, parent, &self.extra, items.len());
         updater.update(state, items.into_iter());
+
+        // Finishing the hack for select_value
+        if let Some(value) = self.select_value {
+            self.element
+                .ws_element()
+                .unchecked_ref::<web_sys::HtmlSelectElement>()
+                .set_value(&value);
+        }
     }
 
     pub fn component<CC: crate::component::Component>(

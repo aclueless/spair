@@ -293,6 +293,8 @@ mod sealed {
         fn check_i32_attribute(&mut self, value: i32) -> bool;
         fn check_u32_attribute(&mut self, value: u32) -> bool;
         fn check_f64_attribute(&mut self, value: f64) -> bool;
+
+        fn start_hacking_for_select_value(&mut self, value: &str);
     }
 }
 
@@ -502,8 +504,12 @@ where
             if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
                 input.set_value(value);
             } else if let Some(select) = element.dyn_ref::<web_sys::HtmlSelectElement>() {
-                log::info!("Setting select value: {}", value);
-                select.set_value(value);
+                // It has no effect ff you set a value for
+                // a <select> element before adding its <option>s,
+                // the hacking should finish in the list() method.
+                // Is there a better hack?
+                self.start_hacking_for_select_value(value);
+            // select.set_value(value);
             } else if let Some(text_area) = element.dyn_ref::<web_sys::HtmlTextAreaElement>() {
                 text_area.set_value(value);
             } else {
@@ -576,6 +582,10 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
     fn check_f64_attribute(&mut self, _value: f64) -> bool {
         self.0.extra.status == super::ElementStatus::JustCreated
         // no need to store the value for static attributes
+    }
+
+    fn start_hacking_for_select_value(&mut self, value: &str) {
+        self.0.select_value = Some(value.to_string());
     }
 }
 
@@ -653,5 +663,9 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attr
             .check_f64_attribute(self.0.extra.index, value);
         self.0.extra.index += 1;
         rs
+    }
+
+    fn start_hacking_for_select_value(&mut self, value: &str) {
+        self.0.select_value = Some(value.to_string());
     }
 }
