@@ -155,6 +155,13 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     {
         self.0.keyed_list(state, items)
     }
+
+    pub fn component<CC: crate::component::Component>(
+        self,
+        child: &crate::component::ChildComp<CC>,
+    ) {
+        self.0.component(child);
+    }
 }
 
 pub struct Attributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
@@ -185,6 +192,13 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         self.0.keyed_list(state, items)
+    }
+
+    pub fn component<CC: crate::component::Component>(
+        self,
+        child: &crate::component::ChildComp<CC>,
+    ) {
+        self.0.component(child);
     }
 }
 
@@ -488,6 +502,7 @@ where
             if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
                 input.set_value(value);
             } else if let Some(select) = element.dyn_ref::<web_sys::HtmlSelectElement>() {
+                log::info!("Setting select value: {}", value);
                 select.set_value(value);
             } else if let Some(text_area) = element.dyn_ref::<web_sys::HtmlTextAreaElement>() {
                 text_area.set_value(value);

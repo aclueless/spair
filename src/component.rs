@@ -378,7 +378,7 @@ impl<C: Component> CompInstance<C> {
         &self.state
     }
 
-    pub(crate) fn not_mounted(&self) -> bool {
+    pub(crate) fn is_mounted(&self) -> bool {
         match self.mount_status {
             MountStatus::Mounted => true,
             _ => false,

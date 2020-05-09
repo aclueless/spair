@@ -183,8 +183,9 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         // if just created: replace child's root_element with this ws_element
         // first render
         // on the second subsequent render, do nothing.
+
         if self.extra.status == super::ElementStatus::JustCreated
-            || child.comp_instance().not_mounted()
+            || !child.comp_instance().is_mounted()
         {
             child.mount_to(self.element.ws_element());
             self.element
