@@ -503,7 +503,7 @@ where
             let element = self.ws_element();
             if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
                 input.set_value(value);
-            } else if let Some(select) = element.dyn_ref::<web_sys::HtmlSelectElement>() {
+            } else if let Some(_select) = element.dyn_ref::<web_sys::HtmlSelectElement>() {
                 // It has no effect ff you set a value for
                 // a <select> element before adding its <option>s,
                 // the hacking should finish in the list() method.

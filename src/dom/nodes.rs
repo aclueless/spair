@@ -205,9 +205,9 @@ impl NodeList {
         }
     }
 
-    fn insert_raw_wrapper(&mut self, element: super::Element) {
-        self.0.push(Node::Element(element))
-    }
+    //     fn insert_raw_wrapper(&mut self, element: super::Element) {
+    //         self.0.push(Node::Element(element))
+    //     }
 
     pub fn store_component_handle(&mut self, any: AnyComponentHandle) {
         let any = Node::ComponentHandle(any);
@@ -216,11 +216,6 @@ impl NodeList {
         } else {
             self.0.push(any);
         }
-        // if self.0.is_empty() {
-        //     self.0.push(any);
-        // }else {
-        //     self.0[0] = any;
-        // }
     }
 }
 
@@ -468,10 +463,10 @@ mod sealed {
     pub trait DomBuilder<C: crate::component::Component> {
         fn require_render(&self) -> bool;
         fn just_created(&self) -> bool;
-        fn next_index(&mut self) {}
+        fn next_index(&mut self);
         fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C>;
         fn get_match_if_and_increase_index(&mut self) -> super::MatchIfHandle<C>;
-        fn insert_raw_wrapper(&mut self, element: crate::dom::Element);
+        fn store_raw_wrapper(&mut self, element: crate::dom::Element);
     }
 }
 
@@ -517,11 +512,15 @@ pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder
         wbr //should be specialized?
     }
 
-    fn raw_element(mut self, ws_element: &web_sys::Element) -> Self {
+    fn raw_wrapper(mut self, raw_wrapper: &impl super::RawWrapper<C>) -> Self {
         if self.just_created() {
+            let ws_element = raw_wrapper.ws_element();
             // TODO: should raw element stores in its own variant?
+            //      This store the ws_element of the RawWrapper as a super::Element,
+            //      it may cause a problem when the RawWrapper in side a list element
             let element = super::Element::from_ws_element(ws_element.clone());
-            self.insert_raw_wrapper(element);
+            self.store_raw_wrapper(element);
+            raw_wrapper.mounted();
         }
         self.next_index();
 
@@ -557,10 +556,9 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodes<'
         mi
     }
 
-    fn insert_raw_wrapper(&mut self, element: super::Element) {
-        debug_assert_eq!(self.0.extra.index + 1, self.0.nodes.0.len());
+    fn store_raw_wrapper(&mut self, element: super::Element) {
         element.insert_before(self.0.parent, self.0.next_sibling);
-        self.0.nodes.insert_raw_wrapper(element);
+        self.0.nodes.0.push(Node::Element(element));
     }
 }
 
@@ -573,6 +571,10 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'a, C> 
 
     fn just_created(&self) -> bool {
         self.0.extra.status == super::ElementStatus::JustCreated
+    }
+
+    fn next_index(&mut self) {
+        self.0.extra.index += 1;
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
@@ -590,10 +592,9 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'a, C> 
         mi
     }
 
-    fn insert_raw_wrapper(&mut self, element: super::Element) {
-        debug_assert_eq!(self.0.extra.index + 1, self.0.nodes.0.len());
+    fn store_raw_wrapper(&mut self, element: super::Element) {
         element.insert_before(self.0.parent, self.0.next_sibling);
-        self.0.nodes.insert_raw_wrapper(element);
+        self.0.nodes.0.push(Node::Element(element));
     }
 }
 
