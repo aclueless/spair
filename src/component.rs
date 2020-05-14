@@ -123,7 +123,11 @@ impl<C: Component> Checklist<C> {
         s
     }
 
-    pub fn fetch_json_ok_error<R, Cl>(
+    pub fn set_skip_fn_render(&mut self) {
+        self.skip_fn_render = true;
+    }
+
+    pub fn fetch_json<R, Cl>(
         &mut self,
         req: http::Request<Option<String>>,
         options: Option<crate::fetch::FetchOptions>,
@@ -138,6 +142,24 @@ impl<C: Component> Checklist<C> {
             .push(Box::new(crate::fetch::FetchCommand::new(
                 req, options, ok, error,
             )));
+    }
+
+    pub fn fetch_json_with_body<B, R, Cl>(
+        &mut self,
+        request_builder: http::request::Builder,
+        body: &B,
+        options: Option<crate::fetch::FetchOptions>,
+        ok: fn(&mut C, R) -> Cl,
+        error: fn(&mut C, crate::FetchError),
+    ) -> Result<(), crate::fetch::FetchError>
+    where
+        B: serde::Serialize,
+        R: 'static + serde::de::DeserializeOwned,
+        Cl: 'static + Into<Checklist<C>>,
+    {
+        let request = request_builder.body(Some(serde_json::to_string(body)?))?;
+        self.fetch_json(request, options, ok, error);
+        Ok(())
     }
 
     pub fn update_related_component(&mut self, fn_update: impl Fn() + 'static) {

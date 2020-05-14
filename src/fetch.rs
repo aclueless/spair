@@ -19,6 +19,9 @@ pub enum FetchError {
     EmptyResponse,
     #[error("Parse error: {0}")]
     ParseError(#[from] serde_json::error::Error),
+    /// Error return by http crate
+    #[error("Http error: {0}")]
+    HttpError(#[from] http::Error),
 }
 
 #[derive(Debug)]

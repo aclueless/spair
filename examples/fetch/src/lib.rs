@@ -59,7 +59,7 @@ impl State {
         .body(None)
         .unwrap();
 
-        c.fetch_json_ok_error(request, None, State::set_data, State::fetch_error);
+        c.fetch_json(request, None, State::set_data, State::fetch_error);
         c
     }
 
