@@ -17,11 +17,11 @@ impl State {
         self.value -= 1;
     }
 
-    pub fn child_value_is_divisible_by_five(&mut self, child_comps: &ChildComp) {
+    pub fn child_value_is_divisible_by_five(&mut self, child_comps: &mut ChildComp) {
         self.value_read_from_child = Some(child_comps.0.comp_instance().state().value());
     }
 
-    fn send_value_to_child(&mut self, child_comps: &ChildComp) -> spair::Checklist<State> {
+    fn send_value_to_child(&mut self, child_comps: &mut ChildComp) -> spair::Checklist<State> {
         let mut cl = spair::Checklist::skip_fn_render();
         let value = self.value;
         cl.update_related_component(

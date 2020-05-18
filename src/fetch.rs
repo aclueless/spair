@@ -255,3 +255,126 @@ async fn get_string(promise: js_sys::Promise) -> Result<String, FetchError> {
         .map_err(|_| FetchError::InvalidResponse)?
         .ok_or_else(|| FetchError::EmptyResponse)
 }
+
+pub struct FetchCommandWithChildComps<C: crate::component::Component, Cl, R> {
+    args: Option<FetchCommandWithChildCompsArgs<C, Cl, R>>,
+    //     _phantom_data: std::marker::PhantomData<R>,
+}
+
+struct FetchCommandWithChildCompsArgs<C: crate::component::Component, Cl, R> {
+    request: http::Request<Option<String>>,
+    options: FetchOptions,
+    ok_handler: OkHandler<C, Cl, R>,
+    error_handler: fn(&mut C, FetchError),
+}
+
+pub enum OkHandler<C: crate::component::Component, Cl, R> {
+    OnlyArg(fn(&mut C, R) -> Cl),
+    ChildCompsAndArg(fn(&mut C, &mut C::Components, R) -> Cl),
+}
+
+// impl<C, Cl, R> OkHandler<C, Cl, R>
+// where
+// C: crate::component::Component,
+// Cl: 'static + Into<crate::component::Checklist<C>>,
+// {
+//     fn create_update_handler<F: FnOnce(R)>(self, comp: &crate::component::Comp<C>) -> F {
+//     fn create_update_handler(self, comp: &crate::component::Comp<C>) -> impl FnOnce(R) {
+//     }
+// }
+
+impl<C, Cl, R> FetchCommandWithChildComps<C, Cl, R>
+where
+    C: crate::component::Component,
+{
+    pub(crate) fn new(
+        request: http::Request<Option<String>>,
+        options: Option<FetchOptions>,
+        ok_handler: OkHandler<C, Cl, R>,
+        error_handler: fn(&mut C, FetchError),
+    ) -> Self {
+        Self {
+            args: Some(FetchCommandWithChildCompsArgs {
+                request,
+                options: options.unwrap_or_else(Default::default),
+                ok_handler,
+                error_handler,
+            }),
+            //             _phantom_data: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<C, Cl, R> crate::component::Command<C> for FetchCommandWithChildComps<C, Cl, R>
+where
+    C: 'static + crate::component::Component,
+    R: 'static + serde::de::DeserializeOwned,
+    Cl: 'static + Into<crate::component::Checklist<C>>,
+{
+    fn execute(&mut self, comp: &crate::component::Comp<C>, state: &mut C) {
+        let FetchCommandWithChildCompsArgs {
+            request,
+            options,
+            ok_handler,
+            error_handler,
+        } = self
+            .args
+            .take()
+            .expect_throw("Why FetchCommand is executed twice?");
+
+        // Transform http::Request into web_sys::Request.
+        let (parts, body) = request.into_parts();
+        let body = body.and_then(|body| match serde_json::to_string(&body) {
+            Ok(body) => Some(wasm_bindgen::JsValue::from(body)),
+            Err(e) => {
+                // The component instance is currently being borrowed,
+                // we must send the error via the `state`, not the `comp`.
+                error_handler(state, FetchError::from(e));
+                None
+            }
+        });
+
+        let ws_request = match build_request(parts, body.as_ref()) {
+            Ok(request) => request,
+            Err(e) => {
+                // The component instance is currently being borrowed,
+                // we must send the error via the `state`, not the `comp`.
+                error_handler(state, e);
+                return;
+            }
+        };
+
+        // Transform FetchOptions into RequestInit.
+        //
+        // Not care about aborting yet
+        // let abort_controller = AbortController::new().ok();
+        let init = options.into(); //.map_or_else(web_sys::RequestInit::new, Into::into);
+                                   // if let Some(abort_controller) = &abort_controller {
+                                   //     init.signal(Some(&abort_controller.signal()));
+                                   // }
+
+        // Start fetch
+        let promise = crate::utils::window().fetch_with_request_and_init(&ws_request, &init);
+
+        // Spawn future to resolve fetch
+        // let active = Rc::new(RefCell::new(true));
+
+        //         let ok_handler = comp.callback_arg(ok_handler);
+        let error_handler = comp.callback_arg(error_handler);
+        match ok_handler {
+            OkHandler::OnlyArg(f) => {
+                let ok_handler = comp.callback_arg(f);
+                let f = fetch_async(promise, ok_handler, error_handler);
+                wasm_bindgen_futures::spawn_local(f);
+            }
+            OkHandler::ChildCompsAndArg(f) => {
+                let ok_handler = comp.callback_child_comps_arg(f);
+                let f = fetch_async(promise, ok_handler, error_handler);
+                wasm_bindgen_futures::spawn_local(f);
+            }
+        }
+
+        //         let f = fetch_async(promise, ok_handler, error_handler);
+        //         wasm_bindgen_futures::spawn_local(f);
+    }
+}

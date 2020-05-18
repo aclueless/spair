@@ -162,6 +162,44 @@ impl<C: Component> Checklist<C> {
         Ok(())
     }
 
+    pub fn fetch_json_then_provide_child_comps<R, Cl>(
+        &mut self,
+        req: http::Request<Option<String>>,
+        options: Option<crate::fetch::FetchOptions>,
+        ok: fn(&mut C, &mut C::Components, R) -> Cl,
+        error: fn(&mut C, crate::FetchError),
+    ) where
+        R: 'static + serde::de::DeserializeOwned,
+        Cl: 'static + Into<Checklist<C>>,
+    {
+        self.commands
+            .0
+            .push(Box::new(crate::fetch::FetchCommandWithChildComps::new(
+                req,
+                options,
+                crate::fetch::OkHandler::ChildCompsAndArg(ok),
+                error,
+            )));
+    }
+
+    pub fn fetch_json_with_body_then_provide_child_comps<B, R, Cl>(
+        &mut self,
+        request_builder: http::request::Builder,
+        body: &B,
+        options: Option<crate::fetch::FetchOptions>,
+        ok: fn(&mut C, &mut C::Components, R) -> Cl,
+        error: fn(&mut C, crate::FetchError),
+    ) -> Result<(), crate::fetch::FetchError>
+    where
+        B: serde::Serialize,
+        R: 'static + serde::de::DeserializeOwned,
+        Cl: 'static + Into<Checklist<C>>,
+    {
+        let request = request_builder.body(Some(serde_json::to_string(body)?))?;
+        self.fetch_json_then_provide_child_comps(request, options, ok, error);
+        Ok(())
+    }
+
     pub fn update_related_component(&mut self, fn_update: impl Fn() + 'static) {
         self.related_comp_updates.0.push(Box::new(fn_update));
     }
@@ -290,7 +328,7 @@ impl<C: Component> Comp<C> {
         related_comp_updates.execute();
     }
 
-    pub fn update_child_comps<Cl>(&self, fn_update: &impl Fn(&mut C, &C::Components) -> Cl)
+    pub fn update_child_comps<Cl>(&self, fn_update: &impl Fn(&mut C, &mut C::Components) -> Cl)
     where
         Cl: Into<Checklist<C>>,
     {
@@ -308,6 +346,33 @@ impl<C: Component> Comp<C> {
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
             let (skip_fn_render, commands, related_comp_updates) =
                 fn_update(state, child_components).into().into_parts();
+            this.extra_update(skip_fn_render, commands, &self);
+            related_comp_updates
+        };
+        related_comp_updates.execute();
+    }
+
+    pub fn update_child_comps_arg<T, Cl>(
+        &self,
+        arg: T,
+        fn_update: &impl Fn(&mut C, &mut C::Components, T) -> Cl,
+    ) where
+        Cl: Into<Checklist<C>>,
+    {
+        let related_comp_updates = {
+            let this = self.0.upgrade().expect_throw(
+                "Expect the component instance alive when updating - update_child_comps()",
+            );
+            let mut this = this.try_borrow_mut().expect_throw(
+                "Multiple borrowing occurred on the component instance - update_child_comps()",
+            );
+
+            let (state, child_components) = this.state_and_child_components();
+
+            // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
+            // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
+            let (skip_fn_render, commands, related_comp_updates) =
+                fn_update(state, child_components, arg).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
             related_comp_updates
         };
@@ -332,13 +397,24 @@ impl<C: Component> Comp<C> {
 
     pub fn callback_child_comps<Cl>(
         &self,
-        fn_update: impl Fn(&mut C, &C::Components) -> Cl,
+        fn_update: impl Fn(&mut C, &mut C::Components) -> Cl,
     ) -> impl Fn()
     where
         Cl: Into<Checklist<C>>,
     {
         let comp = self.clone();
         move || comp.update_child_comps(&fn_update)
+    }
+
+    pub fn callback_child_comps_arg<T, Cl>(
+        &self,
+        fn_update: impl Fn(&mut C, &mut C::Components, T) -> Cl,
+    ) -> impl Fn(T)
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        let comp = self.clone();
+        move |arg: T| comp.update_child_comps_arg(arg, &fn_update)
     }
 
     pub fn handler<T, Cl>(&self, fn_update: impl Fn(&mut C) -> Cl) -> impl Fn(T)
@@ -358,7 +434,7 @@ impl<C: Component> Comp<C> {
 
     pub fn handler_child_comps<T, Cl>(
         &self,
-        fn_update: impl Fn(&mut C, &C::Components) -> Cl,
+        fn_update: impl Fn(&mut C, &mut C::Components) -> Cl,
     ) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
@@ -387,11 +463,11 @@ impl<C: Component> CompInstance<C> {
         commands.execute(comp, &mut self.state);
     }
 
-    fn state_and_child_components(&mut self) -> (&mut C, &C::Components) {
+    fn state_and_child_components(&mut self) -> (&mut C, &mut C::Components) {
         let state = &mut self.state;
         let child_components = self
             .child_components
-            .as_ref()
+            .as_mut()
             .expect_throw("Why child_components None?");
         (state, child_components)
     }
