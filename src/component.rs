@@ -140,7 +140,10 @@ impl<C: Component> Checklist<C> {
         self.commands
             .0
             .push(Box::new(crate::fetch::FetchCommand::new(
-                req, options, ok, error,
+                req,
+                options,
+                crate::fetch::OkHandler::OnlyArg(ok),
+                error,
             )));
     }
 
@@ -174,7 +177,7 @@ impl<C: Component> Checklist<C> {
     {
         self.commands
             .0
-            .push(Box::new(crate::fetch::FetchCommandWithChildComps::new(
+            .push(Box::new(crate::fetch::FetchCommand::new(
                 req,
                 options,
                 crate::fetch::OkHandler::ChildCompsAndArg(ok),
