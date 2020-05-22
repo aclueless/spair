@@ -30,7 +30,7 @@ impl spair::Routes<State> for Filter {
             "#active" => Self::Active,
             _ => Self::All,
         };
-        comp.update_arg(filter, std::rc::Rc::new(State::set_filter));
+        comp.update_arg(filter, &std::rc::Rc::new(State::set_filter));
     }
 }
 

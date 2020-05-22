@@ -297,7 +297,7 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    pub fn update<Cl>(&self, fn_update: Rc<impl Fn(&mut C) -> Cl + 'static>)
+    pub fn update<Cl>(&self, fn_update: &Rc<impl Fn(&mut C) -> Cl + 'static>)
     where
         Cl: Into<Checklist<C>>,
     {
@@ -310,7 +310,8 @@ impl<C: Component> Comp<C> {
                 Ok(this) => this,
                 Err(_) => {
                     let comp = self.clone();
-                    UPDATE_QUEUE.with(|uq| uq.add(Box::new(move || comp.update(fn_update))));
+                    let fn_update = Rc::clone(fn_update);
+                    UPDATE_QUEUE.with(|uq| uq.add(Box::new(move || comp.update(&fn_update))));
                     return;
                 }
             };
@@ -326,7 +327,7 @@ impl<C: Component> Comp<C> {
     pub fn update_arg<T: 'static, Cl>(
         &self,
         arg: T,
-        fn_update: Rc<impl Fn(&mut C, T) -> Cl + 'static>,
+        fn_update: &Rc<impl Fn(&mut C, T) -> Cl + 'static>,
     ) where
         Cl: Into<Checklist<C>>,
     {
@@ -339,8 +340,9 @@ impl<C: Component> Comp<C> {
                 Ok(this) => this,
                 Err(_) => {
                     let comp = self.clone();
+                    let fn_update = Rc::clone(fn_update);
                     UPDATE_QUEUE
-                        .with(|uq| uq.add(Box::new(move || comp.update_arg(arg, fn_update))));
+                        .with(|uq| uq.add(Box::new(move || comp.update_arg(arg, &fn_update))));
                     return;
                 }
             };
@@ -355,7 +357,7 @@ impl<C: Component> Comp<C> {
 
     pub fn update_child_comps<Cl>(
         &self,
-        fn_update: Rc<impl Fn(&mut C, &mut C::Components) -> Cl + 'static>,
+        fn_update: &Rc<impl Fn(&mut C, &mut C::Components) -> Cl + 'static>,
     ) where
         Cl: Into<Checklist<C>>,
     {
@@ -367,8 +369,9 @@ impl<C: Component> Comp<C> {
                 Ok(this) => this,
                 Err(_) => {
                     let comp = self.clone();
+                    let fn_update = Rc::clone(fn_update);
                     UPDATE_QUEUE
-                        .with(|uq| uq.add(Box::new(move || comp.update_child_comps(fn_update))));
+                        .with(|uq| uq.add(Box::new(move || comp.update_child_comps(&fn_update))));
                     return;
                 }
             };
@@ -386,7 +389,7 @@ impl<C: Component> Comp<C> {
     pub fn update_child_comps_arg<T: 'static, Cl>(
         &self,
         arg: T,
-        fn_update: Rc<impl Fn(&mut C, &mut C::Components, T) -> Cl + 'static>,
+        fn_update: &Rc<impl Fn(&mut C, &mut C::Components, T) -> Cl + 'static>,
     ) where
         Cl: Into<Checklist<C>>,
     {
@@ -398,9 +401,10 @@ impl<C: Component> Comp<C> {
                 Ok(this) => this,
                 Err(_) => {
                     let comp = self.clone();
+                    let fn_update = Rc::clone(fn_update);
                     UPDATE_QUEUE.with(|uq| {
                         uq.add(Box::new(move || {
-                            comp.update_child_comps_arg(arg, fn_update)
+                            comp.update_child_comps_arg(arg, &fn_update)
                         }))
                     });
                     return;
@@ -424,7 +428,7 @@ impl<C: Component> Comp<C> {
     {
         let comp = self.clone();
         let fn_update = Rc::new(fn_update);
-        move || comp.update(Rc::clone(&fn_update))
+        move || comp.update(&fn_update)
     }
 
     pub fn callback_arg<T: 'static, Cl>(
@@ -436,7 +440,7 @@ impl<C: Component> Comp<C> {
     {
         let comp = self.clone();
         let fn_update = Rc::new(fn_update);
-        move |t: T| comp.update_arg(t, Rc::clone(&fn_update))
+        move |t: T| comp.update_arg(t, &fn_update)
     }
 
     pub fn callback_child_comps<Cl>(
@@ -448,7 +452,7 @@ impl<C: Component> Comp<C> {
     {
         let comp = self.clone();
         let fn_update = Rc::new(fn_update);
-        move || comp.update_child_comps(Rc::clone(&fn_update))
+        move || comp.update_child_comps(&fn_update)
     }
 
     pub fn callback_child_comps_arg<T: 'static, Cl>(
@@ -460,7 +464,7 @@ impl<C: Component> Comp<C> {
     {
         let comp = self.clone();
         let fn_update = Rc::new(fn_update);
-        move |arg: T| comp.update_child_comps_arg(arg, Rc::clone(&fn_update))
+        move |arg: T| comp.update_child_comps_arg(arg, &fn_update)
     }
 
     pub fn handler<T: 'static, Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn(T)
@@ -469,7 +473,7 @@ impl<C: Component> Comp<C> {
     {
         let comp = self.clone();
         let fn_update = Rc::new(fn_update);
-        move |_: T| comp.update(Rc::clone(&fn_update))
+        move |_: T| comp.update(&fn_update)
     }
 
     pub fn handler_arg<T: 'static, Cl>(
@@ -491,7 +495,7 @@ impl<C: Component> Comp<C> {
     {
         let comp = self.clone();
         let fn_update = Rc::new(fn_update);
-        move |_: T| comp.update_child_comps(Rc::clone(&fn_update))
+        move |_: T| comp.update_child_comps(&fn_update)
     }
 }
 
