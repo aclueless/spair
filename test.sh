@@ -5,7 +5,10 @@ TARGET="--target=wasm32-unknown-unknown"
 
 cargo fmt -- --check
 cargo clippy -- -D warnings
-wasm-pack test --headless --chrome --firefox -- --features="keyed-list"
+
+# --chrome and --firefox on separate lines to easily disable one of them if the drive has problems
+wasm-pack test --headless --chrome -- --features="keyed-list"
+wasm-pack test --headless --firefox -- --features="keyed-list"
 
 for x in ./examples/*; do
     if [ -f $x/Cargo.toml ]; then
