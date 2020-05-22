@@ -1,6 +1,31 @@
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::rc::{Rc, Weak};
 use wasm_bindgen::UnwrapThrowExt;
+
+struct UpdateQueue {
+    queue: RefCell<VecDeque<Box<dyn FnOnce()>>>,
+}
+
+thread_local! {
+    static UPDATE_QUEUE: UpdateQueue = UpdateQueue { queue: RefCell::new(VecDeque::new()) };
+}
+
+impl UpdateQueue {
+    fn add(&self, f: Box<dyn FnOnce()>) {
+        self.queue.borrow_mut().push_back(f);
+    }
+
+    fn take(&self) -> Option<Box<dyn FnOnce()>> {
+        self.queue.borrow_mut().pop_front()
+    }
+
+    fn execute(&self) {
+        while let Some(f) = self.take() {
+            f();
+        }
+    }
+}
 
 pub trait Component: 'static + Sized {
     type Routes: crate::routing::Routes<Self>;
@@ -70,21 +95,13 @@ pub enum MountStatus {
 pub struct Checklist<C: Component> {
     skip_fn_render: bool,
     commands: Commands<C>,
-    related_comp_updates: RelatedCompUpdates,
 }
 
 struct Commands<C>(Vec<Box<dyn Command<C>>>);
-struct RelatedCompUpdates(Vec<Box<dyn Fn()>>);
 
 impl<C: Component> Commands<C> {
     fn execute(&mut self, comp: &Comp<C>, state: &mut C) {
         self.0.iter_mut().for_each(|c| c.execute(comp, state));
-    }
-}
-
-impl RelatedCompUpdates {
-    fn execute(&self) {
-        self.0.iter().for_each(|c| c());
     }
 }
 
@@ -97,7 +114,6 @@ impl<C: Component> Default for Checklist<C> {
         Self {
             skip_fn_render: false,
             commands: Commands(Vec::new()),
-            related_comp_updates: RelatedCompUpdates(Vec::new()),
         }
     }
 }
@@ -109,12 +125,8 @@ impl<C: Component> From<()> for Checklist<C> {
 }
 
 impl<C: Component> Checklist<C> {
-    fn into_parts(self) -> (bool, Commands<C>, RelatedCompUpdates) {
-        (
-            self.skip_fn_render,
-            self.commands,
-            self.related_comp_updates,
-        )
+    fn into_parts(self) -> (bool, Commands<C>) {
+        (self.skip_fn_render, self.commands)
     }
 
     pub fn skip_fn_render() -> Self {
@@ -203,8 +215,8 @@ impl<C: Component> Checklist<C> {
         Ok(())
     }
 
-    pub fn update_related_component(&mut self, fn_update: impl Fn() + 'static) {
-        self.related_comp_updates.0.push(Box::new(fn_update));
+    pub fn update_related_component(&mut self, fn_update: impl FnOnce() + 'static) {
+        UPDATE_QUEUE.with(|uq| uq.add(Box::new(fn_update)));
     }
 }
 
@@ -289,7 +301,7 @@ impl<C: Component> Comp<C> {
     where
         Cl: Into<Checklist<C>>,
     {
-        let related_comp_updates = {
+        {
             let this = self
                 .0
                 .upgrade()
@@ -300,19 +312,17 @@ impl<C: Component> Comp<C> {
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands, related_comp_updates) =
-                fn_update(&mut this.state).into().into_parts();
+            let (skip_fn_render, commands) = fn_update(&mut this.state).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
-            related_comp_updates
-        };
-        related_comp_updates.execute();
+        }
+        UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
     pub fn update_arg<T, Cl>(&self, arg: T, fn_update: &impl Fn(&mut C, T) -> Cl)
     where
         Cl: Into<Checklist<C>>,
     {
-        let related_comp_updates = {
+        {
             let this = self
                 .0
                 .upgrade()
@@ -323,19 +333,17 @@ impl<C: Component> Comp<C> {
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands, related_comp_updates) =
-                fn_update(&mut this.state, arg).into().into_parts();
+            let (skip_fn_render, commands) = fn_update(&mut this.state, arg).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
-            related_comp_updates
-        };
-        related_comp_updates.execute();
+        }
+        UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
     pub fn update_child_comps<Cl>(&self, fn_update: &impl Fn(&mut C, &mut C::Components) -> Cl)
     where
         Cl: Into<Checklist<C>>,
     {
-        let related_comp_updates = {
+        {
             let this = self.0.upgrade().expect_throw(
                 "Expect the component instance alive when updating - update_child_comps()",
             );
@@ -347,12 +355,10 @@ impl<C: Component> Comp<C> {
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands, related_comp_updates) =
-                fn_update(state, child_components).into().into_parts();
+            let (skip_fn_render, commands) = fn_update(state, child_components).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
-            related_comp_updates
-        };
-        related_comp_updates.execute();
+        }
+        UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
     pub fn update_child_comps_arg<T, Cl>(
@@ -362,7 +368,7 @@ impl<C: Component> Comp<C> {
     ) where
         Cl: Into<Checklist<C>>,
     {
-        let related_comp_updates = {
+        {
             let this = self.0.upgrade().expect_throw(
                 "Expect the component instance alive when updating - update_child_comps()",
             );
@@ -374,12 +380,11 @@ impl<C: Component> Comp<C> {
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands, related_comp_updates) =
+            let (skip_fn_render, commands) =
                 fn_update(state, child_components, arg).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
-            related_comp_updates
-        };
-        related_comp_updates.execute();
+        }
+        UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
     pub fn callback<Cl>(&self, fn_update: impl Fn(&mut C) -> Cl) -> impl Fn()
