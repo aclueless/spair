@@ -297,7 +297,7 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    pub fn update<Cl>(&self, fn_update: &impl Fn(&mut C) -> Cl)
+    pub fn update<Cl>(&self, fn_update: Rc<impl Fn(&mut C) -> Cl + 'static>)
     where
         Cl: Into<Checklist<C>>,
     {
@@ -306,9 +306,14 @@ impl<C: Component> Comp<C> {
                 .0
                 .upgrade()
                 .expect_throw("Expect the component instance alive when updating - update()");
-            let mut this = this
-                .try_borrow_mut()
-                .expect_throw("Multiple borrowing occurred on the component instance - update()");
+            let mut this = match this.try_borrow_mut() {
+                Ok(this) => this,
+                Err(_) => {
+                    let comp = self.clone();
+                    UPDATE_QUEUE.with(|uq| uq.add(Box::new(move || comp.update(fn_update))));
+                    return;
+                }
+            };
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
@@ -318,8 +323,11 @@ impl<C: Component> Comp<C> {
         UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
-    pub fn update_arg<T, Cl>(&self, arg: T, fn_update: &impl Fn(&mut C, T) -> Cl)
-    where
+    pub fn update_arg<T: 'static, Cl>(
+        &self,
+        arg: T,
+        fn_update: Rc<impl Fn(&mut C, T) -> Cl + 'static>,
+    ) where
         Cl: Into<Checklist<C>>,
     {
         {
@@ -327,9 +335,15 @@ impl<C: Component> Comp<C> {
                 .0
                 .upgrade()
                 .expect_throw("Expect the component instance alive when updating - update_arg()");
-            let mut this = this.try_borrow_mut().expect_throw(
-                "Multiple borrowing occurred on the component instance - update_arg()",
-            );
+            let mut this = match this.try_borrow_mut() {
+                Ok(this) => this,
+                Err(_) => {
+                    let comp = self.clone();
+                    UPDATE_QUEUE
+                        .with(|uq| uq.add(Box::new(move || comp.update_arg(arg, fn_update))));
+                    return;
+                }
+            };
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
@@ -339,17 +353,25 @@ impl<C: Component> Comp<C> {
         UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
-    pub fn update_child_comps<Cl>(&self, fn_update: &impl Fn(&mut C, &mut C::Components) -> Cl)
-    where
+    pub fn update_child_comps<Cl>(
+        &self,
+        fn_update: Rc<impl Fn(&mut C, &mut C::Components) -> Cl + 'static>,
+    ) where
         Cl: Into<Checklist<C>>,
     {
         {
             let this = self.0.upgrade().expect_throw(
                 "Expect the component instance alive when updating - update_child_comps()",
             );
-            let mut this = this.try_borrow_mut().expect_throw(
-                "Multiple borrowing occurred on the component instance - update_child_comps()",
-            );
+            let mut this = match this.try_borrow_mut() {
+                Ok(this) => this,
+                Err(_) => {
+                    let comp = self.clone();
+                    UPDATE_QUEUE
+                        .with(|uq| uq.add(Box::new(move || comp.update_child_comps(fn_update))));
+                    return;
+                }
+            };
 
             let (state, child_components) = this.state_and_child_components();
 
@@ -361,10 +383,10 @@ impl<C: Component> Comp<C> {
         UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
-    pub fn update_child_comps_arg<T, Cl>(
+    pub fn update_child_comps_arg<T: 'static, Cl>(
         &self,
         arg: T,
-        fn_update: &impl Fn(&mut C, &mut C::Components, T) -> Cl,
+        fn_update: Rc<impl Fn(&mut C, &mut C::Components, T) -> Cl + 'static>,
     ) where
         Cl: Into<Checklist<C>>,
     {
@@ -372,9 +394,18 @@ impl<C: Component> Comp<C> {
             let this = self.0.upgrade().expect_throw(
                 "Expect the component instance alive when updating - update_child_comps()",
             );
-            let mut this = this.try_borrow_mut().expect_throw(
-                "Multiple borrowing occurred on the component instance - update_child_comps()",
-            );
+            let mut this = match this.try_borrow_mut() {
+                Ok(this) => this,
+                Err(_) => {
+                    let comp = self.clone();
+                    UPDATE_QUEUE.with(|uq| {
+                        uq.add(Box::new(move || {
+                            comp.update_child_comps_arg(arg, fn_update)
+                        }))
+                    });
+                    return;
+                }
+            };
 
             let (state, child_components) = this.state_and_child_components();
 
@@ -387,68 +418,80 @@ impl<C: Component> Comp<C> {
         UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
-    pub fn callback<Cl>(&self, fn_update: impl Fn(&mut C) -> Cl) -> impl Fn()
+    pub fn callback<Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn()
     where
         Cl: Into<Checklist<C>>,
     {
         let comp = self.clone();
-        move || comp.update(&fn_update)
+        let fn_update = Rc::new(fn_update);
+        move || comp.update(Rc::clone(&fn_update))
     }
 
-    pub fn callback_arg<T, Cl>(&self, fn_update: impl Fn(&mut C, T) -> Cl) -> impl Fn(T)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        move |t: T| comp.update_arg(t, &fn_update)
-    }
-
-    pub fn callback_child_comps<Cl>(
+    pub fn callback_arg<T: 'static, Cl>(
         &self,
-        fn_update: impl Fn(&mut C, &mut C::Components) -> Cl,
-    ) -> impl Fn()
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        move || comp.update_child_comps(&fn_update)
-    }
-
-    pub fn callback_child_comps_arg<T, Cl>(
-        &self,
-        fn_update: impl Fn(&mut C, &mut C::Components, T) -> Cl,
+        fn_update: impl Fn(&mut C, T) -> Cl + 'static,
     ) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
     {
         let comp = self.clone();
-        move |arg: T| comp.update_child_comps_arg(arg, &fn_update)
+        let fn_update = Rc::new(fn_update);
+        move |t: T| comp.update_arg(t, Rc::clone(&fn_update))
     }
 
-    pub fn handler<T, Cl>(&self, fn_update: impl Fn(&mut C) -> Cl) -> impl Fn(T)
+    pub fn callback_child_comps<Cl>(
+        &self,
+        fn_update: impl Fn(&mut C, &mut C::Components) -> Cl + 'static,
+    ) -> impl Fn()
     where
         Cl: Into<Checklist<C>>,
     {
         let comp = self.clone();
-        move |_: T| comp.update(&fn_update)
+        let fn_update = Rc::new(fn_update);
+        move || comp.update_child_comps(Rc::clone(&fn_update))
     }
 
-    pub fn handler_arg<T, Cl>(&self, fn_update: impl Fn(&mut C, T) -> Cl) -> impl Fn(T)
+    pub fn callback_child_comps_arg<T: 'static, Cl>(
+        &self,
+        fn_update: impl Fn(&mut C, &mut C::Components, T) -> Cl + 'static,
+    ) -> impl Fn(T)
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        let comp = self.clone();
+        let fn_update = Rc::new(fn_update);
+        move |arg: T| comp.update_child_comps_arg(arg, Rc::clone(&fn_update))
+    }
+
+    pub fn handler<T: 'static, Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn(T)
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        let comp = self.clone();
+        let fn_update = Rc::new(fn_update);
+        move |_: T| comp.update(Rc::clone(&fn_update))
+    }
+
+    pub fn handler_arg<T: 'static, Cl>(
+        &self,
+        fn_update: impl Fn(&mut C, T) -> Cl + 'static,
+    ) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
     {
         self.callback_arg(fn_update)
     }
 
-    pub fn handler_child_comps<T, Cl>(
+    pub fn handler_child_comps<T: 'static, Cl>(
         &self,
-        fn_update: impl Fn(&mut C, &mut C::Components) -> Cl,
+        fn_update: impl Fn(&mut C, &mut C::Components) -> Cl + 'static,
     ) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
     {
         let comp = self.clone();
-        move |_: T| comp.update_child_comps(&fn_update)
+        let fn_update = Rc::new(fn_update);
+        move |_: T| comp.update_child_comps(Rc::clone(&fn_update))
     }
 }
 
