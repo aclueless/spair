@@ -172,7 +172,9 @@ impl<C: Component> Checklist<C> {
         R: 'static + serde::de::DeserializeOwned,
         Cl: 'static + Into<Checklist<C>>,
     {
-        let request = request_builder.body(Some(serde_json::to_string(body)?))?;
+        let request = request_builder
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(Some(serde_json::to_string(body)?))?;
         self.fetch_json(request, options, ok, error);
         Ok(())
     }
@@ -210,7 +212,9 @@ impl<C: Component> Checklist<C> {
         R: 'static + serde::de::DeserializeOwned,
         Cl: 'static + Into<Checklist<C>>,
     {
-        let request = request_builder.body(Some(serde_json::to_string(body)?))?;
+        let request = request_builder
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(Some(serde_json::to_string(body)?))?;
         self.fetch_json_then_provide_child_comps(request, options, ok, error);
         Ok(())
     }
