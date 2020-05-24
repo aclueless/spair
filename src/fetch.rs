@@ -13,6 +13,10 @@ pub enum FetchError {
     BuildRequestFailed,
     #[error("Fetch failed")]
     FetchFailed,
+    #[error("Invalid status code: {0}")]
+    InvalidStatusCode(#[from] http::status::InvalidStatusCode),
+    #[error("Response status: {}", .0)]
+    ResponseWithError(http::StatusCode),
     #[error("Invalid response")]
     InvalidResponse,
     #[error("Empty response")]
@@ -123,7 +127,6 @@ fn build_request(
     let mut init = web_sys::RequestInit::new();
     init.method(method).body(body).headers(&header_map);
     web_sys::Request::new_with_str_and_init(&uri, &init).map_err(|e| {
-        log::error!("{:?}", e);
         FetchError::BuildRequestFailed
     })
 }
@@ -148,7 +151,13 @@ async fn get_string(promise: js_sys::Promise) -> Result<String, FetchError> {
         .await
         .map_err(|_| FetchError::FetchFailed)?;
 
-    let promise = web_sys::Response::from(response)
+    let response = web_sys::Response::from(response);
+    let status = http::StatusCode::from_u16(response.status())?;
+    if !status.is_success() {
+        return Err(FetchError::ResponseWithError(status));
+    }
+
+    let promise = response
         .text()
         .map_err(|_| FetchError::InvalidResponse)?;
 
@@ -208,6 +217,7 @@ where
             .0
             .take()
             .expect_throw("Why FetchCommand is executed twice?");
+        log::debug!("URL: {}", request.uri());
 
         // Transform http::Request into web_sys::Request.
         let (parts, body) = request.into_parts();
