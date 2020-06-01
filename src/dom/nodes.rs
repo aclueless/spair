@@ -490,12 +490,12 @@ pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder
 
     create_methods_for_tags! {
         a abbr address area article aside audio
-        b bdi bdo blockquote button /*br should be specialized*/
+        b bdi bdo blockquote button br
         canvas caption cite code col colgroup
         data datalist dd del details dfn dialog div dl dt
         em embed
         fieldset figcaption figure footer form
-        h1 h2 h3 h4 h5 h6 header hgroup /*hr should be specialized*/
+        h1 h2 h3 h4 h5 h6 header hgroup hr
         i iframe img input ins
         kbd
         label legend li
@@ -510,6 +510,28 @@ pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder
         u ul
         var video
         wbr //should be specialized?
+    }
+
+    fn line_break(mut self) -> Self {
+        if self.require_render() {
+            self.get_element_and_increase_index("br");
+        } else {
+            self.next_index();
+        }
+        self
+    }
+
+    fn horizontal_rule(mut self) -> Self {
+        if self.require_render() {
+            self.get_element_and_increase_index("hr");
+        } else {
+            self.next_index();
+        }
+        self
+    }
+
+    fn horizontal_line(self) -> Self {
+        self.horizontal_rule()
     }
 
     fn raw_wrapper(mut self, raw_wrapper: &impl super::RawWrapper<C>) -> Self {
