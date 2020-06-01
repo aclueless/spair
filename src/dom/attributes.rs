@@ -504,10 +504,10 @@ where
             if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
                 input.set_value(value);
             } else if let Some(_select) = element.dyn_ref::<web_sys::HtmlSelectElement>() {
-                // It has no effect ff you set a value for
+                // It has no effect if you set a value for
                 // a <select> element before adding its <option>s,
                 // the hacking should finish in the list() method.
-                // Is there a better hack?
+                // Is there a better solution?
                 self.start_hacking_for_select_value(value);
             // select.set_value(value);
             } else if let Some(text_area) = element.dyn_ref::<web_sys::HtmlTextAreaElement>() {

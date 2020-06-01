@@ -50,9 +50,8 @@ impl spair::Component for State {
             .div(|d| d.component(&child.0))
             .static_nodes()
             .p(|p| {
-                p.static_nodes().render(
-                    "This line and everything below is in the main-component",
-                );
+                p.static_nodes()
+                    .render("This line and everything below is in the main-component");
             })
             .nodes()
             .p(|p| {

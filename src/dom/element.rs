@@ -160,7 +160,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         }
         self.element.nodes.clear_after(self.extra.index, parent);
 
-        // Finishing the hack for select_value
+        // The hack start in AttributeSetter::value
+        self.finish_hacking_for_select_value();
+    }
+
+    fn finish_hacking_for_select_value(self) {
         if let Some(value) = self.select_value {
             self.element
                 .ws_element()
@@ -174,7 +178,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
-        // How to avoid this? The current implementation requires knowing the exact number of items,
+        // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size
         let items: Vec<_> = items.into_iter().collect();
 
@@ -185,13 +189,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
                 .keyed_list(I::ROOT_ELEMENT_TAG, parent, &self.extra, items.len());
         updater.update(state, items.into_iter());
 
-        // Finishing the hack for select_value
-        if let Some(value) = self.select_value {
-            self.element
-                .ws_element()
-                .unchecked_ref::<web_sys::HtmlSelectElement>()
-                .set_value(&value);
-        }
+        // The hack start in AttributeSetter::value
+        self.finish_hacking_for_select_value();
     }
 
     pub fn component<CC: crate::component::Component>(
