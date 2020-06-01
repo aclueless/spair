@@ -51,15 +51,17 @@ impl State {
     fn start_fetching(&mut self) -> spair::Checklist<Self> {
         self.message = "Clicked! Please wait for a moment".to_string();
 
-        let mut c = spair::Checklist::default();
+        let mut c = spair::Checklist::skip_fn_render();
         let request = spair::Request::get(
             "https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master",
         )
-        .header("Accept", "application/vnd.github.v3+json")
-        .body(None)
-        .unwrap();
+        .header("Accept", "application/vnd.github.v3+json");
 
-        c.fetch_json(request, None, State::set_data, State::fetch_error);
+        c.fetch(
+            request
+                .into_fetch_args()
+                .json_response(State::set_data, State::fetch_error),
+        );
         c
     }
 

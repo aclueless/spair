@@ -18,7 +18,7 @@ pub use dom::KeyedListItem;
 pub use dom::{ElementUpdater as Element, Nodes, RawWrapper, StaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
-pub use fetch::{FetchError, Request};
+pub use fetch::{FetchArgs, FetchError, Request};
 pub use renderable::*;
 pub use routing::Routes;
 pub use utils::{document, into_input, into_select, window};
@@ -28,6 +28,7 @@ pub use web_sys::Location;
 pub mod prelude {
     pub use crate::application::Application;
     pub use crate::dom::{AttributeSetter, DomBuilder};
+    pub use crate::fetch::IntoFetchArgs;
     pub use wasm_bindgen::prelude::*;
     pub use wasm_bindgen::UnwrapThrowExt;
 }

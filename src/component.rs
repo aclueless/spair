@@ -109,18 +109,20 @@ pub trait Command<C: Component> {
     fn execute(&mut self, comp: &Comp<C>, state: &mut C);
 }
 
-impl<C: Component> Default for Checklist<C> {
-    fn default() -> Self {
-        Self {
-            skip_fn_render: false,
-            commands: Commands(Vec::new()),
-        }
-    }
-}
+// TODO: This will be replaced by Component::default_checklist()
+
+// impl<C: Component> Default for Checklist<C> {
+//     fn default() -> Self {
+//         Self {
+//             skip_fn_render: false,
+//             commands: Commands(Vec::new()),
+//         }
+//     }
+// }
 
 impl<C: Component> From<()> for Checklist<C> {
     fn from(_: ()) -> Self {
-        Self::default()
+        Self::run_fn_render()
     }
 }
 
@@ -130,93 +132,25 @@ impl<C: Component> Checklist<C> {
     }
 
     pub fn skip_fn_render() -> Self {
-        let mut s = Self::default();
-        s.skip_fn_render = true;
-        s
+        Self {
+            skip_fn_render: true,
+            commands: Commands(Vec::new()),
+        }
+    }
+
+    pub fn run_fn_render() -> Self {
+        Self {
+            skip_fn_render: false,
+            commands: Commands(Vec::new()),
+        }
     }
 
     pub fn set_skip_fn_render(&mut self) {
         self.skip_fn_render = true;
     }
 
-    pub fn fetch_json<R, Cl>(
-        &mut self,
-        req: http::Request<Option<String>>,
-        options: Option<crate::fetch::FetchOptions>,
-        ok: fn(&mut C, R) -> Cl,
-        error: fn(&mut C, crate::FetchError),
-    ) where
-        R: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<Checklist<C>>,
-    {
-        self.commands
-            .0
-            .push(Box::new(crate::fetch::FetchCommand::new(
-                req,
-                options,
-                crate::fetch::OkHandler::OnlyArg(ok),
-                error,
-            )));
-    }
-
-    pub fn fetch_json_with_body<B, R, Cl>(
-        &mut self,
-        request_builder: http::request::Builder,
-        body: &B,
-        options: Option<crate::fetch::FetchOptions>,
-        ok: fn(&mut C, R) -> Cl,
-        error: fn(&mut C, crate::FetchError),
-    ) -> Result<(), crate::fetch::FetchError>
-    where
-        B: serde::Serialize,
-        R: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<Checklist<C>>,
-    {
-        let request = request_builder
-            .header(http::header::CONTENT_TYPE, "application/json")
-            .body(Some(serde_json::to_string(body)?))?;
-        self.fetch_json(request, options, ok, error);
-        Ok(())
-    }
-
-    pub fn fetch_json_then_provide_child_comps<R, Cl>(
-        &mut self,
-        req: http::Request<Option<String>>,
-        options: Option<crate::fetch::FetchOptions>,
-        ok: fn(&mut C, &mut C::Components, R) -> Cl,
-        error: fn(&mut C, crate::FetchError),
-    ) where
-        R: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<Checklist<C>>,
-    {
-        self.commands
-            .0
-            .push(Box::new(crate::fetch::FetchCommand::new(
-                req,
-                options,
-                crate::fetch::OkHandler::ChildCompsAndArg(ok),
-                error,
-            )));
-    }
-
-    pub fn fetch_json_with_body_then_provide_child_comps<B, R, Cl>(
-        &mut self,
-        request_builder: http::request::Builder,
-        body: &B,
-        options: Option<crate::fetch::FetchOptions>,
-        ok: fn(&mut C, &mut C::Components, R) -> Cl,
-        error: fn(&mut C, crate::FetchError),
-    ) -> Result<(), crate::fetch::FetchError>
-    where
-        B: serde::Serialize,
-        R: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<Checklist<C>>,
-    {
-        let request = request_builder
-            .header(http::header::CONTENT_TYPE, "application/json")
-            .body(Some(serde_json::to_string(body)?))?;
-        self.fetch_json_then_provide_child_comps(request, options, ok, error);
-        Ok(())
+    pub fn fetch(&mut self, cmd: Box<dyn Command<C>>) {
+        self.commands.0.push(cmd);
     }
 
     pub fn update_related_component(&mut self, fn_update: impl FnOnce() + 'static) {
@@ -236,13 +170,7 @@ impl<C: Component> RcComp<C> {
             .unwrap_or_else(|| {
                 // Just an element to create CompInstance, the element will be replace by the
                 // actual node when attaching to the DOM
-                (
-                    crate::dom::Element::new("div"),
-                    // crate::utils::document()
-                    //     .create_element("div")
-                    //     .expect_throw("Unable to create a div to use as a phantom node"),
-                    MountStatus::Never,
-                )
+                (crate::dom::Element::new("div"), MountStatus::Never)
             });
 
         let rc = Self(Rc::new(RefCell::new(CompInstance {

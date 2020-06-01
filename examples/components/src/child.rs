@@ -32,7 +32,7 @@ impl ChildState {
     }
 
     fn update_related_component(&self) -> spair::Checklist<ChildState> {
-        let mut cl = spair::Checklist::default();
+        let mut cl = spair::Checklist::run_fn_render();
         if self.value % 5 == 0 {
             cl.update_related_component(
                 self.parent_comp
