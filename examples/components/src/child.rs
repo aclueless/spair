@@ -21,25 +21,23 @@ impl ChildState {
         self.value = value;
     }
 
-    fn increment(&mut self) -> spair::Checklist<ChildState> {
+    fn increment(&mut self) {
         self.value += 1;
         self.update_related_component()
     }
 
-    fn decrement(&mut self) -> spair::Checklist<ChildState> {
+    fn decrement(&mut self) {
         self.value -= 1;
         self.update_related_component()
     }
 
-    fn update_related_component(&self) -> spair::Checklist<ChildState> {
-        let mut cl = spair::Checklist::run_fn_render();
+    fn update_related_component(&self) {
         if self.value % 5 == 0 {
-            cl.update_related_component(
+            spair::update_component(
                 self.parent_comp
                     .callback_child_comps(super::State::child_value_is_divisible_by_five),
             );
         }
-        cl
     }
 }
 

@@ -21,16 +21,14 @@ impl State {
         self.value_read_from_child = Some(child_comps.0.comp_instance().state().value());
     }
 
-    fn send_value_to_child(&mut self, child_comps: &mut ChildComp) -> spair::Checklist<State> {
-        let mut cl = spair::Checklist::skip_fn_render();
+    fn send_value_to_child(&mut self, child_comps: &mut ChildComp) {
         let value = self.value;
-        cl.update_related_component(
+        spair::update_component(
             child_comps
                 .0
                 .comp()
                 .callback(move |state| state.set_value(value)),
         );
-        cl
     }
 }
 
@@ -53,7 +51,7 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes().render(
-                    "==========This line and everything below is in the main-component==========",
+                    "This line and everything below is in the main-component",
                 );
             })
             .nodes()

@@ -11,7 +11,7 @@ mod routing;
 mod utils;
 
 pub use application::start;
-pub use component::{Checklist, ChildComp, Comp, Component, Components, Context};
+pub use component::{update_component, Checklist, ChildComp, Comp, Component, Components, Context};
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
@@ -24,6 +24,7 @@ pub use routing::Routes;
 pub use utils::{document, into_input, into_select, window};
 
 pub use web_sys::Location;
+pub type Command<C> = Box<dyn component::Command<C>>;
 
 pub mod prelude {
     pub use crate::application::Application;

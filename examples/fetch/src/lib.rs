@@ -48,21 +48,13 @@ impl State {
         self.message = "Wait for your click".to_string();
     }
 
-    fn start_fetching(&mut self) -> spair::Checklist<Self> {
+    fn start_fetching(&mut self) -> spair::Command<Self> {
         self.message = "Clicked! Please wait for a moment".to_string();
 
-        let mut c = spair::Checklist::skip_fn_render();
-        let request = spair::Request::get(
-            "https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master",
-        )
-        .header("Accept", "application/vnd.github.v3+json");
-
-        c.fetch(
-            request
-                .into_fetch_args()
-                .json_response(State::set_data, State::fetch_error),
-        );
-        c
+        spair::Request::get("https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master")
+            .header("Accept", "application/vnd.github.v3+json")
+            .into_fetch_args()
+            .json_response(State::set_data, State::fetch_error)
     }
 
     fn fetch_error(&mut self, e: spair::FetchError) {

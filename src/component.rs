@@ -109,8 +109,18 @@ pub trait Command<C: Component> {
     fn execute(&mut self, comp: &Comp<C>, state: &mut C);
 }
 
-// TODO: This will be replaced by Component::default_checklist()
+impl<C> From<Box<dyn Command<C>>> for Checklist<C>
+where
+    C: 'static + Component,
+{
+    fn from(cmd: Box<dyn Command<C>>) -> Self {
+        let mut checklist = Checklist::run_fn_render();
+        checklist.command(cmd);
+        checklist
+    }
+}
 
+// TODO: This will be replaced by Component::default_checklist()
 // impl<C: Component> Default for Checklist<C> {
 //     fn default() -> Self {
 //         Self {
@@ -149,12 +159,8 @@ impl<C: Component> Checklist<C> {
         self.skip_fn_render = true;
     }
 
-    pub fn fetch(&mut self, cmd: Box<dyn Command<C>>) {
+    pub fn command(&mut self, cmd: Box<dyn Command<C>>) {
         self.commands.0.push(cmd);
-    }
-
-    pub fn update_related_component(&mut self, fn_update: impl FnOnce() + 'static) {
-        UPDATE_QUEUE.with(|uq| uq.add(Box::new(fn_update)));
     }
 }
 
@@ -541,4 +547,8 @@ impl<C: Component> Drop for ChildComp<C> {
             .ws_element()
             .set_text_content(None);
     }
+}
+
+pub fn update_component(fn_update: impl FnOnce() + 'static) {
+    UPDATE_QUEUE.with(|uq| uq.add(Box::new(fn_update)));
 }

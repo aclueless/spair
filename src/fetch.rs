@@ -343,3 +343,16 @@ where
         }
     }
 }
+
+// impl<C, T, Cl> From<Box<FetchCmd<C, T, Cl>>> for crate::component::Checklist<C>
+// where
+//     C: 'static + crate::component::Component,
+//     T: 'static + serde::de::DeserializeOwned,
+//     Cl: 'static + Into<crate::component::Checklist<C>>,
+// {
+//     fn from(cmd: Box<FetchCmd<C, T, Cl>>) -> Self {
+//         let mut checklist = crate::component::Checklist::run_fn_render();
+//         checklist.fetch(cmd);
+//         checklist
+//     }
+// }
