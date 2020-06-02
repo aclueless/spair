@@ -84,9 +84,10 @@ impl KeyedList {
         new_item_count: usize,
         parent: &'a web_sys::Node,
         extra: &super::Extra<'a, C>,
-    ) -> super::KeyedListUpdater<'a, C> {
+        use_template: bool,
+    ) -> KeyedListUpdater<'a, C> {
         self.pre_update(new_item_count);
-        super::KeyedListUpdater::new(root_item_tag, self, parent, extra.comp)
+        KeyedListUpdater::new(root_item_tag, self, parent, extra.comp, use_template)
     }
 
     // TODO better name?
@@ -185,7 +186,7 @@ pub struct KeyedListUpdater<'a, C: crate::component::Component> {
     old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
     new_item_count: usize,
     next_sibling: Option<web_sys::Element>,
-    template: &'a mut super::Element,
+    template: Option<&'a mut super::Element>,
     require_init_template: bool,
 }
 
@@ -195,12 +196,13 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         list: &'a mut KeyedList,
         parent: &'a web_sys::Node,
         comp: &'a crate::component::Comp<C>,
+        use_template: bool,
     ) -> Self {
-        let require_init_template = list.template.is_none();
+        let require_init_template = use_template && list.template.is_none();
         if require_init_template {
             list.template = Some(super::Element::new(root_item_tag));
         }
-        let template = list.template.as_mut().expect_throw("template???");
+        let template = list.template.as_mut();
         let new_item_count = list.active.len();
         Self {
             comp,
@@ -212,6 +214,13 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             next_sibling: None,
             template,
             require_init_template,
+        }
+    }
+
+    fn create_element_for_new_item(&self, tag: &str) -> (super::Element, super::ElementStatus) {
+        match &self.template {
+            Some(template) => (Clone::clone(*template), super::ElementStatus::JustCloned),
+            None => (super::Element::new(tag), super::ElementStatus::JustCreated),
         }
     }
 
@@ -233,6 +242,8 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             items_state_iter.peek().unwrap_throw().render(
                 comp_state,
                 self.template
+                    .as_mut()
+                    .unwrap()
                     .create_updater(self.comp, super::ElementStatus::JustCreated),
             );
         }
@@ -451,7 +462,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         {
             let (mut element, status) = match old_element {
                 Some(old_element) => (old_element.element, super::ElementStatus::Existing),
-                None => (self.template.clone(), super::ElementStatus::JustCloned),
+                None => self.create_element_for_new_item(I::ROOT_ELEMENT_TAG),
             };
 
             item_state.render(comp_state, element.create_updater(self.comp, status));
@@ -513,11 +524,8 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         for item_state in items_state_iter {
-            let mut element = self.template.clone();
-            item_state.render(
-                comp_state,
-                element.create_updater(self.comp, super::ElementStatus::JustCloned),
-            );
+            let (mut element, status) = self.create_element_for_new_item(I::ROOT_ELEMENT_TAG);
+            item_state.render(comp_state, element.create_updater(self.comp, status));
             element.insert_before(
                 self.parent,
                 self.next_sibling

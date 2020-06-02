@@ -178,15 +178,34 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
+        self._keyed_list(state, items, true);
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list_not_use_template<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    where
+        for<'k> I: super::KeyedListItem<'k, C>,
+    {
+        self._keyed_list(state, items, false);
+    }
+
+    #[cfg(feature = "keyed-list")]
+    fn _keyed_list<I>(self, state: &C, items: impl IntoIterator<Item = I>, use_template: bool)
+    where
+        for<'k> I: super::KeyedListItem<'k, C>,
+    {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size
         let items: Vec<_> = items.into_iter().collect();
 
         let parent = self.element.ws_element.as_ref();
-        let mut updater =
-            self.element
-                .nodes
-                .keyed_list(I::ROOT_ELEMENT_TAG, parent, &self.extra, items.len());
+        let mut updater = self.element.nodes.keyed_list(
+            I::ROOT_ELEMENT_TAG,
+            parent,
+            &self.extra,
+            items.len(),
+            use_template,
+        );
         updater.update(state, items.into_iter());
 
         // The hack start in AttributeSetter::value

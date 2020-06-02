@@ -187,6 +187,7 @@ impl NodeList {
         parent: &'a web_sys::Node,
         extra: &super::Extra<'a, C>,
         exact_count_of_new_items: usize,
+        use_template: bool,
     ) -> super::KeyedListUpdater<'a, C> {
         if self.0.len() == 0 {
             self.0.push(Node::KeyedList(super::KeyedList::default()));
@@ -197,10 +198,13 @@ impl NodeList {
             .first_mut()
             .expect_throw("Expect a keyed list as the first item of the node list")
         {
-            Node::KeyedList(list) => {
-                list.create_updater(root_item_tag, exact_count_of_new_items, parent, extra)
-                // super::KeyedListUpdater::new(list, parent, extra.comp)
-            }
+            Node::KeyedList(list) => list.create_updater(
+                root_item_tag,
+                exact_count_of_new_items,
+                parent,
+                extra,
+                use_template,
+            ),
             _ => panic!("Why not a keyed list?"),
         }
     }

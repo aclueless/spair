@@ -156,6 +156,14 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         self.0.keyed_list(state, items)
     }
 
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list_not_use_template<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    where
+        for<'k> I: super::KeyedListItem<'k, C>,
+    {
+        self.0.keyed_list_not_use_template(state, items);
+    }
+
     pub fn component<CC: crate::component::Component>(
         self,
         child: &crate::component::ChildComp<CC>,
@@ -192,6 +200,14 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         self.0.keyed_list(state, items)
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list_not_use_template<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    where
+        for<'k> I: super::KeyedListItem<'k, C>,
+    {
+        self.0.keyed_list_not_use_template(state, items);
     }
 
     pub fn component<CC: crate::component::Component>(
