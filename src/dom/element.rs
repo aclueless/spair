@@ -140,7 +140,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         super::Nodes::from_handle(self)
     }
 
-    pub fn list<I>(mut self, state: &C, items: impl IntoIterator<Item = I>)
+    pub fn list<I>(mut self, state: Option<&C>, items: impl IntoIterator<Item = I>)
     where
         I: crate::renderable::ListItem<C>,
     {
@@ -174,7 +174,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    pub fn keyed_list<I>(self, state: Option<&C>, items: impl IntoIterator<Item = I>)
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
@@ -182,16 +182,23 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_not_use_template<I>(self, state: &C, items: impl IntoIterator<Item = I>)
-    where
+    pub fn keyed_list_not_use_template<I>(
+        self,
+        state: Option<&C>,
+        items: impl IntoIterator<Item = I>,
+    ) where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         self._keyed_list(state, items, false);
     }
 
     #[cfg(feature = "keyed-list")]
-    fn _keyed_list<I>(self, state: &C, items: impl IntoIterator<Item = I>, use_template: bool)
-    where
+    fn _keyed_list<I>(
+        self,
+        state: Option<&C>,
+        items: impl IntoIterator<Item = I>,
+        use_template: bool,
+    ) where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,

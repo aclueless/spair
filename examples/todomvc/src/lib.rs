@@ -207,7 +207,7 @@ impl<'s> spair::Render<State> for Main<'s> {
                 })
                 .ul(|u| {
                     u.static_attributes().class("todo-list").keyed_list(
-                        &self.0,
+                        Some(self.0),
                         self.0
                             .items
                             .iter()
@@ -322,11 +322,11 @@ impl spair::KeyedListItem<'_, State> for TodoItem {
 
 impl spair::ListItem<State> for TodoItem {
     const ROOT_ELEMENT_TAG: &'static str = "li";
-    fn render(&self, state: &State, li: spair::Element<State>) {
+    fn render(&self, state: Option<&State>, li: spair::Element<State>) {
         let comp = li.comp();
         let comp = &comp;
         let id = self.id;
-        let is_is_me = state.editing == Some(self.id);
+        let is_is_me = state.and_then(|s| s.editing) == Some(self.id);
         li.attributes()
             .class_if("completed", self.completed)
             .class_if("editing", is_is_me)

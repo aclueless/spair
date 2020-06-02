@@ -58,5 +58,5 @@ impl<C: crate::component::Component> StaticRender<C> for &String {
 
 pub trait ListItem<C: crate::component::Component> {
     const ROOT_ELEMENT_TAG: &'static str;
-    fn render(&self, state: &C, item: crate::dom::ElementUpdater<C>);
+    fn render(&self, state: Option<&C>, item: crate::dom::ElementUpdater<C>);
 }

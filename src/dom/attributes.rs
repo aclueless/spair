@@ -141,7 +141,7 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         super::Nodes::from_handle(self.0)
     }
 
-    pub fn list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    pub fn list<I>(self, state: Option<&C>, items: impl IntoIterator<Item = I>)
     where
         I: crate::renderable::ListItem<C>,
     {
@@ -149,7 +149,7 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    pub fn keyed_list<I>(self, state: Option<&C>, items: impl IntoIterator<Item = I>)
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
@@ -157,8 +157,11 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_not_use_template<I>(self, state: &C, items: impl IntoIterator<Item = I>)
-    where
+    pub fn keyed_list_not_use_template<I>(
+        self,
+        state: Option<&C>,
+        items: impl IntoIterator<Item = I>,
+    ) where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         self.0.keyed_list_not_use_template(state, items);
@@ -187,7 +190,7 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
         super::Nodes::from_handle(self.0)
     }
 
-    pub fn list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    pub fn list<I>(self, state: Option<&C>, items: impl IntoIterator<Item = I>)
     where
         I: crate::renderable::ListItem<C>,
     {
@@ -195,7 +198,7 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, state: &C, items: impl IntoIterator<Item = I>)
+    pub fn keyed_list<I>(self, state: Option<&C>, items: impl IntoIterator<Item = I>)
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
@@ -203,8 +206,11 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_not_use_template<I>(self, state: &C, items: impl IntoIterator<Item = I>)
-    where
+    pub fn keyed_list_not_use_template<I>(
+        self,
+        state: Option<&C>,
+        items: impl IntoIterator<Item = I>,
+    ) where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         self.0.keyed_list_not_use_template(state, items);
