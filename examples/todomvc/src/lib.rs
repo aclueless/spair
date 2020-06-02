@@ -212,6 +212,7 @@ impl<'s> spair::Render<State> for Main<'s> {
                             .items
                             .iter()
                             .filter(|item| item.visible(&self.0.filter)),
+                        spair::ListElementCreation::UseTemplate,
                     )
                 });
         })

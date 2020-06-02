@@ -15,7 +15,7 @@ pub use component::{update_component, Checklist, ChildComp, Comp, Component, Com
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
-pub use dom::{ElementUpdater as Element, Nodes, RawWrapper, StaticNodes};
+pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchArgs, FetchError, Request};

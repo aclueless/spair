@@ -75,11 +75,12 @@ impl NodeList {
         tag: &str,
         extra: &super::Extra<'a, C>,
         parent: &web_sys::Node,
+        use_template: bool,
     ) -> super::ElementUpdater<'a, C> {
         let item_count = self.0.len();
         let status = if extra.index < item_count {
             super::ElementStatus::Existing
-        } else if item_count == 0 {
+        } else if !use_template || item_count == 0 {
             // Assumption:
             //  * A list is the only thing in the parent element.
             //  * New item only added to the end of the list.

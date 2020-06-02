@@ -91,3 +91,9 @@ pub trait RawWrapper<C: crate::component::Component> {
     fn ws_element(&self) -> &web_sys::Element;
     fn mounted(&self) {}
 }
+
+#[derive(Copy, Clone)]
+pub enum ListElementCreation {
+    UseTemplate,
+    NotUseTemplate,
+}

@@ -140,8 +140,12 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         super::Nodes::from_handle(self)
     }
 
-    pub fn list<I>(mut self, state: Option<&C>, items: impl IntoIterator<Item = I>)
-    where
+    pub fn list<I>(
+        mut self,
+        state: Option<&C>,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+    ) where
         I: crate::renderable::ListItem<C>,
     {
         // Reset the index, because it may used by attributes
@@ -150,11 +154,17 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self.extra.index = 0;
 
         let parent = self.element.ws_element.as_ref();
+        let use_template = match mode {
+            super::ListElementCreation::UseTemplate => true,
+            super::ListElementCreation::NotUseTemplate => false,
+        };
         for item in items {
-            let element =
-                self.element
-                    .nodes
-                    .item_for_list(I::ROOT_ELEMENT_TAG, &self.extra, parent);
+            let element = self.element.nodes.item_for_list(
+                I::ROOT_ELEMENT_TAG,
+                &self.extra,
+                parent,
+                use_template,
+            );
             item.render(state, element);
             self.extra.index += 1;
         }
@@ -174,30 +184,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, state: Option<&C>, items: impl IntoIterator<Item = I>)
-    where
-        for<'k> I: super::KeyedListItem<'k, C>,
-    {
-        self._keyed_list(state, items, true);
-    }
-
-    #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_not_use_template<I>(
+    pub fn keyed_list<I>(
         self,
         state: Option<&C>,
         items: impl IntoIterator<Item = I>,
-    ) where
-        for<'k> I: super::KeyedListItem<'k, C>,
-    {
-        self._keyed_list(state, items, false);
-    }
-
-    #[cfg(feature = "keyed-list")]
-    fn _keyed_list<I>(
-        self,
-        state: Option<&C>,
-        items: impl IntoIterator<Item = I>,
-        use_template: bool,
+        mode: super::ListElementCreation,
     ) where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
@@ -206,6 +197,10 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         let items: Vec<_> = items.into_iter().collect();
 
         let parent = self.element.ws_element.as_ref();
+        let use_template = match mode {
+            super::ListElementCreation::UseTemplate => true,
+            super::ListElementCreation::NotUseTemplate => false,
+        };
         let mut updater = self.element.nodes.keyed_list(
             I::ROOT_ELEMENT_TAG,
             parent,
