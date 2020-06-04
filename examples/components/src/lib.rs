@@ -6,6 +6,7 @@ use spair::prelude::*;
 pub struct State {
     value: i32,
     value_read_from_child: Option<i32>,
+    child_comp: spair::ChildComp<ChildState>,
 }
 
 impl State {
@@ -17,37 +18,35 @@ impl State {
         self.value -= 1;
     }
 
-    pub fn child_value_is_divisible_by_five(&mut self, child_comps: &mut ChildComp) {
-        self.value_read_from_child = Some(child_comps.0.comp_instance().state().value());
+    pub fn child_value_is_divisible_by_five(&mut self) {
+        self.value_read_from_child = Some(self.child_comp.comp_instance().state().value());
     }
 
-    fn send_value_to_child(&mut self, child_comps: &mut ChildComp) {
+    fn send_value_to_child(&mut self) {
         let value = self.value;
         spair::update_component(
-            child_comps
-                .0
+            self.child_comp
                 .comp()
                 .callback(move |state| state.set_value(value)),
         );
     }
 }
 
-pub struct ChildComp(spair::ChildComp<ChildState>);
-
-impl spair::Components<State> for ChildComp {
-    fn new(_: &State, parent_comp: spair::Comp<State>) -> Self {
-        Self(ChildState::new(parent_comp).into())
-    }
-}
-
 impl spair::Component for State {
     type Routes = ();
-    type Components = ChildComp;
+    fn with_comp(comp: spair::Comp<Self>) -> Option<Self> {
+        Some(Self {
+            value: 42,
+            value_read_from_child: None,
+            child_comp: ChildState::new(comp).into(),
+        })
+    }
+
     fn render(&self, c: spair::Context<Self>) {
-        let (comp, element, child) = c.into_parts();
+        let (comp, element) = c.into_parts();
         element
             .nodes()
-            .div(|d| d.component(&child.0))
+            .div(|d| d.component(&self.child_comp))
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
@@ -67,7 +66,7 @@ impl spair::Component for State {
             .r#static(Button("+", comp.handler(State::increment)))
             .r#static(Button(
                 "Send value to child-component",
-                comp.handler_child_comps(State::send_value_to_child),
+                comp.handler(State::send_value_to_child),
             ));
     }
 }
@@ -87,9 +86,5 @@ impl<C: spair::Component, H: spair::Click> spair::StaticRender<C> for Button<H> 
 #[wasm_bindgen(start)]
 pub fn start_counter() {
     wasm_logger::init(wasm_logger::Config::default());
-    let state = State {
-        value: 42,
-        value_read_from_child: None,
-    };
-    spair::start(state, "root");
+    State::mount_to("root");
 }

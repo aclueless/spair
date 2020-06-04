@@ -16,9 +16,12 @@ impl State {
 
 impl spair::Component for State {
     type Routes = ();
-    type Components = ();
+    fn with_comp(_: spair::Comp<Self>) -> Option<Self> {
+        Some(Self { value: 42 })
+    }
+
     fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_comp_element();
+        let (comp, element) = c.into_parts();
         element
             .static_nodes()
             .p(|p| {
@@ -46,7 +49,5 @@ impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
 
 #[wasm_bindgen(start)]
 pub fn start_counter() {
-    wasm_logger::init(wasm_logger::Config::default());
-    let state = State { value: 42 };
-    spair::start(state, "root");
+    State::mount_to("root");
 }

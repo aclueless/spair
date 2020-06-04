@@ -165,11 +165,6 @@ async fn get_string(promise: js_sys::Promise) -> Result<String, FetchError> {
         .ok_or_else(|| FetchError::EmptyResponse)
 }
 
-pub enum OkHandler<C: crate::component::Component, Cl, R> {
-    OnlyArg(fn(&mut C, R) -> Cl),
-    ChildCompsAndArg(fn(&mut C, &mut C::Components, R) -> Cl),
-}
-
 pub struct FetchArgs {
     request_builder: http::request::Builder,
     options: Option<FetchOptions>,
@@ -230,31 +225,7 @@ impl FetchArgs {
             parts,
             options: self.options.unwrap_or_else(Default::default),
             body: self.body,
-            ok_handler: OkHandler::OnlyArg(ok_handler),
-            error_handler,
-        })))
-    }
-
-    pub fn json_response_then_provide_child_comps<C, T, Cl>(
-        self,
-        ok_handler: fn(&mut C, &mut C::Components, T) -> Cl,
-        error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, T, Cl>>
-    where
-        C: crate::component::Component,
-        T: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<crate::component::Checklist<C>>,
-    {
-        let parts = self
-            .request_builder
-            .body(())
-            .map(|r| r.into_parts().0)
-            .map_err(From::from);
-        Box::new(FetchCmd(Some(FetchCmdArgs {
-            parts,
-            options: self.options.unwrap_or_else(Default::default),
-            body: self.body,
-            ok_handler: OkHandler::ChildCompsAndArg(ok_handler),
+            ok_handler,
             error_handler,
         })))
     }
@@ -266,7 +237,7 @@ struct FetchCmdArgs<C: crate::component::Component, T, Cl> {
     parts: Result<http::request::Parts, FetchError>,
     options: FetchOptions,
     body: Option<Result<String, FetchError>>,
-    ok_handler: OkHandler<C, Cl, T>,
+    ok_handler: fn(&mut C, T) -> Cl,
     error_handler: fn(&mut C, FetchError),
 }
 
@@ -329,30 +300,8 @@ where
         let promise = crate::utils::window().fetch_with_request_and_init(&ws_request, &init);
 
         let error_handler = comp.callback_arg(error_handler);
-        match ok_handler {
-            OkHandler::OnlyArg(f) => {
-                let ok_handler = comp.callback_arg(f);
-                let f = fetch_async(promise, ok_handler, error_handler);
-                wasm_bindgen_futures::spawn_local(f);
-            }
-            OkHandler::ChildCompsAndArg(f) => {
-                let ok_handler = comp.callback_child_comps_arg(f);
-                let f = fetch_async(promise, ok_handler, error_handler);
-                wasm_bindgen_futures::spawn_local(f);
-            }
-        }
+        let ok_handler = comp.callback_arg(ok_handler);
+        let f = fetch_async(promise, ok_handler, error_handler);
+        wasm_bindgen_futures::spawn_local(f);
     }
 }
-
-// impl<C, T, Cl> From<Box<FetchCmd<C, T, Cl>>> for crate::component::Checklist<C>
-// where
-//     C: 'static + crate::component::Component,
-//     T: 'static + serde::de::DeserializeOwned,
-//     Cl: 'static + Into<crate::component::Checklist<C>>,
-// {
-//     fn from(cmd: Box<FetchCmd<C, T, Cl>>) -> Self {
-//         let mut checklist = crate::component::Checklist::run_fn_render();
-//         checklist.fetch(cmd);
-//         checklist
-//     }
-// }

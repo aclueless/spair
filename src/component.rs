@@ -29,42 +29,26 @@ impl UpdateQueue {
 
 pub trait Component: 'static + Sized {
     type Routes: crate::routing::Routes<Self>;
-    type Components: Components<Self>;
-    // fn init() -> Self;
+    // It return Option to allow default implementation
+    fn with_comp(_: Comp<Self>) -> Option<Self> {
+        None
+    }
+
     fn render<'a>(&self, context: Context<'a, Self>);
 }
 
 pub struct Context<'a, C: Component> {
     pub element: crate::dom::ElementUpdater<'a, C>,
     pub comp: &'a Comp<C>,
-    pub child_components: &'a C::Components,
 }
 
 impl<'a, C: Component> Context<'a, C> {
-    pub fn new(
-        comp: &'a Comp<C>,
-        element: crate::dom::ElementUpdater<'a, C>,
-        child_components: &'a C::Components,
-    ) -> Self {
-        Self {
-            comp,
-            element,
-            child_components,
-        }
+    pub fn new(comp: &'a Comp<C>, element: crate::dom::ElementUpdater<'a, C>) -> Self {
+        Self { comp, element }
     }
 
-    pub fn into_comp_element(self) -> (&'a Comp<C>, crate::dom::ElementUpdater<'a, C>) {
+    pub fn into_parts(self) -> (&'a Comp<C>, crate::dom::ElementUpdater<'a, C>) {
         (self.comp, self.element)
-    }
-
-    pub fn into_parts(
-        self,
-    ) -> (
-        &'a Comp<C>,
-        crate::dom::ElementUpdater<'a, C>,
-        &'a C::Components,
-    ) {
-        (self.comp, self.element, self.child_components)
     }
 }
 
@@ -72,8 +56,7 @@ pub struct RcComp<C: Component>(Rc<RefCell<CompInstance<C>>>);
 pub struct Comp<C: Component>(Weak<RefCell<CompInstance<C>>>);
 
 pub struct CompInstance<C: Component> {
-    state: C,
-    child_components: Option<C::Components>,
+    state: Option<C>,
     root_element: crate::dom::Element,
     router: Option<crate::routing::Router>,
     mount_status: MountStatus,
@@ -165,7 +148,7 @@ impl<C: Component> Checklist<C> {
 }
 
 impl<C: Component> RcComp<C> {
-    pub fn with_state_and_element(state: C, root: Option<web_sys::Element>) -> Self {
+    pub(crate) fn new(root: Option<web_sys::Element>) -> Self {
         let (root_element, mount_status) = root
             .map(|root| {
                 (
@@ -179,22 +162,19 @@ impl<C: Component> RcComp<C> {
                 (crate::dom::Element::new("div"), MountStatus::Never)
             });
 
-        let rc = Self(Rc::new(RefCell::new(CompInstance {
-            state,
+        Self(Rc::new(RefCell::new(CompInstance {
+            state: None,
             root_element,
             router: None,
-            child_components: None,
             mount_status,
-        })));
-        {
-            let comp = rc.comp();
-            let mut instance = rc.0.try_borrow_mut().unwrap_throw();
-            instance.child_components = Some(C::Components::new(&instance.state, comp));
-        }
-        rc
+        })))
     }
 
-    pub fn first_render(&self) {
+    pub(crate) fn set_state(&self, state: C) {
+        self.0.try_borrow_mut().unwrap_throw().state = Some(state);
+    }
+
+    pub(crate) fn first_render(&self) {
         use crate::routing::Routes;
         let comp = self.comp();
 
@@ -256,7 +236,9 @@ impl<C: Component> Comp<C> {
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands) = fn_update(&mut this.state).into().into_parts();
+            let (skip_fn_render, commands) = fn_update(this.state.as_mut().unwrap_throw())
+                .into()
+                .into_parts();
             this.extra_update(skip_fn_render, commands, &self);
         }
         UPDATE_QUEUE.with(|uq| uq.execute());
@@ -287,74 +269,9 @@ impl<C: Component> Comp<C> {
 
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands) = fn_update(&mut this.state, arg).into().into_parts();
-            this.extra_update(skip_fn_render, commands, &self);
-        }
-        UPDATE_QUEUE.with(|uq| uq.execute());
-    }
-
-    pub fn update_child_comps<Cl>(
-        &self,
-        fn_update: &Rc<impl Fn(&mut C, &mut C::Components) -> Cl + 'static>,
-    ) where
-        Cl: Into<Checklist<C>>,
-    {
-        {
-            let this = self.0.upgrade().expect_throw(
-                "Expect the component instance alive when updating - update_child_comps()",
-            );
-            let mut this = match this.try_borrow_mut() {
-                Ok(this) => this,
-                Err(_) => {
-                    let comp = self.clone();
-                    let fn_update = Rc::clone(fn_update);
-                    UPDATE_QUEUE
-                        .with(|uq| uq.add(Box::new(move || comp.update_child_comps(&fn_update))));
-                    return;
-                }
-            };
-
-            let (state, child_components) = this.state_and_child_components();
-
-            // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
-            // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands) = fn_update(state, child_components).into().into_parts();
-            this.extra_update(skip_fn_render, commands, &self);
-        }
-        UPDATE_QUEUE.with(|uq| uq.execute());
-    }
-
-    pub fn update_child_comps_arg<T: 'static, Cl>(
-        &self,
-        arg: T,
-        fn_update: &Rc<impl Fn(&mut C, &mut C::Components, T) -> Cl + 'static>,
-    ) where
-        Cl: Into<Checklist<C>>,
-    {
-        {
-            let this = self.0.upgrade().expect_throw(
-                "Expect the component instance alive when updating - update_child_comps()",
-            );
-            let mut this = match this.try_borrow_mut() {
-                Ok(this) => this,
-                Err(_) => {
-                    let comp = self.clone();
-                    let fn_update = Rc::clone(fn_update);
-                    UPDATE_QUEUE.with(|uq| {
-                        uq.add(Box::new(move || {
-                            comp.update_child_comps_arg(arg, &fn_update)
-                        }))
-                    });
-                    return;
-                }
-            };
-
-            let (state, child_components) = this.state_and_child_components();
-
-            // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
-            // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands) =
-                fn_update(state, child_components, arg).into().into_parts();
+            let (skip_fn_render, commands) = fn_update(this.state.as_mut().unwrap_throw(), arg)
+                .into()
+                .into_parts();
             this.extra_update(skip_fn_render, commands, &self);
         }
         UPDATE_QUEUE.with(|uq| uq.execute());
@@ -381,30 +298,6 @@ impl<C: Component> Comp<C> {
         move |t: T| comp.update_arg(t, &fn_update)
     }
 
-    pub fn callback_child_comps<Cl>(
-        &self,
-        fn_update: impl Fn(&mut C, &mut C::Components) -> Cl + 'static,
-    ) -> impl Fn()
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        move || comp.update_child_comps(&fn_update)
-    }
-
-    pub fn callback_child_comps_arg<T: 'static, Cl>(
-        &self,
-        fn_update: impl Fn(&mut C, &mut C::Components, T) -> Cl + 'static,
-    ) -> impl Fn(T)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        move |arg: T| comp.update_child_comps_arg(arg, &fn_update)
-    }
-
     pub fn handler<T: 'static, Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
@@ -423,50 +316,25 @@ impl<C: Component> Comp<C> {
     {
         self.callback_arg(fn_update)
     }
-
-    pub fn handler_child_comps<T: 'static, Cl>(
-        &self,
-        fn_update: impl Fn(&mut C, &mut C::Components) -> Cl + 'static,
-    ) -> impl Fn(T)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        move |_: T| comp.update_child_comps(&fn_update)
-    }
 }
 
 impl<C: Component> CompInstance<C> {
     pub(crate) fn render(&mut self, comp: &Comp<C>) {
-        self.state.render(
-            self.root_element.create_context(
-                comp,
-                self.child_components
-                    .as_ref()
-                    .expect_throw("Why child components None?"),
-            ),
-        );
+        self.state
+            .as_ref()
+            .unwrap_throw()
+            .render(self.root_element.create_context(comp));
     }
 
     fn extra_update(&mut self, skip_fn_render: bool, mut commands: Commands<C>, comp: &Comp<C>) {
         if !skip_fn_render {
             self.render(comp);
         }
-        commands.execute(comp, &mut self.state);
-    }
-
-    fn state_and_child_components(&mut self) -> (&mut C, &mut C::Components) {
-        let state = &mut self.state;
-        let child_components = self
-            .child_components
-            .as_mut()
-            .expect_throw("Why child_components None?");
-        (state, child_components)
+        commands.execute(comp, self.state.as_mut().unwrap_throw());
     }
 
     pub fn state(&self) -> &C {
-        &self.state
+        self.state.as_ref().unwrap_throw()
     }
 
     pub(crate) fn is_mounted(&self) -> bool {
@@ -475,14 +343,6 @@ impl<C: Component> CompInstance<C> {
             _ => false,
         }
     }
-}
-
-pub trait Components<P: Component> {
-    fn new(parent_state: &P, parent_comp: Comp<P>) -> Self;
-}
-
-impl<P: Component> Components<P> for () {
-    fn new(_: &P, _: Comp<P>) -> Self {}
 }
 
 pub type ChildComp<C> = RcComp<C>;
@@ -518,12 +378,28 @@ impl<C: Component> ChildComp<C> {
 
 impl<C: Component> From<C> for ChildComp<C> {
     fn from(state: C) -> Self {
-        RcComp::with_state_and_element(state, None)
+        let rc_comp = ChildComp::new(None);
+        rc_comp.set_state(state);
+        rc_comp
     }
 }
 
-// A new struct instead of impl Drop on Comp because we only want
-// to set status to unmounted when removing it from its parent.
+pub trait WithParentComp: Component {
+    type Parent: Component;
+    fn with_parent_and_comp(parent: &Comp<Self::Parent>, comp: Comp<Self>) -> Self;
+}
+
+impl<C: WithParentComp> ChildComp<C> {
+    pub fn with_parent(parent: &Comp<C::Parent>) -> Self {
+        let rc_comp = ChildComp::new(None);
+        rc_comp.set_state(C::with_parent_and_comp(parent, rc_comp.comp()));
+        rc_comp
+    }
+}
+
+// A new struct and impl Drop on it, instead of impl Drop on Comp,
+// because we only want to set status to unmounted when removing
+// it from its parent.
 pub struct ComponentHandle<C: Component>(Comp<C>);
 
 impl<C: Component> Drop for ComponentHandle<C> {

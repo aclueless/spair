@@ -78,7 +78,6 @@ impl Element {
     pub(crate) fn create_context<'a, C: crate::component::Component>(
         &'a mut self,
         comp: &'a crate::component::Comp<C>,
-        child_components: &'a C::Components,
     ) -> crate::component::Context<'a, C> {
         crate::component::Context::new(
             comp,
@@ -90,7 +89,6 @@ impl Element {
                     super::ElementStatus::Existing
                 },
             ),
-            child_components,
         )
     }
 

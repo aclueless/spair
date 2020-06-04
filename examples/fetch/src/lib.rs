@@ -64,9 +64,16 @@ impl State {
 
 impl spair::Component for State {
     type Routes = ();
-    type Components = ();
+
+    fn with_comp(_: spair::Comp<Self>) -> Option<Self> {
+        Some(Self {
+            branch: None,
+            message: "Wait for your click".to_string(),
+        })
+    }
+
     fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_comp_element();
+        let (comp, element) = c.into_parts();
         element
             .nodes()
             .match_if(|arm| match self.branch.as_ref() {
@@ -123,10 +130,5 @@ impl spair::Render<State> for &Commit {
 
 #[wasm_bindgen(start)]
 pub fn start_fetch_example() {
-    wasm_logger::init(wasm_logger::Config::default());
-    let state = State {
-        branch: None,
-        message: "Wait for your click".to_string(),
-    };
-    spair::start(state, "root");
+    State::mount_to("root")
 }

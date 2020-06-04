@@ -703,7 +703,6 @@ mod keyed_list_tests {
 
     impl crate::component::Component for () {
         type Routes = ();
-        type Components = ();
         fn render(&self, _: crate::component::Context<Self>) {}
     }
 
@@ -716,10 +715,9 @@ mod keyed_list_tests {
     impl PhantomApp {
         fn new() -> Self {
             let root = super::super::Element::new("div");
-            let _rc = crate::component::RcComp::with_state_and_element(
-                (),
-                Some(root.ws_element().clone()),
-            );
+            let _rc = crate::component::RcComp::new(Some(root.ws_element().clone()));
+            _rc.set_state(());
+
             let comp = _rc.comp();
             Self { root, _rc, comp }
         }

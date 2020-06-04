@@ -137,9 +137,11 @@ impl State {
 
 impl spair::Component for State {
     type Routes = Filter;
-    type Components = ();
+    fn with_comp(_: spair::Comp<Self>) -> Option<Self> {
+        Some(Self::from_store())
+    }
     fn render(&self, c: spair::Context<Self>) {
-        let (_, element) = c.into_comp_element();
+        let (_, element) = c.into_parts();
         element
             .nodes()
             .section(|s| {
@@ -391,7 +393,5 @@ fn get_value(i: web_sys::HtmlInputElement) -> Option<String> {
 
 #[wasm_bindgen(start)]
 pub fn start_todo_mvc() {
-    wasm_logger::init(wasm_logger::Config::default());
-    let state = State::from_store();
-    spair::start(state, "root");
+    State::mount_to("root");
 }

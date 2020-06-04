@@ -35,7 +35,7 @@ impl ChildState {
         if self.value % 5 == 0 {
             spair::update_component(
                 self.parent_comp
-                    .callback_child_comps(super::State::child_value_is_divisible_by_five),
+                    .callback(super::State::child_value_is_divisible_by_five),
             );
         }
     }
@@ -43,9 +43,9 @@ impl ChildState {
 
 impl spair::Component for ChildState {
     type Routes = ();
-    type Components = ();
+
     fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_comp_element();
+        let (comp, element) = c.into_parts();
         element
             .static_nodes()
             .p(|p| {
