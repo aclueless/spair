@@ -125,6 +125,19 @@ where
     }
 }
 
+impl<C> From<Option<Box<dyn Command<C>>>> for Checklist<C>
+where
+    C: 'static + Component,
+{
+    fn from(cmd: Option<Box<dyn Command<C>>>) -> Self {
+        let mut checklist = C::default_checklist();
+        if let Some(cmd) = cmd {
+            checklist.add_command(cmd);
+        }
+        checklist
+    }
+}
+
 impl<C: Component> From<()> for Checklist<C> {
     fn from(_: ()) -> Self {
         C::default_checklist()
