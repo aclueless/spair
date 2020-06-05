@@ -33,4 +33,5 @@ pub mod prelude {
     pub use crate::fetch::IntoFetchArgs;
     pub use wasm_bindgen::prelude::*;
     pub use wasm_bindgen::UnwrapThrowExt;
+    pub use crate::component::Component;
 }
