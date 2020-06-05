@@ -29,9 +29,9 @@ pub type Command<C> = Box<dyn component::Command<C>>;
 
 pub mod prelude {
     pub use crate::application::Application;
+    pub use crate::component::Component;
     pub use crate::dom::{AttributeSetter, DomBuilder};
     pub use crate::fetch::IntoFetchArgs;
     pub use wasm_bindgen::prelude::*;
     pub use wasm_bindgen::UnwrapThrowExt;
-    pub use crate::component::Component;
 }

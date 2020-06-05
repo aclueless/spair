@@ -153,8 +153,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
 
         let parent = self.element.ws_element.as_ref();
         let use_template = match mode {
-            super::ListElementCreation::UseTemplate => true,
-            super::ListElementCreation::NotUseTemplate => false,
+            super::ListElementCreation::Clone => true,
+            super::ListElementCreation::New => false,
         };
         for item in items {
             let element = self.element.nodes.item_for_list(
@@ -196,8 +196,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
 
         let parent = self.element.ws_element.as_ref();
         let use_template = match mode {
-            super::ListElementCreation::UseTemplate => true,
-            super::ListElementCreation::NotUseTemplate => false,
+            super::ListElementCreation::Clone => true,
+            super::ListElementCreation::New => false,
         };
         let mut updater = self.element.nodes.keyed_list(
             I::ROOT_ELEMENT_TAG,

@@ -94,6 +94,6 @@ pub trait RawWrapper<C: crate::component::Component> {
 
 #[derive(Copy, Clone)]
 pub enum ListElementCreation {
-    UseTemplate,
-    NotUseTemplate,
+    Clone,
+    New,
 }

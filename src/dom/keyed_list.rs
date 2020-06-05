@@ -767,12 +767,12 @@ mod keyed_list_tests {
 
     #[wasm_bindgen_test]
     fn keyed_list_with_template() {
-        keyed_list(super::super::ListElementCreation::UseTemplate);
+        keyed_list(super::super::ListElementCreation::Clone);
     }
 
     #[wasm_bindgen_test]
     fn keyed_list_no_template() {
-        keyed_list(super::super::ListElementCreation::NotUseTemplate);
+        keyed_list(super::super::ListElementCreation::New);
     }
 
     fn keyed_list(mode: super::super::ListElementCreation) {
