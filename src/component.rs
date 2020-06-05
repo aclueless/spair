@@ -34,7 +34,29 @@ pub trait Component: 'static + Sized {
         None
     }
 
+    fn default_checklist() -> Checklist<Self> {
+        Self::default_should_render().into()
+    }
+
+    fn default_should_render() -> ShouldRender {
+        ShouldRender::Yes
+    }
+
     fn render<'a>(&self, context: Context<'a, Self>);
+}
+
+pub enum ShouldRender {
+    No,
+    Yes,
+}
+
+impl<C: Component> From<ShouldRender> for Checklist<C> {
+    fn from(should_render: ShouldRender) -> Self {
+        Checklist {
+            should_render,
+            commands: Commands(Vec::new()),
+        }
+    }
 }
 
 pub struct Context<'a, C: Component> {
@@ -76,7 +98,7 @@ pub enum MountStatus {
 
 #[must_use]
 pub struct Checklist<C: Component> {
-    skip_fn_render: bool,
+    should_render: ShouldRender,
     commands: Commands<C>,
 }
 
@@ -97,52 +119,46 @@ where
     C: 'static + Component,
 {
     fn from(cmd: Box<dyn Command<C>>) -> Self {
-        let mut checklist = Checklist::run_fn_render();
-        checklist.command(cmd);
+        let mut checklist = C::default_checklist();
+        checklist.add_command(cmd);
         checklist
     }
 }
 
-// TODO: This will be replaced by Component::default_checklist()
-// impl<C: Component> Default for Checklist<C> {
-//     fn default() -> Self {
-//         Self {
-//             skip_fn_render: false,
-//             commands: Commands(Vec::new()),
-//         }
-//     }
-// }
-
 impl<C: Component> From<()> for Checklist<C> {
     fn from(_: ()) -> Self {
-        Self::run_fn_render()
+        C::default_checklist()
     }
 }
 
 impl<C: Component> Checklist<C> {
-    fn into_parts(self) -> (bool, Commands<C>) {
-        (self.skip_fn_render, self.commands)
+    fn into_parts(self) -> (ShouldRender, Commands<C>) {
+        (self.should_render, self.commands)
     }
 
-    pub fn skip_fn_render() -> Self {
+    pub fn should_render() -> Self {
         Self {
-            skip_fn_render: true,
+            should_render: ShouldRender::Yes,
             commands: Commands(Vec::new()),
         }
     }
 
-    pub fn run_fn_render() -> Self {
+    pub fn skip_render() -> Self {
         Self {
-            skip_fn_render: false,
+            should_render: ShouldRender::No,
             commands: Commands(Vec::new()),
         }
     }
 
-    pub fn set_skip_fn_render(&mut self) {
-        self.skip_fn_render = true;
+    pub fn set_should_render(&mut self) {
+        self.should_render = ShouldRender::Yes;
     }
 
-    pub fn command(&mut self, cmd: Box<dyn Command<C>>) {
+    pub fn set_skip_render(&mut self) {
+        self.should_render = ShouldRender::No;
+    }
+
+    pub fn add_command(&mut self, cmd: Box<dyn Command<C>>) {
         self.commands.0.push(cmd);
     }
 }
@@ -326,8 +342,13 @@ impl<C: Component> CompInstance<C> {
             .render(self.root_element.create_context(comp));
     }
 
-    fn extra_update(&mut self, skip_fn_render: bool, mut commands: Commands<C>, comp: &Comp<C>) {
-        if !skip_fn_render {
+    fn extra_update(
+        &mut self,
+        should_render: ShouldRender,
+        mut commands: Commands<C>,
+        comp: &Comp<C>,
+    ) {
+        if let ShouldRender::Yes = should_render {
             self.render(comp);
         }
         commands.execute(comp, self.state.as_mut().unwrap_throw());
