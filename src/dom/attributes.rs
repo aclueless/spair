@@ -310,7 +310,8 @@ mod sealed {
         fn check_u32_attribute(&mut self, value: u32) -> bool;
         fn check_f64_attribute(&mut self, value: f64) -> bool;
 
-        fn start_hacking_for_select_value(&mut self, value: &str);
+        fn start_hacking_for_selected_value(&mut self, value: &str);
+        fn start_hacking_for_selected_index(&mut self, index: i32);
     }
 }
 
@@ -524,7 +525,7 @@ where
                 // a <select> element before adding its <option>s,
                 // the hacking should finish in the list() method.
                 // Is there a better solution?
-                self.start_hacking_for_select_value(value);
+                self.start_hacking_for_selected_value(value);
             // select.set_value(value);
             } else if let Some(text_area) = element.dyn_ref::<web_sys::HtmlTextAreaElement>() {
                 text_area.set_value(value);
@@ -532,6 +533,23 @@ where
                 log::warn!(
                     ".value() is called on an element that is not <input>, <select>, <textarea>"
                 );
+            }
+        }
+        self
+    }
+
+    fn selected_index(mut self, index: Option<usize>) -> Self {
+        let index_i32 = index.map(|index| index as i32).unwrap_or(-1);
+        if self.check_i32_attribute(index_i32) {
+            let element = self.ws_element();
+            if let Some(_select) = element.dyn_ref::<web_sys::HtmlSelectElement>() {
+                // It has no effect if you set a selected index for
+                // a <select> element before adding its <option>s,
+                // the hacking should finish in the list() method.
+                // Is there a better solution?
+                self.start_hacking_for_selected_index(index_i32);
+            } else {
+                log::warn!(".selected_index() is called on an element that is not <select>");
             }
         }
         self
@@ -600,8 +618,12 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
         // no need to store the value for static attributes
     }
 
-    fn start_hacking_for_select_value(&mut self, value: &str) {
-        self.0.select_value = Some(value.to_string());
+    fn start_hacking_for_selected_value(&mut self, value: &str) {
+        self.0.selected_option = Some(super::SelectedOption::Value(value.to_string()));
+    }
+
+    fn start_hacking_for_selected_index(&mut self, index: i32) {
+        self.0.selected_option = Some(super::SelectedOption::Index(index));
     }
 }
 
@@ -681,7 +703,11 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attr
         rs
     }
 
-    fn start_hacking_for_select_value(&mut self, value: &str) {
-        self.0.select_value = Some(value.to_string());
+    fn start_hacking_for_selected_value(&mut self, value: &str) {
+        self.0.selected_option = Some(super::SelectedOption::Value(value.to_string()));
+    }
+
+    fn start_hacking_for_selected_index(&mut self, index: i32) {
+        self.0.selected_option = Some(super::SelectedOption::Index(index));
     }
 }

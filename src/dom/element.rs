@@ -71,7 +71,7 @@ impl Element {
         ElementUpdater {
             element: self,
             extra,
-            select_value: None,
+            selected_option: None,
         }
     }
 
@@ -112,9 +112,14 @@ impl Element {
 }
 
 pub struct ElementUpdater<'a, C: crate::component::Component> {
-    pub element: &'a mut Element,
-    pub extra: super::Extra<'a, C>,
-    pub select_value: Option<String>,
+    pub(super) element: &'a mut Element,
+    pub(super) extra: super::Extra<'a, C>,
+    pub(super) selected_option: Option<SelectedOption>,
+}
+
+pub enum SelectedOption {
+    Value(String),
+    Index(i32),
 }
 
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
@@ -173,11 +178,19 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     fn finish_hacking_for_select_value(self) {
-        if let Some(value) = self.select_value {
-            self.element
-                .ws_element()
-                .unchecked_ref::<web_sys::HtmlSelectElement>()
-                .set_value(&value);
+        if let Some(selected_option) = self.selected_option {
+            match selected_option {
+                SelectedOption::Value(value) => self
+                    .element
+                    .ws_element()
+                    .unchecked_ref::<web_sys::HtmlSelectElement>()
+                    .set_value(&value),
+                SelectedOption::Index(index) => self
+                    .element
+                    .ws_element()
+                    .unchecked_ref::<web_sys::HtmlSelectElement>()
+                    .set_selected_index(index),
+            }
         }
     }
 
