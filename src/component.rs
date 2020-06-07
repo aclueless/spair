@@ -34,6 +34,10 @@ pub trait Component: 'static + Sized {
         None
     }
 
+    // Better name?
+    // This method will be ran once when the component is created.
+    fn initialize(_: Comp<Self>) {}
+
     fn default_checklist() -> Checklist<Self> {
         Self::default_should_render().into()
     }
@@ -82,6 +86,7 @@ pub struct CompInstance<C: Component> {
     root_element: crate::dom::Element,
     router: Option<crate::routing::Router>,
     mount_status: MountStatus,
+    events: Vec<Box<dyn crate::events::Listener>>,
 }
 
 pub enum MountStatus {
@@ -196,11 +201,15 @@ impl<C: Component> RcComp<C> {
             root_element,
             router: None,
             mount_status,
+            events: Vec::new(),
         })))
     }
 
     pub(crate) fn set_state(&self, state: C) {
-        self.0.try_borrow_mut().unwrap_throw().state = Some(state);
+        self.0
+            .try_borrow_mut()
+            .expect_throw("Why unable to mutably borrow comp instance to set state?")
+            .state = Some(state);
     }
 
     pub(crate) fn first_render(&self) {
@@ -236,6 +245,17 @@ impl<C: Component> Clone for Comp<C> {
 }
 
 impl<C: Component> Comp<C> {
+    pub fn window_event(&self, listener: Box<dyn crate::events::Listener>) -> &Self {
+        self.0
+            .upgrade()
+            .expect_throw("Comp::window_event: why the component dropped?")
+            .try_borrow_mut()
+            .expect_throw("Why unable to mutably borrow comp instance to store event?")
+            .events
+            .push(listener);
+        self
+    }
+
     fn set_mount_status_to_unmounted(&self) {
         if let Some(instance) = self.0.upgrade() {
             if let Ok(mut instance) = instance.try_borrow_mut() {
@@ -244,6 +264,8 @@ impl<C: Component> Comp<C> {
         }
     }
 
+    // TODO: Find a way to make this (and update_arg) private.
+    // Currently these are pub for using in routing which is implemented by user's code.
     pub fn update<Cl>(&self, fn_update: &Rc<impl Fn(&mut C) -> Cl + 'static>)
     where
         Cl: Into<Checklist<C>>,
