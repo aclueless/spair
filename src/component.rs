@@ -264,9 +264,7 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    // TODO: Find a way to make this (and update_arg) private.
-    // Currently these are pub for using in routing which is implemented by user's code.
-    pub fn update<Cl>(&self, fn_update: &Rc<impl Fn(&mut C) -> Cl + 'static>)
+    fn update<Cl>(&self, fn_update: &Rc<impl Fn(&mut C) -> Cl + 'static>)
     where
         Cl: Into<Checklist<C>>,
     {
@@ -295,11 +293,8 @@ impl<C: Component> Comp<C> {
         UPDATE_QUEUE.with(|uq| uq.execute());
     }
 
-    pub fn update_arg<T: 'static, Cl>(
-        &self,
-        arg: T,
-        fn_update: &Rc<impl Fn(&mut C, T) -> Cl + 'static>,
-    ) where
+    fn update_arg<T: 'static, Cl>(&self, arg: T, fn_update: &Rc<impl Fn(&mut C, T) -> Cl + 'static>)
+    where
         Cl: Into<Checklist<C>>,
     {
         {

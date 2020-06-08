@@ -30,7 +30,7 @@ impl spair::Routes<State> for Filter {
             "#active" => Self::Active,
             _ => Self::All,
         };
-        comp.update_arg(filter, &std::rc::Rc::new(State::set_filter));
+        comp.callback_arg(State::set_filter)(filter);
     }
 }
 
@@ -133,6 +133,10 @@ impl State {
         }
         self.editing = None;
     }
+
+    fn cancel_editing(&mut self) {
+        self.editing = None;
+    }
 }
 
 impl spair::Component for State {
@@ -208,7 +212,7 @@ impl<'s> spair::Render<State> for Main<'s> {
                         .render("Mark all as complete");
                 })
                 .ul(|u| {
-                    u.static_attributes().class("todo-list").keyed_list(
+                    u.static_attributes().class("todo-list").list(
                         Some(self.0),
                         self.0
                             .items
@@ -316,13 +320,6 @@ impl spair::Render<State> for Info {
     }
 }
 
-impl spair::KeyedListItem<'_, State> for TodoItem {
-    type Key = u64;
-    fn key(&self) -> Self::Key {
-        self.id as u64
-    }
-}
-
 impl spair::ListItem<State> for TodoItem {
     const ROOT_ELEMENT_TAG: &'static str = "li";
     fn render(&self, state: Option<&State>, li: spair::Element<State>) {
@@ -366,9 +363,9 @@ impl spair::ListItem<State> for TodoItem {
                             arg.target().expect_throw("No event target"),
                         )))
                     }))
-                    .on_key_press(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
+                    .on_key_down(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
                         match arg.key().as_str() {
-                            "Escape" => state.end_editing(None),
+                            "Escape" => state.cancel_editing(),
                             "Enter" => state.end_editing(get_value(spair::into_input(
                                 arg.target().expect_throw("No event target"),
                             ))),

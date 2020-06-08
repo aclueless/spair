@@ -85,6 +85,5 @@ impl<C: spair::Component, H: spair::Click> spair::StaticRender<C> for Button<H> 
 
 #[wasm_bindgen(start)]
 pub fn start_counter() {
-    wasm_logger::init(wasm_logger::Config::default());
     State::mount_to("root");
 }
