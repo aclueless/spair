@@ -8,17 +8,6 @@ pub trait KeyedListItem<'a, C: crate::component::Component>:
     fn key(&'a self) -> Self::Key;
 }
 
-impl<C, T> crate::renderable::ListItem<C> for &T
-where
-    C: crate::component::Component,
-    T: crate::renderable::ListItem<C>,
-{
-    const ROOT_ELEMENT_TAG: &'static str = T::ROOT_ELEMENT_TAG;
-    fn render(&self, comp_state: Option<&C>, element: super::ElementUpdater<C>) {
-        (*self).render(comp_state, element);
-    }
-}
-
 impl<'a, C, T> KeyedListItem<'a, C> for &T
 where
     C: crate::component::Component,
