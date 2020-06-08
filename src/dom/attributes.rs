@@ -527,7 +527,7 @@ where
         self
     }
 
-    fn href(mut self, value: C::Routes) -> Self {
+    fn href(mut self, value: &C::Routes) -> Self {
         use crate::routing::Routes;
         self.set_str_attribute("href", &value.url());
         self
