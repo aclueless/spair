@@ -36,7 +36,7 @@ pub trait Component: 'static + Sized {
 
     // Better name?
     // This method will be ran once when the component is created.
-    fn initialize(_: Comp<Self>) {}
+    fn initialize(_: &Comp<Self>) {}
 
     fn default_checklist() -> Checklist<Self> {
         Self::default_should_render().into()
@@ -98,7 +98,7 @@ pub enum MountStatus {
     // has been detached.
     Unmounted,
     // The main component always in this status.
-    AlwaysMounted,
+    PermanentlyMounted,
 }
 
 #[must_use]
@@ -185,10 +185,8 @@ impl<C: Component> RcComp<C> {
     pub(crate) fn new(root: Option<web_sys::Element>) -> Self {
         let (root_element, mount_status) = root
             .map(|root| {
-                (
-                    crate::dom::Element::from_ws_element(root),
-                    MountStatus::AlwaysMounted,
-                )
+                let root = crate::dom::Element::from_ws_element(root);
+                (root, MountStatus::PermanentlyMounted)
             })
             .unwrap_or_else(|| {
                 // Just an element to create CompInstance, the element will be replace by the
@@ -215,6 +213,7 @@ impl<C: Component> RcComp<C> {
     pub(crate) fn first_render(&self) {
         use crate::routing::Routes;
         let comp = self.comp();
+        C::initialize(&comp);
 
         // The router may cause an update that mutably borrows the CompInstance
         // Therefor this should be done before borrowing the instance.
@@ -402,6 +401,7 @@ impl<C: Component> ChildComp<C> {
     // Attach the component to the given ws_element, and run the render
     pub(crate) fn mount_to(&self, ws_element: &web_sys::Element) {
         let comp = self.comp();
+        C::initialize(&comp);
 
         let mut instance = self
             .0
