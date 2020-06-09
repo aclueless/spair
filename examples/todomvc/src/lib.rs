@@ -1,9 +1,14 @@
+// https://github.com/tastejs/todomvc-app-template/
+
 mod utils;
 
 use serde::{Deserialize, Serialize};
 use spair::prelude::*;
 
-#[derive(PartialEq)]
+const ENTER_KEY: u32 = 13;
+const ESC_KEY: u32 = 27;
+
+#[derive(PartialEq, Clone, Copy)]
 enum Filter {
     All,
     Active,
@@ -16,7 +21,17 @@ impl Default for Filter {
     }
 }
 
-impl spair::Routes<State> for Filter {
+impl Filter {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::All => "All",
+            Self::Active => "Active",
+            Self::Completed => "Completed",
+        }
+    }
+}
+
+impl spair::Routes<AppState> for Filter {
     fn url(&self) -> String {
         match self {
             Self::All => "#all".to_string(),
@@ -24,13 +39,13 @@ impl spair::Routes<State> for Filter {
             Self::Completed => "#completed".to_string(),
         }
     }
-    fn routing(location: spair::Location, comp: &spair::Comp<State>) {
+    fn routing(location: spair::Location, comp: &spair::Comp<AppState>) {
         let filter = match location.hash().unwrap_or_else(|_| String::new()).as_str() {
             "#completed" => Self::Completed,
             "#active" => Self::Active,
             _ => Self::All,
         };
-        comp.callback_arg(State::set_filter)(filter);
+        comp.callback_arg(AppState::set_filter)(filter);
     }
 }
 
@@ -53,96 +68,105 @@ impl TodoItem {
 }
 
 #[derive(Default, Serialize, Deserialize)]
-struct State {
+struct TodoData {
     next_id: u32,
     items: Vec<TodoItem>,
-
-    #[serde(skip)]
-    editing: Option<u32>,
-
-    #[serde(skip)]
-    filter: Filter,
 }
 
-impl State {
-    fn from_store() -> Self {
-        utils::read_data_from_storage()
-    }
+struct AppState {
+    data: TodoData,
 
-    fn save_to_local_storage(&self) {
-        utils::write_data_to_storage(self);
-    }
+    filter: Filter,
+    editing_id: Option<u32>,
+    new_todo_title: String,
+}
 
+impl AppState {
     fn set_filter(&mut self, filter: Filter) {
         self.filter = filter;
     }
 
-    fn add_new_todo(&mut self, title: String) {
-        self.items.push(TodoItem {
-            id: self.next_id,
+    fn set_new_todo_title(&mut self, value: String) {
+        self.new_todo_title = value;
+    }
+
+    fn create_new_todo(&mut self) {
+        let title = std::mem::take(&mut self.new_todo_title).trim().to_string();
+        if title.is_empty() {
+            return;
+        }
+        self.data.items.push(TodoItem {
+            id: self.data.next_id,
             title,
             completed: false,
         });
-        self.next_id += 1;
-        self.save_to_local_storage();
+        self.data.next_id += 1;
+        utils::write_data_to_storage(&self.data);
     }
 
     fn toggle_all(&mut self, checked: bool) {
-        self.items
+        self.data
+            .items
             .iter_mut()
             .for_each(|item| item.completed = checked);
-        self.save_to_local_storage();
+        utils::write_data_to_storage(&self.data);
     }
 
     fn toggle(&mut self, id: u32) {
-        if let Some(item) = self.items.iter_mut().find(|item| item.id == id) {
+        if let Some(item) = self.data.items.iter_mut().find(|item| item.id == id) {
             item.completed = !item.completed;
-            self.save_to_local_storage();
+            utils::write_data_to_storage(&self.data);
         }
     }
 
     fn clear_completed(&mut self) {
-        self.items.retain(|item| !item.completed);
-        self.save_to_local_storage();
+        self.data.items.retain(|item| !item.completed);
+        utils::write_data_to_storage(&self.data);
     }
 
     fn remove(&mut self, id: u32) {
-        self.items.retain(|item| item.id != id);
-        self.save_to_local_storage();
+        self.data.items.retain(|item| item.id != id);
+        utils::write_data_to_storage(&self.data);
     }
 
     fn start_editing(&mut self, id: u32) {
-        self.editing = Some(id);
+        self.editing_id = Some(id);
     }
 
     fn end_editing(&mut self, title: Option<String>) {
-        let id = match self.editing {
+        let id = match self.editing_id {
             Some(id) => id,
             None => return,
         };
         match title {
             Some(title) => {
-                self.items
+                self.data
+                    .items
                     .iter_mut()
                     .find(|item| item.id == id)
                     .expect_throw("Why editing item with an invalid id?")
                     .title = title;
-                self.save_to_local_storage();
+                utils::write_data_to_storage(&self.data);
             }
             None => self.remove(id),
         }
-        self.editing = None;
+        self.editing_id = None;
     }
 
     fn cancel_editing(&mut self) {
-        self.editing = None;
+        self.editing_id = None;
     }
 }
 
-impl spair::Component for State {
+impl spair::Component for AppState {
     type Routes = Filter;
     fn with_comp(_: spair::Comp<Self>) -> Option<Self> {
-        Some(Self::from_store())
+        Some(Self {
+            data: utils::read_data_from_storage(),
+            filter: Filter::default(),
+            editing_id: None,
+            new_todo_title: String::new(),
+        })
     }
     fn render(&self, c: spair::Context<Self>) {
         let (_, element) = c.into_parts();
@@ -152,7 +176,7 @@ impl spair::Component for State {
                 s.static_attributes()
                     .class("todoapp")
                     .nodes()
-                    .render(Header)
+                    .render(Header(self))
                     .render(Main(self))
                     .render(Footer(self));
             })
@@ -160,36 +184,45 @@ impl spair::Component for State {
     }
 }
 
-struct Header;
-impl spair::Render<State> for Header {
-    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
+struct Header<'s>(&'s AppState);
+impl<'s> spair::Render<AppState> for Header<'s> {
+    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
         let comp = nodes.comp();
         nodes.header(|h| {
             h.static_attributes()
                 .class("header")
                 .static_nodes()
                 .h1(|h| h.nodes().render("Spair Todos").done())
+                .nodes()
                 .input(|i| {
                     i.static_attributes()
                         .class("new-todo")
                         .focus(true)
                         .placeholder("What needs to be done?")
-                        .on_change(comp.handler_arg(|state, arg: web_sys::Event| {
+                        .on_input(comp.handler_arg(|state, arg: web_sys::InputEvent| {
                             let input =
                                 spair::into_input(arg.target().expect_throw("No event target"));
-                            state.add_new_todo(input.value());
-                        }));
+                            state.set_new_todo_title(input.value());
+                        }))
+                        .on_key_press(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
+                            match arg.key_code() {
+                                ENTER_KEY => state.create_new_todo(),
+                                _ => {}
+                            }
+                        }))
+                        .attributes()
+                        .value(&self.0.new_todo_title);
                 });
         })
     }
 }
 
-struct Main<'s>(&'s State);
-impl<'s> spair::Render<State> for Main<'s> {
-    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
+struct Main<'s>(&'s AppState);
+impl<'s> spair::Render<AppState> for Main<'s> {
+    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
         let comp = nodes.comp();
-        let todo_count = self.0.items.len();
-        let all_completed = self.0.items.iter().all(|item| item.completed);
+        let todo_count = self.0.data.items.len();
+        let all_completed = self.0.data.items.iter().all(|item| item.completed);
         nodes.section(|s| {
             s.static_attributes()
                 .class("main")
@@ -205,16 +238,19 @@ impl<'s> spair::Render<State> for Main<'s> {
                         .checked(all_completed)
                         .on_change(comp.handler(move |state| state.toggle_all(!all_completed)));
                 })
+                .static_nodes()
                 .label(|l| {
                     l.static_attributes()
                         .r#for("toggle-all")
                         .static_nodes()
                         .render("Mark all as complete");
                 })
+                .nodes()
                 .ul(|u| {
                     u.static_attributes().class("todo-list").list(
                         Some(self.0),
                         self.0
+                            .data
                             .items
                             .iter()
                             .filter(|item| item.visible(&self.0.filter)),
@@ -225,13 +261,19 @@ impl<'s> spair::Render<State> for Main<'s> {
     }
 }
 
-struct Footer<'s>(&'s State);
-impl<'s> spair::Render<State> for Footer<'s> {
-    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
+struct Footer<'s>(&'s AppState);
+impl<'s> spair::Render<AppState> for Footer<'s> {
+    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
         let comp = nodes.comp();
-        let list_empty = self.0.items.len() == 0;
-        let item_left = self.0.items.iter().filter(|item| !item.completed).count();
-        let some_completed = self.0.items.iter().any(|item| item.completed);
+        let list_empty = self.0.data.items.len() == 0;
+        let item_left = self
+            .0
+            .data
+            .items
+            .iter()
+            .filter(|item| !item.completed)
+            .count();
+        let some_completed = self.0.data.items.iter().any(|item| item.completed);
         nodes.footer(|f| {
             f.static_attributes()
                 .class("footer")
@@ -242,53 +284,34 @@ impl<'s> spair::Render<State> for Footer<'s> {
                     s.static_attributes()
                         .class("todo-count")
                         .nodes()
-                        .strong(|s| {
-                            s.nodes().render(item_left).render(if item_left == 1 {
-                                " item left"
-                            } else {
-                                " items left"
-                            });
+                        .strong(|s| s.nodes().render(item_left).done())
+                        .render(if item_left == 1 {
+                            " item left"
+                        } else {
+                            " items left"
                         });
                 })
                 .ul(|u| {
                     u.static_attributes()
                         .class("filters")
                         .nodes()
-                        .li(|l| {
-                            l.nodes().a(|a| {
-                                a.static_attributes()
-                                    .href(Filter::All)
-                                    .attributes()
-                                    .class_if("selected", self.0.filter == Filter::All)
-                                    .static_nodes()
-                                    .r#static("All");
-                            });
+                        .render(FilterView {
+                            current_filter: self.0.filter,
+                            view: Filter::All,
                         })
-                        .li(|l| {
-                            l.nodes().a(|a| {
-                                a.static_attributes()
-                                    .href(Filter::Active)
-                                    .attributes()
-                                    .class_if("selected", self.0.filter == Filter::Active)
-                                    .static_nodes()
-                                    .r#static("Active");
-                            });
+                        .render(FilterView {
+                            current_filter: self.0.filter,
+                            view: Filter::Active,
                         })
-                        .li(|l| {
-                            l.nodes().a(|a| {
-                                a.static_attributes()
-                                    .href(Filter::Completed)
-                                    .attributes()
-                                    .class_if("selected", self.0.filter == Filter::Completed)
-                                    .static_nodes()
-                                    .r#static("Completed");
-                            });
+                        .render(FilterView {
+                            current_filter: self.0.filter,
+                            view: Filter::Completed,
                         });
                 })
                 .button(|b| {
                     b.static_attributes()
                         .class("clear-completed")
-                        .on_click(comp.handler(State::clear_completed))
+                        .on_click(comp.handler(AppState::clear_completed))
                         .attributes()
                         .class_if("hidden", !some_completed)
                         .static_nodes()
@@ -298,16 +321,35 @@ impl<'s> spair::Render<State> for Footer<'s> {
     }
 }
 
+struct FilterView {
+    current_filter: Filter,
+    view: Filter,
+}
+
+impl spair::Render<AppState> for FilterView {
+    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
+        nodes.li(|l| {
+            l.nodes().a(|a| {
+                a.static_attributes()
+                    .href(&self.view)
+                    .attributes()
+                    .class_if("selected", self.current_filter == self.view)
+                    .static_nodes()
+                    .r#static(self.view.as_str());
+            });
+        })
+    }
+}
+
 struct Info;
-impl spair::Render<State> for Info {
-    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
+impl spair::Render<AppState> for Info {
+    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
         nodes.footer(|f| {
             f.static_attributes()
                 .class("info")
                 .static_nodes()
                 .p(|p| p.nodes().render("Double-click to edit a todo").done())
                 .p(|p| p.nodes().render("Created by 'aclueless'").done())
-                .p(|p| p.nodes().render("Part of Spair").done())
                 .p(|p| {
                     p.nodes().render("Part of ").a(|a| {
                         a.static_attributes()
@@ -320,31 +362,31 @@ impl spair::Render<State> for Info {
     }
 }
 
-impl spair::ListItem<State> for TodoItem {
+impl spair::ListItem<AppState> for TodoItem {
     const ROOT_ELEMENT_TAG: &'static str = "li";
-    fn render(&self, state: Option<&State>, li: spair::Element<State>) {
+    fn render(&self, state: Option<&AppState>, li: spair::Element<AppState>) {
         let comp = li.comp();
         let comp = &comp;
         let id = self.id;
-        let is_is_me = state.and_then(|s| s.editing) == Some(self.id);
+        let is_editing_me = state.and_then(|s| s.editing_id) == Some(self.id);
         li.attributes()
             .class_if("completed", self.completed)
-            .class_if("editing", is_is_me)
+            .class_if("editing", is_editing_me)
             .nodes()
             .div(move |d| {
                 d.static_attributes()
-                    .class("filter")
+                    .class("view")
                     .nodes()
                     .input(|i| {
                         i.static_attributes()
                             .class("toggle")
                             .r#type(spair::InputType::CheckBox)
-                            .on_change(comp.handler(move |state| state.toggle(id)))
                             .attributes()
+                            .on_change(comp.handler(move |state| state.toggle(id)))
                             .checked(self.completed);
                     })
                     .label(|l| {
-                        l.static_attributes()
+                        l.attributes()
                             .on_double_click(comp.handler(move |state| state.start_editing(id)))
                             .nodes()
                             .render(&self.title);
@@ -352,30 +394,45 @@ impl spair::ListItem<State> for TodoItem {
                     .button(|b| {
                         b.static_attributes()
                             .class("destroy")
+                            .attributes()
                             .on_click(comp.handler(move |state| state.remove(id)));
                     });
             })
-            .input(|i| {
-                i.static_attributes()
-                    .class("edit")
-                    .on_blur(comp.handler_arg(|state, arg: web_sys::FocusEvent| {
-                        state.end_editing(get_value(spair::into_input(
-                            arg.target().expect_throw("No event target"),
-                        )))
-                    }))
-                    .on_key_down(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
-                        match arg.key().as_str() {
-                            "Escape" => state.cancel_editing(),
-                            "Enter" => state.end_editing(get_value(spair::into_input(
-                                arg.target().expect_throw("No event target"),
-                            ))),
-                            _ => {}
-                        }
-                    }))
-                    .attributes()
-                    .focus(is_is_me)
-                    .value(&self.title);
+            .match_if(|arm| match is_editing_me {
+                true => arm
+                    .render_on_arm_index(0)
+                    .render(EditingInput(&self.title))
+                    .done(),
+                false => arm.render_on_arm_index(1).done(),
             });
+    }
+}
+
+struct EditingInput<'a>(&'a String);
+impl<'a> spair::Render<AppState> for EditingInput<'a> {
+    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
+        let comp = nodes.comp();
+        nodes.input(|i| {
+            i.static_attributes()
+                .class("edit")
+                .on_blur(comp.handler_arg(|state, arg: web_sys::FocusEvent| {
+                    state.end_editing(get_value(spair::into_input(
+                        arg.target().expect_throw("No event target"),
+                    )))
+                }))
+                .on_key_down(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
+                    match arg.key_code() {
+                        ESC_KEY => state.cancel_editing(),
+                        ENTER_KEY => state.end_editing(get_value(spair::into_input(
+                            arg.target().expect_throw("No event target"),
+                        ))),
+                        _ => {}
+                    }
+                }))
+                .attributes()
+                .focus(true)
+                .value(self.0);
+        })
     }
 }
 
@@ -390,5 +447,6 @@ fn get_value(i: web_sys::HtmlInputElement) -> Option<String> {
 
 #[wasm_bindgen(start)]
 pub fn start_todo_mvc() {
-    State::mount_to("root");
+    // wasm_logger::init(wasm_logger::Config::default());
+    AppState::mount_to_body();
 }
