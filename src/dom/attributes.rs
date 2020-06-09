@@ -489,14 +489,34 @@ where
         AsStr   wrap
     }
 
-    fn checked(mut self, value: bool) -> Self {
+    /// Only execute `input.set_checked` if the value changed.
+    fn checked_if_changed(mut self, value: bool) -> Self {
         if self.check_bool_attribute(value) {
-            let element = self.ws_element();
-            if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
-                input.set_checked(value);
-            } else {
-                log::warn!(".checked() is called on an element that is not <input>");
-            }
+            self.checked(value)
+        } else {
+            self
+        }
+    }
+
+    /// Always execute `input.set_checked` with the given value. This is
+    /// useful in situation like in TodoMVC example. TodoMVC spec requires
+    /// that when the app in a filtered mode, for example, just display
+    /// active todos, if an item is checked (completed) by clicking the
+    /// input, the app should hide the todo item. In such a situation, the
+    /// DOM item is checked, but Spair DOM is not checked yet. But the
+    /// checked item was filtered out (hidden), and only active todos
+    /// are displayed, all of them are unchecked which match the state in
+    /// Spair DOM, hence Spair skip setting check, leaving the DOM checked
+    /// but display an unchecked item. In my understand, this only occurs
+    /// with non-keyed list. I choose always setting checked to avoid
+    /// surprise for new users. `checked_if_changed` can be used to reduce
+    /// interaction with DOM if it does not bug you.
+    fn checked(self, value: bool) -> Self {
+        let element = self.ws_element();
+        if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+            input.set_checked(value);
+        } else {
+            log::warn!(".checked() is called on an element that is not <input>");
         }
         self
     }
