@@ -518,8 +518,8 @@ where
         self
     }
 
-    fn focus(self, value: bool) -> Self {
-        if value {
+    fn focus(mut self, value: bool) -> Self {
+        if value && self.check_bool_attribute(value) {
             self.ws_html_element()
                 .focus()
                 .expect_throw("Unable to set focus");
@@ -529,12 +529,17 @@ where
 
     fn href(mut self, value: &C::Routes) -> Self {
         use crate::routing::Routes;
-        self.set_str_attribute("href", &value.url());
+        let url = value.url();
+        if self.check_str_attribute(&url) {
+            self.set_str_attribute("href", &url);
+        }
         self
     }
 
-    fn id(self, id: &str) -> Self {
-        self.ws_element().set_id(id);
+    fn id(mut self, id: &str) -> Self {
+        if self.check_str_attribute(id) {
+            self.ws_element().set_id(id);
+        }
         self
     }
 
