@@ -40,11 +40,11 @@ When implementing `spair::Component` on your application's State, the `spair::Co
 impl spair::Component for State {
     type Routes = ();
     fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_comp_element();
+        let (comp, element) = c.into_parts();
         element
             // This return an object that allow you setting attributes in static mode
             .static_attributes()
-            // This class-name only set when element is marked as `JustCreated`,
+            // This class-name only set when the element is marked as `JustCreated`,
             // otherwise Spair ignores it
             .class("some-class")
             // This return an object that allow you setting attributes in normal mode
@@ -54,12 +54,9 @@ impl spair::Component for State {
             .class_if("option-class", self.some_bool_value)
             // This return an object that allow you adding children in static mode
             .static_nodes()
-            // The next element (and its descendants) will be rendered only when
-            // it does not exist yet, If Spair finds out that it is already there,
-            // then Spair just iterates over it. In this case, the element `<p>`
-            // (and its content) will be created when the app started, but later,
-            // it will be ignored (Spair will iterate over it, ignore any update
-            // to it and its content).
+            // The next element `<p>`, and its descendants, will be rendered only 
+            // once with the app starts. On updates, Spair finds out that it is
+            // already there, then Spair just iterates over it, do nothing on it.
             .p(|p| {
                 // `p` is an element which is the same type as the `element` got
                 // from spair::Context
@@ -89,7 +86,7 @@ impl spair::Component for State {
 
 ### `Render` and `StaticRender`
 
-The code snippet in the previous section also demonstrates two methods: `.render()` and `.r#static()` that are bounded to `Render` and `StaticRender` traits respectively. Those traits are implemented for primitives like `i8`, ..., `u64`, `f32`, `f64`, `bool`, `usize`, `isize`. They are simply converted to strings and rendered as text. You can implement `Render` and `StaticRender` for your own structs and pass them to `.render()` and `.r#static()`.
+The code snippet in the previous section also demonstrates two methods: `.render()` and `.r#static()` that are bounded to `Render` and `StaticRender` traits respectively. Those traits are implemented for primitives like `i8`, ..., `u64`, `f32`, `f64`, `bool`, `usize`, `isize`. They are simply converted to strings and rendered as text. You can implement `Render` or `StaticRender` for your own structs and pass them to `.render()` or `.r#static()`.
 
 The method `.render(value)` always render the `value` in normal mode. For example, `.static_nodes().render(value)` still update the `value` text despite you call `.render()` in static mode. Similarly, method `.r#static(value)` will always ignore updating the `value`, event you call it in normal mode.
 
