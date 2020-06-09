@@ -1,6 +1,6 @@
 use spair::prelude::*;
 
-const TODO_DATA_KEY: &'static str = "spair-todo-data";
+const TODO_DATA_KEY: &'static str = "todos-data-for-spair";
 
 fn get_local_storage() -> web_sys::Storage {
     spair::window()
