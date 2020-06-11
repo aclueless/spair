@@ -5,9 +5,6 @@ mod utils;
 use serde::{Deserialize, Serialize};
 use spair::prelude::*;
 
-const ENTER_KEY: u32 = 13;
-const ESC_KEY: u32 = 27;
-
 #[derive(PartialEq, Clone, Copy)]
 enum Filter {
     All,
@@ -205,8 +202,10 @@ impl<'s> spair::Render<AppState> for Header<'s> {
                             state.set_new_todo_title(input.value());
                         }))
                         .on_key_press(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
-                            match arg.key_code() {
-                                ENTER_KEY => state.create_new_todo(),
+                            // `.key_code()` is deprecated, so we use code instead
+                            // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
+                            match arg.code().as_str() {
+                                "Enter" => state.create_new_todo(),
                                 _ => {}
                             }
                         }))
@@ -421,9 +420,11 @@ impl<'a> spair::Render<AppState> for EditingInput<'a> {
                     )))
                 }))
                 .on_key_down(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
-                    match arg.key_code() {
-                        ESC_KEY => state.cancel_editing(),
-                        ENTER_KEY => state.end_editing(get_value(spair::into_input(
+                    // `.key_code()` is deprecated, so we use code instead
+                    // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
+                    match arg.code().as_str() {
+                        "Escape" => state.cancel_editing(),
+                        "Enter" => state.end_editing(get_value(spair::into_input(
                             arg.target().expect_throw("No event target"),
                         ))),
                         _ => {}
