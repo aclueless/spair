@@ -2,6 +2,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 #[derive(Debug)]
 pub struct Element {
+    pub element_type: super::ElementType,
     pub ws_element: web_sys::Element,
     pub attributes: super::AttributeList,
     pub nodes: super::NodeList,
@@ -17,6 +18,7 @@ impl Clone for Element {
         nodes.append_to(&ws_element);
 
         Self {
+            element_type: self.element_type,
             ws_element: ws_element.unchecked_into(),
             nodes,
             // TODO: Should this be cloned?
@@ -28,6 +30,7 @@ impl Clone for Element {
 impl Element {
     pub fn new(tag: &str) -> Self {
         Self {
+            element_type: tag.into(),
             ws_element: crate::utils::document()
                 .create_element(tag)
                 .expect_throw("Unable to create new element"),
@@ -38,6 +41,7 @@ impl Element {
 
     pub(crate) fn from_ws_element(ws_element: web_sys::Element) -> Self {
         Self {
+            element_type: ws_element.tag_name().to_ascii_lowercase().as_str().into(),
             ws_element,
             attributes: Default::default(),
             nodes: Default::default(),

@@ -300,6 +300,7 @@ macro_rules! create_methods_for_attributes {
 mod sealed {
     pub trait AttributeSetter {
         fn ws_html_element(&self) -> &web_sys::HtmlElement;
+        fn element_type(&self) -> crate::dom::ElementType;
         fn require_set_listener(&mut self) -> bool;
         fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>);
 
@@ -566,21 +567,31 @@ where
     fn value(mut self, value: &str) -> Self {
         if self.check_str_attribute(value) {
             let element = self.ws_element();
-            if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
-                input.set_value(value);
-            } else if let Some(_select) = element.dyn_ref::<web_sys::HtmlSelectElement>() {
-                // It has no effect if you set a value for
-                // a <select> element before adding its <option>s,
-                // the hacking should finish in the list() method.
-                // Is there a better solution?
-                self.start_hacking_for_selected_value(value);
-            // select.set_value(value);
-            } else if let Some(text_area) = element.dyn_ref::<web_sys::HtmlTextAreaElement>() {
-                text_area.set_value(value);
-            } else {
-                log::warn!(
-                    ".value() is called on an element that is not <input>, <select>, <textarea>"
-                );
+            match self.element_type() {
+                super::ElementType::Input => {
+                    let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
+                    input.set_value(value);
+                }
+                super::ElementType::Select => {
+                    // It has no effect if you set a value for
+                    // a <select> element before adding its <option>s,
+                    // the hacking should finish in the list() method.
+                    // Is there a better solution?
+                    self.start_hacking_for_selected_value(value);
+                }
+                super::ElementType::TextArea => {
+                    let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
+                    text_area.set_value(value);
+                }
+                super::ElementType::Option => {
+                    let option = element.unchecked_ref::<web_sys::HtmlOptionElement>();
+                    option.set_value(value);
+                }
+                super::ElementType::Other => {
+                    log::warn!(
+                        ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
+                    );
+                }
             }
         }
         self
@@ -620,6 +631,9 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
         self.0.element.ws_element.unchecked_ref()
     }
 
+    fn element_type(&self) -> super::ElementType {
+        self.0.element.element_type
+    }
     fn require_set_listener(&mut self) -> bool {
         if self.0.extra.status == super::ElementStatus::Existing {
             // When self.require_init == false, self.store_listener will not be invoked.
@@ -687,6 +701,10 @@ where
 impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attributes<'a, C> {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
         self.0.element.ws_element.unchecked_ref()
+    }
+
+    fn element_type(&self) -> super::ElementType {
+        self.0.element.element_type
     }
 
     fn require_set_listener(&mut self) -> bool {

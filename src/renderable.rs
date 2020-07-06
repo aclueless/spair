@@ -1,5 +1,5 @@
 /// This module provides traits that help users define how their types should be rendered.
-/// Implementation for primitive types is also provided.
+/// Implementation for primitive types are also provided.
 use crate::dom::{Nodes, StaticNodes};
 
 pub trait Render<C: crate::component::Component> {

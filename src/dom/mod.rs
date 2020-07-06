@@ -97,3 +97,24 @@ pub enum ListElementCreation {
     Clone,
     New,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub enum ElementType {
+    Select,
+    Input,
+    Option,
+    TextArea,
+    Other,
+}
+
+impl From<&str> for ElementType {
+    fn from(tag: &str) -> Self {
+        match tag {
+            "select" => Self::Select,
+            "input" => Self::Input,
+            "option" => Self::Option,
+            "textarea" => Self::TextArea,
+            _ => Self::Other,
+        }
+    }
+}
