@@ -22,7 +22,7 @@ where
 trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C> {
     fn update_existing_item(
         &self,
-        comp_state: Option<&C>,
+        state: &C,
         comp: &crate::component::Comp<C>,
         old_item: Option<(usize, &mut std::option::Option<(Key, super::Element)>)>,
         new_item: Option<&mut std::option::Option<(Key, super::Element)>>,
@@ -32,12 +32,12 @@ trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C>
         let mut old_item = old_item.unwrap_throw().1.take();
         fn_insert(&old_item.as_ref().unwrap_throw().1, next_sibling);
         self.render(
-            comp_state,
-            old_item
-                .as_mut()
-                .unwrap_throw()
-                .1
-                .create_updater(comp, super::ElementStatus::Existing),
+            state,
+            old_item.as_mut().unwrap_throw().1.create_updater(
+                state,
+                comp,
+                super::ElementStatus::Existing,
+            ),
         );
         *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
     }
@@ -70,13 +70,14 @@ impl KeyedList {
     pub fn create_updater<'a, C: crate::component::Component>(
         &'a mut self,
         root_item_tag: &str,
+        state: &'a C,
         new_item_count: usize,
         parent: &'a web_sys::Node,
         extra: &super::Extra<'a, C>,
         use_template: bool,
     ) -> KeyedListUpdater<'a, C> {
         self.pre_update(new_item_count);
-        KeyedListUpdater::new(root_item_tag, self, parent, extra.comp, use_template)
+        KeyedListUpdater::new(root_item_tag, state, self, parent, extra.comp, use_template)
     }
 
     // TODO better name?
@@ -164,6 +165,7 @@ impl PartialEq<Key> for u64 {
 }
 
 pub struct KeyedListUpdater<'a, C: crate::component::Component> {
+    state: &'a C,
     comp: &'a crate::component::Comp<C>,
     parent: &'a web_sys::Node,
     old: crate::utils::PeekableDoubleEndedIterator<
@@ -182,6 +184,7 @@ pub struct KeyedListUpdater<'a, C: crate::component::Component> {
 impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     fn new(
         root_item_tag: &str,
+        state: &'a C,
         list: &'a mut KeyedList,
         parent: &'a web_sys::Node,
         comp: &'a crate::component::Comp<C>,
@@ -194,6 +197,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         let template = list.template.as_mut();
         let new_item_count = list.active.len();
         Self {
+            state,
             comp,
             parent,
             old: list.buffer.iter_mut().enumerate().peekable_double_ended(),
@@ -213,11 +217,8 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         }
     }
 
-    pub fn update<I>(
-        &mut self,
-        comp_state: Option<&C>,
-        items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
-    ) where
+    pub fn update<I>(&mut self, items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator)
+    where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         // No items? Just clear the current list.
@@ -229,34 +230,33 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         let mut items_state_iter = items_state_iter.peekable_double_ended();
         if self.require_init_template {
             items_state_iter.peek().unwrap_throw().render(
-                comp_state,
-                self.template
-                    .as_mut()
-                    .unwrap()
-                    .create_updater(self.comp, super::ElementStatus::JustCreated),
+                self.state,
+                self.template.as_mut().unwrap().create_updater(
+                    self.state,
+                    self.comp,
+                    super::ElementStatus::JustCreated,
+                ),
             );
         }
         loop {
-            let mut count =
-                self.update_same_key_items_from_start(comp_state, &mut items_state_iter);
+            let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
 
-            count += self.update_same_key_items_from_end(comp_state, &mut items_state_iter);
+            count += self.update_same_key_items_from_end(&mut items_state_iter);
 
-            count += self.update_moved_forward_item(comp_state, &mut items_state_iter);
+            count += self.update_moved_forward_item(&mut items_state_iter);
 
-            count += self.update_moved_backward_item(comp_state, &mut items_state_iter);
+            count += self.update_moved_backward_item(&mut items_state_iter);
 
             if count == 0 {
                 break;
             }
         }
 
-        self.update_other_items_in_middle(comp_state, &mut items_state_iter);
+        self.update_other_items_in_middle(&mut items_state_iter);
     }
 
     fn update_same_key_items_from_start<I>(
         &mut self,
-        comp_state: Option<&C>,
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
@@ -278,7 +278,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             }
             count += 1;
             items_state_iter.next().unwrap_throw().update_existing_item(
-                comp_state,
+                self.state,
                 self.comp,
                 self.old.next(),
                 self.new.next(),
@@ -290,7 +290,6 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
     fn update_same_key_items_from_end<I>(
         &mut self,
-        comp_state: Option<&C>,
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<
             impl Iterator<Item = I> + DoubleEndedIterator,
         >,
@@ -319,7 +318,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
                 .next_back()
                 .unwrap_throw()
                 .update_existing_item(
-                    comp_state,
+                    self.state,
                     self.comp,
                     self.old.next_back(),
                     self.new.next_back(),
@@ -332,7 +331,6 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
     fn update_moved_forward_item<I>(
         &mut self,
-        comp_state: Option<&C>,
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
@@ -357,7 +355,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             .and_then(|item| item.1.as_ref().map(|item| item.1.ws_element()));
         let parent = self.parent;
         items_state_iter.next().unwrap_throw().update_existing_item(
-            comp_state,
+            self.state,
             self.comp,
             moved,
             self.new.next(),
@@ -371,7 +369,6 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
     fn update_moved_backward_item<I>(
         &mut self,
-        comp_state: Option<&C>,
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<
             impl Iterator<Item = I> + DoubleEndedIterator,
         >,
@@ -396,7 +393,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             .next_back()
             .unwrap_throw()
             .update_existing_item(
-                comp_state,
+                self.state,
                 self.comp,
                 self.old.next(),
                 self.new.next_back(),
@@ -414,7 +411,6 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
     fn update_other_items_in_middle<I>(
         &mut self,
-        comp_state: Option<&C>,
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
         for<'k> I: super::KeyedListItem<'k, C>,
@@ -425,7 +421,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         }
 
         if self.old.peek().is_none() {
-            self.insert_remain_items(comp_state, items_state_iter);
+            self.insert_remain_items(items_state_iter);
             return;
         }
 
@@ -454,7 +450,10 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
                 None => self.create_element_for_new_item(I::ROOT_ELEMENT_TAG),
             };
 
-            item_state.render(comp_state, element.create_updater(self.comp, status));
+            item_state.render(
+                self.state,
+                element.create_updater(self.state, self.comp, status),
+            );
             if !lis {
                 let next_sibling = self
                     .next_sibling
@@ -507,14 +506,16 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
     fn insert_remain_items<I>(
         &mut self,
-        comp_state: Option<&C>,
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item(I::ROOT_ELEMENT_TAG);
-            item_state.render(comp_state, element.create_updater(self.comp, status));
+            item_state.render(
+                self.state,
+                element.create_updater(self.state, self.comp, status),
+            );
             element.insert_before(
                 self.parent,
                 self.next_sibling
@@ -713,7 +714,7 @@ mod keyed_list_tests {
 
         fn updater(&mut self) -> super::super::ElementUpdater<()> {
             self.root
-                .create_updater(&self.comp, super::super::ElementStatus::Existing)
+                .create_updater(&(), &self.comp, super::super::ElementStatus::Existing)
         }
 
         fn collect_from_keyed_list(&self) -> Vec<String> {
@@ -742,7 +743,7 @@ mod keyed_list_tests {
 
     impl crate::renderable::ListItem<()> for &'static str {
         const ROOT_ELEMENT_TAG: &'static str = "span";
-        fn render(&self, _: Option<&()>, span: crate::Element<()>) {
+        fn render(&self, _: &(), span: crate::Element<()>) {
             span.nodes().render(*self);
         }
     }
@@ -773,12 +774,12 @@ mod keyed_list_tests {
         let mut pa = PhantomApp::new();
 
         let empty: Vec<&'static str> = Vec::new();
-        pa.updater().keyed_list(None, &empty, mode);
+        pa.updater().keyed_list(&empty, mode);
         assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -787,7 +788,7 @@ mod keyed_list_tests {
 
         // Random shuffle + addition
         let data = vec!["f", "b", "d", "l", "g", "i", "m", "j", "a", "h", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(
             Some("fbdlgimjahk"),
             pa.root.ws_element().text_content().as_deref()
@@ -795,13 +796,13 @@ mod keyed_list_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
 
         // Empty the list
-        pa.updater().keyed_list(None, &empty, mode);
+        pa.updater().keyed_list(&empty, mode);
         assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         // Add back
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -810,7 +811,7 @@ mod keyed_list_tests {
 
         // Forward
         let data = vec!["a", "i", "b", "c", "d", "e", "f", "g", "h", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("aibcdefghjk"),
@@ -819,7 +820,7 @@ mod keyed_list_tests {
 
         // Backward
         let data = vec!["a", "i", "c", "d", "e", "f", "g", "h", "b", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("aicdefghbjk"),
@@ -828,7 +829,7 @@ mod keyed_list_tests {
 
         // Swap
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -837,7 +838,7 @@ mod keyed_list_tests {
 
         // Remove middle
         let data = vec!["a", "b", "c", "d", "i", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdijk"),
@@ -846,7 +847,7 @@ mod keyed_list_tests {
 
         // Insert middle
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -855,7 +856,7 @@ mod keyed_list_tests {
 
         // Remove start
         let data = vec!["d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("defghijk"),
@@ -864,7 +865,7 @@ mod keyed_list_tests {
 
         // Insert start
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -873,7 +874,7 @@ mod keyed_list_tests {
 
         // Remove end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefgh"),
@@ -882,7 +883,7 @@ mod keyed_list_tests {
 
         // Append end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(None, &data, mode);
+        pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),

@@ -365,10 +365,8 @@ impl<C: Component> Comp<C> {
 
 impl<C: Component> CompInstance<C> {
     pub(crate) fn render(&mut self, comp: &Comp<C>) {
-        self.state
-            .as_ref()
-            .unwrap_throw()
-            .render(self.root_element.create_context(comp));
+        let state = self.state.as_ref().unwrap_throw();
+        state.render(self.root_element.create_context(state, comp));
     }
 
     fn extra_update(

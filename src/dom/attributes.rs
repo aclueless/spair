@@ -141,27 +141,19 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         super::Nodes::from_handle(self.0)
     }
 
-    pub fn list<I>(
-        self,
-        state: Option<&C>,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-    ) where
+    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    where
         I: crate::renderable::ListItem<C>,
     {
-        self.0.list(state, items, mode)
+        self.0.list(items, mode)
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(
-        self,
-        state: Option<&C>,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-    ) where
+    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
-        self.0.keyed_list(state, items, mode)
+        self.0.keyed_list(items, mode)
     }
 
     pub fn component<CC: crate::component::Component>(
@@ -187,27 +179,19 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
         super::Nodes::from_handle(self.0)
     }
 
-    pub fn list<I>(
-        self,
-        state: Option<&C>,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-    ) where
+    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    where
         I: crate::renderable::ListItem<C>,
     {
-        self.0.list(state, items, mode)
+        self.0.list(items, mode)
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(
-        self,
-        state: Option<&C>,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-    ) where
+    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
-        self.0.keyed_list(state, items, mode)
+        self.0.keyed_list(items, mode)
     }
 
     pub fn component<CC: crate::component::Component>(

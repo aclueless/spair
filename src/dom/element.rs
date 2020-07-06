@@ -64,6 +64,7 @@ impl Element {
 
     pub fn create_updater<'a, C: crate::component::Component>(
         &'a mut self,
+        state: &'a C,
         comp: &'a crate::component::Comp<C>,
         status: super::ElementStatus,
     ) -> ElementUpdater<'a, C> {
@@ -73,6 +74,7 @@ impl Element {
             index: 0,
         };
         ElementUpdater {
+            state,
             element: self,
             extra,
             selected_option: None,
@@ -81,11 +83,13 @@ impl Element {
 
     pub(crate) fn create_context<'a, C: crate::component::Component>(
         &'a mut self,
+        state: &'a C,
         comp: &'a crate::component::Comp<C>,
     ) -> crate::component::Context<'a, C> {
         crate::component::Context::new(
             comp,
             self.create_updater(
+                state,
                 comp,
                 if self.is_empty() {
                     super::ElementStatus::JustCreated
@@ -116,6 +120,7 @@ impl Element {
 }
 
 pub struct ElementUpdater<'a, C: crate::component::Component> {
+    pub(super) state: &'a C,
     pub(super) element: &'a mut Element,
     pub(super) extra: super::Extra<'a, C>,
     pub(super) selected_option: Option<SelectedOption>,
@@ -127,6 +132,10 @@ pub enum SelectedOption {
 }
 
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
+    pub fn state(&self) -> &C {
+        self.state
+    }
+
     pub fn comp(&self) -> crate::component::Comp<C> {
         self.extra.comp.clone()
     }
@@ -147,12 +156,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         super::Nodes::from_handle(self)
     }
 
-    pub fn list<I>(
-        mut self,
-        state: Option<&C>,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-    ) where
+    pub fn list<I>(mut self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    where
         I: crate::renderable::ListItem<C>,
     {
         // Reset the index, because it may used by attributes
@@ -168,11 +173,12 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         for item in items {
             let element = self.element.nodes.item_for_list(
                 I::ROOT_ELEMENT_TAG,
+                self.state,
                 &self.extra,
                 parent,
                 use_template,
             );
-            item.render(state, element);
+            item.render(self.state, element);
             self.extra.index += 1;
         }
         self.element.nodes.clear_after(self.extra.index, parent);
@@ -199,12 +205,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(
-        self,
-        state: Option<&C>,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-    ) where
+    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
@@ -218,12 +220,13 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         };
         let mut updater = self.element.nodes.keyed_list(
             I::ROOT_ELEMENT_TAG,
+            self.state,
             parent,
             &self.extra,
             items.len(),
             use_template,
         );
-        updater.update(state, items.into_iter());
+        updater.update(items.into_iter());
 
         // The hack start in AttributeSetter::value
         self.finish_hacking_for_select_value();

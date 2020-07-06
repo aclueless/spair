@@ -28,7 +28,7 @@ impl Filter {
     }
 }
 
-impl spair::Routes<AppState> for Filter {
+impl spair::Routes<App> for Filter {
     fn url(&self) -> String {
         match self {
             Self::All => "#all".to_string(),
@@ -36,13 +36,13 @@ impl spair::Routes<AppState> for Filter {
             Self::Completed => "#completed".to_string(),
         }
     }
-    fn routing(location: spair::Location, comp: &spair::Comp<AppState>) {
+    fn routing(location: spair::Location, comp: &spair::Comp<App>) {
         let filter = match location.hash().unwrap_or_else(|_| String::new()).as_str() {
             "#completed" => Self::Completed,
             "#active" => Self::Active,
             _ => Self::All,
         };
-        comp.callback_arg(AppState::set_filter)(filter);
+        comp.callback_arg(App::set_filter)(filter);
     }
 }
 
@@ -70,7 +70,7 @@ struct TodoData {
     items: Vec<TodoItem>,
 }
 
-struct AppState {
+struct App {
     data: TodoData,
 
     filter: Filter,
@@ -78,7 +78,7 @@ struct AppState {
     new_todo_title: String,
 }
 
-impl AppState {
+impl App {
     fn set_filter(&mut self, filter: Filter) {
         self.filter = filter;
     }
@@ -155,7 +155,7 @@ impl AppState {
     }
 }
 
-impl spair::Component for AppState {
+impl spair::Component for App {
     type Routes = Filter;
     fn with_comp(_: spair::Comp<Self>) -> Option<Self> {
         Some(Self {
@@ -173,17 +173,19 @@ impl spair::Component for AppState {
                 s.static_attributes()
                     .class("todoapp")
                     .nodes()
-                    .render(Header(self))
-                    .render(Main(self))
-                    .render(Footer(self));
+                    .render(Header)
+                    .render(Main)
+                    .render(Footer);
             })
             .render(Info);
     }
 }
 
-struct Header<'s>(&'s AppState);
-impl<'s> spair::Render<AppState> for Header<'s> {
-    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
+type Nodes<'a> = spair::Nodes<'a, App>;
+
+struct Header;
+impl<'a> spair::Render<'a, App> for Header {
+    fn render(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         let comp = nodes.comp();
         nodes.header(|h| {
             h.static_attributes()
@@ -192,6 +194,7 @@ impl<'s> spair::Render<AppState> for Header<'s> {
                 .h1(|h| h.nodes().render("Spair Todos").done())
                 .nodes()
                 .input(|i| {
+                    // let state = i.state();
                     i.static_attributes()
                         .class("new-todo")
                         .focus(true)
@@ -210,18 +213,18 @@ impl<'s> spair::Render<AppState> for Header<'s> {
                             }
                         }))
                         .attributes()
-                        .value(&self.0.new_todo_title);
+                        .value(&state.new_todo_title);
                 });
         })
     }
 }
 
-struct Main<'s>(&'s AppState);
-impl<'s> spair::Render<AppState> for Main<'s> {
-    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
+struct Main;
+impl<'a> spair::Render<'a, App> for Main {
+    fn render(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         let comp = nodes.comp();
-        let todo_count = self.0.data.items.len();
-        let all_completed = self.0.data.items.iter().all(|item| item.completed);
+        let todo_count = state.data.items.len();
+        let all_completed = state.data.items.iter().all(|item| item.completed);
         nodes.section(|s| {
             s.static_attributes()
                 .class("main")
@@ -247,12 +250,11 @@ impl<'s> spair::Render<AppState> for Main<'s> {
                 .nodes()
                 .ul(|u| {
                     u.static_attributes().class("todo-list").list(
-                        Some(self.0),
-                        self.0
+                        state
                             .data
                             .items
                             .iter()
-                            .filter(|item| item.visible(&self.0.filter)),
+                            .filter(|item| item.visible(&state.filter)),
                         spair::ListElementCreation::Clone,
                     )
                 });
@@ -260,19 +262,18 @@ impl<'s> spair::Render<AppState> for Main<'s> {
     }
 }
 
-struct Footer<'s>(&'s AppState);
-impl<'s> spair::Render<AppState> for Footer<'s> {
-    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
+struct Footer;
+impl<'a> spair::Render<'a, App> for Footer {
+    fn render(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         let comp = nodes.comp();
-        let list_empty = self.0.data.items.len() == 0;
-        let item_left = self
-            .0
+        let list_empty = state.data.items.len() == 0;
+        let item_left = state
             .data
             .items
             .iter()
             .filter(|item| !item.completed)
             .count();
-        let some_completed = self.0.data.items.iter().any(|item| item.completed);
+        let some_completed = state.data.items.iter().any(|item| item.completed);
         nodes.footer(|f| {
             f.static_attributes()
                 .class("footer")
@@ -295,22 +296,22 @@ impl<'s> spair::Render<AppState> for Footer<'s> {
                         .class("filters")
                         .nodes()
                         .render(FilterView {
-                            current_filter: self.0.filter,
+                            current_filter: state.filter,
                             view: Filter::All,
                         })
                         .render(FilterView {
-                            current_filter: self.0.filter,
+                            current_filter: state.filter,
                             view: Filter::Active,
                         })
                         .render(FilterView {
-                            current_filter: self.0.filter,
+                            current_filter: state.filter,
                             view: Filter::Completed,
                         });
                 })
                 .button(|b| {
                     b.static_attributes()
                         .class("clear-completed")
-                        .on_click(comp.handler(AppState::clear_completed))
+                        .on_click(comp.handler(App::clear_completed))
                         .attributes()
                         .class_if("hidden", !some_completed)
                         .static_nodes()
@@ -325,8 +326,8 @@ struct FilterView {
     view: Filter,
 }
 
-impl spair::Render<AppState> for FilterView {
-    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
+impl<'a> spair::Render<'a, App> for FilterView {
+    fn render(self, _: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         nodes.li(|l| {
             l.nodes().a(|a| {
                 a.static_attributes()
@@ -341,8 +342,8 @@ impl spair::Render<AppState> for FilterView {
 }
 
 struct Info;
-impl spair::Render<AppState> for Info {
-    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
+impl<'a> spair::Render<'a, App> for Info {
+    fn render(self, _: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         nodes.footer(|f| {
             f.static_attributes()
                 .class("info")
@@ -361,13 +362,14 @@ impl spair::Render<AppState> for Info {
     }
 }
 
-impl spair::ListItem<AppState> for TodoItem {
+impl spair::ListItem<App> for TodoItem {
     const ROOT_ELEMENT_TAG: &'static str = "li";
-    fn render(&self, state: Option<&AppState>, li: spair::Element<AppState>) {
+    fn render(&self, _: &App, li: spair::Element<App>) {
+        let state = li.state();
         let comp = li.comp();
         let comp = &comp;
         let id = self.id;
-        let is_editing_me = state.and_then(|s| s.editing_id) == Some(self.id);
+        let is_editing_me = state.editing_id == Some(self.id);
         li.attributes()
             .class_if("completed", self.completed)
             .class_if("editing", is_editing_me)
@@ -408,8 +410,8 @@ impl spair::ListItem<AppState> for TodoItem {
 }
 
 struct EditingInput<'a>(&'a String);
-impl<'a> spair::Render<AppState> for EditingInput<'a> {
-    fn render(self, nodes: spair::Nodes<AppState>) -> spair::Nodes<AppState> {
+impl<'a> spair::Render<'a, App> for EditingInput<'a> {
+    fn render(self, _: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         let comp = nodes.comp();
         nodes.input(|i| {
             i.static_attributes()
@@ -449,5 +451,5 @@ fn get_value(i: web_sys::HtmlInputElement) -> Option<String> {
 #[wasm_bindgen(start)]
 pub fn start_todo_mvc() {
     // wasm_logger::init(wasm_logger::Config::default());
-    AppState::mount_to_body();
+    App::mount_to_body();
 }
