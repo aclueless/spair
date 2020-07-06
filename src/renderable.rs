@@ -10,6 +10,14 @@ pub trait StaticRender<C: crate::component::Component> {
     fn render(self, nodes: StaticNodes<C>) -> StaticNodes<C>;
 }
 
+mod sealed {
+    pub trait ListItemStaticText {}
+}
+
+pub trait ListItemStaticText<C: crate::component::Component>: sealed::ListItemStaticText {
+    fn render(self, nodes: Nodes<C>) -> Nodes<C>;
+}
+
 macro_rules! impl_render_with_to_string {
     ($($type:ident)+) => {
         $(
@@ -18,9 +26,17 @@ macro_rules! impl_render_with_to_string {
                     nodes.update_text(&self.to_string())
                 }
             }
+
             impl<C: crate::component::Component> StaticRender<C> for $type {
                 fn render(self, nodes: StaticNodes<C>) -> StaticNodes<C> {
                     nodes.static_text(&self.to_string())
+                }
+            }
+
+            impl sealed::ListItemStaticText for $type {}
+            impl<C: crate::component::Component> ListItemStaticText<C> for $type {
+                fn render(self, nodes: Nodes<C>) -> Nodes<C> {
+                    nodes.update_text(&self.to_string())
                 }
             }
         )+
@@ -31,16 +47,21 @@ impl_render_with_to_string! {
     i8 i16 i32 i64 u8 u16 u32 u64 isize usize f32 f64 bool
 }
 
-// Special case for 'static str => always render as static text
-impl<C: crate::component::Component> Render<C> for &'static str {
-    fn render(self, nodes: Nodes<C>) -> Nodes<C> {
+impl<C: crate::component::Component> StaticRender<C> for &str {
+    fn render(self, nodes: StaticNodes<C>) -> StaticNodes<C> {
         nodes.static_text(self)
     }
 }
 
-impl<C: crate::component::Component> StaticRender<C> for &str {
+impl<C: crate::component::Component> StaticRender<C> for &String {
     fn render(self, nodes: StaticNodes<C>) -> StaticNodes<C> {
         nodes.static_text(self)
+    }
+}
+
+impl<C: crate::component::Component> Render<C> for &str {
+    fn render(self, nodes: Nodes<C>) -> Nodes<C> {
+        nodes.update_text(self)
     }
 }
 
@@ -50,9 +71,17 @@ impl<C: crate::component::Component> Render<C> for &String {
     }
 }
 
-impl<C: crate::component::Component> StaticRender<C> for &String {
-    fn render(self, nodes: StaticNodes<C>) -> StaticNodes<C> {
-        nodes.static_text(self)
+impl sealed::ListItemStaticText for &str {}
+impl<C: crate::component::Component> ListItemStaticText<C> for &str {
+    fn render(self, nodes: Nodes<C>) -> Nodes<C> {
+        nodes.update_text(self)
+    }
+}
+
+impl sealed::ListItemStaticText for &String {}
+impl<C: crate::component::Component> ListItemStaticText<C> for &String {
+    fn render(self, nodes: Nodes<C>) -> Nodes<C> {
+        nodes.update_text(self)
     }
 }
 

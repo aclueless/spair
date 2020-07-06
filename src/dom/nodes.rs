@@ -210,10 +210,6 @@ impl NodeList {
         }
     }
 
-    //     fn insert_raw_wrapper(&mut self, element: super::Element) {
-    //         self.0.push(Node::Element(element))
-    //     }
-
     pub fn store_component_handle(&mut self, any: AnyComponentHandle) {
         let any = Node::ComponentHandle(any);
         if let Some(first) = self.0.first_mut() {
@@ -282,7 +278,7 @@ impl<C: crate::component::Component> From<crate::component::Comp<C>> for AnyComp
 
 pub struct MatchIf {
     active_index: Option<usize>,
-    // `end_node` purpose is to mark the boundary for the arm content, it is useful when
+    // `end_node` marks the boundary for the arm content, it is useful when
     // users switch between match/if arms and we have to clear the current arm before
     // render new arm.
     end_node: web_sys::Node,
@@ -392,6 +388,18 @@ impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
         value.render(self)
     }
 
+    pub fn static_text_of_keyed_item(
+        mut self,
+        value: impl crate::renderable::ListItemStaticText<C>,
+    ) -> Self {
+        if self.0.extra.status != super::ElementStatus::Existing {
+            value.render(self.nodes()).static_nodes()
+        } else {
+            self.0.extra.index += 1;
+            self
+        }
+    }
+
     pub(crate) fn static_text(mut self, text: &str) -> Self {
         self.0
             .nodes
@@ -437,13 +445,25 @@ impl<'a, C: crate::component::Component> Nodes<'a, C> {
         value.render(self.static_nodes()).nodes()
     }
 
-    pub(crate) fn static_text(mut self, text: &str) -> Self {
-        self.0
-            .nodes
-            .static_text(self.0.extra.index, text, self.0.parent, self.0.next_sibling);
-        self.0.extra.index += 1;
-        self
+    pub fn static_text_of_keyed_item(
+        mut self,
+        value: impl crate::renderable::ListItemStaticText<C>,
+    ) -> Self {
+        if self.0.extra.status != super::ElementStatus::Existing {
+            value.render(self)
+        } else {
+            self.0.extra.index += 1;
+            self
+        }
     }
+
+    // pub(crate) fn static_text(mut self, text: &str) -> Self {
+    //     self.0
+    //         .nodes
+    //         .static_text(self.0.extra.index, text, self.0.parent, self.0.next_sibling);
+    //     self.0.extra.index += 1;
+    //     self
+    // }
 
     pub(crate) fn update_text(mut self, text: &str) -> Self {
         self.0

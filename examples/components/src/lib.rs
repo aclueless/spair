@@ -50,12 +50,12 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
-                    .render("This line and everything below is in the main-component");
+                    .r#static("This line and everything below is in the main-component");
             })
             .nodes()
             .p(|p| {
                 p.nodes()
-                    .render("The value that read from child component: ")
+                    .r#static("The value that read from child component: ")
                     .match_if(|arm| match self.value_read_from_child {
                         Some(value) => arm.render_on_arm_index(0).render(value).done(),
                         None => arm.render_on_arm_index(1).render("[Not read yet]").done(),

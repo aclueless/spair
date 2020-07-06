@@ -242,7 +242,7 @@ impl<'s> spair::Render<AppState> for Main<'s> {
                     l.static_attributes()
                         .r#for("toggle-all")
                         .static_nodes()
-                        .render("Mark all as complete");
+                        .r#static("Mark all as complete");
                 })
                 .nodes()
                 .ul(|u| {
@@ -347,14 +347,14 @@ impl spair::Render<AppState> for Info {
             f.static_attributes()
                 .class("info")
                 .static_nodes()
-                .p(|p| p.nodes().render("Double-click to edit a todo").done())
-                .p(|p| p.nodes().render("Created by 'aclueless'").done())
+                .p(|p| p.nodes().r#static("Double-click to edit a todo").done())
+                .p(|p| p.nodes().r#static("Created by 'aclueless'").done())
                 .p(|p| {
-                    p.nodes().render("Part of ").a(|a| {
+                    p.nodes().r#static("Part of ").a(|a| {
                         a.static_attributes()
                             .href_str("http://todomvc.com")
                             .nodes()
-                            .render("TodoMVC");
+                            .r#static("TodoMVC");
                     });
                 });
         })

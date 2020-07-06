@@ -26,8 +26,8 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
-                    .render("The initial value is ")
-                    .render(self.value);
+                    .r#static("The initial value is ")
+                    .r#static(self.value);
             })
             .r#static(Button("-", comp.handler(State::decrement)))
             .render(self.value)

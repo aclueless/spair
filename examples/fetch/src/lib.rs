@@ -84,7 +84,7 @@ impl spair::Component for State {
                         b.static_attributes()
                             .on_click(comp.handler(State::reset))
                             .static_nodes()
-                            .render("Reset");
+                            .r#static("Reset");
                     })
                     .done(),
                 None => arm
@@ -93,7 +93,7 @@ impl spair::Component for State {
                         b.static_attributes()
                             .on_click(comp.handler(State::start_fetching))
                             .static_nodes()
-                            .render("Click to fetch wasm-bindgen latest commit info");
+                            .r#static("Click to fetch wasm-bindgen latest commit info");
                     })
                     .done(),
             })
@@ -106,9 +106,9 @@ impl spair::Render<State> for &Branch {
         nodes
             .p(|p| {
                 p.nodes()
-                    .render("The latest commit to the wasm-bindgen ")
+                    .r#static("The latest commit to the wasm-bindgen ")
                     .render(&self.name)
-                    .render(" branch is:");
+                    .r#static(" branch is:");
             })
             .render(&self.commit)
     }
@@ -119,11 +119,11 @@ impl spair::Render<State> for &Commit {
         nodes.p(|p| {
             p.nodes()
                 .render(&self.sha)
-                .render(", authored by ")
+                .r#static(", authored by ")
                 .render(&self.commit.author.name)
-                .render(" (")
+                .r#static(" (")
                 .render(&self.commit.author.email)
-                .render(")");
+                .r#static(")");
         })
     }
 }
