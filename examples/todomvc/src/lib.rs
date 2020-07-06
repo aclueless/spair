@@ -184,8 +184,8 @@ impl spair::Component for App {
 type Nodes<'a> = spair::Nodes<'a, App>;
 
 struct Header;
-impl<'a> spair::Render<'a, App> for Header {
-    fn render(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
+impl spair::Render<App> for Header {
+    fn render<'a>(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         let comp = nodes.comp();
         nodes.header(|h| {
             h.static_attributes()
@@ -194,7 +194,7 @@ impl<'a> spair::Render<'a, App> for Header {
                 .h1(|h| h.nodes().render("Spair Todos").done())
                 .nodes()
                 .input(|i| {
-                    // let state = i.state();
+                    // let state: i32 = i.state();
                     i.static_attributes()
                         .class("new-todo")
                         .focus(true)
@@ -220,8 +220,8 @@ impl<'a> spair::Render<'a, App> for Header {
 }
 
 struct Main;
-impl<'a> spair::Render<'a, App> for Main {
-    fn render(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
+impl spair::Render<App> for Main {
+    fn render<'a>(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         let comp = nodes.comp();
         let todo_count = state.data.items.len();
         let all_completed = state.data.items.iter().all(|item| item.completed);
@@ -263,8 +263,8 @@ impl<'a> spair::Render<'a, App> for Main {
 }
 
 struct Footer;
-impl<'a> spair::Render<'a, App> for Footer {
-    fn render(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
+impl spair::Render<App> for Footer {
+    fn render<'a>(self, state: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         let comp = nodes.comp();
         let list_empty = state.data.items.len() == 0;
         let item_left = state
@@ -326,8 +326,8 @@ struct FilterView {
     view: Filter,
 }
 
-impl<'a> spair::Render<'a, App> for FilterView {
-    fn render(self, _: &App, nodes: Nodes<'a>) -> Nodes<'a> {
+impl spair::Render<App> for FilterView {
+    fn render<'a>(self, _: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         nodes.li(|l| {
             l.nodes().a(|a| {
                 a.static_attributes()
@@ -342,8 +342,8 @@ impl<'a> spair::Render<'a, App> for FilterView {
 }
 
 struct Info;
-impl<'a> spair::Render<'a, App> for Info {
-    fn render(self, _: &App, nodes: Nodes<'a>) -> Nodes<'a> {
+impl spair::Render<App> for Info {
+    fn render<'a>(self, _: &App, nodes: Nodes<'a>) -> Nodes<'a> {
         nodes.footer(|f| {
             f.static_attributes()
                 .class("info")
@@ -410,8 +410,8 @@ impl spair::ListItem<App> for TodoItem {
 }
 
 struct EditingInput<'a>(&'a String);
-impl<'a> spair::Render<'a, App> for EditingInput<'a> {
-    fn render(self, _: &App, nodes: Nodes<'a>) -> Nodes<'a> {
+impl<'a> spair::Render<App> for EditingInput<'a> {
+    fn render<'n>(self, _: &App, nodes: Nodes<'n>) -> Nodes<'n> {
         let comp = nodes.comp();
         nodes.input(|i| {
             i.static_attributes()

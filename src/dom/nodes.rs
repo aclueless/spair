@@ -395,17 +395,17 @@ impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
         Nodes(self.0)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<'a, C>) -> Self {
+    pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
         value.render(self.0.state, self.nodes()).static_nodes()
     }
 
-    pub fn r#static(self, value: impl crate::renderable::StaticRender<'a, C>) -> Self {
+    pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
         value.render(self.0.state, self)
     }
 
     pub fn static_text_of_keyed_item(
         mut self,
-        value: impl crate::renderable::ListItemStaticText<'a, C>,
+        value: impl crate::renderable::ListItemStaticText<C>,
     ) -> Self {
         if self.0.extra.status != super::ElementStatus::Existing {
             value.render(self.0.state, self.nodes()).static_nodes()
@@ -459,17 +459,17 @@ impl<'a, C: crate::component::Component> Nodes<'a, C> {
         StaticNodes(self.0)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<'a, C>) -> Self {
+    pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
         value.render(self.0.state, self)
     }
 
-    pub fn r#static(self, value: impl crate::renderable::StaticRender<'a, C>) -> Self {
+    pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
         value.render(self.0.state, self.static_nodes()).nodes()
     }
 
     pub fn static_text_of_keyed_item(
         mut self,
-        value: impl crate::renderable::ListItemStaticText<'a, C>,
+        value: impl crate::renderable::ListItemStaticText<C>,
     ) -> Self {
         if self.0.extra.status != super::ElementStatus::Existing {
             value.render(self.0.state, self)
