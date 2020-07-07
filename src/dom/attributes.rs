@@ -295,7 +295,7 @@ mod sealed {
         fn check_u32_attribute(&mut self, value: u32) -> bool;
         fn check_f64_attribute(&mut self, value: f64) -> bool;
 
-        fn start_hacking_for_selected_value(&mut self, value: &str);
+        fn start_hacking_for_selected_value(&mut self, value: Option<&str>);
         fn start_hacking_for_selected_index(&mut self, index: i32);
     }
 }
@@ -562,7 +562,7 @@ where
                     // a <select> element before adding its <option>s,
                     // the hacking should finish in the list() method.
                     // Is there a better solution?
-                    self.start_hacking_for_selected_value(value);
+                    self.start_hacking_for_selected_value(Some(value));
                 }
                 super::ElementType::TextArea => {
                     let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
@@ -578,6 +578,19 @@ where
                     );
                 }
             }
+        }
+        self
+    }
+
+    fn selected_value(mut self, value: Option<&str>) -> Self {
+        if self.element_type() == super::ElementType::Select {
+            // It has no effect if you set a value for
+            // a <select> element before adding its <option>s,
+            // the hacking should finish in the list() method.
+            // Is there a better solution?
+            self.start_hacking_for_selected_value(value);
+        } else {
+            log::warn!(".selected_value() can only be called on <select>");
         }
         self
     }
@@ -664,8 +677,12 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
         // no need to store the value for static attributes
     }
 
-    fn start_hacking_for_selected_value(&mut self, value: &str) {
-        self.0.selected_option = Some(super::SelectedOption::Value(value.to_string()));
+    fn start_hacking_for_selected_value(&mut self, value: Option<&str>) {
+        self.0.selected_option = Some(
+            value
+                .map(|value| super::SelectedOption::Value(value.to_string()))
+                .unwrap_or(super::SelectedOption::None),
+        );
     }
 
     fn start_hacking_for_selected_index(&mut self, index: i32) {
@@ -753,8 +770,12 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attr
         rs
     }
 
-    fn start_hacking_for_selected_value(&mut self, value: &str) {
-        self.0.selected_option = Some(super::SelectedOption::Value(value.to_string()));
+    fn start_hacking_for_selected_value(&mut self, value: Option<&str>) {
+        self.0.selected_option = Some(
+            value
+                .map(|value| super::SelectedOption::Value(value.to_string()))
+                .unwrap_or(super::SelectedOption::None),
+        );
     }
 
     fn start_hacking_for_selected_index(&mut self, index: i32) {
