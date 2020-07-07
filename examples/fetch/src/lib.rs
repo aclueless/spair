@@ -102,7 +102,7 @@ impl spair::Component for State {
 }
 
 impl spair::Render<State> for &Branch {
-    fn render<'a>(self, _: &State, nodes: spair::Nodes<'a, State>) -> spair::Nodes<'a, State> {
+    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
         nodes
             .p(|p| {
                 p.nodes()
@@ -115,7 +115,7 @@ impl spair::Render<State> for &Branch {
 }
 
 impl spair::Render<State> for &Commit {
-    fn render<'a>(self, _: &State, nodes: spair::Nodes<'a, State>) -> spair::Nodes<'a, State> {
+    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
         nodes.p(|p| {
             p.nodes()
                 .render(&self.sha)

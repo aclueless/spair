@@ -31,14 +31,11 @@ trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C>
     ) {
         let mut old_item = old_item.unwrap_throw().1.take();
         fn_insert(&old_item.as_ref().unwrap_throw().1, next_sibling);
-        self.render(
+        self.render(old_item.as_mut().unwrap_throw().1.create_updater(
             state,
-            old_item.as_mut().unwrap_throw().1.create_updater(
-                state,
-                comp,
-                super::ElementStatus::Existing,
-            ),
-        );
+            comp,
+            super::ElementStatus::Existing,
+        ));
         *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
     }
 }
@@ -230,7 +227,6 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         let mut items_state_iter = items_state_iter.peekable_double_ended();
         if self.require_init_template {
             items_state_iter.peek().unwrap_throw().render(
-                self.state,
                 self.template.as_mut().unwrap().create_updater(
                     self.state,
                     self.comp,
@@ -450,10 +446,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
                 None => self.create_element_for_new_item(I::ROOT_ELEMENT_TAG),
             };
 
-            item_state.render(
-                self.state,
-                element.create_updater(self.state, self.comp, status),
-            );
+            item_state.render(element.create_updater(self.state, self.comp, status));
             if !lis {
                 let next_sibling = self
                     .next_sibling
@@ -512,10 +505,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     {
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item(I::ROOT_ELEMENT_TAG);
-            item_state.render(
-                self.state,
-                element.create_updater(self.state, self.comp, status),
-            );
+            item_state.render(element.create_updater(self.state, self.comp, status));
             element.insert_before(
                 self.parent,
                 self.next_sibling
@@ -743,7 +733,7 @@ mod keyed_list_tests {
 
     impl crate::renderable::ListItem<()> for &'static str {
         const ROOT_ELEMENT_TAG: &'static str = "span";
-        fn render(&self, _: &(), span: crate::Element<()>) {
+        fn render(&self, span: crate::Element<()>) {
             span.nodes().render(*self);
         }
     }

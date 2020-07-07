@@ -383,7 +383,7 @@ impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
         Self(NodeListHandle::from_handle(handle))
     }
 
-    pub fn state(&self) -> &C {
+    pub fn state(&self) -> &'a C {
         self.0.state
     }
 
@@ -396,11 +396,11 @@ impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
     }
 
     pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
-        value.render(self.0.state, self.nodes()).static_nodes()
+        value.render(self.nodes()).static_nodes()
     }
 
     pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
-        value.render(self.0.state, self)
+        value.render(self)
     }
 
     pub fn static_text_of_keyed_item(
@@ -408,7 +408,7 @@ impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
         value: impl crate::renderable::ListItemStaticText<C>,
     ) -> Self {
         if self.0.extra.status != super::ElementStatus::Existing {
-            value.render(self.0.state, self.nodes()).static_nodes()
+            value.render(self.nodes()).static_nodes()
         } else {
             self.0.extra.index += 1;
             self
@@ -447,7 +447,7 @@ impl<'a, C: crate::component::Component> Nodes<'a, C> {
         Self(NodeListHandle::from_handle(handle))
     }
 
-    pub fn state(&self) -> &C {
+    pub fn state(&self) -> &'a C {
         self.0.state
     }
 
@@ -460,11 +460,11 @@ impl<'a, C: crate::component::Component> Nodes<'a, C> {
     }
 
     pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
-        value.render(self.0.state, self)
+        value.render(self)
     }
 
     pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
-        value.render(self.0.state, self.static_nodes()).nodes()
+        value.render(self.static_nodes()).nodes()
     }
 
     pub fn static_text_of_keyed_item(
@@ -472,7 +472,7 @@ impl<'a, C: crate::component::Component> Nodes<'a, C> {
         value: impl crate::renderable::ListItemStaticText<C>,
     ) -> Self {
         if self.0.extra.status != super::ElementStatus::Existing {
-            value.render(self.0.state, self)
+            value.render(self)
         } else {
             self.0.extra.index += 1;
             self

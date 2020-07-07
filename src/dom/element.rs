@@ -132,7 +132,7 @@ pub enum SelectedOption {
 }
 
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
-    pub fn state(&self) -> &C {
+    pub fn state(&self) -> &'a C {
         self.state
     }
 
@@ -178,7 +178,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
                 parent,
                 use_template,
             );
-            item.render(self.state, element);
+            item.render(element);
             self.extra.index += 1;
         }
         self.element.nodes.clear_after(self.extra.index, parent);
