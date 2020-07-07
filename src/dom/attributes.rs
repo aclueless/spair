@@ -498,7 +498,8 @@ where
     /// interaction with DOM if it does not bug you.
     fn checked(self, value: bool) -> Self {
         let element = self.ws_element();
-        if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+        if self.element_type() == super::ElementType::Input {
+            let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
             input.set_checked(value);
         } else {
             log::warn!(".checked() is called on an element that is not <input>");
@@ -584,8 +585,7 @@ where
     fn selected_index(mut self, index: Option<usize>) -> Self {
         let index_i32 = index.map(|index| index as i32).unwrap_or(-1);
         if self.check_i32_attribute(index_i32) {
-            let element = self.ws_element();
-            if let Some(_select) = element.dyn_ref::<web_sys::HtmlSelectElement>() {
+            if self.element_type() == super::ElementType::Select {
                 // It has no effect if you set a selected index for
                 // a <select> element before adding its <option>s,
                 // the hacking should finish in the list() method.

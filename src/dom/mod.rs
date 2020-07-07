@@ -98,7 +98,7 @@ pub enum ListElementCreation {
     New,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ElementType {
     Select,
     Input,

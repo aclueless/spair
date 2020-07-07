@@ -236,13 +236,9 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         }
         loop {
             let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
-
             count += self.update_same_key_items_from_end(&mut items_state_iter);
-
             count += self.update_moved_forward_item(&mut items_state_iter);
-
             count += self.update_moved_backward_item(&mut items_state_iter);
-
             if count == 0 {
                 break;
             }

@@ -479,14 +479,6 @@ impl<'a, C: crate::component::Component> Nodes<'a, C> {
         }
     }
 
-    // pub(crate) fn static_text(mut self, text: &str) -> Self {
-    //     self.0
-    //         .nodes
-    //         .static_text(self.0.extra.index, text, self.0.parent, self.0.next_sibling);
-    //     self.0.extra.index += 1;
-    //     self
-    // }
-
     pub(crate) fn update_text(mut self, text: &str) -> Self {
         self.0
             .nodes
