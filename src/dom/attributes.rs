@@ -584,6 +584,8 @@ where
 
     fn selected_value(mut self, value: Option<&str>) -> Self {
         if self.element_type() == super::ElementType::Select {
+            // TODO: checked to find change of value?
+
             // It has no effect if you set a value for
             // a <select> element before adding its <option>s,
             // the hacking should finish in the list() method.
