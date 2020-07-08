@@ -26,85 +26,100 @@ Open your browser and visit the correct url. By default, `basic-http-server` ser
 
 Not yet. `/examples/*` is the best place to start now.
 
-## How Spair works
+Sections below provide first looks into Spair.
 
-Spair works similar to [Simi]. The big difference is that Simi needs procedural macros to implement the idea, but Spair does not need any macros. That said, a procedural macro/macros can help transform HTML-like code into Spair's Rust code. Such macros were not implemented yet.
+## Static-mode and update-mode
 
-The first render of a single page application need to render everything from an empty DOM. But on the second or subsequence renders, most (or all) of elements are already there. Why re-render, diffing and patching? Spair modifies the current DOM, if the expected element is not found, Spair create it, otherwise, just modify where changes occurs.
+Spair works by iterating through every elements and attributes/properties in the current DOM which is empty before the first render, creating new items or modifying existing items, it's the update-mode. But there are elements or attributes that will never change. You can tell Spair to just create them but ignore them when iterating over them later by turn on the static-mode.
 
-When implementing `spair::Component` on your application's State, the `spair::Component::render` method receive a `context` which contains a `comp: spair::Comp<C>` and an `element: spair::Element<C>`.
+| items                    | update-mode      | static-mode            | notes                                                              |
+| ------------------------ | ---------------- | ---------------------- | ------------------------------------------------------------------ |
+| attributes / properties  | `.attributes()`  | `.static_attributes()` | `static_attributes()` must be called before `attributes()`         |
+| elements                 | `.nodes()`       | `.static_nodes()`      | only apply to elements, *not* apply to texts/renderable-items      |
+| texts / renderable-items | `.render(value)` | `.r#static(value)`     | not affected by mode introduced by `.nodes()` or `.static_nodes()` |
 
-`comp` is used to construct event handlers (for element events) or callbacks. `element` is the root element of your component, on which you can set `static_attributes` and/or `attributes` (in that order). And finally you can add `static_nodes` or `nodes`. You can switch back and ford between `static_nodes` and `nodes` as many times as you want.
+`.nodes()` and `.static_nodes()` can be switched back and forth as many times as you want.
 
+```rust
+element
+    .static_attributes()
+    .class("class-name")
+    .attributes()
+    .value(&some_value)
+    .nodes()
+    .p(|p| {}) // create and update a <p>
+    .render(value) // create and update a text
+    .r#static(value) // a create-only text - not affected by `.nodes()`.
+    .static_nodes()
+    .div(|d| {}) // a create-only <div>
+    .render(value) // an updatable text - not affected by `.static_nodes()`
+    .r#static(value) // a create-only text - because of `r#static`, not `static_nodes`
+
+```
+* **Important note**: when an element is creating in static mode, all its content will be ignored (not update) in future update.
+
+```rust
+element
+    .static_nodes()
+    .p(|p| {
+        // This closure only execute once on the creation of <p>.
+        // In the future update, this closure will be IGNORED,
+        // therefore, all nodes of <p> will not be updated despite
+        // being created in update-mode.
+        p.nodes()
+            .span(|s| {})
+            .render(value)
+    })
+```
+
+## Example
+*Look in `/examples` for full examples*
+
+This is the `render` method of `examples/counter`:
 ```rust
 impl spair::Component for State {
     type Routes = ();
     fn render(&self, c: spair::Context<Self>) {
         let (comp, element) = c.into_parts();
         element
-            // This return an object that allow you setting attributes in static mode
-            .static_attributes()
-            // This class-name only set when the element is marked as `JustCreated`,
-            // otherwise Spair ignores it
-            .class("some-class")
-            // This return an object that allow you setting attributes in normal mode
-            .attributes()
-            // This class-name will be checked and set if the condition changes,
-            // every time `fn render` executes.
-            .class_if("option-class", self.some_bool_value)
-            // This return an object that allow you adding children in static mode
             .static_nodes()
-            // The next element `<p>`, and its descendants, will be rendered only 
-            // once with the app starts. On updates, Spair finds out that it is
-            // already there, then Spair just iterates over it, do nothing on it.
             .p(|p| {
-                // `p` is an element which is the same type as the `element` got
-                // from spair::Context
-                p
-                    // Don't care about attributes of this element (<p>)
-                    // Just add content for it
-                    .nodes()
-                    // Render as text if the value is primitive type
-                    .render(&self.some_string_value)
-                    .render(self.some_copyable_value)
-                    // Also render as text if the value is primitive type
-                    .r#static(self.some_value_that_renders_as_static);
+                p.static_nodes()
+                    .r#static("The initial value is ")
+                    .r#static(self.value);
             })
-            // This return an object that allow you adding children in normal mode
-            .nodes()
-            // The next element (and its descendants) will be processed every time
-            // that `fn render` executes
-            .p(|p| {
-                // sets attributes and/or adds children for `p`
-            })
-            // Add other nodes in static mode
-            .static_nodes()
-            .p(|p| {});
+            .r#static(Button("-", comp.handler(State::decrement)))
+            .render(self.value)
+            .r#static(Button("+", comp.handler(State::increment)));
     }
 }
 ```
 
-### `Render` and `StaticRender`
+## `Render` and `StaticRender` traits
 
-The code snippet in the previous section also demonstrates two methods: `.render()` and `.r#static()` that are bounded to `Render` and `StaticRender` traits respectively. Those traits are implemented for primitives like `i8`, ..., `u64`, `f32`, `f64`, `bool`, `usize`, `isize`. They are simply converted to strings and rendered as text. You can implement `Render` or `StaticRender` for your own structs and pass them to `.render()` or `.r#static()`.
+You can split your codes into small pieces by implement [`Render`] or [`StaticRender`] on your data types and pass the values to `.render()` or `.r#static()` respectively.
 
-The method `.render(value)` always render the `value` in normal mode. For example, `.static_nodes().render(value)` still update the `value` text despite you call `.render()` in static mode. Similarly, method `.r#static(value)` will always ignore updating the `value`, event you call it in normal mode.
+[`Render`] and [`StaticRender`] are implemented for primitives (`i8`, ..., `u64`, `f32`, `f64`, `bool`, `usize`, `isize`). They are simply converted to strings and rendered as text nodes.
 
-But beware that a call to `.render()` still be ignored if it is inside an element that put under static mode:
+## Access to the component state.
+
+When implementing [`Render`], [`StaticRender`] or [`ListItem`] for your data types, you may want to access the state of your component:
+
 ```rust
-    // Create nodes in static mode
-    .static_nodes()
-        // <p> is created in static mode
-        .p(|p| {
-            p
-                .nodes()
-                // These two renders will be ignored because they are inside
-                // a static node.
-                .render(&self.some_string_value)
-                .render(self.some_copyable_value)
-                .r#static(self.some_value_that_renders_as_static);
-        })
+impl spair::Render<State> for &YourType {
+    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
+        let state = nodes.state(); // type of `state` is `&State`
+
+        nodes.render(state.value)
+    }
+}
 ```
+
+## Child components
+
+Spair supports child components, but you do not have to use them if you can avoid them.
+
+Example: `examples/components`
 
 ## Notes
 
@@ -112,12 +127,9 @@ HTML's tags and attributes are implemented as methods in Spair. Names that are c
 
 ## What's done?
 
-* Minimal features of the framework
-* Some common events on html elements
-* Some attributes (enough for `examples/totomvc`)
 * Non-keyed-list
-* Keyed-list (behind `features=["keyed-list]`)
-* Basic support for `fetch`
+* Keyed-list (behind `features=["keyed-list"]`)
+* Basic support for `fetch` (JSON)
 * Basic support for routing
 
 ## What's next?
@@ -136,3 +148,7 @@ HTML's tags and attributes are implemented as methods in Spair. Names that are c
 [Mika]: https://gitlab.com/limira-rs/mika
 [Yew]: https://github.com/yewstack/yew
 [Rust]: https://www.rust-lang.org/
+
+[`Render`]: https://docs.rs/spair/latest/spair/trait.Render.html
+[`StaticRender`]: https://docs.rs/spair/latest/spair/trait.StaticRender.html
+[`ListItem`]: https://docs.rs/spair/latest/spair/trait.ListItem.html
