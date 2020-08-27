@@ -510,7 +510,7 @@ mod sealed {
 }
 
 pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder<C> {
-    /// Use this method the compiler complains about expected `()` but found something else and you don't want to add `;`
+    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     fn done(self) {}
 
     fn match_if(mut self, f: impl FnOnce(MatchIfHandle<C>)) -> Self {
