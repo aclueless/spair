@@ -315,6 +315,9 @@ impl Default for MatchIf {
 impl MatchIf {
     pub fn clear(&mut self, parent: &web_sys::Node) {
         self.nodes.clear(parent);
+        parent
+            .remove_child(&self.end_node)
+            .expect_throw("Unable to remove MatchIf.end_node from its parent");
     }
 
     pub fn append_to(&self, parent: &web_sys::Node) {
