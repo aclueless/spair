@@ -2,6 +2,7 @@ use wasm_bindgen::UnwrapThrowExt;
 
 pub trait Application: crate::component::Component {
     fn mount_to_element(root: web_sys::Element) {
+        root.set_text_content(None);
         let rc_comp = crate::component::RcComp::new(Some(root));
         let state = Self::with_comp(rc_comp.comp())
             .expect_throw("Component::with_comp() should be implemented to return `Some(Self)` for the main component");
