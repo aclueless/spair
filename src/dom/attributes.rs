@@ -304,6 +304,9 @@ pub trait AttributeSetter<C>: Sized + sealed::AttributeSetter
 where
     C: crate::component::Component,
 {
+    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
+    fn done(self) {}
+
     fn ws_element(&self) -> &web_sys::Element;
 
     fn set_bool_attribute(&mut self, name: &str, value: bool) {
@@ -466,6 +469,7 @@ where
         str     src_set "srcset"
         i32     start
         str     step
+        str     style
         AsStr   target
         str     title
         AsStr   r#type "type"
