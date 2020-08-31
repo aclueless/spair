@@ -160,6 +160,13 @@ Example: `examples/components`
 
 HTML's tags and attributes are implemented as methods in Spair. Names that are conflicted with Rust's keywords are implemented using raw identifers such as `r#type`, `r#for`...
 
+## Common errors
+Using Spair, you may encounter common mistakes listed in this section. They are really annoying. How these problems can be avoided?
+### `static_attributes()`
+If you set an attribute in static-mode it will never be updated. It is easy to misplace an update-mode attribute under static-mode.
+### arm index in `match_if()`
+`match_if()` requires you to specify which arm-index you are on to correctly render/update the content. The number must be unique, otherwise it does not work correctly. And the problem become worse when you refactor your code, it easy forgetting update the indices.
+
 ## What's done?
 
 * Non-keyed-list
