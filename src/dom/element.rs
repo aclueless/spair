@@ -241,6 +241,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         if self.extra.status == super::ElementStatus::JustCreated
             || !child.comp_instance().is_mounted()
         {
+            self.element.ws_element().set_text_content(None);
             child.mount_to(self.element.ws_element());
             self.element
                 .nodes
