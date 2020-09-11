@@ -24,9 +24,9 @@ pub use renderable::*;
 pub use routing::Routes;
 pub use utils::{document, into_input, into_select, window};
 
+pub use web_sys::Location;
 pub use web_sys::{Event, FocusEvent, InputEvent, KeyboardEvent, MouseEvent, UiEvent, WheelEvent};
 
-pub use web_sys::Location;
 pub type Command<C> = Box<dyn component::Command<C>>;
 
 pub mod prelude {
@@ -35,6 +35,7 @@ pub mod prelude {
     pub use crate::dom::{AttributeSetter, DomBuilder};
     pub use crate::fetch::IntoFetchArgs;
     pub use crate::routing::Routes;
+    pub use wasm_bindgen;
     pub use wasm_bindgen::prelude::*;
     pub use wasm_bindgen::UnwrapThrowExt;
 }
