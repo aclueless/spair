@@ -53,8 +53,8 @@ impl State {
 
         spair::Request::get("https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master")
             .header("Accept", "application/vnd.github.v3+json")
-            .into_fetch_args()
-            .json_response(State::set_data, State::fetch_error)
+            .response()
+            .json(State::set_data, State::fetch_error)
     }
 
     fn fetch_error(&mut self, e: spair::FetchError) {

@@ -33,7 +33,7 @@ pub mod prelude {
     pub use crate::application::Application;
     pub use crate::component::Component;
     pub use crate::dom::{AttributeSetter, DomBuilder};
-    pub use crate::fetch::IntoFetchArgs;
+    pub use crate::fetch::{FetchCmdBuilder, IntoFetchArgs};
     pub use crate::routing::Routes;
     pub use wasm_bindgen;
     pub use wasm_bindgen::prelude::*;

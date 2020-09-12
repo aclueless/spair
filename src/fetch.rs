@@ -172,6 +172,7 @@ pub struct FetchArgs {
 }
 
 pub trait IntoFetchArgs {
+    #[deprecated(since = "0.0.5", note = "Replaced by .body() and .response()")]
     fn into_fetch_args(self) -> FetchArgs;
 }
 
@@ -181,8 +182,87 @@ impl IntoFetchArgs for http::request::Builder {
     }
 }
 
+pub trait FetchCmdBuilder {
+    fn options(self, options: FetchOptions) -> FetchArgs;
+    fn body(self) -> BodySetter;
+    fn response(self) -> ResponseSetter;
+}
+
+impl FetchCmdBuilder for http::request::Builder {
+    fn options(self, options: FetchOptions) -> FetchArgs {
+        let mut fa = FetchArgs::new(self);
+        fa.options = Some(options);
+        fa
+    }
+
+    fn body(self) -> BodySetter {
+        BodySetter(FetchArgs::new(self))
+    }
+
+    fn response(self) -> ResponseSetter {
+        ResponseSetter(FetchArgs::new(self))
+    }
+}
+
+impl FetchCmdBuilder for FetchArgs {
+    #[track_caller]
+    fn options(self, _options: FetchOptions) -> FetchArgs {
+        panic!("Options must be already set? TODO: consider a new trait for setting option?");
+    }
+
+    fn body(self) -> BodySetter {
+        BodySetter(self)
+    }
+
+    fn response(self) -> ResponseSetter {
+        ResponseSetter(self)
+    }
+}
+
+pub struct BodySetter(FetchArgs);
+impl BodySetter {
+    pub fn json<T: serde::Serialize>(mut self, data: &T) -> ResponseSetter {
+        if let Some(headers) = self.0.request_builder.headers_mut() {
+            headers.insert(
+                http::header::CONTENT_TYPE,
+                http::HeaderValue::from_static("application/json"),
+            );
+            self.0.body = Some(serde_json::to_string(&data).map_err(FetchError::JsonError));
+        }
+        ResponseSetter(self.0)
+    }
+}
+
+pub struct ResponseSetter(FetchArgs);
+impl ResponseSetter {
+    pub fn json<C, T, Cl>(
+        self,
+        ok_handler: fn(&mut C, T) -> Cl,
+        error_handler: fn(&mut C, crate::FetchError),
+    ) -> Box<FetchCmd<C, T, Cl>>
+    where
+        C: crate::component::Component,
+        T: 'static + serde::de::DeserializeOwned,
+        Cl: 'static + Into<crate::component::Checklist<C>>,
+    {
+        let parts = self
+            .0
+            .request_builder
+            .body(())
+            .map(|r| r.into_parts().0)
+            .map_err(From::from);
+        Box::new(FetchCmd(Some(FetchCmdArgs {
+            parts,
+            options: self.0.options.unwrap_or_else(Default::default),
+            body: self.0.body,
+            ok_handler,
+            error_handler,
+        })))
+    }
+}
+
 impl FetchArgs {
-    pub fn new(request_builder: http::request::Builder) -> Self {
+    fn new(request_builder: http::request::Builder) -> Self {
         Self {
             request_builder,
             options: None,
@@ -190,11 +270,13 @@ impl FetchArgs {
         }
     }
 
+    #[deprecated(since = "0.0.5", note = "Replaced by request.options()")]
     pub fn options(mut self, options: FetchOptions) -> Self {
         self.options = Some(options);
         self
     }
 
+    #[deprecated(since = "0.0.5", note = "Replaced by request.body().json()")]
     pub fn json_body<T: serde::Serialize>(mut self, data: &T) -> Self {
         if let Some(headers) = self.request_builder.headers_mut() {
             headers.insert(
@@ -206,6 +288,7 @@ impl FetchArgs {
         self
     }
 
+    #[deprecated(since = "0.0.5", note = "Replaced by request.response().json()")]
     pub fn json_response<C, T, Cl>(
         self,
         ok_handler: fn(&mut C, T) -> Cl,
