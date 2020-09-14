@@ -193,6 +193,14 @@ impl TextBodySetter {
         );
         TextBody(self.0)
     }
+
+    pub fn text(mut self, data: &String) -> TextBody {
+        self.0.set_body(
+            http::HeaderValue::from_static("text/plain;charset=utf-8"),
+            Ok(data.into()),
+        );
+        TextBody(self.0)
+    }
 }
 
 pub struct BinaryBodySetter(FetchArgs);
