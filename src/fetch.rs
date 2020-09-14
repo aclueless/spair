@@ -1,6 +1,5 @@
 // Most of code in this module is based on Yew's fetch service
 pub use http::Request;
-use js_sys::Uint8Array;
 use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(thiserror::Error, Debug)]
@@ -194,7 +193,7 @@ impl TextBodySetter {
         TextBody(self.0)
     }
 
-    pub fn text(mut self, data: &String) -> TextBody {
+    pub fn text(mut self, data: &str) -> TextBody {
         self.0.set_body(
             http::HeaderValue::from_static("text/plain;charset=utf-8"),
             Ok(data.into()),
@@ -212,7 +211,7 @@ impl BinaryBodySetter {
         // How about setting content type for the headers? and then just use self.0.set_body() similar to TextBody
         self.0.body = Some(
             serde_json::to_vec(data)
-                .map(|data| Uint8Array::from(data.as_slice()).into())
+                .map(|data| js_sys::Uint8Array::from(data.as_slice()).into())
                 .map_err(FetchError::EncodeJsonError),
         );
         BinaryBody(self.0)
@@ -425,7 +424,7 @@ impl RawData for Vec<u8> {
     }
 
     fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
-        Ok(Uint8Array::new(&js_value).to_vec())
+        Ok(js_sys::Uint8Array::new(&js_value).to_vec())
     }
 }
 
