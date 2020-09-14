@@ -19,7 +19,7 @@ pub use dom::KeyedListItem;
 pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
-pub use fetch::{FetchArgs, FetchError, Request};
+pub use fetch::{FetchError, Request};
 pub use renderable::*;
 pub use routing::Routes;
 pub use utils::{document, into_input, into_select, window};
@@ -33,7 +33,7 @@ pub mod prelude {
     pub use crate::application::Application;
     pub use crate::component::Component;
     pub use crate::dom::{AttributeSetter, DomBuilder};
-    pub use crate::fetch::{FetchCmdBuilder, IntoFetchArgs};
+    pub use crate::fetch::{FetchOptionsSetter, IntoFetchArgs, RawDataMode};
     pub use crate::routing::Routes;
     pub use wasm_bindgen;
     pub use wasm_bindgen::prelude::*;

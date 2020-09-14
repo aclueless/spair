@@ -1,5 +1,6 @@
 // Most of code in this module is based on Yew's fetch service
 pub use http::Request;
+use js_sys::Uint8Array;
 use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(thiserror::Error, Debug)]
@@ -18,10 +19,10 @@ pub enum FetchError {
     ResponseWithError(http::StatusCode),
     #[error("Invalid response")]
     InvalidResponse,
-    #[error("Empty response")]
-    EmptyResponse,
+    #[error("Response is not a string")]
+    NotAString,
     #[error("Convert to json error: {0}")]
-    JsonError(serde_json::error::Error),
+    EncodeJsonError(serde_json::error::Error),
     #[error("Parse from json error: {0}")]
     ParseJsonError(serde_json::error::Error),
     /// Error return by http crate
@@ -99,6 +100,195 @@ impl Into<web_sys::RequestInit> for FetchOptions {
     }
 }
 
+pub trait IntoFetchArgs {
+    #[deprecated(
+        since = "0.0.5",
+        note = "Replaced by .text_mode().body() or .text_mode().response()"
+    )]
+    fn into_fetch_args(self) -> FetchArgs;
+}
+
+impl IntoFetchArgs for http::request::Builder {
+    fn into_fetch_args(self) -> FetchArgs {
+        FetchArgs {
+            request_builder: self,
+            options: None,
+            body: None,
+        }
+    }
+}
+
+pub struct FetchArgs {
+    request_builder: http::request::Builder,
+    options: Option<FetchOptions>,
+    body: Option<Result<wasm_bindgen::JsValue, FetchError>>,
+}
+
+impl From<http::request::Builder> for FetchArgs {
+    fn from(request_builder: http::request::Builder) -> Self {
+        Self {
+            request_builder,
+            options: None,
+            body: None,
+        }
+    }
+}
+
+pub trait FetchOptionsSetter {
+    fn options(self, options: FetchOptions) -> FetchArgs;
+}
+
+impl FetchOptionsSetter for http::request::Builder {
+    fn options(self, options: FetchOptions) -> FetchArgs {
+        FetchArgs {
+            request_builder: self,
+            options: Some(options),
+            body: None,
+        }
+    }
+}
+
+pub trait RawDataMode: Into<FetchArgs> {
+    fn text_mode(self) -> TextMode {
+        TextMode(self.into())
+    }
+
+    fn binary_mode(self) -> BinaryMode {
+        BinaryMode(self.into())
+    }
+}
+impl RawDataMode for http::request::Builder {}
+impl RawDataMode for FetchArgs {}
+
+pub struct TextMode(FetchArgs);
+impl TextMode {
+    pub fn body(self) -> TextBodySetter {
+        TextBodySetter(self.0)
+    }
+
+    pub fn response(self) -> TextResponseSetter {
+        TextResponseSetter(self.0.build_js_fetch_promise())
+    }
+}
+
+pub struct BinaryMode(FetchArgs);
+impl BinaryMode {
+    pub fn body(self) -> BinaryBodySetter {
+        BinaryBodySetter(self.0)
+    }
+
+    pub fn response(self) -> BinaryResponseSetter {
+        BinaryResponseSetter(self.0.build_js_fetch_promise())
+    }
+}
+
+pub struct TextBodySetter(FetchArgs);
+impl TextBodySetter {
+    pub fn json<T: serde::Serialize>(mut self, data: &T) -> TextBody {
+        self.0.set_body(
+            http::HeaderValue::from_static("application/json"),
+            serde_json::to_string(&data)
+                .map(From::from)
+                .map_err(FetchError::EncodeJsonError),
+        );
+        TextBody(self.0)
+    }
+}
+
+pub struct BinaryBodySetter(FetchArgs);
+impl BinaryBodySetter {
+    pub fn json<T>(mut self, data: &T) -> BinaryBody
+    where
+        T: 'static + serde::Serialize,
+    {
+        // How about setting content type for the headers? and then just use self.0.set_body() similar to TextBody
+        self.0.body = Some(
+            serde_json::to_vec(data)
+                .map(|data| Uint8Array::from(data.as_slice()).into())
+                .map_err(FetchError::EncodeJsonError),
+        );
+        BinaryBody(self.0)
+    }
+}
+
+pub struct TextBody(FetchArgs);
+impl TextBody {
+    pub fn response(self) -> TextResponseSetter {
+        TextResponseSetter(self.0.build_js_fetch_promise())
+    }
+
+    #[deprecated(
+        since = "0.0.5",
+        note = "Replaced by request.text_mode().response().json() or request.text_mode().body().json().response().json()"
+    )]
+    pub fn json_response<C, T, Cl>(
+        self,
+        ok_handler: fn(&mut C, T) -> Cl,
+        error_handler: fn(&mut C, crate::FetchError),
+    ) -> Box<FetchCmd<C, String, T, Cl>>
+    where
+        C: crate::component::Component,
+        T: 'static + serde::de::DeserializeOwned,
+        Cl: 'static + Into<crate::component::Checklist<C>>,
+    {
+        self.response().json(ok_handler, error_handler)
+    }
+}
+
+pub struct BinaryBody(FetchArgs);
+impl BinaryBody {
+    pub fn response(self) -> BinaryResponseSetter {
+        BinaryResponseSetter(self.0.build_js_fetch_promise())
+    }
+}
+
+impl FetchArgs {
+    fn set_body(
+        &mut self,
+        content_type: http::HeaderValue,
+        body: Result<wasm_bindgen::JsValue, FetchError>,
+    ) {
+        if let Some(headers) = self.request_builder.headers_mut() {
+            headers.insert(http::header::CONTENT_TYPE, content_type);
+            self.body = Some(body);
+        }
+    }
+
+    fn build_js_fetch_promise(self) -> Result<js_sys::Promise, FetchError> {
+        let body = self.body.transpose()?;
+        let parts = self.request_builder.body(())?.into_parts().0;
+        let ws_request = build_request(parts, body.as_ref())?;
+        let init = self.options.unwrap_or_else(Default::default).into();
+        let promise = crate::utils::window().fetch_with_request_and_init(&ws_request, &init);
+        Ok(promise)
+    }
+
+    #[deprecated(
+        since = "0.0.5",
+        note = "Replaced by request.text_mode().body().json()"
+    )]
+    pub fn json_body<B: serde::Serialize>(self, data: &B) -> TextBody {
+        TextBodySetter(self).json(data)
+    }
+
+    #[deprecated(
+        since = "0.0.5",
+        note = "Replaced by request.text_mode().response().json() or request.text_mode().body().json().response().json()"
+    )]
+    pub fn json_response<C, T, Cl>(
+        self,
+        ok_handler: fn(&mut C, T) -> Cl,
+        error_handler: fn(&mut C, crate::FetchError),
+    ) -> Box<FetchCmd<C, String, T, Cl>>
+    where
+        C: crate::component::Component,
+        T: 'static + serde::de::DeserializeOwned,
+        Cl: 'static + Into<crate::component::Checklist<C>>,
+    {
+        TextResponseSetter(self.build_js_fetch_promise()).json(ok_handler, error_handler)
+    }
+}
+
 fn build_request(
     parts: http::request::Parts,
     body: Option<&wasm_bindgen::JsValue>,
@@ -130,22 +320,154 @@ fn build_request(
     web_sys::Request::new_with_str_and_init(&uri, &init).map_err(|_| FetchError::BuildRequestFailed)
 }
 
-async fn fetch_async<F1, F2, R>(promise: js_sys::Promise, ok_handler: F1, error_handler: F2)
-where
-    R: 'static + serde::de::DeserializeOwned,
-    F1: FnOnce(R),
-    F2: FnOnce(FetchError),
-{
-    match get_string(promise)
-        .await
-        .and_then(|data| serde_json::from_str::<R>(&data).map_err(FetchError::ParseJsonError))
+pub struct TextResponseSetter(Result<js_sys::Promise, FetchError>);
+pub struct BinaryResponseSetter(Result<js_sys::Promise, FetchError>);
+
+impl TextResponseSetter {
+    pub fn json<C, T, Cl>(
+        self,
+        ok_handler: fn(&mut C, T) -> Cl,
+        error_handler: fn(&mut C, crate::FetchError),
+    ) -> Box<FetchCmd<C, String, T, Cl>>
+    where
+        C: crate::component::Component,
+        T: 'static + serde::de::DeserializeOwned,
+        Cl: 'static + Into<crate::component::Checklist<C>>,
     {
-        Ok(data) => ok_handler(data),
-        Err(e) => error_handler(e),
+        let fca = FetchCmdArgs {
+            phantom: std::marker::PhantomData,
+            promise: self.0,
+            ok_handler,
+            error_handler,
+        };
+        Box::new(FetchCmd(Some(fca)))
+    }
+
+    pub fn text<C, Cl>(
+        self,
+        ok_handler: fn(&mut C, String) -> Cl,
+        error_handler: fn(&mut C, crate::FetchError),
+    ) -> Box<FetchCmd<C, StringForString, String, Cl>>
+    where
+        C: crate::component::Component,
+        Cl: 'static + Into<crate::component::Checklist<C>>,
+    {
+        let fca = FetchCmdArgs {
+            phantom: std::marker::PhantomData,
+            promise: self.0,
+            ok_handler,
+            error_handler,
+        };
+        Box::new(FetchCmd(Some(fca)))
     }
 }
 
-async fn get_string(promise: js_sys::Promise) -> Result<String, FetchError> {
+pub trait RawData: Sized {
+    fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError>;
+    fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError>;
+
+    // Not supported yet, so implement as a generic function in next lines
+    // async fn get_raw_data(response: web_sys::Response) -> Result<Self, FetchError> { }
+}
+
+async fn get_raw_data_from_successful_response<R: RawData>(
+    response: web_sys::Response,
+) -> Result<R, FetchError> {
+    let promise = R::get_raw_js(response)?;
+    wasm_bindgen_futures::JsFuture::from(promise)
+        .await
+        .map_err(|_| FetchError::InvalidResponse)
+        .and_then(R::map_js_to_raw_data)
+}
+
+async fn get_raw_data<R: RawData>(promise: js_sys::Promise) -> Result<R, FetchError> {
+    let sr = get_successful_response(promise).await?;
+    get_raw_data_from_successful_response(sr).await
+}
+
+impl RawData for String {
+    fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
+        response.text().map_err(|_| FetchError::InvalidResponse)
+    }
+
+    fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
+        js_value.as_string().ok_or_else(|| FetchError::NotAString)
+    }
+}
+
+pub struct StringForString(String);
+impl RawData for StringForString {
+    fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
+        response.text().map_err(|_| FetchError::InvalidResponse)
+    }
+
+    fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
+        js_value
+            .as_string()
+            .map(StringForString)
+            .ok_or_else(|| FetchError::NotAString)
+    }
+}
+
+impl RawData for Vec<u8> {
+    fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
+        response
+            .array_buffer()
+            .map_err(|_| FetchError::InvalidResponse)
+    }
+
+    fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
+        Ok(Uint8Array::new(&js_value).to_vec())
+    }
+}
+
+struct FetchCmdArgs<C, R, T, Cl> {
+    phantom: std::marker::PhantomData<R>,
+    promise: Result<js_sys::Promise, FetchError>,
+    ok_handler: fn(&mut C, T) -> Cl,
+    error_handler: fn(&mut C, FetchError),
+}
+pub struct FetchCmd<C, R, T, Cl>(Option<FetchCmdArgs<C, R, T, Cl>>);
+impl<C, R, T, Cl> crate::component::Command<C> for FetchCmd<C, R, T, Cl>
+where
+    C: 'static + crate::component::Component,
+    R: 'static + RawData,
+    T: 'static + ParseFrom<R>,
+    Cl: 'static + Into<crate::component::Checklist<C>>,
+{
+    fn execute(&mut self, comp: &crate::component::Comp<C>, state: &mut C) {
+        let FetchCmdArgs {
+            phantom: _,
+            promise,
+            ok_handler,
+            error_handler,
+        } = self
+            .0
+            .take()
+            .expect_throw("Internal error: Why FetchCmd is executed twice?");
+        let promise = match promise {
+            Ok(promise) => promise,
+            Err(e) => {
+                error_handler(state, e);
+                return;
+            }
+        };
+
+        let error_handler = comp.callback_arg(error_handler);
+        let ok_handler = comp.callback_arg(ok_handler);
+        let f = async move {
+            match get_raw_data::<R>(promise).await.and_then(T::parse_from) {
+                Ok(data) => ok_handler(data),
+                Err(e) => error_handler(e),
+            }
+        };
+        wasm_bindgen_futures::spawn_local(f);
+    }
+}
+
+async fn get_successful_response(
+    promise: js_sys::Promise,
+) -> Result<web_sys::Response, FetchError> {
     let response = wasm_bindgen_futures::JsFuture::from(promise)
         .await
         .map_err(|_| FetchError::FetchFailed)?;
@@ -156,235 +478,24 @@ async fn get_string(promise: js_sys::Promise) -> Result<String, FetchError> {
         return Err(FetchError::ResponseWithError(status));
     }
 
-    let promise = response.text().map_err(|_| FetchError::InvalidResponse)?;
-
-    wasm_bindgen_futures::JsFuture::from(promise)
-        .await
-        .map(|js_text| js_text.as_string())
-        .map_err(|_| FetchError::InvalidResponse)?
-        .ok_or_else(|| FetchError::EmptyResponse)
+    Ok(response)
 }
 
-pub struct FetchArgs {
-    request_builder: http::request::Builder,
-    options: Option<FetchOptions>,
-    body: Option<Result<String, FetchError>>,
+pub trait ParseFrom<R>: Sized {
+    fn parse_from(r: R) -> Result<Self, FetchError>;
 }
 
-pub trait IntoFetchArgs {
-    #[deprecated(since = "0.0.5", note = "Replaced by .body() and .response()")]
-    fn into_fetch_args(self) -> FetchArgs;
-}
-
-impl IntoFetchArgs for http::request::Builder {
-    fn into_fetch_args(self) -> FetchArgs {
-        FetchArgs::new(self)
-    }
-}
-
-pub trait FetchCmdBuilder {
-    fn options(self, options: FetchOptions) -> FetchArgs;
-    fn body(self) -> BodySetter;
-    fn response(self) -> ResponseSetter;
-}
-
-impl FetchCmdBuilder for http::request::Builder {
-    fn options(self, options: FetchOptions) -> FetchArgs {
-        let mut fa = FetchArgs::new(self);
-        fa.options = Some(options);
-        fa
-    }
-
-    fn body(self) -> BodySetter {
-        BodySetter(FetchArgs::new(self))
-    }
-
-    fn response(self) -> ResponseSetter {
-        ResponseSetter(FetchArgs::new(self))
-    }
-}
-
-impl FetchCmdBuilder for FetchArgs {
-    #[track_caller]
-    fn options(self, _options: FetchOptions) -> FetchArgs {
-        panic!("Options must be already set? TODO: consider a new trait for setting option?");
-    }
-
-    fn body(self) -> BodySetter {
-        BodySetter(self)
-    }
-
-    fn response(self) -> ResponseSetter {
-        ResponseSetter(self)
-    }
-}
-
-pub struct BodySetter(FetchArgs);
-impl BodySetter {
-    pub fn json<T: serde::Serialize>(mut self, data: &T) -> ResponseSetter {
-        if let Some(headers) = self.0.request_builder.headers_mut() {
-            headers.insert(
-                http::header::CONTENT_TYPE,
-                http::HeaderValue::from_static("application/json"),
-            );
-            self.0.body = Some(serde_json::to_string(&data).map_err(FetchError::JsonError));
-        }
-        ResponseSetter(self.0)
-    }
-}
-
-pub struct ResponseSetter(FetchArgs);
-impl ResponseSetter {
-    pub fn json<C, T, Cl>(
-        self,
-        ok_handler: fn(&mut C, T) -> Cl,
-        error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, T, Cl>>
-    where
-        C: crate::component::Component,
-        T: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<crate::component::Checklist<C>>,
-    {
-        let parts = self
-            .0
-            .request_builder
-            .body(())
-            .map(|r| r.into_parts().0)
-            .map_err(From::from);
-        Box::new(FetchCmd(Some(FetchCmdArgs {
-            parts,
-            options: self.0.options.unwrap_or_else(Default::default),
-            body: self.0.body,
-            ok_handler,
-            error_handler,
-        })))
-    }
-}
-
-impl FetchArgs {
-    fn new(request_builder: http::request::Builder) -> Self {
-        Self {
-            request_builder,
-            options: None,
-            body: None,
-        }
-    }
-
-    #[deprecated(since = "0.0.5", note = "Replaced by request.options()")]
-    pub fn options(mut self, options: FetchOptions) -> Self {
-        self.options = Some(options);
-        self
-    }
-
-    #[deprecated(since = "0.0.5", note = "Replaced by request.body().json()")]
-    pub fn json_body<T: serde::Serialize>(mut self, data: &T) -> Self {
-        if let Some(headers) = self.request_builder.headers_mut() {
-            headers.insert(
-                http::header::CONTENT_TYPE,
-                http::HeaderValue::from_static("application/json"),
-            );
-            self.body = Some(serde_json::to_string(&data).map_err(FetchError::JsonError));
-        }
-        self
-    }
-
-    #[deprecated(since = "0.0.5", note = "Replaced by request.response().json()")]
-    pub fn json_response<C, T, Cl>(
-        self,
-        ok_handler: fn(&mut C, T) -> Cl,
-        error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, T, Cl>>
-    where
-        C: crate::component::Component,
-        T: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<crate::component::Checklist<C>>,
-    {
-        let parts = self
-            .request_builder
-            .body(())
-            .map(|r| r.into_parts().0)
-            .map_err(From::from);
-        Box::new(FetchCmd(Some(FetchCmdArgs {
-            parts,
-            options: self.options.unwrap_or_else(Default::default),
-            body: self.body,
-            ok_handler,
-            error_handler,
-        })))
-    }
-}
-
-pub struct FetchCmd<C: crate::component::Component, T, Cl>(Option<FetchCmdArgs<C, T, Cl>>);
-
-struct FetchCmdArgs<C: crate::component::Component, T, Cl> {
-    parts: Result<http::request::Parts, FetchError>,
-    options: FetchOptions,
-    body: Option<Result<String, FetchError>>,
-    ok_handler: fn(&mut C, T) -> Cl,
-    error_handler: fn(&mut C, FetchError),
-}
-
-impl<C, T, Cl> crate::component::Command<C> for FetchCmd<C, T, Cl>
+impl<T> ParseFrom<String> for T
 where
-    C: 'static + crate::component::Component,
-    T: 'static + serde::de::DeserializeOwned,
-    Cl: 'static + Into<crate::component::Checklist<C>>,
+    T: serde::de::DeserializeOwned,
 {
-    fn execute(&mut self, comp: &crate::component::Comp<C>, state: &mut C) {
-        let FetchCmdArgs {
-            parts,
-            body,
-            options,
-            ok_handler,
-            error_handler,
-        } = self
-            .0
-            .take()
-            .expect_throw("Why FetchCmd is executed twice?");
+    fn parse_from(s: String) -> Result<T, FetchError> {
+        serde_json::from_str::<T>(&s).map_err(FetchError::ParseJsonError)
+    }
+}
 
-        // Transform http::Request into web_sys::Request.
-        let body = match body {
-            Some(Ok(body)) => Some(wasm_bindgen::JsValue::from(body)),
-            Some(Err(e)) => {
-                error_handler(state, e);
-                return;
-            }
-            None => None,
-        };
-
-        let parts = match parts {
-            Ok(parts) => parts,
-            Err(e) => {
-                error_handler(state, e);
-                return;
-            }
-        };
-
-        let ws_request = match build_request(parts, body.as_ref()) {
-            Ok(request) => request,
-            Err(e) => {
-                // The component instance is currently being borrowed,
-                // we must send the error via the `state`, not the `comp`.
-                error_handler(state, e);
-                return;
-            }
-        };
-
-        // Transform FetchOptions into RequestInit.
-        //
-        // Not care about aborting yet
-        // let abort_controller = AbortController::new().ok();
-        let init = options.into(); //.map_or_else(web_sys::RequestInit::new, Into::into);
-                                   // if let Some(abort_controller) = &abort_controller {
-                                   //     init.signal(Some(&abort_controller.signal()));
-                                   // }
-
-        // Start fetch
-        let promise = crate::utils::window().fetch_with_request_and_init(&ws_request, &init);
-
-        let error_handler = comp.callback_arg(error_handler);
-        let ok_handler = comp.callback_arg(ok_handler);
-        let f = fetch_async(promise, ok_handler, error_handler);
-        wasm_bindgen_futures::spawn_local(f);
+impl ParseFrom<StringForString> for String {
+    fn parse_from(s: StringForString) -> Result<String, FetchError> {
+        Ok(s.0)
     }
 }
