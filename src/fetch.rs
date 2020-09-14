@@ -232,7 +232,7 @@ impl TextBody {
         self,
         ok_handler: fn(&mut C, T) -> Cl,
         error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, String, T, Cl>>
+    ) -> Box<FetchCmd<C, RawTextForJson, T, Cl>>
     where
         C: crate::component::Component,
         T: 'static + serde::de::DeserializeOwned,
@@ -286,7 +286,7 @@ impl FetchArgs {
         self,
         ok_handler: fn(&mut C, T) -> Cl,
         error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, String, T, Cl>>
+    ) -> Box<FetchCmd<C, RawTextForJson, T, Cl>>
     where
         C: crate::component::Component,
         T: 'static + serde::de::DeserializeOwned,
@@ -335,37 +335,37 @@ impl TextResponseSetter {
         self,
         ok_handler: fn(&mut C, T) -> Cl,
         error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, String, T, Cl>>
+    ) -> Box<FetchCmd<C, RawTextForJson, T, Cl>>
     where
         C: crate::component::Component,
         T: 'static + serde::de::DeserializeOwned,
         Cl: 'static + Into<crate::component::Checklist<C>>,
     {
-        let fca = FetchCmdArgs {
+        FetchCmdArgs {
             phantom: std::marker::PhantomData,
             promise: self.0,
             ok_handler,
             error_handler,
-        };
-        Box::new(FetchCmd(Some(fca)))
+        }
+        .into()
     }
 
     pub fn text<C, Cl>(
         self,
         ok_handler: fn(&mut C, String) -> Cl,
         error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, StringForString, String, Cl>>
+    ) -> Box<FetchCmd<C, String, String, Cl>>
     where
         C: crate::component::Component,
         Cl: 'static + Into<crate::component::Checklist<C>>,
     {
-        let fca = FetchCmdArgs {
+        FetchCmdArgs {
             phantom: std::marker::PhantomData,
             promise: self.0,
             ok_handler,
             error_handler,
-        };
-        Box::new(FetchCmd(Some(fca)))
+        }
+        .into()
     }
 }
 
@@ -402,17 +402,14 @@ impl RawData for String {
     }
 }
 
-pub struct StringForString(String);
-impl RawData for StringForString {
+pub struct RawTextForJson(String);
+impl RawData for RawTextForJson {
     fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
-        response.text().map_err(|_| FetchError::InvalidResponse)
+        String::get_raw_js(response)
     }
 
     fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
-        js_value
-            .as_string()
-            .map(StringForString)
-            .ok_or_else(|| FetchError::NotAString)
+        String::map_js_to_raw_data(js_value).map(Self)
     }
 }
 
@@ -428,12 +425,30 @@ impl RawData for Vec<u8> {
     }
 }
 
+pub struct RawBinaryForJson(Vec<u8>);
+impl RawData for RawBinaryForJson {
+    fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
+        Vec::<u8>::get_raw_js(response)
+    }
+
+    fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
+        Vec::<u8>::map_js_to_raw_data(js_value).map(Self)
+    }
+}
+
 struct FetchCmdArgs<C, R, T, Cl> {
     phantom: std::marker::PhantomData<R>,
     promise: Result<js_sys::Promise, FetchError>,
     ok_handler: fn(&mut C, T) -> Cl,
     error_handler: fn(&mut C, FetchError),
 }
+
+impl<C, R, T, Cl> From<FetchCmdArgs<C, R, T, Cl>> for Box<FetchCmd<C, R, T, Cl>> {
+    fn from(fca: FetchCmdArgs<C, R, T, Cl>) -> Self {
+        Box::new(FetchCmd(Some(fca)))
+    }
+}
+
 pub struct FetchCmd<C, R, T, Cl>(Option<FetchCmdArgs<C, R, T, Cl>>);
 impl<C, R, T, Cl> crate::component::Command<C> for FetchCmd<C, R, T, Cl>
 where
@@ -488,21 +503,31 @@ async fn get_successful_response(
     Ok(response)
 }
 
+// Unable to use std::convert::TryFrom because of foreign trait/type restriction
 pub trait ParseFrom<R>: Sized {
     fn parse_from(r: R) -> Result<Self, FetchError>;
 }
 
-impl<T> ParseFrom<String> for T
-where
-    T: serde::de::DeserializeOwned,
-{
-    fn parse_from(s: String) -> Result<T, FetchError> {
-        serde_json::from_str::<T>(&s).map_err(FetchError::ParseJsonError)
+impl ParseFrom<String> for String {
+    fn parse_from(s: String) -> Result<String, FetchError> {
+        Ok(s)
     }
 }
 
-impl ParseFrom<StringForString> for String {
-    fn parse_from(s: StringForString) -> Result<String, FetchError> {
-        Ok(s.0)
+impl<T> ParseFrom<RawTextForJson> for T
+where
+    T: serde::de::DeserializeOwned,
+{
+    fn parse_from(r: RawTextForJson) -> Result<T, FetchError> {
+        serde_json::from_str::<T>(&r.0).map_err(FetchError::ParseJsonError)
+    }
+}
+
+impl<T> ParseFrom<RawBinaryForJson> for T
+where
+    T: serde::de::DeserializeOwned,
+{
+    fn parse_from(r: RawBinaryForJson) -> Result<T, FetchError> {
+        serde_json::from_slice::<T>(&r.0).map_err(FetchError::ParseJsonError)
     }
 }
