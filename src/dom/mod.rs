@@ -9,9 +9,8 @@ mod nodes;
 
 use attribute_types::AsStr;
 
-// All items from these modules are visible here and in the super module (`dom`),
-// but `dom` are private, the `lib.rs` must selectively export items from `dom`
-// to expose to users.
+// All items from these modules are visible here but `dom` is private,
+// the `lib.rs` must selectively export items from `dom` to expose to users.
 pub use attributes::*;
 pub use element::*;
 #[cfg(feature = "keyed-list")]
