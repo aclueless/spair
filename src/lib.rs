@@ -11,7 +11,7 @@ mod routing;
 mod utils;
 
 pub use component::{
-    update_component, Checklist, ChildComp, Comp, Component, Context, ShouldRender, WithParentComp,
+    update_component, Checklist, ChildComp, Comp, Component, ShouldRender, WithParentComp,
 };
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]

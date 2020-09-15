@@ -44,8 +44,8 @@ impl ChildState {
 impl spair::Component for ChildState {
     type Routes = ();
 
-    fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_parts();
+    fn render(&self, element: spair::Element<Self>) {
+        let comp = element.comp();
         element
             .static_nodes()
             .p(|p| {

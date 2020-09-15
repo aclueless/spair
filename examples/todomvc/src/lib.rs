@@ -165,8 +165,7 @@ impl spair::Component for App {
             new_todo_title: String::new(),
         })
     }
-    fn render(&self, c: spair::Context<Self>) {
-        let (_, element) = c.into_parts();
+    fn render(&self, element: spair::Element<Self>) {
         element
             .nodes()
             .section(|s| {

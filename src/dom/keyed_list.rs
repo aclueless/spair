@@ -679,7 +679,7 @@ mod keyed_list_tests {
 
     impl crate::component::Component for () {
         type Routes = ();
-        fn render(&self, _: crate::component::Context<Self>) {}
+        fn render(&self, _: crate::Element<Self>) {}
     }
 
     struct PhantomApp {

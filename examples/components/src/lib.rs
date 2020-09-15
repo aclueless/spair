@@ -42,8 +42,8 @@ impl spair::Component for State {
         })
     }
 
-    fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_parts();
+    fn render(&self, element: spair::Element<Self>) {
+        let comp = element.comp();
         element
             .nodes()
             .div(|d| d.component(&self.child_comp))

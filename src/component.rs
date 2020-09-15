@@ -46,7 +46,7 @@ pub trait Component: 'static + Sized {
         ShouldRender::Yes
     }
 
-    fn render<'a>(&self, context: Context<'a, Self>);
+    fn render<'a>(&self, element: crate::Element<'a, Self>);
 }
 
 pub enum ShouldRender {
@@ -63,20 +63,20 @@ impl<C: Component> From<ShouldRender> for Checklist<C> {
     }
 }
 
-pub struct Context<'a, C: Component> {
-    pub element: crate::dom::ElementUpdater<'a, C>,
-    pub comp: &'a Comp<C>,
-}
+// pub struct Context<'a, C: Component> {
+//     pub element: crate::dom::ElementUpdater<'a, C>,
+//     pub comp: &'a Comp<C>,
+// }
 
-impl<'a, C: Component> Context<'a, C> {
-    pub fn new(comp: &'a Comp<C>, element: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self { comp, element }
-    }
+// impl<'a, C: Component> Context<'a, C> {
+//     pub fn new(comp: &'a Comp<C>, element: crate::dom::ElementUpdater<'a, C>) -> Self {
+//         Self { comp, element }
+//     }
 
-    pub fn into_parts(self) -> (&'a Comp<C>, crate::dom::ElementUpdater<'a, C>) {
-        (self.comp, self.element)
-    }
-}
+//     pub fn into_parts(self) -> (&'a Comp<C>, crate::dom::ElementUpdater<'a, C>) {
+//         (self.comp, self.element)
+//     }
+// }
 
 pub struct RcComp<C: Component>(Rc<RefCell<CompInstance<C>>>);
 pub struct Comp<C: Component>(Weak<RefCell<CompInstance<C>>>);
@@ -366,7 +366,12 @@ impl<C: Component> Comp<C> {
 impl<C: Component> CompInstance<C> {
     pub(crate) fn render(&mut self, comp: &Comp<C>) {
         let state = self.state.as_ref().unwrap_throw();
-        state.render(self.root_element.create_context(state, comp));
+        let status = if self.root_element.is_empty() {
+            crate::dom::ElementStatus::JustCreated
+        } else {
+            crate::dom::ElementStatus::Existing
+        };
+        state.render(self.root_element.create_updater(state, comp, status));
     }
 
     fn extra_update(
