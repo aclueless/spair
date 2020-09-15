@@ -81,25 +81,6 @@ impl Element {
         }
     }
 
-    // pub(crate) fn create_context<'a, C: crate::component::Component>(
-    //     &'a mut self,
-    //     state: &'a C,
-    //     comp: &'a crate::component::Comp<C>,
-    // ) -> crate::component::Context<'a, C> {
-    //     crate::component::Context::new(
-    //         comp,
-    //         self.create_updater(
-    //             state,
-    //             comp,
-    //             if self.is_empty() {
-    //                 super::ElementStatus::JustCreated
-    //             } else {
-    //                 super::ElementStatus::Existing
-    //             },
-    //         ),
-    //     )
-    // }
-
     pub fn append_to(&self, parent: &web_sys::Node) {
         parent
             .append_child(self.ws_element.as_ref())

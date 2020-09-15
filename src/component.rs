@@ -63,21 +63,6 @@ impl<C: Component> From<ShouldRender> for Checklist<C> {
     }
 }
 
-// pub struct Context<'a, C: Component> {
-//     pub element: crate::dom::ElementUpdater<'a, C>,
-//     pub comp: &'a Comp<C>,
-// }
-
-// impl<'a, C: Component> Context<'a, C> {
-//     pub fn new(comp: &'a Comp<C>, element: crate::dom::ElementUpdater<'a, C>) -> Self {
-//         Self { comp, element }
-//     }
-
-//     pub fn into_parts(self) -> (&'a Comp<C>, crate::dom::ElementUpdater<'a, C>) {
-//         (self.comp, self.element)
-//     }
-// }
-
 pub struct RcComp<C: Component>(Rc<RefCell<CompInstance<C>>>);
 pub struct Comp<C: Component>(Weak<RefCell<CompInstance<C>>>);
 
