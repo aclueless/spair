@@ -27,7 +27,7 @@ pub struct Text {
 impl Clone for Text {
     fn clone(&self) -> Self {
         Self {
-            text: String::new(),
+            text: self.text.clone(),
             ws_node: self
                 .ws_node
                 .clone_node_with_deep(false)
