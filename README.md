@@ -79,8 +79,8 @@ This is the `render` method of `examples/counter`:
 ```rust
 impl spair::Component for State {
     type Routes = ();
-    fn render(&self, c: spair::Context<Self>) {
-        let (comp, element) = c.into_parts();
+    fn render(&self, element: spair::Element<Self>) {
+        let comp = element.comp();
         element
             .static_nodes()
             .p(|p| {
