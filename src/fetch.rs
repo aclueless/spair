@@ -20,8 +20,10 @@ pub enum FetchError {
     InvalidResponse,
     #[error("Response is not a string")]
     NotAString,
+    #[cfg(feature = "fetch_json")]
     #[error("Convert to json error: {0}")]
     EncodeJsonError(serde_json::error::Error),
+    #[cfg(feature = "fetch_json")]
     #[error("Parse from json error: {0}")]
     ParseJsonError(serde_json::error::Error),
     /// Error return by http crate
@@ -183,6 +185,15 @@ impl BinaryMode {
 
 pub struct TextBodySetter(FetchArgs);
 impl TextBodySetter {
+    pub fn text(mut self, data: &str) -> TextBody {
+        self.0.set_body(
+            http::HeaderValue::from_static("text/plain;charset=utf-8"),
+            Ok(data.into()),
+        );
+        TextBody(self.0)
+    }
+
+    #[cfg(feature = "fetch_json")]
     pub fn json<T: serde::Serialize>(mut self, data: &T) -> TextBody {
         self.0.set_body(
             http::HeaderValue::from_static("application/json"),
@@ -192,18 +203,17 @@ impl TextBodySetter {
         );
         TextBody(self.0)
     }
-
-    pub fn text(mut self, data: &str) -> TextBody {
-        self.0.set_body(
-            http::HeaderValue::from_static("text/plain;charset=utf-8"),
-            Ok(data.into()),
-        );
-        TextBody(self.0)
-    }
 }
 
 pub struct BinaryBodySetter(FetchArgs);
 impl BinaryBodySetter {
+    pub fn binary(mut self, data: &[u8]) -> BinaryBody {
+        // How about setting content type for the headers? and then just use self.0.set_body() similar to TextBody
+        self.0.body = Some(Ok(js_sys::Uint8Array::from(data).into()));
+        BinaryBody(self.0)
+    }
+
+    #[cfg(feature = "fetch_json")]
     pub fn json<T>(mut self, data: &T) -> BinaryBody
     where
         T: 'static + serde::Serialize,
@@ -224,6 +234,7 @@ impl TextBody {
         TextResponseSetter(self.0.build_js_fetch_promise())
     }
 
+    #[cfg(feature = "fetch_json")]
     #[deprecated(
         since = "0.0.5",
         note = "Replaced by request.text_mode().response().json() or request.text_mode().body().json().response().json()"
@@ -270,6 +281,7 @@ impl FetchArgs {
         Ok(promise)
     }
 
+    #[cfg(feature = "fetch_json")]
     #[deprecated(
         since = "0.0.5",
         note = "Replaced by request.text_mode().body().json()"
@@ -278,6 +290,7 @@ impl FetchArgs {
         TextBodySetter(self).json(data)
     }
 
+    #[cfg(feature = "fetch_json")]
     #[deprecated(
         since = "0.0.5",
         note = "Replaced by request.text_mode().response().json() or request.text_mode().body().json().response().json()"
@@ -331,14 +344,13 @@ pub struct TextResponseSetter(Result<js_sys::Promise, FetchError>);
 pub struct BinaryResponseSetter(Result<js_sys::Promise, FetchError>);
 
 impl TextResponseSetter {
-    pub fn json<C, T, Cl>(
+    pub fn text<C, Cl>(
         self,
-        ok_handler: fn(&mut C, T) -> Cl,
+        ok_handler: fn(&mut C, String) -> Cl,
         error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, RawTextForJson, T, Cl>>
+    ) -> Box<FetchCmd<C, String, String, Cl>>
     where
         C: crate::component::Component,
-        T: 'static + serde::de::DeserializeOwned,
         Cl: 'static + Into<crate::component::Checklist<C>>,
     {
         FetchCmdArgs {
@@ -350,13 +362,15 @@ impl TextResponseSetter {
         .into()
     }
 
-    pub fn text<C, Cl>(
+    #[cfg(feature = "fetch_json")]
+    pub fn json<C, T, Cl>(
         self,
-        ok_handler: fn(&mut C, String) -> Cl,
+        ok_handler: fn(&mut C, T) -> Cl,
         error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, String, String, Cl>>
+    ) -> Box<FetchCmd<C, RawTextForJson, T, Cl>>
     where
         C: crate::component::Component,
+        T: 'static + serde::de::DeserializeOwned,
         Cl: 'static + Into<crate::component::Checklist<C>>,
     {
         FetchCmdArgs {
@@ -402,7 +416,9 @@ impl RawData for String {
     }
 }
 
+#[cfg(feature = "fetch_json")]
 pub struct RawTextForJson(String);
+#[cfg(feature = "fetch_json")]
 impl RawData for RawTextForJson {
     fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
         String::get_raw_js(response)
@@ -425,7 +441,9 @@ impl RawData for Vec<u8> {
     }
 }
 
+#[cfg(feature = "fetch_json")]
 pub struct RawBinaryForJson(Vec<u8>);
+#[cfg(feature = "fetch_json")]
 impl RawData for RawBinaryForJson {
     fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
         Vec::<u8>::get_raw_js(response)
@@ -514,6 +532,7 @@ impl ParseFrom<String> for String {
     }
 }
 
+#[cfg(feature = "fetch_json")]
 impl<T> ParseFrom<RawTextForJson> for T
 where
     T: serde::de::DeserializeOwned,
@@ -523,6 +542,7 @@ where
     }
 }
 
+#[cfg(feature = "fetch_json")]
 impl<T> ParseFrom<RawBinaryForJson> for T
 where
     T: serde::de::DeserializeOwned,

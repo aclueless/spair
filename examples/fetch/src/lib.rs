@@ -54,7 +54,9 @@ impl State {
         spair::Request::get("https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master")
             .header("Accept", "application/vnd.github.v3+json")
             .text_mode()
+            // .body().json(data) <== if you are `spair::Request::post`ing something
             .response()
+            // Please note that you must enable `features = ["fetch_json"]`
             .json(State::set_data, State::fetch_error)
     }
 
