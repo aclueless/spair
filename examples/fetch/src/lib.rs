@@ -56,7 +56,7 @@ impl State {
             .text_mode()
             // .body().json(data) <== if you are `spair::Request::post`ing something
             .response()
-            // Please note that you must enable `features = ["fetch_json"]`
+            // Please note that you must enable `features = ["fetch-json"]`
             .json(State::set_data, State::fetch_error)
     }
 
