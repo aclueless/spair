@@ -148,6 +148,18 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         self.0.list(items, mode)
     }
 
+    pub fn list_with_render<I, R>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        tag: &str,
+        render: R,
+        mode: super::ListElementCreation,
+    ) where
+        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+    {
+        self.0.list_with_render(items, tag, render, mode)
+    }
+
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
@@ -184,6 +196,18 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
         I: crate::renderable::ListItem<C>,
     {
         self.0.list(items, mode)
+    }
+
+    pub fn list_with_render<I, R>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        tag: &str,
+        render: R,
+        mode: super::ListElementCreation,
+    ) where
+        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+    {
+        self.0.list_with_render(items, tag, render, mode)
     }
 
     #[cfg(feature = "keyed-list")]

@@ -142,13 +142,13 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     where
         I: crate::renderable::ListItem<C>,
     {
-        self.list_with_render(I::ROOT_ELEMENT_TAG, items, I::render, mode);
+        self.list_with_render(items, I::ROOT_ELEMENT_TAG, I::render, mode);
     }
 
     pub fn list_with_render<I, R>(
         mut self,
-        tag: &str,
         items: impl IntoIterator<Item = I>,
+        tag: &str,
         render: R,
         mode: super::ListElementCreation,
     ) where
