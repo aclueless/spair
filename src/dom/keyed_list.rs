@@ -5,18 +5,7 @@ pub trait KeyedListItem<'a, C: crate::component::Component>:
     crate::renderable::ListItem<C>
 {
     type Key: 'a + Into<Key> + PartialEq<Key>;
-    fn key(&'a self) -> Self::Key;
-}
-
-impl<'a, C, T> KeyedListItem<'a, C> for &T
-where
-    C: crate::component::Component,
-    T: KeyedListItem<'a, C>,
-{
-    type Key = T::Key;
-    fn key(&'a self) -> Self::Key {
-        (*self).key()
-    }
+    fn key(&self) -> Self::Key;
 }
 
 trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C> {
@@ -727,14 +716,14 @@ mod keyed_list_tests {
         }
     }
 
-    impl crate::renderable::ListItem<()> for &'static str {
+    impl crate::renderable::ListItem<()> for &&'static str {
         const ROOT_ELEMENT_TAG: &'static str = "span";
         fn render(&self, span: crate::Element<()>) {
-            span.nodes().render(*self);
+            span.nodes().render(**self);
         }
     }
 
-    impl<'a> super::KeyedListItem<'a, ()> for &'static str {
+    impl<'a> super::KeyedListItem<'a, ()> for &&'static str {
         type Key = &'a str;
         fn key(&self) -> Self::Key {
             self

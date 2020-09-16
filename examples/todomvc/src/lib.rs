@@ -361,7 +361,7 @@ impl spair::Render<App> for Info {
     }
 }
 
-impl spair::ListItem<App> for TodoItem {
+impl spair::ListItem<App> for &TodoItem {
     const ROOT_ELEMENT_TAG: &'static str = "li";
     fn render(&self, li: spair::Element<App>) {
         let state = li.state();

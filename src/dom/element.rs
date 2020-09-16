@@ -138,37 +138,6 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         super::Nodes::from_handle(self)
     }
 
-    // pub fn list<I>(mut self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    // where
-    //     I: crate::renderable::ListItem<C>,
-    // {
-    //     // Reset the index, because it may used by attributes
-    //     // TODO: Avoid this to eliminate the possibility of a bug appear in the future because of this?
-    //     //  * Maybe a solution is similar to keyed_list: Create its own updater
-    //     self.extra.index = 0;
-
-    //     let parent = self.element.ws_element.as_ref();
-    //     let use_template = match mode {
-    //         super::ListElementCreation::Clone => true,
-    //         super::ListElementCreation::New => false,
-    //     };
-    //     for item in items {
-    //         let element = self.element.nodes.item_for_list(
-    //             I::ROOT_ELEMENT_TAG,
-    //             self.state,
-    //             &self.extra,
-    //             parent,
-    //             use_template,
-    //         );
-    //         item.render(element);
-    //         self.extra.index += 1;
-    //     }
-    //     self.element.nodes.clear_after(self.extra.index, parent);
-
-    //     // The hack start in AttributeSetter::value
-    //     self.finish_hacking_for_select_value();
-    // }
-
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
         I: crate::renderable::ListItem<C>,
