@@ -171,7 +171,7 @@ If you set an attribute in static-mode it will never be updated. It is easy to m
 
 * Non-keyed-list
 * Keyed-list (behind `features=["keyed-list"]`)
-* Basic support for `fetch` (JSON)
+* Basic support for `fetch` (JSON, RON)
 * Basic support for routing
 
 ## What's next?
