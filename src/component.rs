@@ -206,7 +206,10 @@ impl<C: Component> RcComp<C> {
     pub(crate) fn first_render(&self) {
         use crate::routing::Routes;
         let comp = self.comp();
+
         C::initialize(&comp);
+        // Should this be executed right after C::initialize?
+        self::execute_update_queue();
 
         // The router may cause an update that mutably borrows the CompInstance
         // Therefor this should be done before borrowing the instance.
@@ -396,7 +399,10 @@ impl<C: Component> ChildComp<C> {
     // Attach the component to the given ws_element, and run the render
     pub(crate) fn mount_to(&self, ws_element: &web_sys::Element) {
         let comp = self.comp();
+
         C::initialize(&comp);
+        // Should this be executed right after C::initialize?
+        self::execute_update_queue();
 
         let mut instance = self
             .0
