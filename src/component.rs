@@ -11,6 +11,14 @@ thread_local! {
     static UPDATE_QUEUE: UpdateQueue = UpdateQueue { queue: RefCell::new(VecDeque::new()) };
 }
 
+pub fn update_component(fn_update: impl FnOnce() + 'static) {
+    UPDATE_QUEUE.with(|uq| uq.add(Box::new(fn_update)));
+}
+
+fn execute_update_queue() {
+    UPDATE_QUEUE.with(|uq| uq.execute());
+}
+
 impl UpdateQueue {
     fn add(&self, f: Box<dyn FnOnce()>) {
         self.queue.borrow_mut().push_back(f);
@@ -262,7 +270,7 @@ impl<C: Component> Comp<C> {
                 Err(_) => {
                     let comp = self.clone();
                     let fn_update = Rc::clone(fn_update);
-                    UPDATE_QUEUE.with(|uq| uq.add(Box::new(move || comp.update(&fn_update))));
+                    self::update_component(move || comp.update(&fn_update));
                     return;
                 }
             };
@@ -274,7 +282,7 @@ impl<C: Component> Comp<C> {
                 .into_parts();
             this.extra_update(skip_fn_render, commands, &self);
         }
-        UPDATE_QUEUE.with(|uq| uq.execute());
+        self::execute_update_queue();
     }
 
     fn update_arg<T: 'static, Cl>(&self, arg: T, fn_update: &Rc<impl Fn(&mut C, T) -> Cl + 'static>)
@@ -291,8 +299,7 @@ impl<C: Component> Comp<C> {
                 Err(_) => {
                     let comp = self.clone();
                     let fn_update = Rc::clone(fn_update);
-                    UPDATE_QUEUE
-                        .with(|uq| uq.add(Box::new(move || comp.update_arg(arg, &fn_update))));
+                    self::update_component(move || comp.update_arg(arg, &fn_update));
                     return;
                 }
             };
@@ -304,7 +311,7 @@ impl<C: Component> Comp<C> {
                 .into_parts();
             this.extra_update(skip_fn_render, commands, &self);
         }
-        UPDATE_QUEUE.with(|uq| uq.execute());
+        self::execute_update_queue();
     }
 
     pub fn callback<Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn()
@@ -462,8 +469,4 @@ impl<C: Component> Drop for ChildComp<C> {
             .ws_element()
             .set_text_content(None);
     }
-}
-
-pub fn update_component(fn_update: impl FnOnce() + 'static) {
-    UPDATE_QUEUE.with(|uq| uq.add(Box::new(fn_update)));
 }
