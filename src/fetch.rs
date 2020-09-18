@@ -262,7 +262,7 @@ impl TextBody {
         self,
         ok_handler: fn(&mut C, T) -> Cl,
         error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, RawTextForJson, T, Cl>>
+    ) -> crate::Command<C>
     where
         C: crate::component::Component,
         T: 'static + serde::de::DeserializeOwned,
@@ -318,7 +318,7 @@ impl FetchArgs {
         self,
         ok_handler: fn(&mut C, T) -> Cl,
         error_handler: fn(&mut C, crate::FetchError),
-    ) -> Box<FetchCmd<C, RawTextForJson, T, Cl>>
+    ) -> crate::Command<C>
     where
         C: crate::component::Component,
         T: 'static + serde::de::DeserializeOwned,
@@ -359,30 +359,6 @@ fn build_request(
     web_sys::Request::new_with_str_and_init(&uri, &init).map_err(|_| FetchError::BuildRequestFailed)
 }
 
-#[allow(unused_macros)]
-macro_rules! create_response_setter_methods {
-    ($method_name:ident, $RawDataType:ident) => {
-        pub fn $method_name<C, T, Cl>(
-            self,
-            ok_handler: fn(&mut C, T) -> Cl,
-            error_handler: fn(&mut C, FetchError),
-        ) -> Box<FetchCmd<C, $RawDataType, T, Cl>>
-        where
-            C: crate::component::Component,
-            T: 'static + serde::de::DeserializeOwned,
-            Cl: 'static + Into<crate::component::Checklist<C>>,
-        {
-            FetchCmdArgs {
-                phantom: std::marker::PhantomData,
-                promise: self.0,
-                ok_handler,
-                error_handler,
-            }
-            .into()
-        }
-    };
-}
-
 pub struct TextResponseSetter(Result<js_sys::Promise, FetchError>);
 pub struct BinaryResponseSetter(Result<js_sys::Promise, FetchError>);
 
@@ -391,24 +367,19 @@ impl TextResponseSetter {
         self,
         ok_handler: fn(&mut C, String) -> Cl,
         error_handler: fn(&mut C, FetchError),
-    ) -> Box<FetchCmd<C, String, String, Cl>>
+    ) -> crate::Command<C>
     where
         C: crate::component::Component,
         Cl: 'static + Into<crate::component::Checklist<C>>,
     {
         FetchCmdArgs {
-            phantom: std::marker::PhantomData,
+            phantom: std::marker::PhantomData as std::marker::PhantomData<String>,
             promise: self.0,
             ok_handler,
             error_handler,
         }
         .into()
     }
-
-    #[cfg(feature = "fetch-json")]
-    create_response_setter_methods!(json, RawTextForJson);
-    #[cfg(feature = "fetch-ron")]
-    create_response_setter_methods!(ron, RawTextForRon);
 }
 
 pub trait RawData: Sized {
@@ -441,7 +412,13 @@ struct FetchCmdArgs<C, R, T, Cl> {
     error_handler: fn(&mut C, FetchError),
 }
 
-impl<C, R, T, Cl> From<FetchCmdArgs<C, R, T, Cl>> for Box<FetchCmd<C, R, T, Cl>> {
+impl<C, R, T, Cl> From<FetchCmdArgs<C, R, T, Cl>> for crate::Command<C>
+where
+    C: crate::component::Component,
+    R: 'static + RawData,
+    T: 'static + ParseFrom<R>,
+    Cl: 'static + Into<crate::component::Checklist<C>>,
+{
     fn from(fca: FetchCmdArgs<C, R, T, Cl>) -> Self {
         Box::new(FetchCmd(Some(fca)))
     }
@@ -523,32 +500,6 @@ impl RawData for Vec<u8> {
     }
 }
 
-#[allow(unused_macros)]
-macro_rules! create_raw_data_type {
-    ($RawTypeName:ident, $InnerType:ty) => {
-        pub struct $RawTypeName($InnerType);
-        impl RawData for $RawTypeName {
-            fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
-                <$InnerType>::get_raw_js(response)
-            }
-
-            fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
-                <$InnerType>::map_js_to_raw_data(js_value).map(Self)
-            }
-        }
-    };
-}
-
-// Types for raw text data
-#[cfg(feature = "fetch-json")]
-create_raw_data_type!(RawTextForJson, String);
-#[cfg(feature = "fetch-ron")]
-create_raw_data_type!(RawTextForRon, String);
-
-// Types for raw binary data
-#[cfg(feature = "fetch-json")]
-create_raw_data_type!(RawBinaryForJson, Vec<u8>);
-
 // Unable to use std::convert::TryFrom because of foreign trait/type restriction
 pub trait ParseFrom<R>: Sized {
     fn parse_from(r: R) -> Result<Self, FetchError>;
@@ -561,36 +512,77 @@ impl ParseFrom<String> for String {
 }
 
 #[allow(unused_macros)]
-macro_rules! impl_parse_from {
-    ($RawDataType:ident, $deserialize:path, $Error:expr) => {
+macro_rules! impl_fetch {
+    ($method_name:ident, $ResponseSetter:ident, $RawDataType:ident, $RawBaseType:ty, $deserializer:path, $DeserializeError:expr) => {
+        pub struct $RawDataType($RawBaseType);
+        impl RawData for $RawDataType {
+            fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
+                <$RawBaseType>::get_raw_js(response)
+            }
+
+            fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
+                <$RawBaseType>::map_js_to_raw_data(js_value).map(Self)
+            }
+        }
+
         impl<T> ParseFrom<$RawDataType> for T
         where
             T: serde::de::DeserializeOwned,
         {
             fn parse_from(r: $RawDataType) -> Result<T, FetchError> {
-                $deserialize(&r.0).map_err($Error)
+                $deserializer(&r.0).map_err($DeserializeError)
+            }
+        }
+
+        impl $ResponseSetter {
+            pub fn $method_name<C, T, Cl>(
+                self,
+                ok_handler: fn(&mut C, T) -> Cl,
+                error_handler: fn(&mut C, FetchError),
+            ) -> crate::Command<C>
+            where
+                C: crate::component::Component,
+                T: 'static + serde::de::DeserializeOwned,
+                Cl: 'static + Into<crate::component::Checklist<C>>,
+            {
+                FetchCmdArgs {
+                    phantom: std::marker::PhantomData as std::marker::PhantomData<$RawDataType>,
+                    promise: self.0,
+                    ok_handler,
+                    error_handler,
+                }
+                .into()
             }
         }
     };
 }
 
 #[cfg(feature = "fetch-json")]
-impl_parse_from!(
+impl_fetch!(
+    json,
+    TextResponseSetter,
     RawTextForJson,
+    String,
     serde_json::from_str,
     FetchError::DeserializeJsonError
 );
-
 #[cfg(feature = "fetch-ron")]
-impl_parse_from!(
+impl_fetch!(
+    ron,
+    TextResponseSetter,
     RawTextForRon,
+    String,
     ron::de::from_str,
     FetchError::DeserializeRonError
 );
 
+// Types for raw binary data
 #[cfg(feature = "fetch-json")]
-impl_parse_from!(
+impl_fetch!(
+    json,
+    BinaryResponseSetter,
     RawBinaryForJson,
+    Vec<u8>,
     serde_json::from_slice,
     FetchError::DeserializeJsonError
 );
