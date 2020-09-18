@@ -1,5 +1,5 @@
 // Most of code in this module is based on Yew's fetch service
-pub use http::Request;
+pub use http::{Request, StatusCode as FetchStatus};
 use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(thiserror::Error, Debug)]
@@ -424,7 +424,7 @@ where
     }
 }
 
-pub struct FetchCmd<C, R, T, Cl>(Option<FetchCmdArgs<C, R, T, Cl>>);
+struct FetchCmd<C, R, T, Cl>(Option<FetchCmdArgs<C, R, T, Cl>>);
 impl<C, R, T, Cl> crate::component::Command<C> for FetchCmd<C, R, T, Cl>
 where
     C: 'static + crate::component::Component,

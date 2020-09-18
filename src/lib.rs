@@ -19,7 +19,7 @@ pub use dom::KeyedListItem;
 pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
-pub use fetch::{FetchError, Request};
+pub use fetch::{FetchError, FetchStatus, Request};
 pub use renderable::*;
 pub use routing::Routes;
 pub use utils::{document, into_input, into_select, window};
