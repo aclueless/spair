@@ -577,6 +577,37 @@ where
         self
     }
 
+    fn selected_value(mut self, value: Option<&str>) -> Self {
+        if self.element_type() == super::ElementType::Select {
+            // TODO: checked to find change of value?
+
+            // It has no effect if you set a value for
+            // a <select> element before adding its <option>s,
+            // the hacking should finish in the list() method.
+            // Is there a better solution?
+            self.start_hacking_for_selected_value(value);
+        } else {
+            log::warn!(".selected_value() can only be called on <select>");
+        }
+        self
+    }
+
+    fn selected_index(mut self, index: Option<usize>) -> Self {
+        let index_i32 = index.map(|index| index as i32).unwrap_or(-1);
+        if self.check_i32_attribute(index_i32) {
+            if self.element_type() == super::ElementType::Select {
+                // It has no effect if you set a selected index for
+                // a <select> element before adding its <option>s,
+                // the hacking should finish in the list() method.
+                // Is there a better solution?
+                self.start_hacking_for_selected_index(index_i32);
+            } else {
+                log::warn!(".selected_index() is called on an element that is not <select>");
+            }
+        }
+        self
+    }
+
     fn value(mut self, value: &str) -> Self {
         if self.check_str_attribute(value) {
             let element = self.ws_element();
@@ -610,36 +641,6 @@ where
         self
     }
 
-    fn selected_value(mut self, value: Option<&str>) -> Self {
-        if self.element_type() == super::ElementType::Select {
-            // TODO: checked to find change of value?
-
-            // It has no effect if you set a value for
-            // a <select> element before adding its <option>s,
-            // the hacking should finish in the list() method.
-            // Is there a better solution?
-            self.start_hacking_for_selected_value(value);
-        } else {
-            log::warn!(".selected_value() can only be called on <select>");
-        }
-        self
-    }
-
-    fn selected_index(mut self, index: Option<usize>) -> Self {
-        let index_i32 = index.map(|index| index as i32).unwrap_or(-1);
-        if self.check_i32_attribute(index_i32) {
-            if self.element_type() == super::ElementType::Select {
-                // It has no effect if you set a selected index for
-                // a <select> element before adding its <option>s,
-                // the hacking should finish in the list() method.
-                // Is there a better solution?
-                self.start_hacking_for_selected_index(index_i32);
-            } else {
-                log::warn!(".selected_index() is called on an element that is not <select>");
-            }
-        }
-        self
-    }
 }
 
 impl<'a, C: crate::component::Component> AttributeSetter<C> for super::StaticAttributes<'a, C>
