@@ -31,7 +31,7 @@ pub type Command<C> = Box<dyn component::Command<C>>;
 
 pub mod prelude {
     pub use crate::application::Application;
-    pub use crate::component::Component;
+    pub use crate::component::{Component, WrapInSome};
     pub use crate::dom::{AttributeSetter, DomBuilder};
     pub use crate::fetch::{FetchOptionsSetter, IntoFetchArgs, RawDataMode};
     pub use crate::routing::Routes;

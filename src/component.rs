@@ -174,6 +174,14 @@ impl<C: Component> Checklist<C> {
     }
 }
 
+pub trait WrapInSome: Sized {
+    fn some(self) -> Option<Self> {
+        Some(self)
+    }
+}
+
+impl<C> WrapInSome for Box<dyn Command<C>> {}
+
 impl<C: Component> RcComp<C> {
     pub(crate) fn new(root: Option<web_sys::Element>) -> Self {
         let (root_element, mount_status) = root
