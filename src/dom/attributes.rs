@@ -552,6 +552,10 @@ where
         self
     }
 
+    fn enabled(self, value: bool) -> Self {
+        self.disabled(!value)
+    }
+
     fn focus(mut self, value: bool) -> Self {
         if value && self.check_bool_attribute(value) {
             self.ws_html_element()
@@ -640,7 +644,6 @@ where
         }
         self
     }
-
 }
 
 impl<'a, C: crate::component::Component> AttributeSetter<C> for super::StaticAttributes<'a, C>
