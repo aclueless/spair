@@ -128,6 +128,7 @@ impl IntoFetchArgs for http::request::Builder {
     }
 }
 
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
 pub struct FetchArgs {
     request_builder: http::request::Builder,
     options: Option<FetchOptions>,
@@ -170,6 +171,7 @@ pub trait RawDataMode: Into<FetchArgs> {
 impl RawDataMode for http::request::Builder {}
 impl RawDataMode for FetchArgs {}
 
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
 pub struct TextMode(FetchArgs);
 impl TextMode {
     pub fn body(self) -> TextBodySetter {
@@ -177,10 +179,11 @@ impl TextMode {
     }
 
     pub fn response(self) -> TextResponseSetter {
-        TextResponseSetter(self.0.build_js_fetch_promise())
+        TextResponseSetter(self.0.build_web_sys_request())
     }
 }
 
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
 pub struct BinaryMode(FetchArgs);
 impl BinaryMode {
     pub fn body(self) -> BinaryBodySetter {
@@ -188,10 +191,11 @@ impl BinaryMode {
     }
 
     pub fn response(self) -> BinaryResponseSetter {
-        BinaryResponseSetter(self.0.build_js_fetch_promise())
+        BinaryResponseSetter(self.0.build_web_sys_request())
     }
 }
 
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
 pub struct TextBodySetter(FetchArgs);
 impl TextBodySetter {
     pub fn text(mut self, data: &str) -> TextBody {
@@ -224,6 +228,7 @@ impl TextBodySetter {
     }
 }
 
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
 pub struct BinaryBodySetter(FetchArgs);
 impl BinaryBodySetter {
     pub fn binary(mut self, data: &[u8]) -> BinaryBody {
@@ -247,10 +252,11 @@ impl BinaryBodySetter {
     }
 }
 
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
 pub struct TextBody(FetchArgs);
 impl TextBody {
     pub fn response(self) -> TextResponseSetter {
-        TextResponseSetter(self.0.build_js_fetch_promise())
+        TextResponseSetter(self.0.build_web_sys_request())
     }
 
     #[cfg(feature = "fetch-json")]
@@ -272,10 +278,11 @@ impl TextBody {
     }
 }
 
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
 pub struct BinaryBody(FetchArgs);
 impl BinaryBody {
     pub fn response(self) -> BinaryResponseSetter {
-        BinaryResponseSetter(self.0.build_js_fetch_promise())
+        BinaryResponseSetter(self.0.build_web_sys_request())
     }
 }
 
@@ -291,13 +298,35 @@ impl FetchArgs {
         }
     }
 
-    fn build_js_fetch_promise(self) -> Result<js_sys::Promise, FetchError> {
+    fn build_web_sys_request(self) -> Result<web_sys::Request, FetchError> {
+        use std::iter::FromIterator;
+
         let body = self.body.transpose()?;
         let parts = self.request_builder.body(())?.into_parts().0;
-        let ws_request = build_request(parts, body.as_ref())?;
-        let init = self.options.unwrap_or_else(Default::default).into();
-        let promise = crate::utils::window().fetch_with_request_and_init(&ws_request, &init);
-        Ok(promise)
+        let header_list = parts
+            .headers
+            .iter()
+            .map(|(k, v)| {
+                Ok(js_sys::Array::from_iter(&[
+                    wasm_bindgen::JsValue::from_str(k.as_str()),
+                    wasm_bindgen::JsValue::from_str(
+                        v.to_str().map_err(|_| FetchError::InvalidRequestHeader)?,
+                    ),
+                ]))
+            })
+            .collect::<Result<js_sys::Array, FetchError>>()?;
+
+        let header_map = web_sys::Headers::new_with_str_sequence_sequence(&header_list)
+            .map_err(|_| FetchError::BuildHeaderFailed)?;
+
+        let uri = parts.uri.to_string();
+        let method = parts.method.as_str();
+
+        // Do http::Request cover `self.options`?
+        let mut init: web_sys::RequestInit = self.options.unwrap_or_else(Default::default).into();
+        init.method(method).body(body.as_ref()).headers(&header_map);
+        web_sys::Request::new_with_str_and_init(&uri, &init)
+            .map_err(|_| FetchError::BuildRequestFailed)
     }
 
     #[cfg(feature = "fetch-json")]
@@ -324,43 +353,14 @@ impl FetchArgs {
         T: 'static + serde::de::DeserializeOwned,
         Cl: 'static + Into<crate::component::Checklist<C>>,
     {
-        TextResponseSetter(self.build_js_fetch_promise()).json(ok_handler, error_handler)
+        TextResponseSetter(self.build_web_sys_request()).json(ok_handler, error_handler)
     }
 }
 
-fn build_request(
-    parts: http::request::Parts,
-    body: Option<&wasm_bindgen::JsValue>,
-) -> Result<web_sys::Request, FetchError> {
-    use std::iter::FromIterator;
-
-    // Map headers into a Js `Header` type.
-    let header_list = parts
-        .headers
-        .iter()
-        .map(|(k, v)| {
-            Ok(js_sys::Array::from_iter(&[
-                wasm_bindgen::JsValue::from_str(k.as_str()),
-                wasm_bindgen::JsValue::from_str(
-                    v.to_str().map_err(|_| FetchError::InvalidRequestHeader)?,
-                ),
-            ]))
-        })
-        .collect::<Result<js_sys::Array, FetchError>>()?;
-
-    let header_map = web_sys::Headers::new_with_str_sequence_sequence(&header_list)
-        .map_err(|_| FetchError::BuildHeaderFailed)?;
-
-    // Formats URI.
-    let uri = parts.uri.to_string();
-    let method = parts.method.as_str();
-    let mut init = web_sys::RequestInit::new();
-    init.method(method).body(body).headers(&header_map);
-    web_sys::Request::new_with_str_and_init(&uri, &init).map_err(|_| FetchError::BuildRequestFailed)
-}
-
-pub struct TextResponseSetter(Result<js_sys::Promise, FetchError>);
-pub struct BinaryResponseSetter(Result<js_sys::Promise, FetchError>);
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
+pub struct TextResponseSetter(Result<web_sys::Request, FetchError>);
+#[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
+pub struct BinaryResponseSetter(Result<web_sys::Request, FetchError>);
 
 impl TextResponseSetter {
     pub fn text<C, Cl>(
@@ -374,7 +374,7 @@ impl TextResponseSetter {
     {
         FetchCmdArgs {
             phantom: std::marker::PhantomData as std::marker::PhantomData<String>,
-            promise: self.0,
+            ws_request: self.0,
             ok_handler,
             error_handler,
         }
@@ -407,7 +407,7 @@ async fn get_raw_data<R: RawData>(promise: js_sys::Promise) -> Result<R, FetchEr
 
 struct FetchCmdArgs<C, R, T, Cl> {
     phantom: std::marker::PhantomData<R>,
-    promise: Result<js_sys::Promise, FetchError>,
+    ws_request: Result<web_sys::Request, FetchError>,
     ok_handler: fn(&mut C, T) -> Cl,
     error_handler: fn(&mut C, FetchError),
 }
@@ -420,7 +420,7 @@ where
     Cl: 'static + Into<crate::component::Checklist<C>>,
 {
     fn from(fca: FetchCmdArgs<C, R, T, Cl>) -> Self {
-        Box::new(FetchCmd(Some(fca)))
+        crate::Command(Box::new(FetchCmd(Some(fca))))
     }
 }
 
@@ -435,15 +435,15 @@ where
     fn execute(&mut self, comp: &crate::component::Comp<C>, state: &mut C) {
         let FetchCmdArgs {
             phantom: _,
-            promise,
+            ws_request,
             ok_handler,
             error_handler,
         } = self
             .0
             .take()
             .expect_throw("Internal error: Why FetchCmd is executed twice?");
-        let promise = match promise {
-            Ok(promise) => promise,
+        let promise = match ws_request {
+            Ok(ws_request) => crate::utils::window().fetch_with_request(&ws_request),
             Err(e) => {
                 error_handler(state, e);
                 return;
@@ -514,7 +514,7 @@ impl ParseFrom<String> for String {
 #[allow(unused_macros)]
 macro_rules! impl_fetch {
     ($method_name:ident, $ResponseSetter:ident, $RawDataType:ident, $RawBaseType:ty, $deserializer:path, $DeserializeError:expr) => {
-        pub struct $RawDataType($RawBaseType);
+        struct $RawDataType($RawBaseType);
         impl RawData for $RawDataType {
             fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
                 <$RawBaseType>::get_raw_js(response)
@@ -547,7 +547,7 @@ macro_rules! impl_fetch {
             {
                 FetchCmdArgs {
                     phantom: std::marker::PhantomData as std::marker::PhantomData<$RawDataType>,
-                    promise: self.0,
+                    ws_request: self.0,
                     ok_handler,
                     error_handler,
                 }
@@ -557,6 +557,7 @@ macro_rules! impl_fetch {
     };
 }
 
+// Using binary as raw data
 #[cfg(feature = "fetch-json")]
 impl_fetch!(
     json,
@@ -576,7 +577,7 @@ impl_fetch!(
     FetchError::DeserializeRonError
 );
 
-// Types for raw binary data
+// Using binary as raw data
 #[cfg(feature = "fetch-json")]
 impl_fetch!(
     json,

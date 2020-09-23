@@ -57,6 +57,7 @@ pub trait Component: 'static + Sized {
     fn render<'a>(&self, element: crate::Element<'a, Self>);
 }
 
+#[must_use = "This value must be returned to the framework. Otherwise, it will be lost and the default value will be used"]
 pub enum ShouldRender {
     No,
     Yes,
@@ -112,30 +113,6 @@ pub trait Command<C: Component> {
     fn execute(&mut self, comp: &Comp<C>, state: &mut C);
 }
 
-impl<C> From<Box<dyn Command<C>>> for Checklist<C>
-where
-    C: 'static + Component,
-{
-    fn from(cmd: Box<dyn Command<C>>) -> Self {
-        let mut checklist = C::default_checklist();
-        checklist.add_command(cmd);
-        checklist
-    }
-}
-
-impl<C> From<Option<Box<dyn Command<C>>>> for Checklist<C>
-where
-    C: 'static + Component,
-{
-    fn from(cmd: Option<Box<dyn Command<C>>>) -> Self {
-        let mut checklist = C::default_checklist();
-        if let Some(cmd) = cmd {
-            checklist.add_command(cmd);
-        }
-        checklist
-    }
-}
-
 impl<C: Component> From<()> for Checklist<C> {
     fn from(_: ()) -> Self {
         C::default_checklist()
@@ -173,14 +150,6 @@ impl<C: Component> Checklist<C> {
         self.commands.0.push(cmd);
     }
 }
-
-pub trait WrapInSome: Sized {
-    fn some(self) -> Option<Self> {
-        Some(self)
-    }
-}
-
-impl<C> WrapInSome for Box<dyn Command<C>> {}
 
 impl<C: Component> RcComp<C> {
     pub(crate) fn new(root: Option<web_sys::Element>) -> Self {
