@@ -36,7 +36,7 @@ impl spair::Routes<App> for Filter {
             Self::Completed => "#completed".to_string(),
         }
     }
-    fn routing(location: spair::Location, comp: &spair::Comp<App>) {
+    fn routing(location: spair::web_sys::Location, comp: &spair::Comp<App>) {
         let filter = match location.hash().unwrap_or_else(|_| String::new()).as_str() {
             "#completed" => Self::Completed,
             "#active" => Self::Active,
