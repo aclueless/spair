@@ -423,7 +423,7 @@ where
         AsStr   auto_complete "autocomplete"
         bool    auto_play "autoplay"
         str     cite
-        str     class
+        //str     class
         u32     cols
         u32     col_span "colspan"
         bool    controls
@@ -532,6 +532,15 @@ where
         } else {
             log::warn!(".checked() is called on an element that is not <input>");
         }
+        self
+    }
+
+    /// This method should only execute in static mode.
+    fn class(self, class_name: &str) -> Self {
+        self.ws_element()
+            .class_list()
+            .add_1(class_name)
+            .expect_throw("Unable to add class");
         self
     }
 
