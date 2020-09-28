@@ -187,7 +187,7 @@ If you set an attribute in static-mode it will never be updated. It is easy to m
 - [x] Add support for child components
 - [ ] Some benchmarks
 - [ ] Proc macro to convert HTML-like or other short-clear syntax to Spair's Rust code.
-- [ ] Using child components is inevitable in complex apps. Is it possible to reduce size added by using multi components?
+- [ ] Using child components is inevitable in complex apps. Is it possible to reduce additional size causes by multi components?
 
 
 [Simi]: https://gitlab.com/limira-rs/simi
