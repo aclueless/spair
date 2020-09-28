@@ -11,9 +11,9 @@ cargo clippy -- -D warnings
 wasm-pack test --headless --chrome -- --features="keyed-list"
 wasm-pack test --headless --chrome -- --features="fetch-json" # just build, no actual tests yet
 wasm-pack test --headless --chrome -- --features="fetch-ron" # just build, no actual tests yet
-# wasm-pack test --headless --firefox -- --features="keyed-list"
-# wasm-pack test --headless --firefox -- --features="fetch-json" # just build, no actual tests yet
-# wasm-pack test --headless --firefox -- --features="fetch-ron" # just build, no actual tests yet
+wasm-pack test --headless --firefox -- --features="keyed-list"
+wasm-pack test --headless --firefox -- --features="fetch-json" # just build, no actual tests yet
+wasm-pack test --headless --firefox -- --features="fetch-ron" # just build, no actual tests yet
 
 for x in ./examples/*; do
     if [ -f $x/Cargo.toml ]; then
