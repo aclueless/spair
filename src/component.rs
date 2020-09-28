@@ -1,21 +1,50 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::rc::{Rc, Weak};
 use wasm_bindgen::UnwrapThrowExt;
 
 struct UpdateQueue {
+    // A hack to avoid circular borrowing and mutable borrowing between
+    // child and parent component. The first component that run when
+    // `will_be_executed` == false will have to promise that it will
+    // execute UPDATE_QUEUE.
+    will_be_executed: Cell<bool>,
     queue: RefCell<VecDeque<Box<dyn FnOnce()>>>,
 }
 
 thread_local! {
-    static UPDATE_QUEUE: UpdateQueue = UpdateQueue { queue: RefCell::new(VecDeque::new()) };
+    static UPDATE_QUEUE: UpdateQueue = UpdateQueue {
+        will_be_executed: Cell::new(false),
+        queue: RefCell::new(VecDeque::new())
+    };
+}
+
+fn i_have_to_execute_update_queue() -> bool {
+    UPDATE_QUEUE.with(|uq| {
+        match uq.will_be_executed.get() {
+            false => {
+                // It means that there is no component promise executing UPDATE_QUEUE
+                // The caller must execute it.
+                uq.will_be_executed.set(true);
+                true
+            }
+            true => {
+                // There already a component promise to execute UPDATE_QUEUE, so the
+                // caller just ignore it.
+                false
+            }
+        }
+    })
 }
 
 pub fn update_component(fn_update: impl FnOnce() + 'static) {
     UPDATE_QUEUE.with(|uq| uq.add(Box::new(fn_update)));
 }
 
-fn execute_update_queue() {
+fn execute_update_queue(promise: bool) {
+    if !promise {
+        return;
+    }
     UPDATE_QUEUE.with(|uq| uq.execute());
 }
 
@@ -32,6 +61,7 @@ impl UpdateQueue {
         while let Some(f) = self.take() {
             f();
         }
+        self.will_be_executed.set(false);
     }
 }
 
@@ -185,24 +215,28 @@ impl<C: Component> RcComp<C> {
         let comp = self.comp();
 
         C::initialize(&comp);
-        // Should this be executed right after C::initialize?
-        self::execute_update_queue();
+
+        let promise = self::i_have_to_execute_update_queue();
 
         // The router may cause an update that mutably borrows the CompInstance
         // Therefor this should be done before borrowing the instance.
         let router = C::Routes::router(&comp);
 
-        let mut instance = self
-            .0
-            .try_borrow_mut()
-            .expect_throw("Expect no borrowing at the first render");
+        {
+            let mut instance = self
+                .0
+                .try_borrow_mut()
+                .expect_throw("Expect no borrowing at the first render");
 
-        if instance.root_element.is_empty() {
-            // In cases that the router not cause any render yet, such as Routes = ()
-            instance.render(&comp);
+            if instance.root_element.is_empty() {
+                // In cases that the router not cause any render yet, such as Routes = ()
+                instance.render(&comp);
+            }
+
+            instance.router = router;
         }
 
-        instance.router = router;
+        self::execute_update_queue(promise);
     }
 
     pub fn comp(&self) -> Comp<C> {
@@ -240,6 +274,7 @@ impl<C: Component> Comp<C> {
     where
         Cl: Into<Checklist<C>>,
     {
+        let promise = self::i_have_to_execute_update_queue();
         {
             let this = self
                 .0
@@ -262,13 +297,14 @@ impl<C: Component> Comp<C> {
                 .into_parts();
             this.extra_update(skip_fn_render, commands, &self);
         }
-        self::execute_update_queue();
+        self::execute_update_queue(promise);
     }
 
     fn update_arg<T: 'static, Cl>(&self, arg: T, fn_update: &Rc<impl Fn(&mut C, T) -> Cl + 'static>)
     where
         Cl: Into<Checklist<C>>,
     {
+        let promise = self::i_have_to_execute_update_queue();
         {
             let this = self
                 .0
@@ -291,7 +327,7 @@ impl<C: Component> Comp<C> {
                 .into_parts();
             this.extra_update(skip_fn_render, commands, &self);
         }
-        self::execute_update_queue();
+        self::execute_update_queue(promise);
     }
 
     pub fn callback<Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn()
@@ -378,26 +414,29 @@ impl<C: Component> ChildComp<C> {
         let comp = self.comp();
 
         C::initialize(&comp);
-        // Should this be executed right after C::initialize?
-        self::execute_update_queue();
 
-        let mut instance = self
-            .0
-            .try_borrow_mut()
-            .expect_throw("Why unable to borrow a child component on attaching?");
+        let promise = self::i_have_to_execute_update_queue();
 
-        // TODO: This may cause problems
-        //  * When the component was detached from an element then
-        //      was attached to another element with mismatched attributes?
-        //  * When the component was detached and reattached to the
-        //      same element but somehow attributes are still mismatched?
-        //      because there is another component was attached in between?
-        instance.root_element.replace_ws_element(ws_element.clone());
+        {
+            let mut instance = self
+                .0
+                .try_borrow_mut()
+                .expect_throw("Why unable to borrow a child component on attaching?");
 
-        instance.mount_status = MountStatus::Mounted;
+            // TODO: This may cause problems
+            //  * When the component was detached from an element then
+            //      was attached to another element with mismatched attributes?
+            //  * When the component was detached and reattached to the
+            //      same element but somehow attributes are still mismatched?
+            //      because there is another component was attached in between?
+            instance.root_element.replace_ws_element(ws_element.clone());
 
-        // TODO: Allow an option to ignore render on re-mounted?
-        instance.render(&comp);
+            instance.mount_status = MountStatus::Mounted;
+
+            // TODO: Allow an option to ignore render on re-mounted?
+            instance.render(&comp);
+        }
+        self::execute_update_queue(promise);
     }
 
     pub fn comp_instance(&self) -> std::cell::Ref<CompInstance<C>> {
