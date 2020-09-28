@@ -125,7 +125,7 @@ pub enum MountStatus {
     PermanentlyMounted,
 }
 
-#[must_use]
+#[must_use = "This value must be returned to the framework. Otherwise, it will be lost and the default value will be used"]
 pub struct Checklist<C: Component> {
     should_render: ShouldRender,
     commands: Commands<C>,
