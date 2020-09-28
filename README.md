@@ -171,7 +171,10 @@ If you set an attribute in static-mode it will never be updated. It is easy to m
 
 * Non-keyed-list
 * Keyed-list (behind `features=["keyed-list"]`)
-* Basic support for `fetch` (JSON, RON)
+* Support for `fetch`
+    * JSON: `features=["fetch-json"]`
+    * RON: `features=["fetch-ron"]`
+    * I believe it's ready to add other formats
 * Basic support for routing
 
 ## What's next?
@@ -184,6 +187,7 @@ If you set an attribute in static-mode it will never be updated. It is easy to m
 - [x] Add support for child components
 - [ ] Some benchmarks
 - [ ] Proc macro to convert HTML-like or other short-clear syntax to Spair's Rust code.
+- [ ] Using child components is inevitable in complex apps. Is it possible to reduce size added by using multi components?
 
 
 [Simi]: https://gitlab.com/limira-rs/simi
