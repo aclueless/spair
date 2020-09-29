@@ -1,5 +1,6 @@
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
+use std::future::Future;
 use std::rc::{Rc, Weak};
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -368,6 +369,31 @@ impl<C: Component> Comp<C> {
         Cl: Into<Checklist<C>>,
     {
         self.callback_arg(fn_update)
+    }
+
+    pub fn async_handler<T: 'static, R: 'static, Cl, F>(
+        &self,
+        fn_update: impl Fn(&mut C, Result<R, wasm_bindgen::JsValue>) -> Cl + 'static,
+        future_creator: impl Fn() -> F + 'static,
+    ) -> impl Fn(T)
+    where
+        Cl: Into<Checklist<C>>,
+        F: 'static + Future<Output = Result<R, wasm_bindgen::JsValue>>,
+    {
+        let comp = self.clone();
+        let fn_update = Rc::new(fn_update);
+        let future_creator = Rc::new(future_creator);
+
+        move |_: T| {
+            let comp = comp.clone();
+            let fn_update = fn_update.clone();
+            let future_creator = future_creator.clone();
+            let f = async move {
+                let output = future_creator().await;
+                comp.update_arg(output, &fn_update);
+            };
+            wasm_bindgen_futures::spawn_local(f);
+        }
     }
 }
 
