@@ -28,6 +28,9 @@ pub use utils::{document, into_input, into_select, window};
 // pub use web_sys::{Event, FocusEvent, InputEvent, KeyboardEvent, MouseEvent, UiEvent, WheelEvent};
 pub use web_sys;
 
+pub use wasm_bindgen::JsValue;
+pub use wasm_bindgen_futures::JsFuture;
+
 pub mod prelude {
     pub use crate::application::Application;
     pub use crate::component::Component;
