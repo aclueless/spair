@@ -39,7 +39,7 @@ pub mod prelude {
     pub use crate::routing::Routes;
     pub use wasm_bindgen;
     pub use wasm_bindgen::prelude::*;
-    pub use wasm_bindgen::UnwrapThrowExt;
+    pub use wasm_bindgen::{JsCast, UnwrapThrowExt};
 }
 
 #[must_use = "This value must be returned to the framework. Otherwise, the command will be lost"]
