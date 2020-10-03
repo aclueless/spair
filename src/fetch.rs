@@ -179,7 +179,7 @@ impl TextMode {
     }
 
     pub fn response(self) -> TextResponseSetter {
-        TextResponseSetter(self.0.build_web_sys_request())
+        TextResponseSetter(self.0.build_ws_request())
     }
 }
 
@@ -191,7 +191,7 @@ impl BinaryMode {
     }
 
     pub fn response(self) -> BinaryResponseSetter {
-        BinaryResponseSetter(self.0.build_web_sys_request())
+        BinaryResponseSetter(self.0.build_ws_request())
     }
 }
 
@@ -256,7 +256,7 @@ impl BinaryBodySetter {
 pub struct TextBody(FetchArgs);
 impl TextBody {
     pub fn response(self) -> TextResponseSetter {
-        TextResponseSetter(self.0.build_web_sys_request())
+        TextResponseSetter(self.0.build_ws_request())
     }
 
     #[cfg(feature = "fetch-json")]
@@ -282,7 +282,7 @@ impl TextBody {
 pub struct BinaryBody(FetchArgs);
 impl BinaryBody {
     pub fn response(self) -> BinaryResponseSetter {
-        BinaryResponseSetter(self.0.build_web_sys_request())
+        BinaryResponseSetter(self.0.build_ws_request())
     }
 }
 
@@ -298,7 +298,7 @@ impl FetchArgs {
         }
     }
 
-    fn build_web_sys_request(self) -> Result<web_sys::Request, FetchError> {
+    fn build_ws_request(self) -> Result<web_sys::Request, FetchError> {
         use std::iter::FromIterator;
 
         let body = self.body.transpose()?;
@@ -353,7 +353,7 @@ impl FetchArgs {
         T: 'static + serde::de::DeserializeOwned,
         Cl: 'static + Into<crate::component::Checklist<C>>,
     {
-        TextResponseSetter(self.build_web_sys_request()).json(ok_handler, error_handler)
+        TextResponseSetter(self.build_ws_request()).json(ok_handler, error_handler)
     }
 }
 
