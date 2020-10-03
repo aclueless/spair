@@ -82,3 +82,32 @@ impl<C> From<Option<Command<C>>> for OptionCommand<C> {
         OptionCommand(cmd.map(|cmd| cmd.0))
     }
 }
+
+pub struct WsRef<T>(std::cell::RefCell<Option<T>>);
+
+impl<T: wasm_bindgen::JsCast> Default for WsRef<T> {
+    fn default() -> Self {
+        Self::none()
+    }
+}
+
+impl<T: wasm_bindgen::JsCast> WsRef<T> {
+    pub fn none() -> Self {
+        Self(std::cell::RefCell::new(None))
+    }
+
+    pub fn get(&self) -> std::cell::Ref<Option<T>> {
+        self.0.borrow()
+    }
+
+    pub fn set<C: component::Component>(&self, element: &crate::Element<C>) {
+        use wasm_bindgen::JsCast;
+        *self.0.borrow_mut() = Some(element.ws_element().unchecked_into());
+    }
+
+    pub fn execute(&self, f: impl FnOnce(&T)) {
+        if let Some(t) = self.get().as_ref() {
+            f(t);
+        }
+    }
+}
