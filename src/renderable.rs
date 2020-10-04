@@ -135,3 +135,10 @@ pub trait ListItem<C: crate::component::Component> {
     const ROOT_ELEMENT_TAG: &'static str;
     fn render(&self, item: crate::dom::ElementUpdater<C>);
 }
+
+impl<C: crate::component::Component, T: ListItem<C>> ListItem<C> for &T {
+    const ROOT_ELEMENT_TAG: &'static str = T::ROOT_ELEMENT_TAG;
+    fn render(&self, item: crate::dom::ElementUpdater<C>) {
+        (*self).render(item);
+    }
+}
