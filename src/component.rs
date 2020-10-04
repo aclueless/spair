@@ -103,10 +103,10 @@ impl<C: Component> From<ShouldRender> for Checklist<C> {
     }
 }
 
-pub struct RcComp<C: Component>(Rc<RefCell<CompInstance<C>>>);
-pub struct Comp<C: Component>(Weak<RefCell<CompInstance<C>>>);
+pub struct RcComp<C>(Rc<RefCell<CompInstance<C>>>);
+pub struct Comp<C>(Weak<RefCell<CompInstance<C>>>);
 
-pub struct CompInstance<C: Component> {
+pub struct CompInstance<C> {
     state: Option<C>,
     root_element: crate::dom::Element,
     router: Option<crate::routing::Router>,
@@ -182,7 +182,7 @@ impl<C: Component> Checklist<C> {
     }
 }
 
-impl<C: Component> RcComp<C> {
+impl<C> RcComp<C> {
     pub(crate) fn new(root: Option<web_sys::Element>) -> Self {
         let (root_element, mount_status) = root
             .map(|root| {
@@ -203,7 +203,9 @@ impl<C: Component> RcComp<C> {
             events: Vec::new(),
         })))
     }
+}
 
+impl<C: Component> RcComp<C> {
     pub(crate) fn set_state(&self, state: C) {
         self.0
             .try_borrow_mut()
@@ -478,12 +480,12 @@ impl<C: Component> From<C> for ChildComp<C> {
     }
 }
 
-pub trait WithParentComp: Component {
-    type Parent: Component;
+pub trait WithParentComp: Sized {
+    type Parent;
     fn with_parent_and_comp(parent: &Comp<Self::Parent>, comp: Comp<Self>) -> Self;
 }
 
-impl<C: WithParentComp> ChildComp<C> {
+impl<C: WithParentComp + Component> ChildComp<C> {
     pub fn with_parent(parent: &Comp<C::Parent>) -> Self {
         let rc_comp = ChildComp::new(None);
         rc_comp.set_state(C::with_parent_and_comp(parent, rc_comp.comp()));
@@ -508,7 +510,7 @@ impl<C: Component> From<Comp<C>> for ComponentHandle<C> {
     }
 }
 
-impl<C: Component> Drop for ChildComp<C> {
+impl<C> Drop for ChildComp<C> {
     fn drop(&mut self) {
         self.0
             .try_borrow_mut()
