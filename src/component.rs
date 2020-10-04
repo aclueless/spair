@@ -177,8 +177,14 @@ impl<C: Component> Checklist<C> {
         self.should_render = ShouldRender::No;
     }
 
-    pub fn add_command(&mut self, cmd: Box<dyn Command<C>>) {
-        self.commands.0.push(cmd);
+    pub fn add_option_command(&mut self, cmd: crate::OptionCommand<C>) {
+        if let Some(cmd) = cmd.0 {
+            self.commands.0.push(cmd);
+        }
+    }
+
+    pub fn add_command(&mut self, cmd: crate::Command<C>) {
+        self.commands.0.push(cmd.0);
     }
 }
 
