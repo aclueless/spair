@@ -105,7 +105,7 @@ impl spair::Component for State {
 }
 
 impl spair::Render<State> for &Branch {
-    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
+    fn render(self, nodes: spair::Nodes<State>) {
         nodes
             .p(|p| {
                 p.nodes()
@@ -113,12 +113,12 @@ impl spair::Render<State> for &Branch {
                     .render(&self.name)
                     .r#static(" branch is:");
             })
-            .render(&self.commit)
+            .render(&self.commit);
     }
 }
 
 impl spair::Render<State> for &Commit {
-    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
+    fn render(self, nodes: spair::Nodes<State>) {
         nodes.p(|p| {
             p.nodes()
                 .render(&self.sha)
@@ -127,7 +127,7 @@ impl spair::Render<State> for &Commit {
                 .r#static(" (")
                 .render(&self.commit.author.email)
                 .r#static(")");
-        })
+        });
     }
 }
 

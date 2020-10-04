@@ -29,16 +29,15 @@ impl spair::Component for State {
                     .r#static("The initial value is ")
                     .r#static(self.value);
             })
-            .static2(Button("-", comp.handler(State::decrement)))
+            .r#static(Button("-", comp.handler(State::decrement)))
             .render(self.value)
-            .static2(Button("+", comp.handler(State::increment)));
+            .r#static(Button("+", comp.handler(State::increment)));
     }
 }
 
 struct Button<H>(&'static str, H);
-impl<H: spair::Click> spair::StaticRender2<State> for Button<H> {
+impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
     fn render(self, nodes: spair::StaticNodes<State>) {
-        let state = nodes.state();
         nodes.button(|b| {
             b.static_attributes()
                 .on_click(self.1)

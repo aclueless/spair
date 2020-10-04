@@ -73,13 +73,13 @@ impl spair::Component for State {
 
 struct Button<H>(&'static str, H);
 impl<C: spair::Component, H: spair::Click> spair::StaticRender<C> for Button<H> {
-    fn render(self, nodes: spair::StaticNodes<C>) -> spair::StaticNodes<C> {
+    fn render(self, nodes: spair::StaticNodes<C>) {
         nodes.button(|b| {
             b.static_attributes()
                 .on_click(self.1)
                 .static_nodes()
                 .r#static(self.0);
-        })
+        });
     }
 }
 

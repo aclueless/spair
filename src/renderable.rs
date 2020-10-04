@@ -1,23 +1,14 @@
 /// This module provides traits that help users define how their types should be rendered.
 /// Implementation for primitive types are also provided.
-use crate::dom::{Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
+use crate::dom::{Nodes, NodesOwned, StaticNodes};
 
 pub trait Render<C: crate::component::Component> {
-    fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C>;
-}
-
-pub trait StaticRender<C: crate::component::Component> {
-    fn render(self, nodes: StaticNodesOwned<C>) -> StaticNodesOwned<C>;
-}
-
-pub trait Render2<C: crate::component::Component> {
     fn render(self, nodes: Nodes<C>);
 }
 
-pub trait StaticRender2<C: crate::component::Component> {
+pub trait StaticRender<C: crate::component::Component> {
     fn render(self, nodes: StaticNodes<C>);
 }
-
 
 mod sealed {
     pub trait ListItemStaticText {}
@@ -31,24 +22,12 @@ macro_rules! impl_render_with_to_string {
     ($($type:ident)+) => {
         $(
             impl<C: crate::component::Component> Render<C> for $type {
-                fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
-                    nodes.update_text(&self.to_string())
-                }
-            }
-
-            impl<C: crate::component::Component> StaticRender<C> for $type {
-                fn render(self, nodes: StaticNodesOwned<C>) -> StaticNodesOwned<C> {
-                    nodes.static_text(&self.to_string())
-                }
-            }
-
-            impl<C: crate::component::Component> Render2<C> for $type {
                 fn render(self, nodes: Nodes<C>) {
                     nodes.update_text(&self.to_string());
                 }
             }
 
-            impl<C: crate::component::Component> StaticRender2<C> for $type {
+            impl<C: crate::component::Component> StaticRender<C> for $type {
                 fn render(self, nodes: StaticNodes<C>) {
                     nodes.static_text(&self.to_string());
                 }
@@ -69,53 +48,28 @@ impl_render_with_to_string! {
 }
 
 impl<C: crate::component::Component> StaticRender<C> for &str {
-    fn render(self, nodes: StaticNodesOwned<C>) -> StaticNodesOwned<C> {
-        nodes.static_text(self)
+    fn render(self, nodes: StaticNodes<C>) {
+        nodes.static_text(self);
     }
 }
 
 impl<C: crate::component::Component> StaticRender<C> for &String {
-    fn render(self, nodes: StaticNodesOwned<C>) -> StaticNodesOwned<C> {
-        nodes.static_text(self)
+    fn render(self, nodes: StaticNodes<C>) {
+        nodes.static_text(self);
     }
 }
 
 impl<C: crate::component::Component> Render<C> for &str {
-    fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
-        nodes.update_text(self)
+    fn render(self, nodes: Nodes<C>) {
+        nodes.update_text(self);
     }
 }
 
 impl<C: crate::component::Component> Render<C> for &String {
-    fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
-        nodes.update_text(self)
-    }
-}
-
-impl<C: crate::component::Component> StaticRender2<C> for &str {
-    fn render(self, nodes: StaticNodes<C>) {
-        nodes.static_text(self);
-    }
-}
-
-impl<C: crate::component::Component> StaticRender2<C> for &String {
-    fn render(self, nodes: StaticNodes<C>) {
-        nodes.static_text(self);
-    }
-}
-
-impl<C: crate::component::Component> Render2<C> for &str {
     fn render(self, nodes: Nodes<C>) {
         nodes.update_text(self);
     }
 }
-
-impl<C: crate::component::Component> Render2<C> for &String {
-    fn render(self, nodes: Nodes<C>) {
-        nodes.update_text(self);
-    }
-}
-
 
 impl sealed::ListItemStaticText for &str {}
 impl<C: crate::component::Component> ListItemStaticText<C> for &str {

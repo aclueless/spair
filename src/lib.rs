@@ -16,9 +16,7 @@ pub use component::{
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
-//pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, NodesOwned, RawWrapper, StaticNodes, StaticNodesOwned};
-pub use dom::{ElementUpdater as Element, ListElementCreation, NodesOwned as Nodes, RawWrapper, StaticNodesOwned as StaticNodes};
-pub use dom::{Nodes as Nodes2};
+pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};
@@ -61,7 +59,7 @@ where
 {
     fn from(cmd: Command<C>) -> Self {
         let mut checklist = C::default_checklist();
-        checklist.add_command(cmd.0);
+        checklist.add_command(cmd);
         checklist
     }
 }
@@ -72,9 +70,7 @@ where
 {
     fn from(cmd: OptionCommand<C>) -> Self {
         let mut checklist = C::default_checklist();
-        if let Some(cmd) = cmd.0 {
-            checklist.add_command(cmd);
-        }
+        checklist.add_option_command(cmd);
         checklist
     }
 }

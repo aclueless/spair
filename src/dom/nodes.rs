@@ -398,21 +398,13 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
         NodesOwned(self.0)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
-        value.render(self.nodes()).static_nodes()
-    }
-
-    pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
-        value.render(self)
-    }
-
-    pub fn render2(mut self, value: impl crate::renderable::Render2<C>) -> Self {
+    pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
         self
     }
 
-    pub fn static2(mut self, value: impl crate::renderable::StaticRender2<C>) -> Self {
+    pub fn r#static(mut self, value: impl crate::renderable::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(&mut self.0);
         value.render(static_nodes);
         self
@@ -428,14 +420,6 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
             self.0.extra.index += 1;
             self
         }
-    }
-
-    pub(crate) fn static_text(mut self, text: &str) -> Self {
-        self.0
-            .nodes
-            .static_text(self.0.extra.index, text, self.0.parent, self.0.next_sibling);
-        self.0.extra.index += 1;
-        self
     }
 }
 
@@ -474,21 +458,13 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         StaticNodesOwned(self.0)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
-        value.render(self)
-    }
-
-    pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
-        value.render(self.static_nodes()).nodes()
-    }
-
-    pub fn render2(mut self, value: impl crate::renderable::Render2<C>) -> Self {
+    pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
         self
     }
 
-    pub fn static2(mut self, value: impl crate::renderable::StaticRender2<C>) -> Self {
+    pub fn r#static(mut self, value: impl crate::renderable::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(&mut self.0);
         value.render(static_nodes);
         self
@@ -700,22 +676,7 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a
 
 impl<'a, C: crate::component::Component> DomBuilder<C> for NodesOwned<'a, C> {}
 
-//================================================================================================//
 //
-//
-//
-//
-//
-//
-// StaticNodes, Nodes
-//
-//
-//
-//
-//
-//
-//================================================================================================//
-
 pub struct StaticNodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut NodeListHandle<'h, C>);
 
 impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
@@ -731,13 +692,13 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
         Nodes(self.0)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render2<C>) -> Self {
+    pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(self.0);
         value.render(nodes);
         self
     }
 
-    pub fn r#static(self, value: impl crate::renderable::StaticRender2<C>) -> Self {
+    pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(self.0);
         value.render(static_nodes);
         self
@@ -779,13 +740,13 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
         StaticNodes(self.0)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render2<C>) -> Self {
+    pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(self.0);
         value.render(nodes);
         self
     }
 
-    pub fn r#static(self, value: impl crate::renderable::StaticRender2<C>) -> Self {
+    pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(self.0);
         value.render(static_nodes);
         self
