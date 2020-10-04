@@ -133,12 +133,12 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         Attributes(self.0)
     }
 
-    pub fn static_nodes(self) -> super::StaticNodes<'a, C> {
-        super::StaticNodes::from_handle(self.0)
+    pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
+        super::StaticNodesOwned::from_handle(self.0)
     }
 
-    pub fn nodes(self) -> super::Nodes<'a, C> {
-        super::Nodes::from_handle(self.0)
+    pub fn nodes(self) -> super::NodesOwned<'a, C> {
+        super::NodesOwned::from_handle(self.0)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
@@ -183,12 +183,12 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
         Self(handle)
     }
 
-    pub fn static_nodes(self) -> super::StaticNodes<'a, C> {
-        super::StaticNodes::from_handle(self.0)
+    pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
+        super::StaticNodesOwned::from_handle(self.0)
     }
 
-    pub fn nodes(self) -> super::Nodes<'a, C> {
-        super::Nodes::from_handle(self.0)
+    pub fn nodes(self) -> super::NodesOwned<'a, C> {
+        super::NodesOwned::from_handle(self.0)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)

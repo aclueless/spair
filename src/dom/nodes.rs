@@ -336,7 +336,7 @@ pub struct MatchIfHandle<'a, C: crate::component::Component> {
 }
 
 impl<'a, C: crate::component::Component> MatchIfHandle<'a, C> {
-    pub fn render_on_arm_index(mut self, index: usize) -> super::Nodes<'a, C> {
+    pub fn render_on_arm_index(mut self, index: usize) -> super::NodesOwned<'a, C> {
         let status = if Some(index) != self.mi.active_index {
             self.mi.nodes.clear(self.parent.as_ref());
             self.mi.active_index = Some(index);
@@ -344,7 +344,7 @@ impl<'a, C: crate::component::Component> MatchIfHandle<'a, C> {
         } else {
             super::ElementStatus::Existing
         };
-        super::Nodes::new(
+        super::NodesOwned::new(
             self.state,
             &mut self.mi.nodes,
             super::Extra {
@@ -379,9 +379,9 @@ impl<'a, C: crate::component::Component> NodeListHandle<'a, C> {
     }
 }
 
-pub struct StaticNodes<'a, C: crate::component::Component>(NodeListHandle<'a, C>);
+pub struct StaticNodesOwned<'a, C: crate::component::Component>(NodeListHandle<'a, C>);
 
-impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
+impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     pub(super) fn from_handle(handle: super::ElementUpdater<'a, C>) -> Self {
         Self(NodeListHandle::from_handle(handle))
     }
@@ -394,8 +394,8 @@ impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
         self.0.extra.comp.clone()
     }
 
-    pub fn nodes(self) -> Nodes<'a, C> {
-        Nodes(self.0)
+    pub fn nodes(self) -> NodesOwned<'a, C> {
+        NodesOwned(self.0)
     }
 
     pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
@@ -427,9 +427,9 @@ impl<'a, C: crate::component::Component> StaticNodes<'a, C> {
     }
 }
 
-pub struct Nodes<'a, C: crate::component::Component>(NodeListHandle<'a, C>);
+pub struct NodesOwned<'a, C: crate::component::Component>(NodeListHandle<'a, C>);
 
-impl<'a, C: crate::component::Component> Nodes<'a, C> {
+impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     pub(super) fn new(
         state: &'a C,
         nodes: &'a mut super::NodeList,
@@ -458,8 +458,8 @@ impl<'a, C: crate::component::Component> Nodes<'a, C> {
         self.0.extra.comp.clone()
     }
 
-    pub fn static_nodes(self) -> StaticNodes<'a, C> {
-        StaticNodes(self.0)
+    pub fn static_nodes(self) -> StaticNodesOwned<'a, C> {
+        StaticNodesOwned(self.0)
     }
 
     pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
@@ -592,7 +592,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder
     }
 }
 
-impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodes<'a, C> {
+impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodesOwned<'a, C> {
     fn require_render(&self) -> bool {
         self.0.extra.status == super::ElementStatus::JustCreated
     }
@@ -632,9 +632,9 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodes<'
     }
 }
 
-impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodes<'a, C> {}
+impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodesOwned<'a, C> {}
 
-impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'a, C> {
+impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a, C> {
     fn require_render(&self) -> bool {
         true
     }
@@ -674,4 +674,4 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'a, C> 
     }
 }
 
-impl<'a, C: crate::component::Component> DomBuilder<C> for Nodes<'a, C> {}
+impl<'a, C: crate::component::Component> DomBuilder<C> for NodesOwned<'a, C> {}

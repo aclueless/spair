@@ -117,3 +117,21 @@ impl From<&str> for ElementType {
         }
     }
 }
+
+pub struct Context<'a, C: crate::component::Component> {
+    pub comp: &'a crate::component::Comp<C>,
+    pub state: &'a C,
+    pub index: usize,
+    pub status: ElementStatus,
+}
+
+pub struct ElementContext<'a> {
+    pub element: &'a mut Element,
+    pub selected_option: Option<element::SelectedOption>,
+}
+
+pub(crate) struct NodeListContext<'a> {
+    pub parent: &'a web_sys::Node,
+    pub next_sibling: Option<&'a web_sys::Node>,
+    pub nodes: &'a mut NodeList,
+}
