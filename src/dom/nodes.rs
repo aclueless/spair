@@ -406,6 +406,18 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
         value.render(self)
     }
 
+    pub fn render2(mut self, value: impl crate::renderable::Render2<C>) -> Self {
+        let nodes = Nodes(&mut self.0);
+        value.render(nodes);
+        self
+    }
+
+    pub fn static2(mut self, value: impl crate::renderable::StaticRender2<C>) -> Self {
+        let static_nodes = StaticNodes(&mut self.0);
+        value.render(static_nodes);
+        self
+    }
+
     pub fn static_text_of_keyed_item(
         mut self,
         value: impl crate::renderable::ListItemStaticText<C>,
@@ -468,6 +480,18 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
 
     pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
         value.render(self.static_nodes()).nodes()
+    }
+
+    pub fn render2(mut self, value: impl crate::renderable::Render2<C>) -> Self {
+        let nodes = Nodes(&mut self.0);
+        value.render(nodes);
+        self
+    }
+
+    pub fn static2(mut self, value: impl crate::renderable::StaticRender2<C>) -> Self {
+        let static_nodes = StaticNodes(&mut self.0);
+        value.render(static_nodes);
+        self
     }
 
     pub fn static_text_of_keyed_item(
@@ -675,3 +699,199 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a
 }
 
 impl<'a, C: crate::component::Component> DomBuilder<C> for NodesOwned<'a, C> {}
+
+//================================================================================================//
+//
+//
+//
+//
+//
+//
+// StaticNodes, Nodes
+//
+//
+//
+//
+//
+//
+//================================================================================================//
+
+pub struct StaticNodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut NodeListHandle<'h, C>);
+
+impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
+    pub fn state(&self) -> &'n C {
+        self.0.state
+    }
+
+    pub fn comp(&self) -> crate::component::Comp<C> {
+        self.0.extra.comp.clone()
+    }
+
+    pub fn nodes(self) -> Nodes<'n, 'h, C> {
+        Nodes(self.0)
+    }
+
+    pub fn render(self, value: impl crate::renderable::Render2<C>) -> Self {
+        let nodes = Nodes(self.0);
+        value.render(nodes);
+        self
+    }
+
+    pub fn r#static(self, value: impl crate::renderable::StaticRender2<C>) -> Self {
+        let static_nodes = StaticNodes(self.0);
+        value.render(static_nodes);
+        self
+    }
+
+    // pub fn static_text_of_keyed_item(
+    //     mut self,
+    //     value: impl crate::renderable::ListItemStaticText<C>,
+    // ) -> Self {
+    //     if self.0.extra.status != super::ElementStatus::Existing {
+    //         value.render(self.nodes()).static_nodes()
+    //     } else {
+    //         self.0.extra.index += 1;
+    //         self
+    //     }
+    // }
+
+    pub(crate) fn static_text(mut self, text: &str) -> Self {
+        self.0
+            .nodes
+            .static_text(self.0.extra.index, text, self.0.parent, self.0.next_sibling);
+        self.0.extra.index += 1;
+        self
+    }
+}
+
+pub struct Nodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut NodeListHandle<'h, C>);
+
+impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
+    pub fn state(&self) -> &'n C {
+        self.0.state
+    }
+
+    pub fn comp(&self) -> crate::component::Comp<C> {
+        self.0.extra.comp.clone()
+    }
+
+    pub fn static_nodes(self) -> StaticNodes<'n, 'h, C> {
+        StaticNodes(self.0)
+    }
+
+    pub fn render(self, value: impl crate::renderable::Render2<C>) -> Self {
+        let nodes = Nodes(self.0);
+        value.render(nodes);
+        self
+    }
+
+    pub fn r#static(self, value: impl crate::renderable::StaticRender2<C>) -> Self {
+        let static_nodes = StaticNodes(self.0);
+        value.render(static_nodes);
+        self
+    }
+
+    // pub fn static_text_of_keyed_item(
+    //     mut self,
+    //     value: impl crate::renderable::ListItemStaticText<C>,
+    // ) -> Self {
+    //     if self.0.extra.status != super::ElementStatus::Existing {
+    //         value.render(self)
+    //     } else {
+    //         self.0.extra.index += 1;
+    //         self
+    //     }
+    // }
+
+    pub(crate) fn update_text(mut self, text: &str) -> Self {
+        self.0
+            .nodes
+            .update_text(self.0.extra.index, text, self.0.parent, self.0.next_sibling);
+        self.0.extra.index += 1;
+        self
+    }
+}
+
+impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodes<'n, 'h, C> {
+    fn require_render(&self) -> bool {
+        self.0.extra.status == super::ElementStatus::JustCreated
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.extra.status == super::ElementStatus::JustCreated
+    }
+
+    fn next_index(&mut self) {
+        self.0.extra.index += 1;
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
+        let e = self.0.nodes.element(
+            tag,
+            self.0.state,
+            &self.0.extra,
+            self.0.parent,
+            self.0.next_sibling,
+        );
+        self.0.extra.index += 1;
+        e
+    }
+
+    fn get_match_if_and_increase_index(&mut self) -> MatchIfHandle<C> {
+        let mi = self
+            .0
+            .nodes
+            .match_if(self.0.state, &self.0.extra, self.0.parent);
+        self.0.extra.index += 1;
+        mi
+    }
+
+    fn store_raw_wrapper(&mut self, element: super::Element) {
+        element.insert_before(self.0.parent, self.0.next_sibling);
+        self.0.nodes.0.push(Node::Element(element));
+    }
+}
+
+impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for StaticNodes<'n, 'h, C> {}
+
+impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'n, 'h, C> {
+    fn require_render(&self) -> bool {
+        true
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.extra.status == super::ElementStatus::JustCreated
+    }
+
+    fn next_index(&mut self) {
+        self.0.extra.index += 1;
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
+        let e = self.0.nodes.element(
+            tag,
+            self.0.state,
+            &self.0.extra,
+            self.0.parent,
+            self.0.next_sibling,
+        );
+        self.0.extra.index += 1;
+        e
+    }
+
+    fn get_match_if_and_increase_index(&mut self) -> MatchIfHandle<C> {
+        let mi = self
+            .0
+            .nodes
+            .match_if(self.0.state, &self.0.extra, self.0.parent);
+        self.0.extra.index += 1;
+        mi
+    }
+
+    fn store_raw_wrapper(&mut self, element: super::Element) {
+        element.insert_before(self.0.parent, self.0.next_sibling);
+        self.0.nodes.0.push(Node::Element(element));
+    }
+}
+
+impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> {}
