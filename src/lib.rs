@@ -24,8 +24,6 @@ pub use renderable::*;
 pub use routing::Routes;
 pub use utils::{document, into_input, into_select, window};
 
-// pub use web_sys::Location;
-// pub use web_sys::{Event, FocusEvent, InputEvent, KeyboardEvent, MouseEvent, UiEvent, WheelEvent};
 pub use web_sys;
 
 pub use wasm_bindgen::JsValue;
