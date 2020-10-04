@@ -107,7 +107,7 @@ When implementing [`Render`], [`StaticRender`] or [`ListItem`] for your data typ
 
 ```rust
 impl spair::Render<State> for &YourType {
-    fn render(self, nodes: spair::Nodes<State>) -> spair::Nodes<State> {
+    fn render(self, nodes: spair::Nodes<State>) {
         let state = nodes.state(); // type of `state` is `&State`
 
         nodes.render(state.value)
