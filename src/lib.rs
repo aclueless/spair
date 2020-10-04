@@ -16,7 +16,9 @@ pub use component::{
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
-pub use dom::{ElementUpdater as Element, ListElementCreation, NodesOwned, RawWrapper, StaticNodesOwned};
+//pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, NodesOwned, RawWrapper, StaticNodes, StaticNodesOwned};
+pub use dom::{ElementUpdater as Element, ListElementCreation, NodesOwned as Nodes, RawWrapper, StaticNodesOwned as StaticNodes};
+pub use dom::{Nodes as Nodes2};
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};
