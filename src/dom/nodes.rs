@@ -476,7 +476,6 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         self
     }
 
-
     pub fn r#static(mut self, value: impl crate::renderable::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(&mut self.0);
         value.render(static_nodes);

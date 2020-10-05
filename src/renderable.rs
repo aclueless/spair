@@ -17,7 +17,7 @@ pub trait RenderRef<C: crate::component::Component> {
 impl<C, T> RenderRef<C> for T
 where
     C: crate::component::Component,
-    for <'t> &'t T: Render<C>,
+    for<'t> &'t T: Render<C>,
 {
     fn render(&self, nodes: Nodes<C>) {
         Render::render(self, nodes);
