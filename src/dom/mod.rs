@@ -72,13 +72,6 @@ impl Text {
     }
 }
 
-// A better name? Context?
-pub struct Extra<'a, C: crate::component::Component> {
-    pub comp: &'a crate::component::Comp<C>,
-    pub status: ElementStatus,
-    pub index: usize,
-}
-
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ElementStatus {
     JustCreated,
@@ -145,10 +138,11 @@ impl<'a, C> CompContext<'a, C> {
             list_context,
         }
     }
-}
 
-// pub(crate) struct NodeListContext<'a> {
-//     pub parent: &'a web_sys::Node,
-//     pub next_sibling: Option<&'a web_sys::Node>,
-//     pub nodes: &'a mut NodeList,
-// }
+    fn match_if_updater(&self, mi_context: MatchIfContext<'a>) -> MatchIfUpdater<'a, C> {
+        MatchIfUpdater {
+            comp_context: self.clone(),
+            mi_context,
+        }
+    }
+}

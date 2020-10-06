@@ -97,19 +97,6 @@ pub struct ElementContext<'a> {
     pub(super) selected_option: Option<SelectedOption>,
 }
 
-impl<'a> ElementContext<'a> {
-    pub fn create_extra<C: crate::component::Component>(
-        &self,
-        comp: &'a crate::component::Comp<C>,
-    ) -> super::Extra<'a, C> {
-        super::Extra {
-            comp,
-            index: self.index,
-            status: self.status,
-        }
-    }
-}
-
 pub enum SelectedOption {
     None,
     Value(String),
