@@ -107,7 +107,7 @@ impl NodeList {
         self.0.push(element);
     }
 
-    fn match_if<'a>(&'a mut self, index: usize, parent: &'a web_sys::Node) -> &'a mut MatchIf {
+    fn match_if(&mut self, index: usize, parent: &web_sys::Node) -> &mut MatchIf {
         if index == self.0.len() {
             let mi = MatchIf::default();
             mi.append_to(parent);

@@ -210,17 +210,16 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             super::ListElementCreation::New => false,
         };
 
-        let mut keyed_list_updater =
-            super::KeyedListUpdater {
-                comp: self.comp,
-                state: self.state,
-                list_context: self.element.nodes.keyed_list_context(
-                    I::ROOT_ELEMENT_TAG,
-                    parent,
-                    items.len(),
-                    use_template,
-                )
-            };
+        let mut keyed_list_updater = super::KeyedListUpdater {
+            comp: self.comp,
+            state: self.state,
+            list_context: self.element.nodes.keyed_list_context(
+                I::ROOT_ELEMENT_TAG,
+                parent,
+                items.len(),
+                use_template,
+            ),
+        };
         keyed_list_updater.update(items.into_iter());
 
         // The hack start in AttributeSetter::value
