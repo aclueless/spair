@@ -124,21 +124,28 @@ pub struct CompContext<'a, C> {
 }
 
 impl<'a, C> CompContext<'a, C> {
+    fn clone(&self) -> Self {
+        Self {
+            comp: self.comp,
+            state: self.state,
+        }
+    }
+
     fn element_updater(&self, el_context: ElementContext<'a>) -> ElementUpdater<'a, C> {
         ElementUpdater {
-            comp_context: CompContext {
-                comp: self.comp,
-                state: self.state,
-            },
+            comp_context: self.clone(),
             el_context,
         }
     }
-}
 
-// pub struct ElementContext<'a> {
-//     pub element: &'a mut Element,
-//     pub selected_option: Option<element::SelectedOption>,
-// }
+    #[cfg(feature = "keyed-list")]
+    fn keyed_list_updater(&self, list_context: KeyedListContext<'a>) -> KeyedListUpdater<'a, C> {
+        KeyedListUpdater {
+            comp_context: self.clone(),
+            list_context,
+        }
+    }
+}
 
 // pub(crate) struct NodeListContext<'a> {
 //     pub parent: &'a web_sys::Node,

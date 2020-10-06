@@ -11,8 +11,7 @@ pub trait KeyedListItem<'a, C: crate::component::Component>:
 trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C> {
     fn update_existing_item(
         &self,
-        state: &C,
-        comp: &crate::component::Comp<C>,
+        comp_context: &super::CompContext<C>,
         old_item: Option<(usize, &mut std::option::Option<(Key, super::Element)>)>,
         new_item: Option<&mut std::option::Option<(Key, super::Element)>>,
         next_sibling: Option<&web_sys::Element>,
@@ -26,7 +25,7 @@ trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C>
             .unwrap_throw()
             .1
             .create_context(super::ElementStatus::Existing);
-        let eu = super::CompContext { comp, state }.element_updater(el_context);
+        let eu = comp_context.element_updater(el_context);
         self.render(eu);
         *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
     }
@@ -56,17 +55,32 @@ impl Clone for KeyedList {
 }
 
 impl KeyedList {
-    pub fn create_updater<'a, C: crate::component::Component>(
+    pub fn create_context<'a>(
         &'a mut self,
         root_item_tag: &str,
-        state: &'a C,
         new_item_count: usize,
         parent: &'a web_sys::Node,
-        extra: &super::Extra<'a, C>,
         use_template: bool,
-    ) -> KeyedListUpdater<'a, C> {
+    ) -> KeyedListContext<'a> {
         self.pre_update(new_item_count);
-        KeyedListUpdater::new(root_item_tag, state, self, parent, extra.comp, use_template)
+        //        KeyedListUpdater::new(root_item_tag, state, self, parent, extra.comp, use_template)
+
+        let require_init_template = use_template && self.template.is_none();
+        if require_init_template {
+            self.template = Some(super::Element::new(root_item_tag));
+        }
+        let template = self.template.as_mut();
+        let new_item_count = self.active.len();
+        KeyedListContext {
+            parent,
+            old: self.buffer.iter_mut().enumerate().peekable_double_ended(),
+            new: self.active.iter_mut().peekable_double_ended(),
+            old_elements_map: &mut self.old_elements_map,
+            new_item_count,
+            next_sibling: None,
+            template,
+            require_init_template,
+        }
     }
 
     // TODO better name?
@@ -153,9 +167,7 @@ impl PartialEq<Key> for u64 {
     }
 }
 
-pub struct KeyedListUpdater<'a, C: crate::component::Component> {
-    state: &'a C,
-    comp: &'a crate::component::Comp<C>,
+pub struct KeyedListContext<'a> {
     parent: &'a web_sys::Node,
     old: crate::utils::PeekableDoubleEndedIterator<
         std::iter::Enumerate<std::slice::IterMut<'a, Option<(Key, super::Element)>>>,
@@ -170,37 +182,14 @@ pub struct KeyedListUpdater<'a, C: crate::component::Component> {
     require_init_template: bool,
 }
 
-impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
-    fn new(
-        root_item_tag: &str,
-        state: &'a C,
-        list: &'a mut KeyedList,
-        parent: &'a web_sys::Node,
-        comp: &'a crate::component::Comp<C>,
-        use_template: bool,
-    ) -> Self {
-        let require_init_template = use_template && list.template.is_none();
-        if require_init_template {
-            list.template = Some(super::Element::new(root_item_tag));
-        }
-        let template = list.template.as_mut();
-        let new_item_count = list.active.len();
-        Self {
-            state,
-            comp,
-            parent,
-            old: list.buffer.iter_mut().enumerate().peekable_double_ended(),
-            new: list.active.iter_mut().peekable_double_ended(),
-            old_elements_map: &mut list.old_elements_map,
-            new_item_count,
-            next_sibling: None,
-            template,
-            require_init_template,
-        }
-    }
+pub struct KeyedListUpdater<'a, C> {
+    pub(super) comp_context: super::CompContext<'a, C>,
+    pub(super) list_context: KeyedListContext<'a>,
+}
 
+impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     fn create_element_for_new_item(&self, tag: &str) -> (super::Element, super::ElementStatus) {
-        match &self.template {
+        match &self.list_context.template {
             Some(template) => (Clone::clone(*template), super::ElementStatus::JustCloned),
             None => (super::Element::new(tag), super::ElementStatus::JustCreated),
         }
@@ -211,23 +200,20 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         // No items? Just clear the current list.
-        if self.new_item_count == 0 {
+        if self.list_context.new_item_count == 0 {
             self.remove_all_old_items();
             return;
         }
 
         let mut items_state_iter = items_state_iter.peekable_double_ended();
-        if self.require_init_template {
+        if self.list_context.require_init_template {
             let el_context = self
+                .list_context
                 .template
                 .as_mut()
                 .unwrap()
                 .create_context(super::ElementStatus::JustCreated);
-            let eu = super::CompContext {
-                comp: self.comp,
-                state: self.state,
-            }
-            .element_updater(el_context);
+            let eu = self.comp_context.element_updater(el_context);
 
             items_state_iter.peek().unwrap_throw().render(eu);
         }
@@ -253,7 +239,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     {
         let mut count = 0;
         loop {
-            match (items_state_iter.peek(), self.old.peek()) {
+            match (items_state_iter.peek(), self.list_context.old.peek()) {
                 (Some(item_state), Some(item)) => {
                     let item = item
                         .1
@@ -267,10 +253,9 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             }
             count += 1;
             items_state_iter.next().unwrap_throw().update_existing_item(
-                self.state,
-                self.comp,
-                self.old.next(),
-                self.new.next(),
+                &self.comp_context,
+                self.list_context.old.next(),
+                self.list_context.new.next(),
                 None,
                 |_, _| {},
             );
@@ -288,7 +273,10 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     {
         let mut count = 0;
         loop {
-            let ws_element = match (items_state_iter.peek_back(), self.old.peek_back()) {
+            let ws_element = match (
+                items_state_iter.peek_back(),
+                self.list_context.old.peek_back(),
+            ) {
                 (Some(item_state), Some(item)) => {
                     let item = item
                         .1
@@ -307,14 +295,13 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
                 .next_back()
                 .unwrap_throw()
                 .update_existing_item(
-                    self.state,
-                    self.comp,
-                    self.old.next_back(),
-                    self.new.next_back(),
+                    &self.comp_context,
+                    self.list_context.old.next_back(),
+                    self.list_context.new.next_back(),
                     None,
                     |_, _| {},
                 );
-            self.next_sibling = Some(ws_element);
+            self.list_context.next_sibling = Some(ws_element);
         }
     }
 
@@ -325,7 +312,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
-        match (items_state_iter.peek(), self.old.peek_back()) {
+        match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
                 let item = item
                     .1
@@ -337,17 +324,17 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             }
             _ => return 0,
         }
-        let moved = self.old.next_back();
+        let moved = self.list_context.old.next_back();
         let next_sibling = self
+            .list_context
             .old
             .peek()
             .and_then(|item| item.1.as_ref().map(|item| item.1.ws_element()));
-        let parent = self.parent;
+        let parent = self.list_context.parent;
         items_state_iter.next().unwrap_throw().update_existing_item(
-            self.state,
-            self.comp,
+            &self.comp_context,
             moved,
-            self.new.next(),
+            self.list_context.new.next(),
             next_sibling,
             |element, next_sibling| {
                 element.insert_before(parent, next_sibling.map(|element| element.unchecked_ref()));
@@ -365,7 +352,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
-        let new_next_sibling = match (items_state_iter.peek_back(), self.old.peek()) {
+        let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
                 let item = item
                     .1
@@ -382,19 +369,18 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             .next_back()
             .unwrap_throw()
             .update_existing_item(
-                self.state,
-                self.comp,
-                self.old.next(),
-                self.new.next_back(),
-                self.next_sibling.as_ref(),
+                &self.comp_context,
+                self.list_context.old.next(),
+                self.list_context.new.next_back(),
+                self.list_context.next_sibling.as_ref(),
                 |element, next_sibling| {
                     element.insert_before(
-                        self.parent,
+                        self.list_context.parent,
                         next_sibling.map(|element| element.unchecked_ref()),
                     );
                 },
             );
-        self.next_sibling = Some(new_next_sibling);
+        self.list_context.next_sibling = Some(new_next_sibling);
         1
     }
 
@@ -409,7 +395,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             return;
         }
 
-        if self.old.peek().is_none() {
+        if self.list_context.old.peek().is_none() {
             self.insert_remain_items(items_state_iter);
             return;
         }
@@ -420,7 +406,10 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         // and which should be stay still
         let mut items_with_lis: Vec<_> = items_state_iter
             .map(|item| {
-                let old_element = self.old_elements_map.remove(&item.key().into());
+                let old_element = self
+                    .list_context
+                    .old_elements_map
+                    .remove(&item.key().into());
                 ItemWithLis::new(item, old_element)
             })
             .collect();
@@ -440,56 +429,60 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
             };
 
             let el_context = element.create_context(status);
-            let eu = super::CompContext {
-                comp: self.comp,
-                state: self.state,
-            }
-            .element_updater(el_context);
+            let eu = self.comp_context.element_updater(el_context);
 
             item_state.render(eu);
             if !lis {
                 let next_sibling = self
+                    .list_context
                     .next_sibling
                     .as_ref()
                     .map(|element| element.unchecked_ref());
-                element.insert_before(self.parent, next_sibling);
+                element.insert_before(self.list_context.parent, next_sibling);
             }
 
-            self.next_sibling = Some(element.ws_element().clone());
-            *self.new.next_back().expect_throw("Why new-list overflow?") =
-                Some((item_state.key().into(), element));
+            self.list_context.next_sibling = Some(element.ws_element().clone());
+            *self
+                .list_context
+                .new
+                .next_back()
+                .expect_throw("Why new-list overflow?") = Some((item_state.key().into(), element));
         }
     }
 
     fn construct_old_elements_map_from_remaining_old_elements(&mut self) {
-        self.old_elements_map.clear();
-        while let Some((index, item)) = self.old.next() {
+        self.list_context.old_elements_map.clear();
+        while let Some((index, item)) = self.list_context.old.next() {
             let (key, element) = item.take().expect_throw(
                 "Why no item in old list? - construct_old_elements_map_from_remaining_old_elements",
             );
-            self.old_elements_map
+            self.list_context
+                .old_elements_map
                 .insert(key, OldElement { index, element });
         }
     }
 
     fn remove_old_elements_that_still_in_old_elements_map(&mut self) {
-        let parent = self.parent;
-        self.old_elements_map.drain().for_each(|(_, item)| {
-            item.element.remove_from(parent);
-        })
+        let parent = self.list_context.parent;
+        self.list_context
+            .old_elements_map
+            .drain()
+            .for_each(|(_, item)| {
+                item.element.remove_from(parent);
+            })
     }
 
     fn remove_all_old_items(&mut self) {
-        self.parent.set_text_content(None);
-        while let Some((_, item)) = self.old.next() {
+        self.list_context.parent.set_text_content(None);
+        while let Some((_, item)) = self.list_context.old.next() {
             item.take()
                 .expect_throw("Why no item in old list? - remove_all_old_items");
         }
     }
 
     fn remove_remain_items(&mut self) {
-        let parent = self.parent;
-        while let Some((_, item)) = self.old.next() {
+        let parent = self.list_context.parent;
+        while let Some((_, item)) = self.list_context.old.next() {
             item.take()
                 .expect_throw("Why no item in old list? - remove_remain_items")
                 .1
@@ -506,20 +499,20 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item(I::ROOT_ELEMENT_TAG);
             let el_context = element.create_context(status);
-            let eu = super::CompContext {
-                comp: self.comp,
-                state: self.state,
-            }
-            .element_updater(el_context);
+            let eu = self.comp_context.element_updater(el_context);
             item_state.render(eu);
             element.insert_before(
-                self.parent,
-                self.next_sibling
+                self.list_context.parent,
+                self.list_context
+                    .next_sibling
                     .as_ref()
                     .map(|element| element.unchecked_ref()),
             );
-            *self.new.next().expect_throw("new remain items") =
-                Some((item_state.key().into(), element));
+            *self
+                .list_context
+                .new
+                .next()
+                .expect_throw("new remain items") = Some((item_state.key().into(), element));
         }
     }
 }

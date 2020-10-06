@@ -185,15 +185,13 @@ impl NodeList {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<'a, C: crate::component::Component>(
+    pub fn keyed_list_context<'a>(
         &'a mut self,
         root_item_tag: &str,
-        state: &'a C,
         parent: &'a web_sys::Node,
-        extra: &super::Extra<'a, C>,
         exact_count_of_new_items: usize,
         use_template: bool,
-    ) -> super::KeyedListUpdater<'a, C> {
+    ) -> super::KeyedListContext<'a> {
         if self.0.len() == 0 {
             self.0.push(Node::KeyedList(super::KeyedList::default()));
         }
@@ -203,12 +201,10 @@ impl NodeList {
             .first_mut()
             .expect_throw("Expect a keyed list as the first item of the node list")
         {
-            Node::KeyedList(list) => list.create_updater(
+            Node::KeyedList(list) => list.create_context(
                 root_item_tag,
-                state,
                 exact_count_of_new_items,
                 parent,
-                extra,
                 use_template,
             ),
             _ => panic!("Why not a keyed list?"),

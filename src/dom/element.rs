@@ -222,21 +222,15 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             super::ListElementCreation::New => false,
         };
 
-        let extra = super::Extra {
-            comp: self.comp_context.comp,
-            index: self.el_context.index,
-            status: self.el_context.status,
-        };
-
-        let mut updater = self.el_context.element.nodes.keyed_list(
-            I::ROOT_ELEMENT_TAG,
-            self.comp_context.state,
-            parent,
-            &extra,
-            items.len(),
-            use_template,
-        );
-        updater.update(items.into_iter());
+        let mut keyed_list_updater =
+            self.comp_context
+                .keyed_list_updater(self.el_context.element.nodes.keyed_list_context(
+                    I::ROOT_ELEMENT_TAG,
+                    parent,
+                    items.len(),
+                    use_template,
+                ));
+        keyed_list_updater.update(items.into_iter());
 
         // The hack start in AttributeSetter::value
         self.finish_hacking_for_select_value();
