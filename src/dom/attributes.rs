@@ -660,7 +660,7 @@ where
     C: crate::component::Component,
 {
     fn ws_element(&self) -> &web_sys::Element {
-        &self.0.el_context.element.ws_element
+        &self.0.element.ws_element
     }
 }
 
@@ -668,17 +668,17 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
     for super::StaticAttributes<'a, C>
 {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.0.el_context.element.ws_element.unchecked_ref()
+        self.0.element.ws_element.unchecked_ref()
     }
 
     fn element_type(&self) -> super::ElementType {
-        self.0.el_context.element.element_type
+        self.0.element.element_type
     }
     fn require_set_listener(&mut self) -> bool {
-        if self.0.el_context.status == super::ElementStatus::Existing {
+        if self.0.status == super::ElementStatus::Existing {
             // When self.require_init == false, self.store_listener will not be invoked.
             // We must update the index here to count over the static events.
-            self.0.el_context.index += 1;
+            self.0.index += 1;
             false
         } else {
             // A cloned element requires its event handlers to be set because the events
@@ -689,40 +689,39 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
 
     fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
         self.0
-            .el_context
             .element
             .attributes
-            .store_listener(self.0.el_context.index, listener);
-        self.0.el_context.index += 1;
+            .store_listener(self.0.index, listener);
+        self.0.index += 1;
     }
 
     fn check_bool_attribute(&mut self, _value: bool) -> bool {
-        self.0.el_context.status == super::ElementStatus::JustCreated
+        self.0.status == super::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn check_str_attribute(&mut self, _value: &str) -> bool {
-        self.0.el_context.status == super::ElementStatus::JustCreated
+        self.0.status == super::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn check_i32_attribute(&mut self, _value: i32) -> bool {
-        self.0.el_context.status == super::ElementStatus::JustCreated
+        self.0.status == super::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn check_u32_attribute(&mut self, _value: u32) -> bool {
-        self.0.el_context.status == super::ElementStatus::JustCreated
+        self.0.status == super::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn check_f64_attribute(&mut self, _value: f64) -> bool {
-        self.0.el_context.status == super::ElementStatus::JustCreated
+        self.0.status == super::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn start_hacking_for_selected_value(&mut self, value: Option<&str>) {
-        self.0.el_context.selected_option = Some(
+        self.0.selected_option = Some(
             value
                 .map(|value| super::SelectedOption::Value(value.to_string()))
                 .unwrap_or(super::SelectedOption::None),
@@ -730,7 +729,7 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
     }
 
     fn start_hacking_for_selected_index(&mut self, index: i32) {
-        self.0.el_context.selected_option = Some(super::SelectedOption::Index(index));
+        self.0.selected_option = Some(super::SelectedOption::Index(index));
     }
 }
 
@@ -739,17 +738,17 @@ where
     C: crate::component::Component,
 {
     fn ws_element(&self) -> &web_sys::Element {
-        &self.0.el_context.element.ws_element
+        &self.0.element.ws_element
     }
 }
 
 impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attributes<'a, C> {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.0.el_context.element.ws_element.unchecked_ref()
+        self.0.element.ws_element.unchecked_ref()
     }
 
     fn element_type(&self) -> super::ElementType {
-        self.0.el_context.element.element_type
+        self.0.element.element_type
     }
 
     fn require_set_listener(&mut self) -> bool {
@@ -758,70 +757,64 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attr
 
     fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
         self.0
-            .el_context
             .element
             .attributes
-            .store_listener(self.0.el_context.index, listener);
-        self.0.el_context.index += 1;
+            .store_listener(self.0.index, listener);
+        self.0.index += 1;
     }
 
     fn check_bool_attribute(&mut self, value: bool) -> bool {
         let rs = self
             .0
-            .el_context
             .element
             .attributes
-            .check_bool_attribute(self.0.el_context.index, value);
-        self.0.el_context.index += 1;
+            .check_bool_attribute(self.0.index, value);
+        self.0.index += 1;
         rs
     }
 
     fn check_str_attribute(&mut self, value: &str) -> bool {
         let rs = self
             .0
-            .el_context
             .element
             .attributes
-            .check_str_attribute(self.0.el_context.index, value);
-        self.0.el_context.index += 1;
+            .check_str_attribute(self.0.index, value);
+        self.0.index += 1;
         rs
     }
 
     fn check_i32_attribute(&mut self, value: i32) -> bool {
         let rs = self
             .0
-            .el_context
             .element
             .attributes
-            .check_i32_attribute(self.0.el_context.index, value);
-        self.0.el_context.index += 1;
+            .check_i32_attribute(self.0.index, value);
+        self.0.index += 1;
         rs
     }
 
     fn check_u32_attribute(&mut self, value: u32) -> bool {
         let rs = self
             .0
-            .el_context
             .element
             .attributes
-            .check_u32_attribute(self.0.el_context.index, value);
-        self.0.el_context.index += 1;
+            .check_u32_attribute(self.0.index, value);
+        self.0.index += 1;
         rs
     }
 
     fn check_f64_attribute(&mut self, value: f64) -> bool {
         let rs = self
             .0
-            .el_context
             .element
             .attributes
-            .check_f64_attribute(self.0.el_context.index, value);
-        self.0.el_context.index += 1;
+            .check_f64_attribute(self.0.index, value);
+        self.0.index += 1;
         rs
     }
 
     fn start_hacking_for_selected_value(&mut self, value: Option<&str>) {
-        self.0.el_context.selected_option = Some(
+        self.0.selected_option = Some(
             value
                 .map(|value| super::SelectedOption::Value(value.to_string()))
                 .unwrap_or(super::SelectedOption::None),
@@ -829,6 +822,6 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attr
     }
 
     fn start_hacking_for_selected_index(&mut self, index: i32) {
-        self.0.el_context.selected_option = Some(super::SelectedOption::Index(index));
+        self.0.selected_option = Some(super::SelectedOption::Index(index));
     }
 }

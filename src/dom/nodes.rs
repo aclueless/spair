@@ -26,36 +26,31 @@ impl NodeList {
         self.0.iter().for_each(|node| node.append_to(parent));
     }
 
-    fn get_element_context(
-        &mut self,
-        index: usize,
-        status: super::ElementStatus,
-    ) -> super::ElementContext {
+    pub fn get_element(&mut self, index: usize) -> &mut super::Element {
         match self
             .0
             .get_mut(index)
             .expect_throw("Expect an element node at the given index")
         {
-            Node::Element(element) => element.create_context(status),
+            Node::Element(element) => element,
             _ => panic!("Why not an element?"),
         }
     }
 
-    fn element(
+    fn create_element(
         &mut self,
         tag: &str,
         index: usize,
         parent_status: super::ElementStatus,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
-    ) -> super::ElementContext {
-        let status = if index == self.0.len() {
+    ) -> super::ElementStatus {
+        if index == self.0.len() {
             self.create_new_element(tag, parent, next_sibling);
             super::ElementStatus::JustCreated
         } else {
             parent_status
-        };
-        self.get_element_context(index, status)
+        }
     }
 
     pub fn clear_after(&mut self, index: usize, parent: &web_sys::Node) {
@@ -71,15 +66,15 @@ impl NodeList {
         }
     }
 
-    pub fn element_context_for_list_element(
+    pub fn create_element_for_list(
         &mut self,
         tag: &str,
         index: usize,
         parent: &web_sys::Node,
         use_template: bool,
-    ) -> super::ElementContext {
+    ) -> super::ElementStatus {
         let item_count = self.0.len();
-        let status = if index < item_count {
+        if index < item_count {
             super::ElementStatus::Existing
         } else if !use_template || item_count == 0 {
             // Assumption:
@@ -91,8 +86,7 @@ impl NodeList {
         } else {
             self.create_new_element_by_cloning_first_item(parent);
             super::ElementStatus::JustCloned
-        };
-        self.get_element_context(index, status)
+        }
     }
 
     fn create_new_element(
@@ -113,7 +107,7 @@ impl NodeList {
         self.0.push(element);
     }
 
-    fn match_if<'a>(&'a mut self, index: usize, parent: &'a web_sys::Node) -> MatchIfContext<'a> {
+    fn match_if<'a>(&'a mut self, index: usize, parent: &'a web_sys::Node) -> &'a mut MatchIf {
         if index == self.0.len() {
             let mi = MatchIf::default();
             mi.append_to(parent);
@@ -125,7 +119,7 @@ impl NodeList {
             .get_mut(index)
             .expect_throw("Expect a match/if arm node at the given index")
         {
-            Node::MatchIf(match_if) => MatchIfContext { match_if, parent },
+            Node::MatchIf(match_if) => match_if,
             _ => panic!("Why not a match/if arm?"),
         }
     }
@@ -312,43 +306,41 @@ impl MatchIf {
     }
 }
 
-pub struct MatchIfContext<'a> {
+pub struct MatchIfUpdater<'a, C> {
+    comp: &'a crate::component::Comp<C>,
+    state: &'a C,
+
     parent: &'a web_sys::Node,
     match_if: &'a mut MatchIf,
 }
 
-pub struct MatchIfUpdater<'a, C> {
-    pub(super) comp_context: super::CompContext<'a, C>,
-    pub(super) mi_context: MatchIfContext<'a>,
-}
-
 impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
     pub fn render_on_arm_index(mut self, index: usize) -> super::NodesOwned<'a, C> {
-        let status = if Some(index) != self.mi_context.match_if.active_index {
-            self.mi_context
-                .match_if
-                .nodes
-                .clear(self.mi_context.parent.as_ref());
-            self.mi_context.match_if.active_index = Some(index);
+        let status = if Some(index) != self.match_if.active_index {
+            self.match_if.nodes.clear(self.parent.as_ref());
+            self.match_if.active_index = Some(index);
             super::ElementStatus::JustCreated
         } else {
             super::ElementStatus::Existing
         };
 
         NodesOwned(NodeListUpdater {
-            comp_context: self.comp_context.clone(),
-            list_context: NodeListContext {
-                index: 0,
-                parent_status: status,
-                nodes: &mut self.mi_context.match_if.nodes,
-                parent: self.mi_context.parent,
-                next_sibling: Some(&self.mi_context.match_if.end_node),
-            },
+            comp: self.comp,
+            state: self.state,
+
+            index: 0,
+            parent_status: status,
+            nodes: &mut self.match_if.nodes,
+            parent: self.parent,
+            next_sibling: Some(&self.match_if.end_node),
         })
     }
 }
 
-pub(crate) struct NodeListContext<'a> {
+pub(crate) struct NodeListUpdater<'a, C> {
+    comp: &'a crate::component::Comp<C>,
+    state: &'a C,
+
     index: usize,
     parent_status: super::ElementStatus,
     parent: &'a web_sys::Node,
@@ -356,23 +348,30 @@ pub(crate) struct NodeListContext<'a> {
     nodes: &'a mut super::NodeList,
 }
 
-pub(crate) struct NodeListUpdater<'a, C> {
-    comp_context: super::CompContext<'a, C>,
-    list_context: NodeListContext<'a>,
-}
-
 impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     pub fn from_el_updater(eu: super::ElementUpdater<'a, C>) -> Self {
         Self {
-            comp_context: eu.comp_context.clone(),
-            list_context: NodeListContext {
-                index: 0,
-                parent_status: eu.el_context.status,
-                parent: eu.el_context.element.ws_element.as_ref(),
-                next_sibling: None,
-                nodes: &mut eu.el_context.element.nodes,
-            },
+            comp: eu.comp,
+            state: eu.state,
+            index: 0,
+            parent_status: eu.status,
+            parent: eu.element.ws_element.as_ref(),
+            next_sibling: None,
+            nodes: &mut eu.element.nodes,
         }
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
+        let status = self.nodes.create_element(
+            tag,
+            self.index,
+            self.parent_status,
+            self.parent,
+            self.next_sibling,
+        );
+        let element = self.nodes.get_element(self.index);
+        self.index += 1;
+        super::ElementUpdater::new(self.comp, self.state, element, status)
     }
 }
 
@@ -384,11 +383,11 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     }
 
     pub fn state(&self) -> &'a C {
-        self.0.comp_context.state
+        self.0.state
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp_context.comp.clone()
+        self.0.comp.clone()
     }
 
     pub fn nodes(self) -> NodesOwned<'a, C> {
@@ -417,10 +416,10 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
         mut self,
         value: impl crate::renderable::ListItemStaticText<C>,
     ) -> Self {
-        if self.0.list_context.parent_status != super::ElementStatus::Existing {
+        if self.0.parent_status != super::ElementStatus::Existing {
             value.render(self.nodes()).static_nodes()
         } else {
-            self.0.list_context.index += 1;
+            self.0.index += 1;
             self
         }
     }
@@ -434,11 +433,11 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     }
 
     pub fn state(&self) -> &'a C {
-        self.0.comp_context.state
+        self.0.state
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp_context.comp.clone()
+        self.0.comp.clone()
     }
 
     pub fn static_nodes(self) -> StaticNodesOwned<'a, C> {
@@ -467,22 +466,19 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         mut self,
         value: impl crate::renderable::ListItemStaticText<C>,
     ) -> Self {
-        if self.0.list_context.parent_status != super::ElementStatus::Existing {
+        if self.0.parent_status != super::ElementStatus::Existing {
             value.render(self)
         } else {
-            self.0.list_context.index += 1;
+            self.0.index += 1;
             self
         }
     }
 
     pub(crate) fn update_text(mut self, text: &str) -> Self {
-        self.0.list_context.nodes.update_text(
-            self.0.list_context.index,
-            text,
-            self.0.list_context.parent,
-            self.0.list_context.next_sibling,
-        );
-        self.0.list_context.index += 1;
+        self.0
+            .nodes
+            .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
+        self.0.index += 1;
         self
     }
 }
@@ -590,51 +586,35 @@ pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder
 
 impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodesOwned<'a, C> {
     fn require_render(&self) -> bool {
-        self.0.list_context.parent_status == super::ElementStatus::JustCreated
+        self.0.parent_status == super::ElementStatus::JustCreated
     }
 
     fn just_created(&self) -> bool {
-        self.0.list_context.parent_status == super::ElementStatus::JustCreated
+        self.0.parent_status == super::ElementStatus::JustCreated
     }
 
     fn next_index(&mut self) {
-        self.0.list_context.index += 1;
+        self.0.index += 1;
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        // let el_context = super::ElementContext {
-        //     index: self.0.list_context.index,
-        //     status: self.0.list_context.parent_status,
-        //     selected_option: self.selected_option,
-        // };
-        let el_context = self.0.list_context.nodes.element(
-            tag,
-            self.0.list_context.index,
-            self.0.list_context.parent_status,
-            self.0.list_context.parent,
-            self.0.list_context.next_sibling,
-        );
-        self.0.list_context.index += 1;
-        super::CompContext {
-            state: self.0.comp_context.state,
-            comp: self.0.comp_context.comp,
-        }
-        .element_updater(el_context)
+        self.0.get_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
-        let mi = self
-            .0
-            .list_context
-            .nodes
-            .match_if(self.0.list_context.index, self.0.list_context.parent);
-        self.0.list_context.index += 1;
-        self.0.comp_context.match_if_updater(mi)
+        let match_if = self.0.nodes.match_if(self.0.index, self.0.parent);
+        self.0.index += 1;
+        MatchIfUpdater {
+            comp: self.0.comp,
+            state: self.0.state,
+            parent: self.0.parent,
+            match_if,
+        }
     }
 
     fn store_raw_wrapper(&mut self, element: super::Element) {
-        element.insert_before(self.0.list_context.parent, self.0.list_context.next_sibling);
-        self.0.list_context.nodes.0.push(Node::Element(element));
+        element.insert_before(self.0.parent, self.0.next_sibling);
+        self.0.nodes.0.push(Node::Element(element));
     }
 }
 
@@ -646,57 +626,45 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a
     }
 
     fn just_created(&self) -> bool {
-        self.0.list_context.parent_status == super::ElementStatus::JustCreated
+        self.0.parent_status == super::ElementStatus::JustCreated
     }
 
     fn next_index(&mut self) {
-        self.0.list_context.index += 1;
+        self.0.index += 1;
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let el_context = self.0.list_context.nodes.element(
-            tag,
-            self.0.list_context.index,
-            self.0.list_context.parent_status,
-            self.0.list_context.parent,
-            self.0.list_context.next_sibling,
-        );
-        self.0.list_context.index += 1;
-        super::CompContext {
-            state: self.0.comp_context.state,
-            comp: self.0.comp_context.comp,
-        }
-        .element_updater(el_context)
+        self.0.get_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
-        let mi = self
-            .0
-            .list_context
-            .nodes
-            .match_if(self.0.list_context.index, self.0.list_context.parent);
-        self.0.list_context.index += 1;
-        self.0.comp_context.match_if_updater(mi)
+        let match_if = self.0.nodes.match_if(self.0.index, self.0.parent);
+        self.0.index += 1;
+        MatchIfUpdater {
+            comp: self.0.comp,
+            state: self.0.state,
+            parent: self.0.parent,
+            match_if,
+        }
     }
 
     fn store_raw_wrapper(&mut self, element: super::Element) {
-        element.insert_before(self.0.list_context.parent, self.0.list_context.next_sibling);
-        self.0.list_context.nodes.0.push(Node::Element(element));
+        element.insert_before(self.0.parent, self.0.next_sibling);
+        self.0.nodes.0.push(Node::Element(element));
     }
 }
 
 impl<'a, C: crate::component::Component> DomBuilder<C> for NodesOwned<'a, C> {}
 
-//
 pub struct StaticNodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut NodeListUpdater<'h, C>);
 
 impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
-        self.0.comp_context.state
+        self.0.state
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp_context.comp.clone()
+        self.0.comp.clone()
     }
 
     pub fn nodes(self) -> Nodes<'n, 'h, C> {
@@ -725,22 +693,19 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
     //     mut self,
     //     value: impl crate::renderable::ListItemStaticText<C>,
     // ) -> Self {
-    //     if self.0.list_context.parent_status != super::ElementStatus::Existing {
+    //     if self.0.parent_status != super::ElementStatus::Existing {
     //         value.render(self.nodes()).static_nodes()
     //     } else {
-    //         self.0.list_context.index += 1;
+    //         self.0.index += 1;
     //         self
     //     }
     // }
 
     pub(crate) fn static_text(mut self, text: &str) -> Self {
-        self.0.list_context.nodes.static_text(
-            self.0.list_context.index,
-            text,
-            self.0.list_context.parent,
-            self.0.list_context.next_sibling,
-        );
-        self.0.list_context.index += 1;
+        self.0
+            .nodes
+            .static_text(self.0.index, text, self.0.parent, self.0.next_sibling);
+        self.0.index += 1;
         self
     }
 }
@@ -749,11 +714,11 @@ pub struct Nodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut NodeListUpd
 
 impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
-        self.0.comp_context.state
+        self.0.state
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp_context.comp.clone()
+        self.0.comp.clone()
     }
 
     pub fn static_nodes(self) -> StaticNodes<'n, 'h, C> {
@@ -782,68 +747,54 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     //     mut self,
     //     value: impl crate::renderable::ListItemStaticText<C>,
     // ) -> Self {
-    //     if self.0.list_context.parent_status != super::ElementStatus::Existing {
+    //     if self.0.parent_status != super::ElementStatus::Existing {
     //         value.render(self)
     //     } else {
-    //         self.0.list_context.index += 1;
+    //         self.0.index += 1;
     //         self
     //     }
     // }
 
     pub(crate) fn update_text(mut self, text: &str) -> Self {
-        self.0.list_context.nodes.update_text(
-            self.0.list_context.index,
-            text,
-            self.0.list_context.parent,
-            self.0.list_context.next_sibling,
-        );
-        self.0.list_context.index += 1;
+        self.0
+            .nodes
+            .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
+        self.0.index += 1;
         self
     }
 }
 
 impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodes<'n, 'h, C> {
     fn require_render(&self) -> bool {
-        self.0.list_context.parent_status == super::ElementStatus::JustCreated
+        self.0.parent_status == super::ElementStatus::JustCreated
     }
 
     fn just_created(&self) -> bool {
-        self.0.list_context.parent_status == super::ElementStatus::JustCreated
+        self.0.parent_status == super::ElementStatus::JustCreated
     }
 
     fn next_index(&mut self) {
-        self.0.list_context.index += 1;
+        self.0.index += 1;
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let el_context = self.0.list_context.nodes.element(
-            tag,
-            self.0.list_context.index,
-            self.0.list_context.parent_status,
-            self.0.list_context.parent,
-            self.0.list_context.next_sibling,
-        );
-        self.0.list_context.index += 1;
-        super::CompContext {
-            state: self.0.comp_context.state,
-            comp: self.0.comp_context.comp,
-        }
-        .element_updater(el_context)
+        self.0.get_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
-        let mi = self
-            .0
-            .list_context
-            .nodes
-            .match_if(self.0.list_context.index, self.0.list_context.parent);
-        self.0.list_context.index += 1;
-        self.0.comp_context.match_if_updater(mi)
+        let match_if = self.0.nodes.match_if(self.0.index, self.0.parent);
+        self.0.index += 1;
+        MatchIfUpdater {
+            comp: self.0.comp,
+            state: self.0.state,
+            parent: self.0.parent,
+            match_if,
+        }
     }
 
     fn store_raw_wrapper(&mut self, element: super::Element) {
-        element.insert_before(self.0.list_context.parent, self.0.list_context.next_sibling);
-        self.0.list_context.nodes.0.push(Node::Element(element));
+        element.insert_before(self.0.parent, self.0.next_sibling);
+        self.0.nodes.0.push(Node::Element(element));
     }
 }
 
@@ -855,42 +806,31 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'n,
     }
 
     fn just_created(&self) -> bool {
-        self.0.list_context.parent_status == super::ElementStatus::JustCreated
+        self.0.parent_status == super::ElementStatus::JustCreated
     }
 
     fn next_index(&mut self) {
-        self.0.list_context.index += 1;
+        self.0.index += 1;
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let el_context = self.0.list_context.nodes.element(
-            tag,
-            self.0.list_context.index,
-            self.0.list_context.parent_status,
-            self.0.list_context.parent,
-            self.0.list_context.next_sibling,
-        );
-        self.0.list_context.index += 1;
-        super::CompContext {
-            state: self.0.comp_context.state,
-            comp: self.0.comp_context.comp,
-        }
-        .element_updater(el_context)
+        self.0.get_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
-        let mi = self
-            .0
-            .list_context
-            .nodes
-            .match_if(self.0.list_context.index, self.0.list_context.parent);
-        self.0.list_context.index += 1;
-        self.0.comp_context.match_if_updater(mi)
+        let match_if = self.0.nodes.match_if(self.0.index, self.0.parent);
+        self.0.index += 1;
+        MatchIfUpdater {
+            comp: self.0.comp,
+            state: self.0.state,
+            parent: self.0.parent,
+            match_if,
+        }
     }
 
     fn store_raw_wrapper(&mut self, element: super::Element) {
-        element.insert_before(self.0.list_context.parent, self.0.list_context.next_sibling);
-        self.0.list_context.nodes.0.push(Node::Element(element));
+        element.insert_before(self.0.parent, self.0.next_sibling);
+        self.0.nodes.0.push(Node::Element(element));
     }
 }
 

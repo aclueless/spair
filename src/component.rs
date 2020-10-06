@@ -413,10 +413,7 @@ impl<C: Component> CompInstance<C> {
         } else {
             crate::dom::ElementStatus::Existing
         };
-        let eu = crate::dom::ElementUpdater {
-            comp_context: crate::dom::CompContext { state, comp },
-            el_context: self.root_element.create_context(status),
-        };
+        let eu = crate::dom::ElementUpdater::new(comp, state, &mut self.root_element, status);
         state.render(eu);
     }
 

@@ -110,39 +110,3 @@ impl From<&str> for ElementType {
         }
     }
 }
-
-pub struct CompContext<'a, C> {
-    pub comp: &'a crate::component::Comp<C>,
-    pub state: &'a C,
-}
-
-impl<'a, C> CompContext<'a, C> {
-    fn clone(&self) -> Self {
-        Self {
-            comp: self.comp,
-            state: self.state,
-        }
-    }
-
-    fn element_updater(&self, el_context: ElementContext<'a>) -> ElementUpdater<'a, C> {
-        ElementUpdater {
-            comp_context: self.clone(),
-            el_context,
-        }
-    }
-
-    #[cfg(feature = "keyed-list")]
-    fn keyed_list_updater(&self, list_context: KeyedListContext<'a>) -> KeyedListUpdater<'a, C> {
-        KeyedListUpdater {
-            comp_context: self.clone(),
-            list_context,
-        }
-    }
-
-    fn match_if_updater(&self, mi_context: MatchIfContext<'a>) -> MatchIfUpdater<'a, C> {
-        MatchIfUpdater {
-            comp_context: self.clone(),
-            mi_context,
-        }
-    }
-}
