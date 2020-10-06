@@ -125,8 +125,8 @@ impl AttributeList {
 pub struct StaticAttributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
 
 impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
-    pub(super) fn new(handle: super::ElementUpdater<'a, C>) -> Self {
-        Self(handle)
+    pub(super) fn new(eu: super::ElementUpdater<'a, C>) -> Self {
+        Self(eu)
     }
 
     pub fn attributes(self) -> Attributes<'a, C> {
@@ -179,8 +179,8 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
 pub struct Attributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
 
 impl<'a, C: crate::component::Component> Attributes<'a, C> {
-    pub(super) fn new(handle: super::ElementUpdater<'a, C>) -> Self {
-        Self(handle)
+    pub(super) fn new(eu: super::ElementUpdater<'a, C>) -> Self {
+        Self(eu)
     }
 
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
