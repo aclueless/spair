@@ -62,21 +62,11 @@ impl Element {
         self.nodes.append_to(self.ws_element.as_ref());
     }
 
-    pub fn create_updater<'a, C: crate::component::Component>(
-        &'a mut self,
-        state: &'a C,
-        comp: &'a crate::component::Comp<C>,
-        status: super::ElementStatus,
-    ) -> ElementUpdater<'a, C> {
-        let extra = super::Extra {
-            comp,
-            status,
+    pub fn create_context(&mut self, status: super::ElementStatus) -> ElementContext {
+        ElementContext {
             index: 0,
-        };
-        ElementUpdater {
-            state,
+            status,
             element: self,
-            extra,
             selected_option: None,
         }
     }
@@ -100,11 +90,24 @@ impl Element {
     }
 }
 
-pub struct ElementUpdater<'a, C: crate::component::Component> {
-    pub(super) state: &'a C,
+pub struct ElementContext<'a> {
+    pub(super) index: usize,
+    pub(super) status: super::ElementStatus,
     pub(super) element: &'a mut Element,
-    pub(super) extra: super::Extra<'a, C>,
     pub(super) selected_option: Option<SelectedOption>,
+}
+
+impl<'a> ElementContext<'a> {
+    pub fn create_extra<C: crate::component::Component>(
+        &self,
+        comp: &'a crate::component::Comp<C>,
+    ) -> super::Extra<'a, C> {
+        super::Extra {
+            comp,
+            index: self.index,
+            status: self.status,
+        }
+    }
 }
 
 pub enum SelectedOption {
@@ -113,17 +116,22 @@ pub enum SelectedOption {
     Index(i32),
 }
 
+pub struct ElementUpdater<'a, C> {
+    pub(crate) comp_context: super::CompContext<'a, C>,
+    pub(crate) el_context: ElementContext<'a>,
+}
+
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     pub fn state(&self) -> &'a C {
-        self.state
+        self.comp_context.state
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.extra.comp.clone()
+        self.comp_context.comp.clone()
     }
 
     pub fn ws_element(&self) -> web_sys::Element {
-        self.element.ws_element.clone()
+        self.el_context.element.ws_element.clone()
     }
 
     pub fn static_attributes(self) -> super::StaticAttributes<'a, C> {
@@ -135,11 +143,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
-        super::StaticNodesOwned::from_handle(self)
+        super::StaticNodesOwned::from_el_updater(self)
     }
 
     pub fn nodes(self) -> super::NodesOwned<'a, C> {
-        super::NodesOwned::from_handle(self)
+        super::NodesOwned::from_el_updater(self)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
@@ -158,33 +166,36 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.extra.index = 0;
+        self.el_context.index = 0;
 
-        let parent = self.element.ws_element.as_ref();
+        let parent = self.el_context.element.ws_element.as_ref();
         let use_template = match mode {
             super::ListElementCreation::Clone => true,
             super::ListElementCreation::New => false,
         };
         for item in items {
-            let element = self.element.nodes.item_for_list(
-                tag,
-                self.state,
-                &self.extra,
-                parent,
-                use_template,
-            );
-            render(&item, element);
-            self.extra.index += 1;
+            let el_context = self
+                .el_context
+                .element
+                .nodes
+                .element_context_for_list_element(tag, self.el_context.index, parent, use_template);
+            let eu = self.comp_context.element_updater(el_context);
+            render(&item, eu);
+            self.el_context.index += 1;
         }
-        self.element.nodes.clear_after(self.extra.index, parent);
+        self.el_context
+            .element
+            .nodes
+            .clear_after(self.el_context.index, parent);
 
         // The hack start in AttributeSetter::value
         self.finish_hacking_for_select_value();
     }
 
     fn finish_hacking_for_select_value(self) {
-        if let Some(selected_option) = self.selected_option {
+        if let Some(selected_option) = self.el_context.selected_option {
             let select = self
+                .el_context
                 .element
                 .ws_element()
                 .unchecked_ref::<web_sys::HtmlSelectElement>();
@@ -205,16 +216,23 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         // we need to collect items into a vec to know exact size
         let items: Vec<_> = items.into_iter().collect();
 
-        let parent = self.element.ws_element.as_ref();
+        let parent = self.el_context.element.ws_element.as_ref();
         let use_template = match mode {
             super::ListElementCreation::Clone => true,
             super::ListElementCreation::New => false,
         };
-        let mut updater = self.element.nodes.keyed_list(
+
+        let extra = super::Extra {
+            comp: self.comp_context.comp,
+            index: self.el_context.index,
+            status: self.el_context.status,
+        };
+
+        let mut updater = self.el_context.element.nodes.keyed_list(
             I::ROOT_ELEMENT_TAG,
-            self.state,
+            self.comp_context.state,
             parent,
-            &self.extra,
+            &extra,
             items.len(),
             use_template,
         );
@@ -232,12 +250,13 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         // first render
         // on the second subsequent render, do nothing.
 
-        if self.extra.status == super::ElementStatus::JustCreated
+        if self.el_context.status == super::ElementStatus::JustCreated
             || !child.comp_instance().is_mounted()
         {
-            self.element.ws_element().set_text_content(None);
-            child.mount_to(self.element.ws_element());
-            self.element
+            self.el_context.element.ws_element().set_text_content(None);
+            child.mount_to(self.el_context.element.ws_element());
+            self.el_context
+                .element
                 .nodes
                 .store_component_handle(child.comp().into());
         }

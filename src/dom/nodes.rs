@@ -26,37 +26,36 @@ impl NodeList {
         self.0.iter().for_each(|node| node.append_to(parent));
     }
 
-    fn get_element<'a, C: crate::component::Component>(
-        &'a mut self,
-        state: &'a C,
-        extra: &super::Extra<'a, C>,
+    fn get_element_context(
+        &mut self,
+        index: usize,
         status: super::ElementStatus,
-    ) -> super::ElementUpdater<'a, C> {
+    ) -> super::ElementContext {
         match self
             .0
-            .get_mut(extra.index)
+            .get_mut(index)
             .expect_throw("Expect an element node at the given index")
         {
-            Node::Element(element) => element.create_updater(state, extra.comp, status),
+            Node::Element(element) => element.create_context(status),
             _ => panic!("Why not an element?"),
         }
     }
 
-    fn element<'a, C: crate::component::Component>(
+    fn element<'a>(
         &'a mut self,
         tag: &str,
-        state: &'a C,
-        extra: &super::Extra<'a, C>,
+        index: usize,
+        parent_status: super::ElementStatus,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
-    ) -> super::ElementUpdater<'a, C> {
-        let status = if extra.index == self.0.len() {
+    ) -> super::ElementContext<'a> {
+        let status = if index == self.0.len() {
             self.create_new_element(tag, parent, next_sibling);
             super::ElementStatus::JustCreated
         } else {
-            extra.status
+            parent_status
         };
-        self.get_element(state, extra, status)
+        self.get_element_context(index, status)
     }
 
     pub fn clear_after(&mut self, index: usize, parent: &web_sys::Node) {
@@ -72,16 +71,15 @@ impl NodeList {
         }
     }
 
-    pub fn item_for_list<'a, C: crate::component::Component>(
+    pub fn element_context_for_list_element<'a>(
         &'a mut self,
         tag: &str,
-        state: &'a C,
-        extra: &super::Extra<'a, C>,
+        index: usize,
         parent: &web_sys::Node,
         use_template: bool,
-    ) -> super::ElementUpdater<'a, C> {
+    ) -> super::ElementContext<'a> {
         let item_count = self.0.len();
-        let status = if extra.index < item_count {
+        let status = if index < item_count {
             super::ElementStatus::Existing
         } else if !use_template || item_count == 0 {
             // Assumption:
@@ -94,7 +92,7 @@ impl NodeList {
             self.create_new_element_by_cloning_first_item(parent);
             super::ElementStatus::JustCloned
         };
-        self.get_element(state, extra, status)
+        self.get_element_context(index, status)
     }
 
     fn create_new_element(
@@ -367,14 +365,19 @@ pub(crate) struct NodeListHandle<'a, C: crate::component::Component> {
 }
 
 impl<'a, C: crate::component::Component> NodeListHandle<'a, C> {
-    pub fn from_handle(mut handle: super::ElementUpdater<'a, C>) -> Self {
-        handle.extra.index = 0;
+    pub fn from_el_updater(mut eu: super::ElementUpdater<'a, C>) -> Self {
+        eu.el_context.index = 0;
+        let extra = super::Extra {
+            comp: eu.comp_context.comp,
+            index: 0,
+            status: eu.el_context.status,
+        };
         Self {
-            state: handle.state,
-            parent: handle.element.ws_element.as_ref(),
+            state: eu.comp_context.state,
+            parent: eu.el_context.element.ws_element.as_ref(),
             next_sibling: None,
-            nodes: &mut handle.element.nodes,
-            extra: handle.extra,
+            nodes: &mut eu.el_context.element.nodes,
+            extra,
         }
     }
 }
@@ -382,8 +385,8 @@ impl<'a, C: crate::component::Component> NodeListHandle<'a, C> {
 pub struct StaticNodesOwned<'a, C: crate::component::Component>(NodeListHandle<'a, C>);
 
 impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
-    pub(super) fn from_handle(handle: super::ElementUpdater<'a, C>) -> Self {
-        Self(NodeListHandle::from_handle(handle))
+    pub(super) fn from_el_updater(eu: super::ElementUpdater<'a, C>) -> Self {
+        Self(NodeListHandle::from_el_updater(eu))
     }
 
     pub fn state(&self) -> &'a C {
@@ -448,8 +451,8 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         })
     }
 
-    pub(super) fn from_handle(handle: super::ElementUpdater<'a, C>) -> Self {
-        Self(NodeListHandle::from_handle(handle))
+    pub(super) fn from_el_updater(eu: super::ElementUpdater<'a, C>) -> Self {
+        Self(NodeListHandle::from_el_updater(eu))
     }
 
     pub fn state(&self) -> &'a C {
@@ -618,15 +621,24 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodesOw
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let e = self.0.nodes.element(
+        // let el_context = super::ElementContext {
+        //     index: self.0.extra.index,
+        //     status: self.0.extra.status,
+        //     selected_option: self.selected_option,
+        // };
+        let el_context = self.0.nodes.element(
             tag,
-            self.0.state,
-            &self.0.extra,
+            self.0.extra.index,
+            self.0.extra.status,
             self.0.parent,
             self.0.next_sibling,
         );
         self.0.extra.index += 1;
-        e
+        super::CompContext {
+            state: self.0.state,
+            comp: self.0.extra.comp,
+        }
+        .element_updater(el_context)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfHandle<C> {
@@ -660,15 +672,19 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let e = self.0.nodes.element(
+        let el_context = self.0.nodes.element(
             tag,
-            self.0.state,
-            &self.0.extra,
+            self.0.extra.index,
+            self.0.extra.status,
             self.0.parent,
             self.0.next_sibling,
         );
         self.0.extra.index += 1;
-        e
+        super::CompContext {
+            state: self.0.state,
+            comp: self.0.extra.comp,
+        }
+        .element_updater(el_context)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfHandle<C> {
@@ -811,15 +827,19 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for StaticNod
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let e = self.0.nodes.element(
+        let el_context = self.0.nodes.element(
             tag,
-            self.0.state,
-            &self.0.extra,
+            self.0.extra.index,
+            self.0.extra.status,
             self.0.parent,
             self.0.next_sibling,
         );
         self.0.extra.index += 1;
-        e
+        super::CompContext {
+            state: self.0.state,
+            comp: self.0.extra.comp,
+        }
+        .element_updater(el_context)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfHandle<C> {
@@ -853,15 +873,19 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'n,
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let e = self.0.nodes.element(
+        let el_context = self.0.nodes.element(
             tag,
-            self.0.state,
-            &self.0.extra,
+            self.0.extra.index,
+            self.0.extra.status,
             self.0.parent,
             self.0.next_sibling,
         );
         self.0.extra.index += 1;
-        e
+        super::CompContext {
+            state: self.0.state,
+            comp: self.0.extra.comp,
+        }
+        .element_updater(el_context)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfHandle<C> {

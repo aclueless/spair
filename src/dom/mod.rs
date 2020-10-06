@@ -118,12 +118,22 @@ impl From<&str> for ElementType {
     }
 }
 
-// pub struct Context<'a, C: crate::component::Component> {
-//     pub comp: &'a crate::component::Comp<C>,
-//     pub state: &'a C,
-//     pub index: usize,
-//     pub status: ElementStatus,
-// }
+pub struct CompContext<'a, C> {
+    pub comp: &'a crate::component::Comp<C>,
+    pub state: &'a C,
+}
+
+impl<'a, C> CompContext<'a, C> {
+    fn element_updater(&self, el_context: ElementContext<'a>) -> ElementUpdater<'a, C> {
+        ElementUpdater {
+            comp_context: CompContext {
+                comp: self.comp,
+                state: self.state,
+            },
+            el_context,
+        }
+    }
+}
 
 // pub struct ElementContext<'a> {
 //     pub element: &'a mut Element,

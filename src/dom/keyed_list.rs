@@ -20,11 +20,14 @@ trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C>
     ) {
         let mut old_item = old_item.unwrap_throw().1.take();
         fn_insert(&old_item.as_ref().unwrap_throw().1, next_sibling);
-        self.render(old_item.as_mut().unwrap_throw().1.create_updater(
-            state,
-            comp,
-            super::ElementStatus::Existing,
-        ));
+
+        let el_context = old_item
+            .as_mut()
+            .unwrap_throw()
+            .1
+            .create_context(super::ElementStatus::Existing);
+        let eu = super::CompContext { comp, state }.element_updater(el_context);
+        self.render(eu);
         *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
     }
 }
@@ -215,13 +218,18 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
         let mut items_state_iter = items_state_iter.peekable_double_ended();
         if self.require_init_template {
-            items_state_iter.peek().unwrap_throw().render(
-                self.template.as_mut().unwrap().create_updater(
-                    self.state,
-                    self.comp,
-                    super::ElementStatus::JustCreated,
-                ),
-            );
+            let el_context = self
+                .template
+                .as_mut()
+                .unwrap()
+                .create_context(super::ElementStatus::JustCreated);
+            let eu = super::CompContext {
+                comp: self.comp,
+                state: self.state,
+            }
+            .element_updater(el_context);
+
+            items_state_iter.peek().unwrap_throw().render(eu);
         }
         loop {
             let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
@@ -431,7 +439,14 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
                 None => self.create_element_for_new_item(I::ROOT_ELEMENT_TAG),
             };
 
-            item_state.render(element.create_updater(self.state, self.comp, status));
+            let el_context = element.create_context(status);
+            let eu = super::CompContext {
+                comp: self.comp,
+                state: self.state,
+            }
+            .element_updater(el_context);
+
+            item_state.render(eu);
             if !lis {
                 let next_sibling = self
                     .next_sibling
@@ -490,7 +505,13 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     {
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item(I::ROOT_ELEMENT_TAG);
-            item_state.render(element.create_updater(self.state, self.comp, status));
+            let el_context = element.create_context(status);
+            let eu = super::CompContext {
+                comp: self.comp,
+                state: self.state,
+            }
+            .element_updater(el_context);
+            item_state.render(eu);
             element.insert_before(
                 self.parent,
                 self.next_sibling
@@ -688,8 +709,14 @@ mod keyed_list_tests {
         }
 
         fn updater(&mut self) -> super::super::ElementUpdater<()> {
-            self.root
-                .create_updater(&(), &self.comp, super::super::ElementStatus::Existing)
+            let el_context = self
+                .root
+                .create_context(super::super::ElementStatus::Existing);
+            super::super::CompContext {
+                comp: &self.comp,
+                state: &(),
+            }
+            .element_updater(el_context)
         }
 
         fn collect_from_keyed_list(&self) -> Vec<String> {
