@@ -102,7 +102,7 @@ impl NonKeyedList {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[must_use = "Caller should set selected value for <select> element"]
+    #[must_use = "Caller should set selected option for <select> element"]
     pub fn update<I, R, C>(
         &mut self,
         items: impl IntoIterator<Item = I>,
@@ -112,7 +112,7 @@ impl NonKeyedList {
         parent: &web_sys::Node,
         comp: &crate::component::Comp<C>,
         state: &C,
-    ) -> RememberSettingSelectedValue
+    ) -> RememberSettingSelectedOption
     where
         C: crate::component::Component,
         for<'i, 'c> R: Fn(&'i I, super::ElementUpdater<'c, C>),
@@ -126,8 +126,8 @@ impl NonKeyedList {
             index += 1;
         }
         self.clear_after(index, parent);
-        RememberSettingSelectedValue
+        RememberSettingSelectedOption
     }
 }
 
-pub struct RememberSettingSelectedValue;
+pub struct RememberSettingSelectedOption;

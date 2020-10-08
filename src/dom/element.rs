@@ -90,7 +90,38 @@ impl Element {
 pub enum SelectedOption {
     None,
     Value(String),
-    Index(i32),
+    Index(usize),
+}
+
+pub struct SelectElementValue(Option<SelectedOption>);
+
+impl SelectElementValue {
+    pub fn set_selected_value(&mut self, value: Option<&str>) {
+        self.0 = Some(
+            value
+                .map(|value| SelectedOption::Value(value.to_string()))
+                .unwrap_or(SelectedOption::None),
+        );
+    }
+
+    pub fn set_selected_index(&mut self, index: Option<usize>) {
+        self.0 = Some(
+            index
+                .map(SelectedOption::Index)
+                .unwrap_or(SelectedOption::None),
+        );
+    }
+
+    pub fn set_select_element_value(&self, element: &web_sys::Node) {
+        if let Some(selected_option) = self.0.as_ref() {
+            let select = element.unchecked_ref::<web_sys::HtmlSelectElement>();
+            match selected_option {
+                SelectedOption::None => select.set_selected_index(-1),
+                SelectedOption::Value(value) => select.set_value(&value),
+                SelectedOption::Index(index) => select.set_selected_index(*index as i32),
+            }
+        }
+    }
 }
 
 pub struct ElementUpdater<'a, C> {
@@ -100,7 +131,7 @@ pub struct ElementUpdater<'a, C> {
     pub(super) index: usize,
     pub(super) status: super::ElementStatus,
     pub(super) element: &'a mut Element,
-    pub(super) selected_option: Option<SelectedOption>,
+    pub(super) select_element_value: SelectElementValue,
 }
 
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
@@ -116,7 +147,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             index: 0,
             status,
             element,
-            selected_option: None,
+            select_element_value: SelectElementValue(None),
         }
     }
 
@@ -170,7 +201,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             super::ListElementCreation::New => false,
         };
 
-        let _must_finish_hacking_for_select_value = self.element.nodes.non_keyed_list().update(
+        let _must_set_select_element_value = self.element.nodes.non_keyed_list().update(
             items,
             tag,
             render,
@@ -181,21 +212,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         );
 
         // The hack start in AttributeSetter::value
-        self.finish_hacking_for_select_value();
-    }
-
-    fn finish_hacking_for_select_value(self) {
-        if let Some(selected_option) = self.selected_option {
-            let select = self
-                .element
-                .ws_element()
-                .unchecked_ref::<web_sys::HtmlSelectElement>();
-            match selected_option {
-                SelectedOption::None => select.set_selected_index(-1),
-                SelectedOption::Value(value) => select.set_value(&value),
-                SelectedOption::Index(index) => select.set_selected_index(index),
-            }
-        }
+        self.select_element_value.set_select_element_value(parent);
     }
 
     #[cfg(feature = "keyed-list")]
@@ -226,7 +243,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         keyed_list_updater.update(items.into_iter());
 
         // The hack start in AttributeSetter::value
-        self.finish_hacking_for_select_value();
+        self.select_element_value.set_select_element_value(parent);
     }
 
     pub fn component<CC: crate::component::Component>(

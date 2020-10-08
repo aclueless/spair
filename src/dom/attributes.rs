@@ -319,8 +319,8 @@ mod sealed {
         fn check_u32_attribute(&mut self, value: u32) -> bool;
         fn check_f64_attribute(&mut self, value: f64) -> bool;
 
-        fn start_hacking_for_selected_value(&mut self, value: Option<&str>);
-        fn start_hacking_for_selected_index(&mut self, index: i32);
+        fn set_selected_value(&mut self, value: Option<&str>);
+        fn set_selected_index(&mut self, index: Option<usize>);
     }
 }
 
@@ -592,13 +592,13 @@ where
 
     fn selected_value(mut self, value: Option<&str>) -> Self {
         if self.element_type() == super::ElementType::Select {
-            // TODO: checked to find change of value?
+            // TODO: check to find change of value?
 
             // It has no effect if you set a value for
             // a <select> element before adding its <option>s,
             // the hacking should finish in the list() method.
             // Is there a better solution?
-            self.start_hacking_for_selected_value(value);
+            self.set_selected_value(value);
         } else {
             log::warn!(".selected_value() can only be called on <select>");
         }
@@ -606,17 +606,16 @@ where
     }
 
     fn selected_index(mut self, index: Option<usize>) -> Self {
-        let index_i32 = index.map(|index| index as i32).unwrap_or(-1);
-        if self.check_i32_attribute(index_i32) {
-            if self.element_type() == super::ElementType::Select {
-                // It has no effect if you set a selected index for
-                // a <select> element before adding its <option>s,
-                // the hacking should finish in the list() method.
-                // Is there a better solution?
-                self.start_hacking_for_selected_index(index_i32);
-            } else {
-                log::warn!(".selected_index() is called on an element that is not <select>");
-            }
+        if self.element_type() == super::ElementType::Select {
+            // TODO: check to find change of index?
+
+            // It has no effect if you set a selected index for
+            // a <select> element before adding its <option>s,
+            // the hacking should finish in the list() method.
+            // Is there a better solution?
+            self.set_selected_index(index);
+        } else {
+            log::warn!(".selected_index() is called on an element that is not <select>");
         }
         self
     }
@@ -634,7 +633,7 @@ where
                     // a <select> element before adding its <option>s,
                     // the hacking should finish in the list() method.
                     // Is there a better solution?
-                    self.start_hacking_for_selected_value(Some(value));
+                    self.set_selected_value(Some(value));
                 }
                 super::ElementType::TextArea => {
                     let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
@@ -720,16 +719,12 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
         // no need to store the value for static attributes
     }
 
-    fn start_hacking_for_selected_value(&mut self, value: Option<&str>) {
-        self.0.selected_option = Some(
-            value
-                .map(|value| super::SelectedOption::Value(value.to_string()))
-                .unwrap_or(super::SelectedOption::None),
-        );
+    fn set_selected_value(&mut self, value: Option<&str>) {
+        self.0.select_element_value.set_selected_value(value);
     }
 
-    fn start_hacking_for_selected_index(&mut self, index: i32) {
-        self.0.selected_option = Some(super::SelectedOption::Index(index));
+    fn set_selected_index(&mut self, index: Option<usize>) {
+        self.0.select_element_value.set_selected_index(index);
     }
 }
 
@@ -813,15 +808,11 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attr
         rs
     }
 
-    fn start_hacking_for_selected_value(&mut self, value: Option<&str>) {
-        self.0.selected_option = Some(
-            value
-                .map(|value| super::SelectedOption::Value(value.to_string()))
-                .unwrap_or(super::SelectedOption::None),
-        );
+    fn set_selected_value(&mut self, value: Option<&str>) {
+        self.0.select_element_value.set_selected_value(value);
     }
 
-    fn start_hacking_for_selected_index(&mut self, index: i32) {
-        self.0.selected_option = Some(super::SelectedOption::Index(index));
+    fn set_selected_index(&mut self, index: Option<usize>) {
+        self.0.select_element_value.set_selected_index(index);
     }
 }
