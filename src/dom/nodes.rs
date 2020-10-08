@@ -14,10 +14,6 @@ impl NodeList {
         self.0.len()
     }
 
-    pub fn clear_raw_vec(&mut self) {
-        self.0.clear()
-    }
-
     fn clear(&mut self, parent: &web_sys::Node) {
         self.0.drain(..).for_each(|mut node| node.clear(parent));
     }
@@ -46,65 +42,15 @@ impl NodeList {
         next_sibling: Option<&web_sys::Node>,
     ) -> super::ElementStatus {
         if index == self.0.len() {
-            self.create_new_element(tag, parent, next_sibling);
+            self.0.push(Node::Element(super::Element::new_in(
+                tag,
+                parent,
+                next_sibling,
+            )));
             super::ElementStatus::JustCreated
         } else {
             parent_status
         }
-    }
-
-    pub fn clear_after(&mut self, index: usize, parent: &web_sys::Node) {
-        if index < self.0.len() {
-            if index == 0 {
-                parent.set_text_content(None);
-                self.clear_raw_vec();
-            } else {
-                self.0
-                    .drain(index..)
-                    .for_each(|mut node| node.clear(parent));
-            }
-        }
-    }
-
-    pub fn create_element_for_list(
-        &mut self,
-        tag: &str,
-        index: usize,
-        parent: &web_sys::Node,
-        use_template: bool,
-    ) -> super::ElementStatus {
-        let item_count = self.0.len();
-        if index < item_count {
-            super::ElementStatus::Existing
-        } else if !use_template || item_count == 0 {
-            // Assumption:
-            //  * A list is the only thing in the parent element.
-            //  * New item only added to the end of the list.
-            // => next_sibling = None
-            self.create_new_element(tag, parent, None);
-            super::ElementStatus::JustCreated
-        } else {
-            self.create_new_element_by_cloning_first_item(parent);
-            super::ElementStatus::JustCloned
-        }
-    }
-
-    fn create_new_element(
-        &mut self,
-        tag: &str,
-        parent: &web_sys::Node,
-        next_sibling: Option<&web_sys::Node>,
-    ) {
-        let element = super::Element::new(tag);
-        element.insert_before(parent, next_sibling);
-        self.0.push(Node::Element(element));
-    }
-
-    fn create_new_element_by_cloning_first_item(&mut self, parent: &web_sys::Node) {
-        let element = self.0[0].clone();
-        // should be append to or insert to?
-        element.append_to(parent);
-        self.0.push(element);
     }
 
     fn match_if(&mut self, index: usize, parent: &web_sys::Node) -> &mut MatchIf {
@@ -168,6 +114,22 @@ impl NodeList {
         self.0.push(Node::Text(text));
     }
 
+    pub fn non_keyed_list(&mut self) -> &mut super::NonKeyedList {
+        if self.0.is_empty() {
+            self.0
+                .push(Node::NonKeyedList(super::NonKeyedList::default()));
+        }
+
+        match self
+            .0
+            .first_mut()
+            .expect_throw("Expect a keyed list as the first item of the node list")
+        {
+            Node::NonKeyedList(list) => list,
+            _ => panic!("Why not a non keyed list?"),
+        }
+    }
+
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list_context<'a>(
         &'a mut self,
@@ -176,7 +138,7 @@ impl NodeList {
         exact_count_of_new_items: usize,
         use_template: bool,
     ) -> super::KeyedListContext<'a> {
-        if self.0.len() == 0 {
+        if self.0.is_empty() {
             self.0.push(Node::KeyedList(super::KeyedList::default()));
         }
 
@@ -212,6 +174,7 @@ pub enum Node {
     MatchIf(MatchIf),
     #[cfg(feature = "keyed-list")]
     KeyedList(super::KeyedList),
+    NonKeyedList(super::NonKeyedList),
     ComponentHandle(AnyComponentHandle),
 }
 
@@ -223,6 +186,7 @@ impl Node {
             Self::MatchIf(mi) => mi.clear(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.clear(parent),
+            Self::NonKeyedList(list) => list.clear(parent),
             Self::ComponentHandle(_) => {
                 // The component is the only child of an element
                 parent.set_text_content(None);
@@ -238,6 +202,7 @@ impl Node {
             Self::MatchIf(mi) => mi.append_to(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.append_to(parent),
+            Self::NonKeyedList(list) => list.append_to(parent),
             Self::ComponentHandle(_) => {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");

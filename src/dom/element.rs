@@ -39,6 +39,12 @@ impl Element {
         }
     }
 
+    pub fn new_in(tag: &str, parent: &web_sys::Node, next_sibling: Option<&web_sys::Node>) -> Self {
+        let element = super::Element::new(tag);
+        element.insert_before(parent, next_sibling);
+        element
+    }
+
     pub(crate) fn from_ws_element(ws_element: web_sys::Element) -> Self {
         Self {
             element_type: ws_element.tag_name().to_ascii_lowercase().as_str().into(),
@@ -150,7 +156,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     pub fn list_with_render<I, R>(
-        mut self,
+        self,
         items: impl IntoIterator<Item = I>,
         tag: &str,
         render: R,
@@ -158,24 +164,21 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.index = 0;
-
         let parent = self.element.ws_element.as_ref();
         let use_template = match mode {
             super::ListElementCreation::Clone => true,
             super::ListElementCreation::New => false,
         };
-        for item in items {
-            let status =
-                self.element
-                    .nodes
-                    .create_element_for_list(tag, self.index, parent, use_template);
-            let element = self.element.nodes.get_element(self.index);
-            let eu = ElementUpdater::new(self.comp, self.state, element, status);
-            render(&item, eu);
-            self.index += 1;
-        }
-        self.element.nodes.clear_after(self.index, parent);
+
+        let _must_finish_hacking_for_select_value = self.element.nodes.non_keyed_list().update(
+            items,
+            tag,
+            render,
+            use_template,
+            parent,
+            self.comp,
+            self.state,
+        );
 
         // The hack start in AttributeSetter::value
         self.finish_hacking_for_select_value();
