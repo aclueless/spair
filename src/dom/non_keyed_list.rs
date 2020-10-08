@@ -3,6 +3,7 @@ use wasm_bindgen::UnwrapThrowExt;
 #[derive(Default)]
 pub struct NonKeyedList {
     elements: Vec<super::Element>,
+
     // None => a full list: the parent node only has child elements that are in this list
     // Some => partial list: the parent node also has some child elements that are not in this list
     end_node: Option<web_sys::Node>,
@@ -23,6 +24,7 @@ impl NonKeyedList {
         }
     }
 
+    #[cfg(feature = "partial-non-keyed-list")]
     pub fn create_end_node(
         mut self,
         parent: &web_sys::Node,

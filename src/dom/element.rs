@@ -96,6 +96,9 @@ pub enum SelectedOption {
 pub struct SelectElementValue(Option<SelectedOption>);
 
 impl SelectElementValue {
+    pub fn none() -> Self {
+        Self(None)
+    }
     pub fn set_selected_value(&mut self, value: Option<&str>) {
         self.0 = Some(
             value
@@ -147,7 +150,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             index: 0,
             status,
             element,
-            select_element_value: SelectElementValue(None),
+            select_element_value: SelectElementValue::none(),
         }
     }
 
@@ -196,10 +199,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
         let parent = self.element.ws_element.as_ref();
-        let use_template = match mode {
-            super::ListElementCreation::Clone => true,
-            super::ListElementCreation::New => false,
-        };
+        let use_template = mode.use_template();
 
         let _must_set_select_element_value = self.element.nodes.non_keyed_list().update(
             items,
@@ -225,10 +225,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         let items: Vec<_> = items.into_iter().collect();
 
         let parent = self.element.ws_element.as_ref();
-        let use_template = match mode {
-            super::ListElementCreation::Clone => true,
-            super::ListElementCreation::New => false,
-        };
+        let use_template = mode.use_template();
 
         let mut keyed_list_updater = super::KeyedListUpdater {
             comp: self.comp,

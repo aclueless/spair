@@ -130,6 +130,29 @@ impl NodeList {
         }
     }
 
+    #[cfg(feature = "partial-non-keyed-list")]
+    pub fn partial_non_keyed_list(
+        &mut self,
+        index: usize,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) -> &mut super::NonKeyedList {
+        if index == self.0.len() {
+            self.0.push(Node::NonKeyedList(
+                super::NonKeyedList::new().create_end_node(parent, next_sibling),
+            ));
+        }
+
+        match self
+            .0
+            .get_mut(index)
+            .expect_throw("Expect a keyed list as the first item of the node list")
+        {
+            Node::NonKeyedList(list) => list,
+            _ => panic!("Why not a non keyed list?"),
+        }
+    }
+
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list_context<'a>(
         &'a mut self,
@@ -298,6 +321,8 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
             nodes: &mut self.match_if.nodes,
             parent: self.parent,
             next_sibling: Some(&self.match_if.end_node),
+            #[cfg(feature = "partial-non-keyed-list")]
+            select_element_value: super::SelectElementValue::none(),
         })
     }
 }
@@ -311,6 +336,16 @@ pub(crate) struct NodeListUpdater<'a, C> {
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
     nodes: &'a mut super::NodeList,
+    #[cfg(feature = "partial-non-keyed-list")]
+    select_element_value: super::SelectElementValue,
+}
+
+#[cfg(feature = "partial-non-keyed-list")]
+impl<'a, C> Drop for NodeListUpdater<'a, C> {
+    fn drop(&mut self) {
+        self.select_element_value
+            .set_select_element_value(self.parent);
+    }
 }
 
 impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
@@ -323,6 +358,8 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
             parent: eu.element.ws_element.as_ref(),
             next_sibling: None,
             nodes: &mut eu.element.nodes,
+            #[cfg(feature = "partial-non-keyed-list")]
+            select_element_value: eu.select_element_value,
         }
     }
 
@@ -337,6 +374,35 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
         let element = self.nodes.get_element(self.index);
         self.index += 1;
         super::ElementUpdater::new(self.comp, self.state, element, status)
+    }
+
+    #[cfg(feature = "partial-non-keyed-list")]
+    pub fn list_with_render<I, R>(
+        &mut self,
+        items: impl IntoIterator<Item = I>,
+        tag: &str,
+        render: R,
+        mode: super::ListElementCreation,
+    ) where
+        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+    {
+        let parent = self.parent;
+        let use_template = mode.use_template();
+        let next_sibling = self.next_sibling;
+
+        let _select_element_value_will_be_set_on_dropping = self
+            .nodes
+            .partial_non_keyed_list(self.index, parent, next_sibling)
+            .update(
+                items,
+                tag,
+                render,
+                use_template,
+                parent,
+                self.comp,
+                self.state,
+            );
+        self.index += 1;
     }
 }
 
@@ -444,6 +510,21 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
             .nodes
             .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
         self.0.index += 1;
+        self
+    }
+
+    #[cfg(feature = "partial-non-keyed-list")]
+    pub fn list_with_render<I, R>(
+        mut self,
+        items: impl IntoIterator<Item = I>,
+        tag: &str,
+        render: R,
+        mode: super::ListElementCreation,
+    ) -> Self
+    where
+        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+    {
+        self.0.list_with_render(items, tag, render, mode);
         self
     }
 }
@@ -666,7 +747,7 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
     //     }
     // }
 
-    pub(crate) fn static_text(mut self, text: &str) -> Self {
+    pub(crate) fn static_text(self, text: &str) -> Self {
         self.0
             .nodes
             .static_text(self.0.index, text, self.0.parent, self.0.next_sibling);
@@ -720,11 +801,26 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     //     }
     // }
 
-    pub(crate) fn update_text(mut self, text: &str) -> Self {
+    pub(crate) fn update_text(self, text: &str) -> Self {
         self.0
             .nodes
             .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
         self.0.index += 1;
+        self
+    }
+
+    #[cfg(feature = "partial-non-keyed-list")]
+    pub fn list_with_render<I, R>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        tag: &str,
+        render: R,
+        mode: super::ListElementCreation,
+    ) -> Self
+    where
+        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+    {
+        self.0.list_with_render(items, tag, render, mode);
         self
     }
 }
