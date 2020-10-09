@@ -58,7 +58,7 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
         RememberSettingSelectedOption
     }
 
-    pub fn clear_after(&mut self, index: usize) {
+    fn clear_after(&mut self, index: usize) {
         if index >= self.list.count() {
             return;
         }
