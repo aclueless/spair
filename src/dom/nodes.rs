@@ -105,9 +105,8 @@ impl NodeList {
     ) -> &mut FragmentedNodeList {
         if index == self.0.len() {
             let fnl = FragmentedNodeList::default();
-            //fnl.append_to(parent);
-            fnl.end_node
-                .insert_before(parent, next_sibling)
+            parent
+                .insert_before(fnl.end_node.as_ref(), next_sibling)
                 .expect_throw("Unable to insert fragmented node into its parent node");
             self.0.push(Node::FragmentedNodeList(fnl));
         }
@@ -269,7 +268,7 @@ pub struct FragmentedNodeList {
 
 impl Clone for FragmentedNodeList {
     fn clone(&self) -> Self {
-        // a match/if arm should not be cloned?
+        // a FragmentedNodeList should not be cloned?
         Default::default()
     }
 }
@@ -277,7 +276,7 @@ impl Clone for FragmentedNodeList {
 impl Default for FragmentedNodeList {
     fn default() -> Self {
         let end_node = crate::utils::document()
-            .create_comment("Mark the end of a match/if arm")
+            .create_comment("Mark the end of a fragmented node list")
             .into();
         Self {
             active_index: None,
@@ -292,14 +291,14 @@ impl FragmentedNodeList {
         self.nodes.clear(parent);
         parent
             .remove_child(&self.end_node)
-            .expect_throw("Unable to remove MatchIf.end_node from its parent");
+            .expect_throw("Unable to remove FragmentedNodeList.end_node from its parent");
     }
 
     pub fn append_to(&self, parent: &web_sys::Node) {
         self.nodes.append_to(parent);
-        parent
-            .append_child(&self.end_node)
-            .expect_throw("Unable to append a match/if arm's end node to its expected parent");
+        parent.append_child(&self.end_node).expect_throw(
+            "Unable to append a FragmentedNodeList's end node to its expected parent",
+        );
     }
 }
 
