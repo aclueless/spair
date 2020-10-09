@@ -166,45 +166,6 @@ impl NodeList {
         self.0.push(Node::Text(text));
     }
 
-    // pub fn non_keyed_list(&mut self) -> &mut super::NonKeyedList {
-    //     if self.0.is_empty() {
-    //         self.0
-    //             .push(Node::NonKeyedList(super::NonKeyedList::default()));
-    //     }
-
-    //     match self
-    //         .0
-    //         .first_mut()
-    //         .expect_throw("Expect a keyed list as the first item of the node list")
-    //     {
-    //         Node::NonKeyedList(list) => list,
-    //         _ => panic!("Why not a non keyed list?"),
-    //     }
-    // }
-
-    // #[cfg(feature = "partial-non-keyed-list")]
-    // pub fn partial_non_keyed_list(
-    //     &mut self,
-    //     index: usize,
-    //     parent: &web_sys::Node,
-    //     next_sibling: Option<&web_sys::Node>,
-    // ) -> &mut super::NonKeyedList {
-    //     if index == self.0.len() {
-    //         self.0.push(Node::NonKeyedList(
-    //             super::NonKeyedList::new().create_end_node(parent, next_sibling),
-    //         ));
-    //     }
-
-    //     match self
-    //         .0
-    //         .get_mut(index)
-    //         .expect_throw("Expect a keyed list as the first item of the node list")
-    //     {
-    //         Node::NonKeyedList(list) => list,
-    //         _ => panic!("Why not a non keyed list?"),
-    //     }
-    // }
-
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list_context<'a>(
         &'a mut self,
@@ -249,7 +210,6 @@ pub enum Node {
     FragmentedNodeList(FragmentedNodeList),
     #[cfg(feature = "keyed-list")]
     KeyedList(super::KeyedList),
-    //NonKeyedList(super::NonKeyedList),
     ComponentHandle(AnyComponentHandle),
 }
 
@@ -261,7 +221,6 @@ impl Node {
             Self::FragmentedNodeList(mi) => mi.clear(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.clear(parent),
-            //Self::NonKeyedList(list) => list.clear(parent),
             Self::ComponentHandle(_) => {
                 // The component is the only child of an element
                 parent.set_text_content(None);
@@ -277,7 +236,6 @@ impl Node {
             Self::FragmentedNodeList(mi) => mi.append_to(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.append_to(parent),
-            //Self::NonKeyedList(list) => list.append_to(parent),
             Self::ComponentHandle(_) => {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");

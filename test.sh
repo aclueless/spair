@@ -6,7 +6,7 @@ TARGET="--target=wasm32-unknown-unknown"
 cargo fmt -- --check
 cargo clippy -- -D warnings
 
-# --chrome and --firefox on separate lines to easily disable one of them if the drive has problems
+# --chrome and --firefox on separate lines to easily disable one of them if the driver has problems
 # wasm-pack test --headless --chrome -- --all-features
 # wasm-pack test --headless --chrome -- --features="keyed-list"
 # wasm-pack test --headless --chrome -- --features="partial-non-keyed-list" # just build, no actual tests yet
