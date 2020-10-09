@@ -17,7 +17,7 @@ pub use element::*;
 #[cfg(feature = "keyed-list")]
 pub use keyed_list::*;
 pub use nodes::*;
-use non_keyed_list::*;
+pub use non_keyed_list::*;
 
 // This is currently created by both `Nodes::Iter::update_text()` and `Nodes::Iter::static_text()`
 pub struct Text {

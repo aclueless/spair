@@ -14,8 +14,18 @@ impl NodeList {
         self.0.len()
     }
 
-    fn clear(&mut self, parent: &web_sys::Node) {
+    pub fn clear_raw(&mut self) {
+        self.0.clear();
+    }
+
+    pub fn clear(&mut self, parent: &web_sys::Node) {
         self.0.drain(..).for_each(|mut node| node.clear(parent));
+    }
+
+    pub fn clear_after(&mut self, index: usize, parent: &web_sys::Node) {
+        self.0
+            .drain(index..)
+            .for_each(|mut node| node.clear(parent));
     }
 
     pub fn append_to(&self, parent: &web_sys::Node) {
@@ -33,7 +43,20 @@ impl NodeList {
         }
     }
 
-    fn create_element(
+    fn create_new_element(
+        &mut self,
+        tag: &str,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        self.0.push(Node::Element(super::Element::new_in(
+            tag,
+            parent,
+            next_sibling,
+        )));
+    }
+
+    fn check_or_create_element(
         &mut self,
         tag: &str,
         index: usize,
@@ -42,31 +65,60 @@ impl NodeList {
         next_sibling: Option<&web_sys::Node>,
     ) -> super::ElementStatus {
         if index == self.0.len() {
-            self.0.push(Node::Element(super::Element::new_in(
-                tag,
-                parent,
-                next_sibling,
-            )));
+            self.create_new_element(tag, parent, next_sibling);
             super::ElementStatus::JustCreated
         } else {
             parent_status
         }
     }
 
-    fn match_if(&mut self, index: usize, parent: &web_sys::Node) -> &mut MatchIf {
+    pub fn check_or_create_element_for_non_keyed_list(
+        &mut self,
+        tag: &str,
+        index: usize,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+        use_template: bool,
+    ) -> super::ElementStatus {
+        let item_count = self.0.len();
+        if index < item_count {
+            super::ElementStatus::Existing
+        } else if !use_template || item_count == 0 {
+            self.create_new_element(tag, parent, next_sibling);
+            super::ElementStatus::JustCreated
+        } else {
+            let element = self.0[0].clone();
+            match &element {
+                Node::Element(element) => element.insert_before(parent, next_sibling),
+                _ => panic!("non-keyed-list: internal bug?"),
+            }
+            self.0.push(element);
+            super::ElementStatus::JustCloned
+        }
+    }
+
+    fn fragmented_node_list(
+        &mut self,
+        index: usize,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) -> &mut FragmentedNodeList {
         if index == self.0.len() {
-            let mi = MatchIf::default();
-            mi.append_to(parent);
-            self.0.push(Node::MatchIf(mi));
+            let fnl = FragmentedNodeList::default();
+            //fnl.append_to(parent);
+            fnl.end_node
+                .insert_before(parent, next_sibling)
+                .expect_throw("Unable to insert fragmented node into its parent node");
+            self.0.push(Node::FragmentedNodeList(fnl));
         }
 
         match self
             .0
             .get_mut(index)
-            .expect_throw("Expect a match/if arm node at the given index")
+            .expect_throw("Expect a fragmented node list at the given index")
         {
-            Node::MatchIf(match_if) => match_if,
-            _ => panic!("Why not a match/if arm?"),
+            Node::FragmentedNodeList(fragmented_node_list) => fragmented_node_list,
+            _ => panic!("Why not a fragmented_node_list?"),
         }
     }
 
@@ -114,44 +166,44 @@ impl NodeList {
         self.0.push(Node::Text(text));
     }
 
-    pub fn non_keyed_list(&mut self) -> &mut super::NonKeyedList {
-        if self.0.is_empty() {
-            self.0
-                .push(Node::NonKeyedList(super::NonKeyedList::default()));
-        }
+    // pub fn non_keyed_list(&mut self) -> &mut super::NonKeyedList {
+    //     if self.0.is_empty() {
+    //         self.0
+    //             .push(Node::NonKeyedList(super::NonKeyedList::default()));
+    //     }
 
-        match self
-            .0
-            .first_mut()
-            .expect_throw("Expect a keyed list as the first item of the node list")
-        {
-            Node::NonKeyedList(list) => list,
-            _ => panic!("Why not a non keyed list?"),
-        }
-    }
+    //     match self
+    //         .0
+    //         .first_mut()
+    //         .expect_throw("Expect a keyed list as the first item of the node list")
+    //     {
+    //         Node::NonKeyedList(list) => list,
+    //         _ => panic!("Why not a non keyed list?"),
+    //     }
+    // }
 
-    #[cfg(feature = "partial-non-keyed-list")]
-    pub fn partial_non_keyed_list(
-        &mut self,
-        index: usize,
-        parent: &web_sys::Node,
-        next_sibling: Option<&web_sys::Node>,
-    ) -> &mut super::NonKeyedList {
-        if index == self.0.len() {
-            self.0.push(Node::NonKeyedList(
-                super::NonKeyedList::new().create_end_node(parent, next_sibling),
-            ));
-        }
+    // #[cfg(feature = "partial-non-keyed-list")]
+    // pub fn partial_non_keyed_list(
+    //     &mut self,
+    //     index: usize,
+    //     parent: &web_sys::Node,
+    //     next_sibling: Option<&web_sys::Node>,
+    // ) -> &mut super::NonKeyedList {
+    //     if index == self.0.len() {
+    //         self.0.push(Node::NonKeyedList(
+    //             super::NonKeyedList::new().create_end_node(parent, next_sibling),
+    //         ));
+    //     }
 
-        match self
-            .0
-            .get_mut(index)
-            .expect_throw("Expect a keyed list as the first item of the node list")
-        {
-            Node::NonKeyedList(list) => list,
-            _ => panic!("Why not a non keyed list?"),
-        }
-    }
+    //     match self
+    //         .0
+    //         .get_mut(index)
+    //         .expect_throw("Expect a keyed list as the first item of the node list")
+    //     {
+    //         Node::NonKeyedList(list) => list,
+    //         _ => panic!("Why not a non keyed list?"),
+    //     }
+    // }
 
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list_context<'a>(
@@ -194,10 +246,10 @@ impl NodeList {
 pub enum Node {
     Element(super::Element),
     Text(super::Text),
-    MatchIf(MatchIf),
+    FragmentedNodeList(FragmentedNodeList),
     #[cfg(feature = "keyed-list")]
     KeyedList(super::KeyedList),
-    NonKeyedList(super::NonKeyedList),
+    //NonKeyedList(super::NonKeyedList),
     ComponentHandle(AnyComponentHandle),
 }
 
@@ -206,10 +258,10 @@ impl Node {
         match self {
             Self::Element(element) => element.remove_from(parent),
             Self::Text(text) => text.remove_from(parent),
-            Self::MatchIf(mi) => mi.clear(parent),
+            Self::FragmentedNodeList(mi) => mi.clear(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.clear(parent),
-            Self::NonKeyedList(list) => list.clear(parent),
+            //Self::NonKeyedList(list) => list.clear(parent),
             Self::ComponentHandle(_) => {
                 // The component is the only child of an element
                 parent.set_text_content(None);
@@ -222,10 +274,10 @@ impl Node {
         match self {
             Self::Element(element) => element.append_to(parent),
             Self::Text(text) => text.append_to(parent),
-            Self::MatchIf(mi) => mi.append_to(parent),
+            Self::FragmentedNodeList(mi) => mi.append_to(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.append_to(parent),
-            Self::NonKeyedList(list) => list.append_to(parent),
+            //Self::NonKeyedList(list) => list.append_to(parent),
             Self::ComponentHandle(_) => {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");
@@ -249,23 +301,22 @@ impl<C: crate::component::Component> From<crate::component::Comp<C>> for AnyComp
     }
 }
 
-pub struct MatchIf {
+// Manage a match-if arm or a partial-non-keyed-list
+pub struct FragmentedNodeList {
     active_index: Option<usize>,
-    // `end_node` marks the boundary for the arm content, it is useful when
-    // users switch between match/if arms and we have to clear the current arm before
-    // render new arm.
+    // `end_node` marks the boundary of this fragment
     end_node: web_sys::Node,
     nodes: NodeList,
 }
 
-impl Clone for MatchIf {
+impl Clone for FragmentedNodeList {
     fn clone(&self) -> Self {
         // a match/if arm should not be cloned?
         Default::default()
     }
 }
 
-impl Default for MatchIf {
+impl Default for FragmentedNodeList {
     fn default() -> Self {
         let end_node = crate::utils::document()
             .create_comment("Mark the end of a match/if arm")
@@ -278,7 +329,7 @@ impl Default for MatchIf {
     }
 }
 
-impl MatchIf {
+impl FragmentedNodeList {
     pub fn clear(&mut self, parent: &web_sys::Node) {
         self.nodes.clear(parent);
         parent
@@ -299,7 +350,7 @@ pub struct MatchIfUpdater<'a, C> {
     state: &'a C,
 
     parent: &'a web_sys::Node,
-    match_if: &'a mut MatchIf,
+    match_if: &'a mut FragmentedNodeList,
 }
 
 impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
@@ -364,7 +415,7 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let status = self.nodes.create_element(
+        let status = self.nodes.check_or_create_element(
             tag,
             self.index,
             self.parent_status,
@@ -374,6 +425,19 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
         let element = self.nodes.get_element(self.index);
         self.index += 1;
         super::ElementUpdater::new(self.comp, self.state, element, status)
+    }
+
+    fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {
+        let match_if = self
+            .nodes
+            .fragmented_node_list(self.index, self.parent, self.next_sibling);
+        self.index += 1;
+        MatchIfUpdater {
+            comp: self.comp,
+            state: self.state,
+            parent: self.parent,
+            match_if,
+        }
     }
 
     #[cfg(feature = "partial-non-keyed-list")]
@@ -386,23 +450,22 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        let parent = self.parent;
         let use_template = mode.use_template();
-        let next_sibling = self.next_sibling;
-
-        let _select_element_value_will_be_set_on_dropping = self
-            .nodes
-            .partial_non_keyed_list(self.index, parent, next_sibling)
-            .update(
-                items,
-                tag,
-                render,
-                use_template,
-                parent,
-                self.comp,
-                self.state,
-            );
+        let fragmented_node_list =
+            self.nodes
+                .fragmented_node_list(self.index, self.parent, self.next_sibling);
         self.index += 1;
+        let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
+            self.comp,
+            self.state,
+            &mut fragmented_node_list.nodes,
+            tag,
+            self.parent,
+            Some(&fragmented_node_list.end_node),
+            use_template,
+        );
+        let _select_element_value_will_be_set_on_dropping =
+            non_keyed_list_updater.update(items, render);
     }
 }
 
@@ -648,14 +711,7 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodesOw
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
-        let match_if = self.0.nodes.match_if(self.0.index, self.0.parent);
-        self.0.index += 1;
-        MatchIfUpdater {
-            comp: self.0.comp,
-            state: self.0.state,
-            parent: self.0.parent,
-            match_if,
-        }
+        self.0.get_match_if_updater()
     }
 
     fn store_raw_wrapper(&mut self, element: super::Element) {
@@ -684,14 +740,7 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
-        let match_if = self.0.nodes.match_if(self.0.index, self.0.parent);
-        self.0.index += 1;
-        MatchIfUpdater {
-            comp: self.0.comp,
-            state: self.0.state,
-            parent: self.0.parent,
-            match_if,
-        }
+        self.0.get_match_if_updater()
     }
 
     fn store_raw_wrapper(&mut self, element: super::Element) {
@@ -843,14 +892,7 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for StaticNod
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
-        let match_if = self.0.nodes.match_if(self.0.index, self.0.parent);
-        self.0.index += 1;
-        MatchIfUpdater {
-            comp: self.0.comp,
-            state: self.0.state,
-            parent: self.0.parent,
-            match_if,
-        }
+        self.0.get_match_if_updater()
     }
 
     fn store_raw_wrapper(&mut self, element: super::Element) {
@@ -879,14 +921,7 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'n,
     }
 
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
-        let match_if = self.0.nodes.match_if(self.0.index, self.0.parent);
-        self.0.index += 1;
-        MatchIfUpdater {
-            comp: self.0.comp,
-            state: self.0.state,
-            parent: self.0.parent,
-            match_if,
-        }
+        self.0.get_match_if_updater()
     }
 
     fn store_raw_wrapper(&mut self, element: super::Element) {

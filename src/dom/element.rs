@@ -201,15 +201,16 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         let parent = self.element.ws_element.as_ref();
         let use_template = mode.use_template();
 
-        let _must_set_select_element_value = self.element.nodes.non_keyed_list().update(
-            items,
-            tag,
-            render,
-            use_template,
-            parent,
+        let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
             self.comp,
             self.state,
+            &mut self.element.nodes,
+            tag,
+            parent,
+            None,
+            use_template,
         );
+        let _must_set_select_element_value = non_keyed_list_updater.update(items, render);
 
         // The hack start in AttributeSetter::value
         self.select_element_value.set_select_element_value(parent);
