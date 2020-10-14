@@ -174,6 +174,14 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     ) {
         self.0.component(child);
     }
+
+    pub fn text(self, text: &str) {
+        self.0.text(text);
+    }
+
+    pub fn static_text(self, text: &str) {
+        self.0.static_text(text);
+    }
 }
 
 pub struct Attributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
@@ -223,6 +231,14 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
         child: &crate::component::ChildComp<CC>,
     ) {
         self.0.component(child);
+    }
+
+    pub fn text(self, text: &str) {
+        self.0.text(text);
+    }
+
+    pub fn static_text(self, text: &str) {
+        self.0.static_text(text);
     }
 }
 

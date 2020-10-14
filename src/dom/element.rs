@@ -260,4 +260,12 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
                 .store_component_handle(child.comp().into());
         }
     }
+
+    pub fn text(self, text: &str) {
+        self.nodes().render(text);
+    }
+
+    pub fn static_text(self, text: &str) {
+        self.nodes().r#static(text);
+    }
 }
