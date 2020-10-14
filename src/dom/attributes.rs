@@ -654,7 +654,7 @@ where
     }
 }
 
-impl<'a, C: crate::component::Component> AttributeSetter<C> for super::StaticAttributes<'a, C>
+impl<'a, C: crate::component::Component> AttributeSetter<C> for StaticAttributes<'a, C>
 where
     C: crate::component::Component,
 {
@@ -663,9 +663,7 @@ where
     }
 }
 
-impl<'a, C: crate::component::Component> sealed::AttributeSetter
-    for super::StaticAttributes<'a, C>
-{
+impl<'a, C: crate::component::Component> sealed::AttributeSetter for StaticAttributes<'a, C> {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
         self.0.element.ws_element.unchecked_ref()
     }
@@ -728,7 +726,7 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter
     }
 }
 
-impl<'a, C: crate::component::Component> AttributeSetter<C> for super::Attributes<'a, C>
+impl<'a, C: crate::component::Component> AttributeSetter<C> for Attributes<'a, C>
 where
     C: crate::component::Component,
 {
@@ -737,7 +735,7 @@ where
     }
 }
 
-impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attributes<'a, C> {
+impl<'a, C: crate::component::Component> sealed::AttributeSetter for Attributes<'a, C> {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
         self.0.element.ws_element.unchecked_ref()
     }
@@ -814,5 +812,86 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Attr
 
     fn set_selected_index(&mut self, index: Option<usize>) {
         self.0.select_element_value.set_selected_index(index);
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeSetter<C> for super::ElementUpdater<'a, C>
+where
+    C: crate::component::Component,
+{
+    fn ws_element(&self) -> &web_sys::Element {
+        &self.element.ws_element
+    }
+}
+
+impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::ElementUpdater<'a, C> {
+    fn ws_html_element(&self) -> &web_sys::HtmlElement {
+        self.element.ws_element.unchecked_ref()
+    }
+
+    fn element_type(&self) -> super::ElementType {
+        self.element.element_type
+    }
+
+    fn require_set_listener(&mut self) -> bool {
+        true
+    }
+
+    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
+        self.element.attributes.store_listener(self.index, listener);
+        self.index += 1;
+    }
+
+    fn check_bool_attribute(&mut self, value: bool) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_bool_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    fn check_str_attribute(&mut self, value: &str) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_str_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    fn check_i32_attribute(&mut self, value: i32) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_i32_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    fn check_u32_attribute(&mut self, value: u32) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_u32_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    fn check_f64_attribute(&mut self, value: f64) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_f64_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    fn set_selected_value(&mut self, value: Option<&str>) {
+        self.select_element_value.set_selected_value(value);
+    }
+
+    fn set_selected_index(&mut self, index: Option<usize>) {
+        self.select_element_value.set_selected_index(index);
     }
 }
