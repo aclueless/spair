@@ -425,6 +425,8 @@ where
         on_submit Submit,
         on_pointer_lock_change PointerLockChange,
         on_pointer_lock_error PointerLockError,
+
+        on_ended Ended,
     }
 
     create_methods_for_attributes! {

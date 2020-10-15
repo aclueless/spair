@@ -104,5 +104,7 @@ create_events! {
         Submit => "submit",
         PointerLockChange => "pointerlockchange",
         PointerLockError => "pointerlockerror",
+
+        Ended => "ended",
     }
 }
