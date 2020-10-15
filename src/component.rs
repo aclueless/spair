@@ -85,7 +85,7 @@ pub trait Component: 'static + Sized {
         ShouldRender::Yes
     }
 
-    fn render<'a>(&self, element: crate::Element<'a, Self>);
+    fn render(&self, element: crate::Element<Self>);
 }
 
 #[must_use = "This value must be returned to the framework. Otherwise, it will be lost and the default value will be used"]
