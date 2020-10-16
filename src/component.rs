@@ -360,6 +360,31 @@ impl<C: Component> Comp<C> {
         move |t: T| comp.update_arg(t, &fn_update)
     }
 
+    pub fn async_callback<Cl, F>(
+        &self,
+        fn_update: impl Fn(&mut C) -> Cl + 'static,
+        future_creator: impl Fn() -> F + 'static,
+    ) -> impl Fn()
+    where
+        Cl: Into<Checklist<C>>,
+        F: 'static + Future<Output = ()>,
+    {
+        let comp = self.clone();
+        let fn_update = Rc::new(fn_update);
+        let future_creator = Rc::new(future_creator);
+
+        move || {
+            let comp = comp.clone();
+            let fn_update = fn_update.clone();
+            let future_creator = future_creator.clone();
+            let f = async move {
+                future_creator().await;
+                comp.update(&fn_update);
+            };
+            wasm_bindgen_futures::spawn_local(f);
+        }
+    }
+
     pub fn handler<T: 'static, Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
