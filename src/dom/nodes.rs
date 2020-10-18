@@ -908,3 +908,25 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'n,
 impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> {
     type Output = Self;
 }
+
+impl<'a, C: crate::component::Component> From<super::ElementUpdater<'a, C>> for NodesOwned<'a, C> {
+    fn from(eu: super::ElementUpdater<'a, C>) -> Self {
+        Self::from_el_updater(eu)
+    }
+}
+
+impl<'a, C: crate::component::Component> DomBuilder<C> for super::ElementUpdater<'a, C> {
+    type Output = NodesOwned<'a, C>;
+}
+
+impl<'a, C: crate::component::Component> From<super::StaticAttributes<'a, C>>
+    for NodesOwned<'a, C>
+{
+    fn from(sa: super::StaticAttributes<'a, C>) -> Self {
+        sa.nodes()
+    }
+}
+
+impl<'a, C: crate::component::Component> DomBuilder<C> for super::StaticAttributes<'a, C> {
+    type Output = NodesOwned<'a, C>;
+}
