@@ -133,8 +133,38 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         super::StaticNodesOwned::from_el_updater(self.0)
     }
 
-    pub(super) fn nodes(self) -> super::NodesOwned<'a, C> {
+    pub(super) fn internal_nodes(self) -> super::NodesOwned<'a, C> {
         super::NodesOwned::from_el_updater(self.0)
+    }
+
+    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
+    pub fn done(self) {}
+
+    pub fn render(self, value: impl crate::renderable::Render<C>) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = super::NodesOwned::from_el_updater(self.0);
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    pub fn render_ref(
+        self,
+        value: &impl crate::renderable::RenderRef<C>,
+    ) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = super::NodesOwned::from_el_updater(self.0);
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    pub fn r#static(
+        self,
+        value: impl crate::renderable::StaticRender<C>,
+    ) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = super::NodesOwned::from_el_updater(self.0);
+        let static_nodes = nodes_owned.static_nodes_ref();
+        value.render(static_nodes);
+        nodes_owned
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
@@ -332,9 +362,6 @@ pub trait AttributeSetter<C>: Sized + sealed::AttributeSetter
 where
     C: crate::component::Component,
 {
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    fn done(self) {}
-
     fn ws_element(&self) -> &web_sys::Element;
 
     fn set_bool_attribute(&mut self, name: &str, value: bool) {
@@ -492,7 +519,7 @@ where
         AsStr   scope
         u32     size
         str     sizes
-        u32     span
+        // u32     span // temporaly remove this because conficted with <span> in DomBuilder
         str     src
         str     src_doc "srcdoc"
         str     src_lang "srclang"

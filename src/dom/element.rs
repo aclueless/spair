@@ -174,6 +174,9 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         super::StaticNodesOwned::from_el_updater(self)
     }
 
+    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
+    pub fn done(self) {}
+
     pub fn render(self, value: impl crate::renderable::Render<C>) -> super::NodesOwned<'a, C> {
         let mut nodes_owned = super::NodesOwned::from_el_updater(self);
         let nodes = nodes_owned.nodes_ref();

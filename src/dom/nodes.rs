@@ -445,6 +445,9 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
         NodesOwned(self.0)
     }
 
+    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
+    pub fn done(self) {}
+
     pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
@@ -502,6 +505,10 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     pub fn static_nodes(self) -> StaticNodesOwned<'a, C> {
         StaticNodesOwned(self.0)
     }
+
+    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
+    pub fn done(self) {}
+
 
     pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
@@ -580,9 +587,6 @@ mod sealed {
 
 pub trait DomBuilder<C: crate::component::Component>: Sized {
     type Output: From<Self> + sealed::DomBuilder<C>;
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    fn done(self) {}
 
     fn match_if(self, f: impl FnOnce(MatchIfUpdater<C>)) -> Self::Output {
         use sealed::DomBuilder;
@@ -931,7 +935,7 @@ impl<'a, C: crate::component::Component> From<super::StaticAttributes<'a, C>>
     for NodesOwned<'a, C>
 {
     fn from(sa: super::StaticAttributes<'a, C>) -> Self {
-        sa.nodes()
+        sa.internal_nodes()
     }
 }
 
