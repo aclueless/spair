@@ -170,16 +170,35 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         super::StaticAttributes::new(self)
     }
 
-    pub fn attributes(self) -> super::Attributes<'a, C> {
-        super::Attributes::new(self)
-    }
-
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
         super::StaticNodesOwned::from_el_updater(self)
     }
 
-    pub fn nodes(self) -> super::NodesOwned<'a, C> {
-        super::NodesOwned::from_el_updater(self)
+    pub fn render(self, value: impl crate::renderable::Render<C>) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = super::NodesOwned::from_el_updater(self);
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    pub fn render_ref(
+        self,
+        value: &impl crate::renderable::RenderRef<C>,
+    ) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = super::NodesOwned::from_el_updater(self);
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    pub fn r#static(
+        self,
+        value: impl crate::renderable::StaticRender<C>,
+    ) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = super::NodesOwned::from_el_updater(self);
+        let static_nodes = nodes_owned.static_nodes_ref();
+        value.render(static_nodes);
+        nodes_owned
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
@@ -259,13 +278,5 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
                 .nodes
                 .store_component_handle(child.comp().into());
         }
-    }
-
-    pub fn text(self, text: &str) {
-        self.nodes().render(text);
-    }
-
-    pub fn static_text(self, text: &str) {
-        self.nodes().r#static(text);
     }
 }

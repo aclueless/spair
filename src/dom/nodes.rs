@@ -483,6 +483,14 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         Self(NodeListUpdater::from_el_updater(eu))
     }
 
+    pub(super) fn nodes_ref<'n>(&'n mut self) -> Nodes<'n, 'a, C> {
+        Nodes(&mut self.0)
+    }
+
+    pub(super) fn static_nodes_ref<'n>(&'n mut self) -> StaticNodes<'n, 'a, C> {
+        StaticNodes(&mut self.0)
+    }
+
     pub fn state(&self) -> &'a C {
         self.0.state
     }

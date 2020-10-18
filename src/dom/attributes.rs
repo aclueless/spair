@@ -129,15 +129,11 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         Self(eu)
     }
 
-    pub fn attributes(self) -> Attributes<'a, C> {
-        Attributes(self.0)
-    }
-
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
         super::StaticNodesOwned::from_el_updater(self.0)
     }
 
-    pub fn nodes(self) -> super::NodesOwned<'a, C> {
+    pub(super) fn nodes(self) -> super::NodesOwned<'a, C> {
         super::NodesOwned::from_el_updater(self.0)
     }
 
@@ -174,16 +170,8 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     ) {
         self.0.component(child);
     }
-
-    pub fn text(self, text: &str) {
-        self.0.text(text);
-    }
-
-    pub fn static_text(self, text: &str) {
-        self.0.static_text(text);
-    }
 }
-
+/*
 pub struct Attributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
 
 impl<'a, C: crate::component::Component> Attributes<'a, C> {
@@ -241,7 +229,7 @@ impl<'a, C: crate::component::Component> Attributes<'a, C> {
         self.0.static_text(text);
     }
 }
-
+*/
 macro_rules! create_methods_for_events {
     ($($method_name:ident $EventType:ident,)+) => {
         $(
@@ -743,7 +731,7 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for StaticAttri
         self.0.select_element_value.set_selected_index(index);
     }
 }
-
+/*
 impl<'a, C: crate::component::Component> AttributeSetter<C> for Attributes<'a, C>
 where
     C: crate::component::Component,
@@ -832,7 +820,7 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for Attributes<
         self.0.select_element_value.set_selected_index(index);
     }
 }
-
+*/
 impl<'a, C: crate::component::Component> AttributeSetter<C> for super::ElementUpdater<'a, C>
 where
     C: crate::component::Component,

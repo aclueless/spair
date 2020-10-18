@@ -742,7 +742,7 @@ mod keyed_list_tests {
     impl crate::renderable::ListItem<()> for &&'static str {
         const ROOT_ELEMENT_TAG: &'static str = "span";
         fn render(&self, span: crate::Element<()>) {
-            span.nodes().render(**self);
+            span.render(**self);
         }
     }
 
