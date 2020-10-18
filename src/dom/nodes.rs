@@ -552,7 +552,7 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
 macro_rules! create_methods_for_tags {
     ($($tag:ident)+) => {
         $(
-            fn $tag(self, f: impl FnOnce(super::ElementUpdater<C>)) -> Self {
+            fn $tag(self, f: impl FnOnce(super::ElementUpdater<C>)) -> Self::Output {
                 self.render_element(stringify!($tag), f)
             }
         )+
@@ -571,21 +571,27 @@ mod sealed {
 }
 
 pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder<C> {
+    type Output: From<Self>;
+
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     fn done(self) {}
 
-    fn match_if(mut self, f: impl FnOnce(MatchIfUpdater<C>)) -> Self {
+    fn match_if(mut self, f: impl FnOnce(MatchIfUpdater<C>)) -> Self::Output {
         f(self.get_match_if_and_increase_index());
-        self
+        self.into()
     }
 
-    fn render_element(mut self, tag: &str, f: impl FnOnce(super::ElementUpdater<C>)) -> Self {
+    fn render_element(
+        mut self,
+        tag: &str,
+        f: impl FnOnce(super::ElementUpdater<C>),
+    ) -> Self::Output {
         if self.require_render() {
             f(self.get_element_and_increase_index(tag));
         } else {
             self.next_index();
         }
-        self
+        self.into()
     }
 
     create_methods_for_tags! {
@@ -612,29 +618,29 @@ pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder
         wbr //should be specialized?
     }
 
-    fn line_break(mut self) -> Self {
+    fn line_break(mut self) -> Self::Output {
         if self.require_render() {
             self.get_element_and_increase_index("br");
         } else {
             self.next_index();
         }
-        self
+        self.into()
     }
 
-    fn horizontal_rule(mut self) -> Self {
+    fn horizontal_rule(mut self) -> Self::Output {
         if self.require_render() {
             self.get_element_and_increase_index("hr");
         } else {
             self.next_index();
         }
-        self
+        self.into()
     }
 
-    fn horizontal_line(self) -> Self {
+    fn horizontal_line(self) -> Self::Output {
         self.horizontal_rule()
     }
 
-    fn raw_wrapper(mut self, raw_wrapper: &impl super::RawWrapper<C>) -> Self {
+    fn raw_wrapper(mut self, raw_wrapper: &impl super::RawWrapper<C>) -> Self::Output {
         if self.just_created() {
             let ws_element = raw_wrapper.ws_element();
             // TODO: should raw element stores in its own variant?
@@ -646,7 +652,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder
         }
         self.next_index();
 
-        self
+        self.into()
     }
 }
 
@@ -677,7 +683,9 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodesOw
     }
 }
 
-impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodesOwned<'a, C> {}
+impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodesOwned<'a, C> {
+    type Output = Self;
+}
 
 impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a, C> {
     fn require_render(&self) -> bool {
@@ -706,7 +714,9 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a
     }
 }
 
-impl<'a, C: crate::component::Component> DomBuilder<C> for NodesOwned<'a, C> {}
+impl<'a, C: crate::component::Component> DomBuilder<C> for NodesOwned<'a, C> {
+    type Output = Self;
+}
 
 pub struct StaticNodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut NodeListUpdater<'h, C>);
 
@@ -858,7 +868,9 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for StaticNod
     }
 }
 
-impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for StaticNodes<'n, 'h, C> {}
+impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for StaticNodes<'n, 'h, C> {
+    type Output = Self;
+}
 
 impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'n, 'h, C> {
     fn require_render(&self) -> bool {
@@ -887,4 +899,6 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'n,
     }
 }
 
-impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> {}
+impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> {
+    type Output = Self;
+}
