@@ -201,65 +201,7 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         self.0.component(child);
     }
 }
-/*
-pub struct Attributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
 
-impl<'a, C: crate::component::Component> Attributes<'a, C> {
-    pub(super) fn new(eu: super::ElementUpdater<'a, C>) -> Self {
-        Self(eu)
-    }
-
-    pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
-        super::StaticNodesOwned::from_el_updater(self.0)
-    }
-
-    pub fn nodes(self) -> super::NodesOwned<'a, C> {
-        super::NodesOwned::from_el_updater(self.0)
-    }
-
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    where
-        I: crate::renderable::ListItem<C>,
-    {
-        self.0.list(items, mode)
-    }
-
-    pub fn list_with_render<I, R>(
-        self,
-        items: impl IntoIterator<Item = I>,
-        tag: &str,
-        render: R,
-        mode: super::ListElementCreation,
-    ) where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
-    {
-        self.0.list_with_render(items, tag, render, mode)
-    }
-
-    #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    where
-        for<'k> I: super::KeyedListItem<'k, C>,
-    {
-        self.0.keyed_list(items, mode)
-    }
-
-    pub fn component<CC: crate::component::Component>(
-        self,
-        child: &crate::component::ChildComp<CC>,
-    ) {
-        self.0.component(child);
-    }
-
-    pub fn text(self, text: &str) {
-        self.0.text(text);
-    }
-
-    pub fn static_text(self, text: &str) {
-        self.0.static_text(text);
-    }
-}
-*/
 macro_rules! create_methods_for_events {
     ($($method_name:ident $EventType:ident,)+) => {
         $(
@@ -519,7 +461,7 @@ where
         AsStr   scope
         u32     size
         str     sizes
-        // u32     span // temporaly remove this because conficted with <span> in DomBuilder
+        u32     span_attr "span" // rename to `span_attr` to avoid conflict with DomBuilder::span
         str     src
         str     src_doc "srcdoc"
         str     src_lang "srclang"
@@ -758,96 +700,7 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for StaticAttri
         self.0.select_element_value.set_selected_index(index);
     }
 }
-/*
-impl<'a, C: crate::component::Component> AttributeSetter<C> for Attributes<'a, C>
-where
-    C: crate::component::Component,
-{
-    fn ws_element(&self) -> &web_sys::Element {
-        &self.0.element.ws_element
-    }
-}
 
-impl<'a, C: crate::component::Component> sealed::AttributeSetter for Attributes<'a, C> {
-    fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.0.element.ws_element.unchecked_ref()
-    }
-
-    fn element_type(&self) -> super::ElementType {
-        self.0.element.element_type
-    }
-
-    fn require_set_listener(&mut self) -> bool {
-        true
-    }
-
-    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
-        self.0
-            .element
-            .attributes
-            .store_listener(self.0.index, listener);
-        self.0.index += 1;
-    }
-
-    fn check_bool_attribute(&mut self, value: bool) -> bool {
-        let rs = self
-            .0
-            .element
-            .attributes
-            .check_bool_attribute(self.0.index, value);
-        self.0.index += 1;
-        rs
-    }
-
-    fn check_str_attribute(&mut self, value: &str) -> bool {
-        let rs = self
-            .0
-            .element
-            .attributes
-            .check_str_attribute(self.0.index, value);
-        self.0.index += 1;
-        rs
-    }
-
-    fn check_i32_attribute(&mut self, value: i32) -> bool {
-        let rs = self
-            .0
-            .element
-            .attributes
-            .check_i32_attribute(self.0.index, value);
-        self.0.index += 1;
-        rs
-    }
-
-    fn check_u32_attribute(&mut self, value: u32) -> bool {
-        let rs = self
-            .0
-            .element
-            .attributes
-            .check_u32_attribute(self.0.index, value);
-        self.0.index += 1;
-        rs
-    }
-
-    fn check_f64_attribute(&mut self, value: f64) -> bool {
-        let rs = self
-            .0
-            .element
-            .attributes
-            .check_f64_attribute(self.0.index, value);
-        self.0.index += 1;
-        rs
-    }
-
-    fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0.select_element_value.set_selected_value(value);
-    }
-
-    fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0.select_element_value.set_selected_index(index);
-    }
-}
-*/
 impl<'a, C: crate::component::Component> AttributeSetter<C> for super::ElementUpdater<'a, C>
 where
     C: crate::component::Component,

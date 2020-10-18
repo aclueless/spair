@@ -509,7 +509,6 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
 
-
     pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
