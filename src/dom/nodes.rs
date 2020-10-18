@@ -570,28 +570,28 @@ mod sealed {
     }
 }
 
-pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder<C> {
-    type Output: From<Self>;
+pub trait DomBuilder<C: crate::component::Component>: Sized {
+    type Output: From<Self> + sealed::DomBuilder<C>;
 
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     fn done(self) {}
 
-    fn match_if(mut self, f: impl FnOnce(MatchIfUpdater<C>)) -> Self::Output {
-        f(self.get_match_if_and_increase_index());
-        self.into()
+    fn match_if(self, f: impl FnOnce(MatchIfUpdater<C>)) -> Self::Output {
+        use sealed::DomBuilder;
+        let mut this: Self::Output = self.into();
+        f(this.get_match_if_and_increase_index());
+        this
     }
 
-    fn render_element(
-        mut self,
-        tag: &str,
-        f: impl FnOnce(super::ElementUpdater<C>),
-    ) -> Self::Output {
-        if self.require_render() {
-            f(self.get_element_and_increase_index(tag));
+    fn render_element(self, tag: &str, f: impl FnOnce(super::ElementUpdater<C>)) -> Self::Output {
+        use sealed::DomBuilder;
+        let mut this: Self::Output = self.into();
+        if this.require_render() {
+            f(this.get_element_and_increase_index(tag));
         } else {
-            self.next_index();
+            this.next_index();
         }
-        self.into()
+        this
     }
 
     create_methods_for_tags! {
@@ -618,41 +618,47 @@ pub trait DomBuilder<C: crate::component::Component>: Sized + sealed::DomBuilder
         wbr //should be specialized?
     }
 
-    fn line_break(mut self) -> Self::Output {
-        if self.require_render() {
-            self.get_element_and_increase_index("br");
+    fn line_break(self) -> Self::Output {
+        use sealed::DomBuilder;
+        let mut this: Self::Output = self.into();
+        if this.require_render() {
+            this.get_element_and_increase_index("br");
         } else {
-            self.next_index();
+            this.next_index();
         }
-        self.into()
+        this
     }
 
-    fn horizontal_rule(mut self) -> Self::Output {
-        if self.require_render() {
-            self.get_element_and_increase_index("hr");
+    fn horizontal_rule(self) -> Self::Output {
+        use sealed::DomBuilder;
+        let mut this: Self::Output = self.into();
+        if this.require_render() {
+            this.get_element_and_increase_index("hr");
         } else {
-            self.next_index();
+            this.next_index();
         }
-        self.into()
+        this
     }
 
     fn horizontal_line(self) -> Self::Output {
         self.horizontal_rule()
     }
 
-    fn raw_wrapper(mut self, raw_wrapper: &impl super::RawWrapper<C>) -> Self::Output {
-        if self.just_created() {
+    fn raw_wrapper(self, raw_wrapper: &impl super::RawWrapper<C>) -> Self::Output {
+        use sealed::DomBuilder;
+        let mut this: Self::Output = self.into();
+        if this.just_created() {
             let ws_element = raw_wrapper.ws_element();
             // TODO: should raw element stores in its own variant?
             //      This store the ws_element of the RawWrapper as a super::Element,
             //      it may cause a problem when the RawWrapper in side a list element
             let element = super::Element::from_ws_element(ws_element.clone());
-            self.store_raw_wrapper(element);
+            this.store_raw_wrapper(element);
             raw_wrapper.mounted();
         }
-        self.next_index();
+        this.next_index();
 
-        self.into()
+        this
     }
 }
 
