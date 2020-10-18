@@ -78,7 +78,6 @@ impl spair::Component for State {
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
-            .nodes()
             .match_if(|arm| match self.branch.as_ref() {
                 Some(branch) => arm
                     .render_on_arm_index(0)
@@ -100,7 +99,7 @@ impl spair::Component for State {
                     })
                     .done(),
             })
-            .p(|p| p.nodes().render(&self.message).done());
+            .p(|p| p.render(&self.message).done());
     }
 }
 
@@ -108,8 +107,7 @@ impl spair::Render<State> for &Branch {
     fn render(self, nodes: spair::Nodes<State>) {
         nodes
             .p(|p| {
-                p.nodes()
-                    .r#static("The latest commit to the wasm-bindgen ")
+                p.r#static("The latest commit to the wasm-bindgen ")
                     .render(&self.name)
                     .r#static(" branch is:");
             })
@@ -120,8 +118,7 @@ impl spair::Render<State> for &Branch {
 impl spair::Render<State> for &Commit {
     fn render(self, nodes: spair::Nodes<State>) {
         nodes.p(|p| {
-            p.nodes()
-                .render(&self.sha)
+            p.render(&self.sha)
                 .r#static(", authored by ")
                 .render(&self.commit.author.name)
                 .r#static(" (")

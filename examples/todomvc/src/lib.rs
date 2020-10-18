@@ -167,11 +167,9 @@ impl spair::Component for App {
     }
     fn render(&self, element: spair::Element<Self>) {
         element
-            .nodes()
             .section(|s| {
                 s.static_attributes()
                     .class("todoapp")
-                    .nodes()
                     .render(Header)
                     .render(Main)
                     .render(Footer);
@@ -188,11 +186,12 @@ impl spair::Render<App> for Header {
             h.static_attributes()
                 .class("header")
                 .static_nodes()
-                .h1(|h| h.nodes().render("Spair Todos").done())
+                .h1(|h| h.render("Spair Todos").done())
                 .nodes()
                 .input(|i| {
                     let state = i.state();
-                    i.static_attributes()
+                    i.value(&state.new_todo_title)
+                        .static_attributes()
                         .class("new-todo")
                         .focus(true)
                         .placeholder("What needs to be done?")
@@ -208,9 +207,7 @@ impl spair::Render<App> for Header {
                                 "Enter" => state.create_new_todo(),
                                 _ => {}
                             }
-                        }))
-                        .attributes()
-                        .value(&state.new_todo_title);
+                        }));
                 });
         });
     }
@@ -224,19 +221,16 @@ impl spair::Render<App> for Main {
         let todo_count = state.data.items.len();
         let all_completed = state.data.items.iter().all(|item| item.completed);
         nodes.section(|s| {
-            s.static_attributes()
+            s.class_if("hidden", todo_count == 0)
+                .static_attributes()
                 .class("main")
-                .attributes()
-                .class_if("hidden", todo_count == 0)
-                .nodes()
                 .input(move |i| {
-                    i.static_attributes()
+                    i.checked(all_completed)
+                        .on_change(comp.handler(move |state| state.toggle_all(!all_completed)))
+                        .static_attributes()
                         .id("toggle-all")
                         .class("toggle-all")
-                        .r#type(spair::InputType::CheckBox)
-                        .attributes()
-                        .checked(all_completed)
-                        .on_change(comp.handler(move |state| state.toggle_all(!all_completed)));
+                        .r#type(spair::InputType::CheckBox);
                 })
                 .static_nodes()
                 .label(|l| {
@@ -274,16 +268,13 @@ impl spair::Render<App> for Footer {
             .count();
         let some_completed = state.data.items.iter().any(|item| item.completed);
         nodes.footer(|f| {
-            f.static_attributes()
+            f.class_if("hidden", list_empty)
+                .static_attributes()
                 .class("footer")
-                .attributes()
-                .class_if("hidden", list_empty)
-                .nodes()
                 .span(|s| {
                     s.static_attributes()
                         .class("todo-count")
-                        .nodes()
-                        .strong(|s| s.nodes().render(item_left).done())
+                        .strong(|s| s.render(item_left).done())
                         .render(if item_left == 1 {
                             " item left"
                         } else {
@@ -293,7 +284,6 @@ impl spair::Render<App> for Footer {
                 .ul(|u| {
                     u.static_attributes()
                         .class("filters")
-                        .nodes()
                         .render(FilterView {
                             current_filter: state.filter,
                             view: Filter::All,
@@ -308,12 +298,10 @@ impl spair::Render<App> for Footer {
                         });
                 })
                 .button(|b| {
-                    b.static_attributes()
+                    b.class_if("hidden", !some_completed)
+                        .static_attributes()
                         .class("clear-completed")
                         .on_click(comp.handler(App::clear_completed))
-                        .attributes()
-                        .class_if("hidden", !some_completed)
-                        .static_nodes()
                         .r#static("Clear completed");
                 });
         });
@@ -328,11 +316,10 @@ struct FilterView {
 impl spair::Render<App> for FilterView {
     fn render(self, nodes: spair::Nodes<App>) {
         nodes.li(|l| {
-            l.nodes().a(|a| {
-                a.static_attributes()
+            l.a(|a| {
+                a.class_if("selected", self.current_filter == self.view)
+                    .static_attributes()
                     .href(&self.view)
-                    .attributes()
-                    .class_if("selected", self.current_filter == self.view)
                     .static_nodes()
                     .r#static(self.view.as_str());
             });
@@ -347,13 +334,12 @@ impl spair::Render<App> for Info {
             f.static_attributes()
                 .class("info")
                 .static_nodes()
-                .p(|p| p.nodes().r#static("Double-click to edit a todo").done())
-                .p(|p| p.nodes().r#static("Created by 'aclueless'").done())
+                .p(|p| p.r#static("Double-click to edit a todo").done())
+                .p(|p| p.r#static("Created by 'aclueless'").done())
                 .p(|p| {
-                    p.nodes().r#static("Part of ").a(|a| {
+                    p.r#static("Part of ").a(|a| {
                         a.static_attributes()
                             .href_str("http://todomvc.com")
-                            .nodes()
                             .r#static("TodoMVC");
                     });
                 });
@@ -369,33 +355,26 @@ impl spair::ListItem<App> for &TodoItem {
         let comp = &comp;
         let id = self.id;
         let is_editing_me = state.editing_id == Some(self.id);
-        li.attributes()
-            .class_if("completed", self.completed)
+        li.class_if("completed", self.completed)
             .class_if("editing", is_editing_me)
-            .nodes()
             .div(move |d| {
                 d.static_attributes()
                     .class("view")
-                    .nodes()
                     .input(|i| {
-                        i.static_attributes()
+                        i.on_change(comp.handler(move |state| state.toggle(id)))
+                            .checked(self.completed)
+                            .static_attributes()
                             .class("toggle")
-                            .r#type(spair::InputType::CheckBox)
-                            .attributes()
-                            .on_change(comp.handler(move |state| state.toggle(id)))
-                            .checked(self.completed);
+                            .r#type(spair::InputType::CheckBox);
                     })
                     .label(|l| {
-                        l.attributes()
-                            .on_double_click(comp.handler(move |state| state.start_editing(id)))
-                            .nodes()
+                        l.on_double_click(comp.handler(move |state| state.start_editing(id)))
                             .render(&self.title);
                     })
                     .button(|b| {
-                        b.static_attributes()
-                            .class("destroy")
-                            .attributes()
-                            .on_click(comp.handler(move |state| state.remove(id)));
+                        b.on_click(comp.handler(move |state| state.remove(id)))
+                            .static_attributes()
+                            .class("destroy");
                     });
             })
             .match_if(|arm| match is_editing_me {
@@ -413,7 +392,9 @@ impl<'a> spair::Render<App> for EditingInput<'a> {
     fn render(self, nodes: spair::Nodes<App>) {
         let comp = nodes.comp();
         nodes.input(|i| {
-            i.static_attributes()
+            i.focus(true)
+                .value(self.0)
+                .static_attributes()
                 .class("edit")
                 .on_blur(comp.handler_arg(|state, arg: web_sys::FocusEvent| {
                     state.end_editing(get_value(spair::into_input(
@@ -430,10 +411,7 @@ impl<'a> spair::Render<App> for EditingInput<'a> {
                         ))),
                         _ => {}
                     }
-                }))
-                .attributes()
-                .focus(true)
-                .value(self.0);
+                }));
         });
     }
 }

@@ -45,7 +45,6 @@ impl spair::Component for State {
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
-            .nodes()
             .div(|d| d.component(&self.child_comp))
             .static_nodes()
             .p(|p| {
@@ -54,8 +53,7 @@ impl spair::Component for State {
             })
             .nodes()
             .p(|p| {
-                p.nodes()
-                    .r#static("The value that read from child component: ")
+                p.r#static("The value that read from child component: ")
                     .match_if(|arm| match self.value_read_from_child {
                         Some(value) => arm.render_on_arm_index(0).render(value).done(),
                         None => arm.render_on_arm_index(1).render("[Not read yet]").done(),
