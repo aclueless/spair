@@ -45,15 +45,16 @@ impl spair::Component for State {
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
-            .div(|d| d.component(&self.child_comp))
             .static_nodes()
+            .div(|d| d.component(&self.child_comp))
+            .horizontal_line()
             .p(|p| {
                 p.static_nodes()
                     .r#static("This line and everything below is in the main-component");
             })
             .nodes()
             .p(|p| {
-                p.r#static("The value that read from child component: ")
+                p.r#static("The value that read from the child-component: ")
                     .match_if(|arm| match self.value_read_from_child {
                         Some(value) => arm.render_on_arm_index(0).render(value).done(),
                         None => arm.render_on_arm_index(1).render("[Not read yet]").done(),
@@ -63,7 +64,7 @@ impl spair::Component for State {
             .render(self.value)
             .r#static(Button("+", comp.handler(State::increment)))
             .r#static(Button(
-                "Send value to child-component",
+                "Send value to the child-component",
                 comp.handler(State::send_value_to_child),
             ));
     }

@@ -182,6 +182,7 @@ struct Header;
 impl spair::Render<App> for Header {
     fn render(self, nodes: spair::Nodes<App>) {
         let comp = nodes.comp();
+        let state = nodes.state();
         nodes.header(|h| {
             h.static_attributes()
                 .class("header")
@@ -189,7 +190,6 @@ impl spair::Render<App> for Header {
                 .h1(|h| h.render("Spair Todos").done())
                 .nodes()
                 .input(|i| {
-                    let state = i.state();
                     i.value(&state.new_todo_title)
                         .static_attributes()
                         .class("new-todo")
@@ -216,8 +216,8 @@ impl spair::Render<App> for Header {
 struct Main;
 impl spair::Render<App> for Main {
     fn render(self, nodes: spair::Nodes<App>) {
-        let state = nodes.state();
         let comp = nodes.comp();
+        let state = nodes.state();
         let todo_count = state.data.items.len();
         let all_completed = state.data.items.iter().all(|item| item.completed);
         nodes.section(|s| {
@@ -257,8 +257,8 @@ impl spair::Render<App> for Main {
 struct Footer;
 impl spair::Render<App> for Footer {
     fn render(self, nodes: spair::Nodes<App>) {
-        let state = nodes.state();
         let comp = nodes.comp();
+        let state = nodes.state();
         let list_empty = state.data.items.len() == 0;
         let item_left = state
             .data
@@ -350,9 +350,8 @@ impl spair::Render<App> for Info {
 impl spair::ListItem<App> for &TodoItem {
     const ROOT_ELEMENT_TAG: &'static str = "li";
     fn render(&self, li: spair::Element<App>) {
-        let state = li.state();
         let comp = li.comp();
-        let comp = &comp;
+        let state = li.state();
         let id = self.id;
         let is_editing_me = state.editing_id == Some(self.id);
         li.class_if("completed", self.completed)
@@ -427,6 +426,5 @@ fn get_value(i: web_sys::HtmlInputElement) -> Option<String> {
 
 #[wasm_bindgen(start)]
 pub fn start_todo_mvc() {
-    // wasm_logger::init(wasm_logger::Config::default());
     App::mount_to_body();
 }
