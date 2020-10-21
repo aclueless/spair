@@ -32,24 +32,25 @@ Sections below provide first looks into Spair.
 
 Spair works by iterating through every elements and attributes/properties in the current DOM, which is empty before the first render, creating new items or modifying existing items, it's the update-mode. But there are elements or attributes that will never change. You can tell Spair to just create them but ignore them when iterating over them later by turn on the static-mode.
 
-| items                    | update-mode      | static-mode            | notes                                                              |
-| ------------------------ | ---------------- | ---------------------- | ------------------------------------------------------------------ |
-| attributes / properties  | `.attributes()`  | `.static_attributes()` | `static_attributes()` must be called before `attributes()`         |
-| elements                 | `.nodes()`       | `.static_nodes()`      | only apply to elements, *not* apply to texts/renderable-items      |
-| texts / renderable-items | `.render(value)` | `.r#static(value)`     | not affected by mode introduced by `.nodes()` or `.static_nodes()` |
+| items                    | update-mode           | static-mode            | notes                                                                      |
+| ------------------------ | --------------------- | ---------------------- | -------------------------------------------------------------------------- |
+| attributes / properties  | *default*             | `.static_attributes()` | call `.static_attributes()` after you are done with update-mode-attributes |
+| elements                 | *default*, `.nodes()` | `.static_nodes()`      | only apply to elements, *not* apply to texts/renderable-items              |
+| texts / renderable-items | `.render(value)`      | `.r#static(value)`     | not affected by mode introduced by `.nodes()` or `.static_nodes()`         |
 
 `.nodes()` and `.static_nodes()` can be switched back and forth as many times as you want.
 
 ```rust
 element
-    .static_attributes()
-    .class("class-name") // class="class-name" is added on creation, but ignored on subsequence render
-    .attributes()
+    // default to update-mode attributes
     .value(&some_value) // will be checked and updated if changed
-    .nodes()
+    .class_if("class-name", bool_value)
+    .static_attributes() // we are done with update-mode attributes!
+    .class("class-name") // class="class-name" is added on creation, but ignored on subsequence render
+    // just add child-elements, default to update mode.
     .p(|p| {}) // create and update a <p>
     .render(value) // create and update a text
-    .r#static(value) // a create-only text - not affected by `.nodes()`.
+    .r#static(value) // a create-only text - not affected by update-mode (default).
     .static_nodes()
     .div(|d| {}) // a create-only <div> (because creating in static-mode)
     .render(value) // an updatable text - not affected by `.static_nodes()`
@@ -66,8 +67,7 @@ element
         // In the future update, this closure will be IGNORED,
         // therefore, all child-nodes of <p> will NOT be updated despite
         // being created in update-mode.
-        p.nodes()
-            .span(|s| {})
+        p.span(|s| {})
             .render(value)
     })
 ```
@@ -121,32 +121,32 @@ Spair does not do reconciliation, users must do it by themselves. When an expect
 
 The following code is extracted from `examples/fetch/src/lib.rs`:
 ```rust
-.nodes()
-.match_if(|arm| match self.branch.as_ref() {
-    Some(branch) => arm
-        // Tell Spair which arm we are on.
-        // If in the previous render we were on index=1, but in this
-        // render we are on index=0, then Spair clear all nodes before
-        // rendering the content
-        .render_on_arm_index(0)
-        // Render the content of `Some(branch)`
-        .render(branch)
-        // some code removed
-        .done(),
-    None => arm
-        .render_on_arm_index(1)
-        // There is no value: `None`? Then just render a button
-        .button(|b| {/* some code removed */})
-        .done(),
-})
+element
+    .match_if(|arm| match self.branch.as_ref() {
+        Some(branch) => arm
+            // Tell Spair which arm we are on.
+            // If in the previous render we were on index=1, but in this
+            // render we are on index=0, then Spair clear all nodes before
+            // rendering the content
+            .render_on_arm_index(0)
+            // Render the content of `Some(branch)`
+            .render(branch)
+            // some code removed
+            .done(),
+        None => arm
+            .render_on_arm_index(1)
+            // There is no value: `None`? Then just render a button
+            .button(|b| {/* some code removed */})
+            .done(),
+    })
 ```
 
 **DON'T DO THIS, IT DOES NOT WORK**
 ```rust
 if some_condition {
-    nodes().div(|d| {})
+    element.div(|d| {})
 } else {
-    nodes().p(|p| {})
+    element.p(|p| {})
 }
 ```
 
@@ -159,6 +159,8 @@ Example: `examples/components`
 ## Notes
 
 HTML's tags and attributes are implemented as methods in Spair. Names that are conflicted with Rust's keywords are implemented using raw identifers such as `r#type`, `r#for`...
+
+There is an element named `<span>`, there is also an attribute named `span`. Spair implements methods for both elements and attributes on the `spair::Element`, so there is a conflict here. Spair implements `.span()` for element `<span>` and `span_attr()` for attribute `span`.  
 
 ## Common errors
 Using Spair, you may encounter common mistakes listed in this section. They are really annoying. How these problems can be avoided?
