@@ -129,6 +129,10 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         Self(eu)
     }
 
+    pub fn nodes(self) -> super::NodesOwned<'a, C> {
+        super::NodesOwned::from_el_updater(self.0)
+    }
+
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
         super::StaticNodesOwned::from_el_updater(self.0)
     }

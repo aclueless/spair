@@ -170,6 +170,10 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         super::StaticAttributes::new(self)
     }
 
+    pub fn nodes(self) -> super::NodesOwned<'a, C> {
+        super::NodesOwned::from_el_updater(self)
+    }
+
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
         super::StaticNodesOwned::from_el_updater(self)
     }
