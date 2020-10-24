@@ -391,6 +391,31 @@ where
         on_ended Ended,
     }
 
+    fn bool_attr(mut self, name: &str, value: bool) -> Self {
+        self.set_bool_attribute(name, value);
+        self
+    }
+
+    fn str_attr(mut self, name: &str, value: &str) -> Self {
+        self.set_str_attribute(name, value);
+        self
+    }
+
+    fn i32_attr(mut self, name: &str, value: i32) -> Self {
+        self.set_i32_attribute(name, value);
+        self
+    }
+
+    fn u32_attr(mut self, name: &str, value: u32) -> Self {
+        self.set_u32_attribute(name, value);
+        self
+    }
+
+    fn f64_attr(mut self, name: &str, value: f64) -> Self {
+        self.set_f64_attribute(name, value);
+        self
+    }
+
     create_methods_for_attributes! {
         str     abbr
         str     accept
