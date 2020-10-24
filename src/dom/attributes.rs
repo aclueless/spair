@@ -286,8 +286,11 @@ macro_rules! create_methods_for_attributes {
 }
 
 mod sealed {
+    use wasm_bindgen::UnwrapThrowExt;
+
     pub trait AttributeSetter {
         fn ws_html_element(&self) -> &web_sys::HtmlElement;
+        fn ws_element(&self) -> &web_sys::Element;
         fn element_type(&self) -> crate::dom::ElementType;
         fn require_set_listener(&mut self) -> bool;
         fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>);
@@ -301,6 +304,52 @@ mod sealed {
 
         fn set_selected_value(&mut self, value: Option<&str>);
         fn set_selected_index(&mut self, index: Option<usize>);
+
+        fn set_bool_attribute(&mut self, name: &str, value: bool) {
+            if self.check_bool_attribute(value) {
+                if value {
+                    self.ws_element()
+                        .set_attribute(name, "")
+                        .expect_throw("Unable to set bool attribute");
+                } else {
+                    self.ws_element()
+                        .remove_attribute(name)
+                        .expect_throw("Unable to remove bool attribute");
+                }
+            }
+        }
+
+        fn set_str_attribute(&mut self, name: &str, value: &str) {
+            if self.check_str_attribute(value) {
+                self.ws_element()
+                    .set_attribute(name, value)
+                    .expect_throw("Unable to set string attribute");
+            }
+        }
+
+        fn set_i32_attribute(&mut self, name: &str, value: i32) {
+            if self.check_i32_attribute(value) {
+                self.ws_element()
+                    .set_attribute(name, &value.to_string())
+                    .expect_throw("Unable to set string attribute");
+            }
+        }
+
+        fn set_u32_attribute(&mut self, name: &str, value: u32) {
+            if self.check_u32_attribute(value) {
+                self.ws_element()
+                    .set_attribute(name, &value.to_string())
+                    .expect_throw("Unable to set string attribute");
+            }
+        }
+
+        fn set_f64_attribute(&mut self, name: &str, value: f64) {
+            if self.check_f64_attribute(value) {
+                self.ws_element()
+                    .set_attribute(name, &value.to_string())
+                    .expect_throw("Unable to set string attribute");
+            }
+        }
     }
 }
 
@@ -308,54 +357,6 @@ pub trait AttributeSetter<C>: Sized + sealed::AttributeSetter
 where
     C: crate::component::Component,
 {
-    fn ws_element(&self) -> &web_sys::Element;
-
-    fn set_bool_attribute(&mut self, name: &str, value: bool) {
-        if self.check_bool_attribute(value) {
-            if value {
-                self.ws_element()
-                    .set_attribute(name, "")
-                    .expect_throw("Unable to set bool attribute");
-            } else {
-                self.ws_element()
-                    .remove_attribute(name)
-                    .expect_throw("Unable to remove bool attribute");
-            }
-        }
-    }
-
-    fn set_str_attribute(&mut self, name: &str, value: &str) {
-        if self.check_str_attribute(value) {
-            self.ws_element()
-                .set_attribute(name, value)
-                .expect_throw("Unable to set string attribute");
-        }
-    }
-
-    fn set_i32_attribute(&mut self, name: &str, value: i32) {
-        if self.check_i32_attribute(value) {
-            self.ws_element()
-                .set_attribute(name, &value.to_string())
-                .expect_throw("Unable to set string attribute");
-        }
-    }
-
-    fn set_u32_attribute(&mut self, name: &str, value: u32) {
-        if self.check_u32_attribute(value) {
-            self.ws_element()
-                .set_attribute(name, &value.to_string())
-                .expect_throw("Unable to set string attribute");
-        }
-    }
-
-    fn set_f64_attribute(&mut self, name: &str, value: f64) {
-        if self.check_f64_attribute(value) {
-            self.ws_element()
-                .set_attribute(name, &value.to_string())
-                .expect_throw("Unable to set string attribute");
-        }
-    }
-
     create_methods_for_events! {
         on_focus Focus,
         on_blur Blur,
@@ -633,13 +634,9 @@ where
     }
 }
 
-impl<'a, C: crate::component::Component> AttributeSetter<C> for StaticAttributes<'a, C>
-where
-    C: crate::component::Component,
+impl<'a, C: crate::component::Component> AttributeSetter<C> for StaticAttributes<'a, C> where
+    C: crate::component::Component
 {
-    fn ws_element(&self) -> &web_sys::Element {
-        &self.0.element.ws_element
-    }
 }
 
 impl<'a, C: crate::component::Component> sealed::AttributeSetter for StaticAttributes<'a, C> {
@@ -647,9 +644,14 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for StaticAttri
         self.0.element.ws_element.unchecked_ref()
     }
 
+    fn ws_element(&self) -> &web_sys::Element {
+        &self.0.element.ws_element
+    }
+
     fn element_type(&self) -> super::ElementType {
         self.0.element.element_type
     }
+
     fn require_set_listener(&mut self) -> bool {
         if self.0.status == super::ElementStatus::Existing {
             // When self.require_init == false, self.store_listener will not be invoked.
@@ -705,18 +707,18 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for StaticAttri
     }
 }
 
-impl<'a, C: crate::component::Component> AttributeSetter<C> for super::ElementUpdater<'a, C>
-where
-    C: crate::component::Component,
+impl<'a, C: crate::component::Component> AttributeSetter<C> for super::ElementUpdater<'a, C> where
+    C: crate::component::Component
 {
-    fn ws_element(&self) -> &web_sys::Element {
-        &self.element.ws_element
-    }
 }
 
 impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::ElementUpdater<'a, C> {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
         self.element.ws_element.unchecked_ref()
+    }
+
+    fn ws_element(&self) -> &web_sys::Element {
+        &self.element.ws_element
     }
 
     fn element_type(&self) -> super::ElementType {
