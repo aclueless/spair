@@ -67,14 +67,6 @@ impl State {
 
 impl spair::Component for State {
     type Routes = ();
-
-    fn with_comp(_: spair::Comp<Self>) -> Option<Self> {
-        Some(Self {
-            branch: None,
-            message: "Wait for your click".to_string(),
-        })
-    }
-
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
@@ -125,6 +117,15 @@ impl spair::Render<State> for &Commit {
                 .render(&self.commit.author.email)
                 .r#static(")");
         });
+    }
+}
+
+impl spair::Application for State {
+    fn with_comp(_: spair::Comp<Self>) -> Self {
+        Self {
+            branch: None,
+            message: "Wait for your click".to_string(),
+        }
     }
 }
 

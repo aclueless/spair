@@ -16,10 +16,6 @@ impl State {
 
 impl spair::Component for State {
     type Routes = ();
-    fn with_comp(_: spair::Comp<Self>) -> Option<Self> {
-        Some(Self { value: 42 })
-    }
-
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
@@ -44,6 +40,12 @@ impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
                 .static_nodes()
                 .r#static(self.0);
         });
+    }
+}
+
+impl spair::Application for State {
+    fn with_comp(_: spair::Comp<Self>) -> Self {
+        Self { value: 42 }
     }
 }
 

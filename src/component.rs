@@ -68,10 +68,6 @@ impl UpdateQueue {
 
 pub trait Component: 'static + Sized {
     type Routes: crate::routing::Routes<Self>;
-    // It return Option to allow default implementation
-    fn with_comp(_: Comp<Self>) -> Option<Self> {
-        None
-    }
 
     // Better name?
     // This method will be ran once when the component is created.

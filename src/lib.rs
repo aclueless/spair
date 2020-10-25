@@ -10,6 +10,7 @@ mod renderable;
 mod routing;
 mod utils;
 
+pub use application::Application;
 pub use component::{
     update_component, Checklist, ChildComp, Comp, Component, ShouldRender, WithParentComp,
 };
