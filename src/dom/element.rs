@@ -166,6 +166,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self.element.ws_element.clone()
     }
 
+    pub fn clear(self) {
+        let parent = self.element.ws_element.as_ref();
+        self.element.nodes.clear(parent);
+    }
+
     pub fn static_attributes(self) -> super::StaticAttributes<'a, C> {
         super::StaticAttributes::new(self)
     }
