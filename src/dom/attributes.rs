@@ -181,9 +181,9 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     pub fn list_with_render<I, R>(
         self,
         items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
         tag: &str,
         render: R,
-        mode: super::ListElementCreation,
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
