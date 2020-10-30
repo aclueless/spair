@@ -217,15 +217,15 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     where
         I: crate::renderable::ListItem<C>,
     {
-        self.list_with_render(items, I::ROOT_ELEMENT_TAG, I::render, mode);
+        self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
     }
 
     pub fn list_with_render<I, R>(
         self,
         items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
         tag: &str,
         render: R,
-        mode: super::ListElementCreation,
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {

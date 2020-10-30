@@ -187,7 +187,7 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.0.list_with_render(items, tag, render, mode)
+        self.0.list_with_render(items, mode, tag, render)
     }
 
     #[cfg(feature = "keyed-list")]
