@@ -130,45 +130,32 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     }
 
     pub fn nodes(self) -> super::NodesOwned<'a, C> {
-        super::NodesOwned::from_el_updater(self.0)
+        self.0.nodes()
     }
 
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
-        super::StaticNodesOwned::from_el_updater(self.0)
-    }
-
-    pub(super) fn internal_nodes(self) -> super::NodesOwned<'a, C> {
-        super::NodesOwned::from_el_updater(self.0)
+        self.0.static_nodes()
     }
 
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
 
     pub fn render(self, value: impl crate::renderable::Render<C>) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = super::NodesOwned::from_el_updater(self.0);
-        let nodes = nodes_owned.nodes_ref();
-        value.render(nodes);
-        nodes_owned
+        self.0.render(value)
     }
 
     pub fn render_ref(
         self,
         value: &impl crate::renderable::RenderRef<C>,
     ) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = super::NodesOwned::from_el_updater(self.0);
-        let nodes = nodes_owned.nodes_ref();
-        value.render(nodes);
-        nodes_owned
+        self.0.render_ref(value)
     }
 
     pub fn r#static(
         self,
         value: impl crate::renderable::StaticRender<C>,
     ) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = super::NodesOwned::from_el_updater(self.0);
-        let static_nodes = nodes_owned.static_nodes_ref();
-        value.render(static_nodes);
-        nodes_owned
+        self.0.r#static(value)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)

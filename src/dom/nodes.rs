@@ -934,7 +934,7 @@ impl<'a, C: crate::component::Component> From<super::StaticAttributes<'a, C>>
     for NodesOwned<'a, C>
 {
     fn from(sa: super::StaticAttributes<'a, C>) -> Self {
-        sa.internal_nodes()
+        sa.nodes()
     }
 }
 
