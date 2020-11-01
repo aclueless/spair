@@ -615,7 +615,7 @@ where
         self
     }
 
-    fn selected_value_so(mut self, value: Option<&str>) -> Self {
+    fn selected_value(mut self, value: Option<&str>) -> Self {
         if self.element_type() == super::ElementType::Select {
             // TODO: check to find change of value?
 
@@ -642,11 +642,6 @@ where
         } else {
             log::warn!(".selected_index() is called on an element that is not <select>");
         }
-        self
-    }
-
-    fn value_so(mut self, value: &str) -> Self {
-        self.value_str(value);
         self
     }
 
@@ -854,7 +849,7 @@ impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a
     for Option<&str>
 {
     fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.selected_value_so(self)
+        u.selected_value(self)
     }
 }
 
@@ -862,6 +857,19 @@ impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<
     for Option<&str>
 {
     fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.selected_value_so(self)
+        u.selected_value(self)
+    }
+}
+
+// f64
+impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a, C>> for f64 {
+    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        u.f64_attr("value", self)
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>> for f64 {
+    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        u.f64_attr("value", self)
     }
 }
