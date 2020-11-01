@@ -273,7 +273,8 @@ macro_rules! create_methods_for_attributes {
 }
 
 mod sealed {
-    use wasm_bindgen::UnwrapThrowExt;
+    use super::super::ElementType;
+    use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
     pub trait AttributeSetter {
         fn ws_html_element(&self) -> &web_sys::HtmlElement;
@@ -335,6 +336,38 @@ mod sealed {
                 self.ws_element()
                     .set_attribute(name, &value.to_string())
                     .expect_throw("Unable to set string attribute");
+            }
+        }
+
+        fn value_str(&mut self, value: &str) {
+            if self.check_str_attribute(value) {
+                let element = self.ws_element();
+                match self.element_type() {
+                    ElementType::Input => {
+                        let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
+                        input.set_value(value);
+                    }
+                    ElementType::Select => {
+                        // It has no effect if you set a value for
+                        // a <select> element before adding its <option>s,
+                        // the hacking should finish in the list() method.
+                        // Is there a better solution?
+                        self.set_selected_value(Some(value));
+                    }
+                    ElementType::TextArea => {
+                        let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
+                        text_area.set_value(value);
+                    }
+                    ElementType::Option => {
+                        let option = element.unchecked_ref::<web_sys::HtmlOptionElement>();
+                        option.set_value(value);
+                    }
+                    ElementType::Other => {
+                        log::warn!(
+                        ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
+                    );
+                    }
+                }
             }
         }
     }
@@ -582,7 +615,7 @@ where
         self
     }
 
-    fn selected_value(mut self, value: Option<&str>) -> Self {
+    fn selected_value_so(mut self, value: Option<&str>) -> Self {
         if self.element_type() == super::ElementType::Select {
             // TODO: check to find change of value?
 
@@ -612,37 +645,13 @@ where
         self
     }
 
-    fn value(mut self, value: &str) -> Self {
-        if self.check_str_attribute(value) {
-            let element = self.ws_element();
-            match self.element_type() {
-                super::ElementType::Input => {
-                    let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
-                    input.set_value(value);
-                }
-                super::ElementType::Select => {
-                    // It has no effect if you set a value for
-                    // a <select> element before adding its <option>s,
-                    // the hacking should finish in the list() method.
-                    // Is there a better solution?
-                    self.set_selected_value(Some(value));
-                }
-                super::ElementType::TextArea => {
-                    let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
-                    text_area.set_value(value);
-                }
-                super::ElementType::Option => {
-                    let option = element.unchecked_ref::<web_sys::HtmlOptionElement>();
-                    option.set_value(value);
-                }
-                super::ElementType::Other => {
-                    log::warn!(
-                        ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
-                    );
-                }
-            }
-        }
+    fn value_so(mut self, value: &str) -> Self {
+        self.value_str(value);
         self
+    }
+
+    fn value(self, value: impl AttributeValue<Self>) -> Self {
+        value.update(self)
     }
 }
 
@@ -797,5 +806,62 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Elem
 
     fn set_selected_index(&mut self, index: Option<usize>) {
         self.select_element_value.set_selected_index(index);
+    }
+}
+
+pub trait AttributeValue<U> {
+    fn update(self, u: U) -> U;
+}
+
+// &str
+impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a, C>> for &str {
+    fn update(self, mut u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        use sealed::AttributeSetter;
+        u.value_str(self);
+        u
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>> for &str {
+    fn update(self, mut u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        use sealed::AttributeSetter;
+        u.value_str(self);
+        u
+    }
+}
+
+// &String
+impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a, C>> for &String {
+    fn update(self, mut u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        use sealed::AttributeSetter;
+        u.value_str(self);
+        u
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>>
+    for &String
+{
+    fn update(self, mut u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        use sealed::AttributeSetter;
+        u.value_str(self);
+        u
+    }
+}
+
+// Option<&str>
+impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a, C>>
+    for Option<&str>
+{
+    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        u.selected_value_so(self)
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>>
+    for Option<&str>
+{
+    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        u.selected_value_so(self)
     }
 }
