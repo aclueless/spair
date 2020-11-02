@@ -615,6 +615,10 @@ where
         self
     }
 
+    fn min(self, value: impl AttributeMin<Self>) -> Self {
+        value.update(self)
+    }
+
     fn selected_value(mut self, value: Option<&str>) -> Self {
         if self.element_type() == super::ElementType::Select {
             // TODO: check to find change of value?
@@ -871,5 +875,48 @@ impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a
 impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>> for f64 {
     fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
         u.f64_attr("value", self)
+    }
+}
+
+pub trait AttributeMin<U> {
+    fn update(self, u: U) -> U;
+}
+
+// &str
+impl<'a, C: crate::component::Component> AttributeMin<super::ElementUpdater<'a, C>> for &str {
+    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        u.str_attr("min", self)
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeMin<super::StaticAttributes<'a, C>> for &str {
+    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        u.str_attr("min", self)
+    }
+}
+
+// &String
+impl<'a, C: crate::component::Component> AttributeMin<super::ElementUpdater<'a, C>> for &String {
+    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        u.str_attr("min", self)
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeMin<super::StaticAttributes<'a, C>> for &String {
+    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        u.str_attr("min", self)
+    }
+}
+
+// f64
+impl<'a, C: crate::component::Component> AttributeMin<super::ElementUpdater<'a, C>> for f64 {
+    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        u.f64_attr("min", self)
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeMin<super::StaticAttributes<'a, C>> for f64 {
+    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        u.f64_attr("min", self)
     }
 }
