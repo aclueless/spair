@@ -615,6 +615,10 @@ where
         self
     }
 
+    fn max(self, value: impl AttributeMax<Self>) -> Self {
+        value.update(self)
+    }
+
     fn min(self, value: impl AttributeMin<Self>) -> Self {
         value.update(self)
     }
@@ -875,6 +879,49 @@ impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a
 impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>> for f64 {
     fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
         u.f64_attr("value", self)
+    }
+}
+
+pub trait AttributeMax<U> {
+    fn update(self, u: U) -> U;
+}
+
+// &str
+impl<'a, C: crate::component::Component> AttributeMax<super::ElementUpdater<'a, C>> for &str {
+    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        u.str_attr("max", self)
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeMax<super::StaticAttributes<'a, C>> for &str {
+    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        u.str_attr("max", self)
+    }
+}
+
+// &String
+impl<'a, C: crate::component::Component> AttributeMax<super::ElementUpdater<'a, C>> for &String {
+    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        u.str_attr("max", self)
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeMax<super::StaticAttributes<'a, C>> for &String {
+    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        u.str_attr("max", self)
+    }
+}
+
+// f64
+impl<'a, C: crate::component::Component> AttributeMax<super::ElementUpdater<'a, C>> for f64 {
+    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
+        u.f64_attr("max", self)
+    }
+}
+
+impl<'a, C: crate::component::Component> AttributeMax<super::StaticAttributes<'a, C>> for f64 {
+    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
+        u.f64_attr("max", self)
     }
 }
 
