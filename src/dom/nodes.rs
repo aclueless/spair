@@ -640,7 +640,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
         this
     }
 
-    fn horizontal_rule(self) -> Self::Output {
+    fn horizontal_line(self) -> Self::Output {
         use sealed::DomBuilder;
         let mut this: Self::Output = self.into();
         if this.require_render() {
@@ -649,10 +649,6 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
             this.next_index();
         }
         this
-    }
-
-    fn horizontal_line(self) -> Self::Output {
-        self.horizontal_rule()
     }
 
     fn raw_wrapper(self, raw_wrapper: &impl super::RawWrapper<C>) -> Self::Output {
