@@ -812,7 +812,7 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::Elem
     }
 }
 
-// TODO: Should all this be produced by macros?
+// TODO: Should all these (below) be produced by macros?
 
 pub trait AttributeValue<U> {
     fn update(self, u: U) -> U;
