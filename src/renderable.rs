@@ -58,7 +58,7 @@ macro_rules! impl_render_with_to_string {
 }
 
 impl_render_with_to_string! {
-    i8 i16 i32 i64 u8 u16 u32 u64 isize usize f32 f64 bool
+    i8 i16 i32 i64 u8 u16 u32 u64 isize usize f32 f64 bool char
 }
 
 impl<C: crate::component::Component> StaticRender<C> for &str {
