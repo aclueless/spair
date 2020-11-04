@@ -401,9 +401,9 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     pub fn list_with_render<I, R>(
         &mut self,
         items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
         tag: &str,
         render: R,
-        mode: super::ListElementCreation,
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
@@ -551,14 +551,14 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     pub fn list_with_render<I, R>(
         mut self,
         items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
         tag: &str,
         render: R,
-        mode: super::ListElementCreation,
     ) -> Self
     where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.0.list_with_render(items, tag, render, mode);
+        self.0.list_with_render(items, mode, tag, render);
         self
     }
 }
@@ -842,14 +842,14 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     pub fn list_with_render<I, R>(
         self,
         items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
         tag: &str,
         render: R,
-        mode: super::ListElementCreation,
     ) -> Self
     where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.0.list_with_render(items, tag, render, mode);
+        self.0.list_with_render(items, mode, tag, render);
         self
     }
 }
