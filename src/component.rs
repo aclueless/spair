@@ -516,6 +516,14 @@ impl<C: WithParentComp + Component> ChildComp<C> {
         rc_comp.set_state(C::with_parent_and_comp(parent, rc_comp.comp()));
         rc_comp
     }
+
+    pub fn with_parent_and_state_editor(parent: &Comp<C::Parent>, edit: impl FnOnce(&mut C)) -> Self {
+        let rc_comp = ChildComp::new(None);
+        let mut state = C::with_parent_and_comp(parent, rc_comp.comp());
+        edit(&mut state);
+        rc_comp.set_state(state);
+        rc_comp
+    }
 }
 
 // A new struct and impl Drop on it, instead of impl Drop on Comp,
