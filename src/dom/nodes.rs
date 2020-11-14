@@ -667,6 +667,18 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 
         this
     }
+
+    #[cfg(feature = "svg")]
+    pub fn svg(self, updater: impl FnOnce(svg::SvgUpdater<'a, C>)) -> Self::Output {
+        use sealed::DomBuilder;
+        let mut this: Self::Output = self.into();
+        if this.require_render() {
+            f(this.get_element_and_increase_index(tag));
+        } else {
+            this.next_index();
+        }
+        this
+    }
 }
 
 impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodesOwned<'a, C> {

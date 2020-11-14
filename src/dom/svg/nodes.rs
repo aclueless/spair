@@ -10,6 +10,7 @@ pub(crate) struct SvgNodeListUpdater<'a, C> {
 }
 
 mod sealed {
+    // TODO: Copied from dom::nodes. Should be a common trait?
     pub trait SvgBuilder<C: crate::component::Component> {
         fn require_render(&self) -> bool;
         fn just_created(&self) -> bool;
