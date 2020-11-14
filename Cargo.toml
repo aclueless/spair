@@ -25,6 +25,7 @@ members = [
     "examples/fetch",
     "examples/todomvc",
     "examples/components",
+    "examples/svg_clock",
 ]
 
 [dev-dependencies]

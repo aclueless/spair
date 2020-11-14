@@ -1,6 +1,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 pub mod attribute_types;
+#[macro_use]
 mod attributes;
 mod element;
 #[cfg(feature = "keyed-list")]
@@ -21,6 +22,9 @@ pub use element::*;
 pub use keyed_list::*;
 pub use nodes::*;
 pub use non_keyed_list::*;
+
+#[cfg(feature = "svg")]
+pub use svg::*;
 
 // This is currently created by both `Nodes::Iter::update_text()` and `Nodes::Iter::static_text()`
 pub struct Text {

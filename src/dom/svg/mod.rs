@@ -1,16 +1,17 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 mod attributes;
-//mod nodes;
+mod nodes;
 
 use attributes::*;
+use nodes::*;
 
 impl super::Element {
-    pub fn new_svg(tag: &str) -> Self {
+    pub fn new_svg() -> Self {
         Self {
-            element_type: tag.into(),
+            element_type: "svg".into(),
             ws_element: crate::utils::document()
-                .create_element_ns(Some("http://www.w3.org/2000/svg"), tag)
+                .create_element_ns(Some("http://www.w3.org/2000/svg"), "svg")
                 .expect_throw("Unable to create new svg element"),
             attributes: Default::default(),
             nodes: Default::default(),
@@ -64,13 +65,13 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         SvgStaticAttributes::new(self)
     }
 
-    // pub fn nodes(self) -> SvgNodesOwned<'a, C> {
-    //     SvgNodesOwned::from_svg_updater(self)
-    // }
+    pub fn nodes(self) -> SvgNodesOwned<'a, C> {
+        SvgNodesOwned::from_svg_updater(self)
+    }
 
-    // pub fn static_nodes(self) -> SvgStaticNodesOwned<'a, C> {
-    //     SvgStaticNodesOwned::from_svg_updater(self)
-    // }
+    pub fn static_nodes(self) -> SvgStaticNodesOwned<'a, C> {
+        SvgStaticNodesOwned::from_svg_updater(self)
+    }
 
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
