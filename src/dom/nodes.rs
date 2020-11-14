@@ -731,6 +731,7 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for StaticNodesOw
         self.0.get_element_and_increase_index(tag)
     }
 
+    #[cfg(feature = "svg")]
     fn get_svg_element_and_increase_index(&mut self) -> super::SvgUpdater<C> {
         self.0.get_svg_element_and_increase_index()
     }
@@ -766,6 +767,7 @@ impl<'a, C: crate::component::Component> sealed::DomBuilder<C> for NodesOwned<'a
         self.0.get_element_and_increase_index(tag)
     }
 
+    #[cfg(feature = "svg")]
     fn get_svg_element_and_increase_index(&mut self) -> super::SvgUpdater<C> {
         self.0.get_svg_element_and_increase_index()
     }
@@ -924,6 +926,7 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for StaticNod
         self.0.get_element_and_increase_index(tag)
     }
 
+    #[cfg(feature = "svg")]
     fn get_svg_element_and_increase_index(&mut self) -> super::SvgUpdater<C> {
         self.0.get_svg_element_and_increase_index()
     }
@@ -959,6 +962,7 @@ impl<'n, 'h, C: crate::component::Component> sealed::DomBuilder<C> for Nodes<'n,
         self.0.get_element_and_increase_index(tag)
     }
 
+    #[cfg(feature = "svg")]
     fn get_svg_element_and_increase_index(&mut self) -> super::SvgUpdater<C> {
         self.0.get_svg_element_and_increase_index()
     }
