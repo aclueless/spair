@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::JsCast;
 
 pub struct SvgStaticAttributes<'a, C>(super::SvgUpdater<'a, C>);
 
@@ -21,7 +21,7 @@ impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
 
 mod sealed {
     // TODO: Copied from dom::attributes. Should be a common trait?
-    use wasm_bindgen::{JsCast, UnwrapThrowExt};
+    use wasm_bindgen::UnwrapThrowExt;
 
     pub trait AttributeSetter {
         fn ws_html_element(&self) -> &web_sys::HtmlElement;
@@ -88,12 +88,19 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
     create_methods_for_attributes! {
         f64     cx
         f64     cy
+        str     fill
         f64     height
         f64     r
-        str     view_box "viewBox"
+        str     stroke
+        f64     stroke_width    "stroke-width"
+        str     view_box        "viewBox"
         f64     width
         f64     x
+        f64     x1
+        f64     x2
         f64     y
+        f64     y1
+        f64     y2
     }
 }
 

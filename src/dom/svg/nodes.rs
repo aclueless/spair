@@ -23,7 +23,8 @@ impl<'a, C: crate::component::Component> SvgNodeListUpdater<'a, C> {
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::SvgUpdater<C> {
-        let status = self.nodes.check_or_create_element(
+        let status = self.nodes.check_or_create_svg_element_ns(
+        //let status = self.nodes.check_or_create_element(
             tag,
             self.index,
             self.parent_status,
@@ -122,6 +123,7 @@ pub trait SvgBuilder<C: crate::component::Component>: Sized {
 
     create_methods_for_tags! {
         circle
+        line
     }
 
     fn svg(self, f: impl FnOnce(super::SvgUpdater<C>)) -> Self::Output {
@@ -151,42 +153,24 @@ impl<'a, C: crate::component::Component> SvgStaticNodesOwned<'a, C> {
         self.0.comp.clone()
     }
 
-    // pub fn nodes(self) -> NodesOwned<'a, C> {
-    //     SvgNodesOwned(self.0)
-    // }
+    pub fn nodes(self) -> SvgNodesOwned<'a, C> {
+        SvgNodesOwned(self.0)
+    }
 
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
 
-    // pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
-    //     let nodes = SvgNodes(&mut self.0);
-    //     value.render(nodes);
-    //     self
-    // }
+    pub fn render(mut self, value: impl super::SvgRender<C>) -> Self {
+        let nodes = SvgNodes(&mut self.0);
+        value.render(nodes);
+        self
+    }
 
-    // pub fn render_ref(mut self, value: &impl crate::renderable::RenderRef<C>) -> Self {
-    //     let nodes = Nodes(&mut self.0);
-    //     value.render(nodes);
-    //     self
-    // }
-
-    // pub fn r#static(mut self, value: impl crate::renderable::StaticRender<C>) -> Self {
-    //     let static_nodes = StaticNodes(&mut self.0);
-    //     value.render(static_nodes);
-    //     self
-    // }
-
-    // pub fn static_text_of_keyed_item(
-    //     mut self,
-    //     value: impl crate::renderable::ListItemStaticText<C>,
-    // ) -> Self {
-    //     if self.0.parent_status != crate::dom::ElementStatus::Existing {
-    //         value.render(self.nodes()).static_nodes()
-    //     } else {
-    //         self.0.index += 1;
-    //         self
-    //     }
-    // }
+    pub fn r#static(mut self, value: impl super::SvgStaticRender<C>) -> Self {
+        let static_nodes = SvgStaticNodes(&mut self.0);
+        value.render(static_nodes);
+        self
+    }
 }
 
 pub struct SvgNodesOwned<'a, C: crate::component::Component>(SvgNodeListUpdater<'a, C>);
@@ -195,14 +179,6 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
     pub(super) fn from_svg_updater(su: super::SvgUpdater<'a, C>) -> Self {
         Self(SvgNodeListUpdater::from_svg_updater(su))
     }
-
-    // pub(super) fn nodes_ref<'n>(&'n mut self) -> Nodes<'n, 'a, C> {
-    //     Nodes(&mut self.0)
-    // }
-
-    // pub(super) fn static_nodes_ref<'n>(&'n mut self) -> StaticNodes<'n, 'a, C> {
-    //     StaticNodes(&mut self.0)
-    // }
 
     pub fn state(&self) -> &'a C {
         self.0.state
@@ -219,56 +195,23 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
 
-    // pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
-    //     let nodes = Nodes(&mut self.0);
-    //     value.render(nodes);
-    //     self
-    // }
+    pub fn render(mut self, value: impl super::SvgRender<C>) -> Self {
+        let nodes = SvgNodes(&mut self.0);
+        value.render(nodes);
+        self
+    }
 
-    // pub fn render_ref(mut self, value: &impl crate::renderable::RenderRef<C>) -> Self {
-    //     let nodes = Nodes(&mut self.0);
-    //     value.render(nodes);
-    //     self
-    // }
-
-    // pub fn r#static(mut self, value: impl crate::renderable::StaticRender<C>) -> Self {
-    //     let static_nodes = StaticNodes(&mut self.0);
-    //     value.render(static_nodes);
-    //     self
-    // }
-
-    // pub fn static_text_of_keyed_item(
-    //     mut self,
-    //     value: impl crate::renderable::ListItemStaticText<C>,
-    // ) -> Self {
-    //     if self.0.parent_status != crate::dom::ElementStatus::Existing {
-    //         value.render(self)
-    //     } else {
-    //         self.0.index += 1;
-    //         self
-    //     }
-    // }
+    pub fn r#static(mut self, value: impl super::SvgStaticRender<C>) -> Self {
+        let static_nodes = SvgStaticNodes(&mut self.0);
+        value.render(static_nodes);
+        self
+    }
 
     // pub(crate) fn update_text(mut self, text: &str) -> Self {
     //     self.0
     //         .nodes
     //         .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
     //     self.0.index += 1;
-    //     self
-    // }
-
-    // #[cfg(feature = "partial-non-keyed-list")]
-    // pub fn list_with_render<I, R>(
-    //     mut self,
-    //     items: impl IntoIterator<Item = I>,
-    //     mode: super::ListElementCreation,
-    //     tag: &str,
-    //     render: R,
-    // ) -> Self
-    // where
-    //     for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
-    // {
-    //     self.0.list_with_render(items, mode, tag, render);
     //     self
     // }
 }
@@ -341,4 +284,128 @@ impl<'a, C: crate::component::Component> From<super::SvgStaticAttributes<'a, C>>
 
 impl<'a, C: crate::component::Component> SvgBuilder<C> for super::SvgStaticAttributes<'a, C> {
     type Output = SvgNodesOwned<'a, C>;
+}
+
+pub struct SvgStaticNodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut SvgNodeListUpdater<'h, C>);
+
+impl<'n, 'h, C: crate::component::Component> SvgStaticNodes<'n, 'h, C> {
+    pub fn state(&self) -> &'n C {
+        self.0.state
+    }
+
+    pub fn comp(&self) -> crate::component::Comp<C> {
+        self.0.comp.clone()
+    }
+
+    pub fn nodes(self) -> SvgNodes<'n, 'h, C> {
+        SvgNodes(self.0)
+    }
+
+    pub fn render(self, value: impl super::SvgRender<C>) -> Self {
+        let nodes = SvgNodes(self.0);
+        value.render(nodes);
+        self
+    }
+
+    pub fn r#static(self, value: impl super::SvgStaticRender<C>) -> Self {
+        let static_nodes = SvgStaticNodes(self.0);
+        value.render(static_nodes);
+        self
+    }
+
+    // pub(crate) fn static_text(self, text: &str) -> Self {
+    //     self.0
+    //         .nodes
+    //         .static_text(self.0.index, text, self.0.parent, self.0.next_sibling);
+    //     self.0.index += 1;
+    //     self
+    // }
+}
+
+pub struct SvgNodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut SvgNodeListUpdater<'h, C>);
+
+impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
+    pub fn state(&self) -> &'n C {
+        self.0.state
+    }
+
+    pub fn comp(&self) -> crate::component::Comp<C> {
+        self.0.comp.clone()
+    }
+
+    pub fn static_nodes(self) -> SvgStaticNodes<'n, 'h, C> {
+        SvgStaticNodes(self.0)
+    }
+
+    pub fn render(self, value: impl super::SvgRender<C>) -> Self {
+        let nodes = SvgNodes(self.0);
+        value.render(nodes);
+        self
+    }
+
+    pub fn r#static(self, value: impl super::SvgStaticRender<C>) -> Self {
+        let static_nodes = SvgStaticNodes(self.0);
+        value.render(static_nodes);
+        self
+    }
+
+    // pub(crate) fn update_text(self, text: &str) -> Self {
+    //     self.0
+    //         .nodes
+    //         .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
+    //     self.0.index += 1;
+    //     self
+    // }
+}
+
+impl<'n, 'h, C: crate::component::Component> sealed::SvgBuilder<C> for SvgStaticNodes<'n, 'h, C> {
+    fn require_render(&self) -> bool {
+        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+    }
+
+    fn next_index(&mut self) {
+        self.0.index += 1;
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::SvgUpdater<C> {
+        self.0.get_element_and_increase_index(tag)
+    }
+
+    // fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
+    //     self.0.get_match_if_updater()
+    // }
+}
+
+impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgStaticNodes<'n, 'h, C> {
+    type Output = Self;
+}
+
+impl<'n, 'h, C: crate::component::Component> sealed::SvgBuilder<C> for SvgNodes<'n, 'h, C> {
+    fn require_render(&self) -> bool {
+        true
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+    }
+
+    fn next_index(&mut self) {
+        self.0.index += 1;
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::SvgUpdater<C> {
+        self.0.get_element_and_increase_index(tag)
+    }
+
+    // fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
+    //     self.0.get_match_if_updater()
+    // }
+}
+
+impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgNodes<'n, 'h, C> {
+    type Output = Self;
 }

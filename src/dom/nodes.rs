@@ -72,24 +72,6 @@ impl NodeList {
         }
     }
 
-    #[cfg(feature = "svg")]
-    fn check_or_create_svg_element(
-        &mut self,
-        index: usize,
-        parent_status: super::ElementStatus,
-        parent: &web_sys::Node,
-        next_sibling: Option<&web_sys::Node>,
-    ) -> super::ElementStatus {
-        if index == self.0.len() {
-            let svg = super::Element::new_svg();
-            svg.insert_before(parent, next_sibling);
-            self.0.push(Node::Element(svg));
-            super::ElementStatus::JustCreated
-        } else {
-            parent_status
-        }
-    }
-
     pub fn check_or_create_element_for_non_keyed_list(
         &mut self,
         tag: &str,
@@ -404,7 +386,8 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
 
     #[cfg(feature = "svg")]
     fn get_svg_element_and_increase_index(&mut self) -> super::SvgUpdater<C> {
-        let status = self.nodes.check_or_create_svg_element(
+        let status = self.nodes.check_or_create_svg_element_ns(
+            "svg",
             self.index,
             self.parent_status,
             self.parent,
@@ -702,7 +685,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
     }
 
     #[cfg(feature = "svg")]
-    fn svg(self, f: impl FnOnce(super::SvgUpdater<C>)) -> Self::Output {
+    fn _svg(self, f: impl FnOnce(super::SvgUpdater<C>)) -> Self::Output {
         use sealed::DomBuilder;
         let mut this: Self::Output = self.into();
         if this.require_render() {
