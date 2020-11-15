@@ -11,3 +11,4 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 spair = { path = "../../", features = ["svg"] }
+js-sys = "0.3"

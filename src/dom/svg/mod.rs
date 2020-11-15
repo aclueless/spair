@@ -3,8 +3,8 @@ use wasm_bindgen::UnwrapThrowExt;
 mod attributes;
 mod nodes;
 
-use attributes::*;
-use nodes::*;
+pub use attributes::*;
+pub use nodes::*;
 
 impl super::Element {
     pub fn new_svg() -> Self {

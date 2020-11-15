@@ -9,6 +9,14 @@ impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
 
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
+
+    pub fn nodes(self) -> super::SvgNodesOwned<'a, C> {
+        self.0.nodes()
+    }
+
+    pub fn static_nodes(self) -> super::SvgStaticNodesOwned<'a, C> {
+        self.0.static_nodes()
+    }
 }
 
 mod sealed {
@@ -78,9 +86,14 @@ mod sealed {
 
 pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
     create_methods_for_attributes! {
+        f64     cx
+        f64     cy
+        f64     height
+        f64     r
+        str     view_box "viewBox"
+        f64     width
         f64     x
         f64     y
-        f64     r
     }
 }
 
