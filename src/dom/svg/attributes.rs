@@ -85,15 +85,54 @@ mod sealed {
 }
 
 pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
+    fn bool_attr(mut self, name: &str, value: bool) -> Self {
+        self.set_bool_attribute(name, value);
+        self
+    }
+
+    fn str_attr(mut self, name: &str, value: &str) -> Self {
+        self.set_str_attribute(name, value);
+        self
+    }
+
+    fn i32_attr(mut self, name: &str, value: i32) -> Self {
+        self.set_i32_attribute(name, value);
+        self
+    }
+
+    fn u32_attr(mut self, name: &str, value: u32) -> Self {
+        self.set_u32_attribute(name, value);
+        self
+    }
+
+    fn f64_attr(mut self, name: &str, value: f64) -> Self {
+        self.set_f64_attribute(name, value);
+        self
+    }
+
     create_methods_for_attributes! {
+        str     attribute_name "attributeName"
+        str     attribute_type "attributeType"
         f64     cx
         f64     cy
+        f64     dx
+        f64     dy
+        str     dur
         str     fill
+        str     filter_attr "filter"
         f64     height
+        str     id
+        str     r#in "in"
         f64     r
+        str     repeat_count "repeatCount"
+        str     result
+        f64     std_deviation "stdDeviation"
         str     stroke
-        f64     stroke_width    "stroke-width"
-        str     view_box        "viewBox"
+        f64     stroke_width "stroke-width"
+        str     style
+        str     r#type "type"
+        str     transform
+        str     view_box "viewBox"
         f64     width
         f64     x
         f64     x1

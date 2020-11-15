@@ -91,12 +91,21 @@ mod sealed {
 }
 
 macro_rules! create_methods_for_tags {
-    ($($tag:ident)+) => {
+    ($($fn_name:ident $($tag:literal)?)+) => {
         $(
-            fn $tag(self, f: impl FnOnce(super::SvgUpdater<C>)) -> Self::Output {
-                self.render_element(stringify!($tag), f)
-            }
+            create_methods_for_tags!(@single $fn_name $($tag)?);
         )+
+    };
+    (@single $fn_name:ident) => {
+        create_methods_for_tags!(@impl $fn_name stringify!($fn_name));
+    };
+    (@single $fn_name:ident $tag:literal) => {
+        create_methods_for_tags!(@impl $fn_name $tag);
+    };
+    (@impl $fn_name:ident $tag:expr) => {
+        fn $fn_name(self, f: impl FnOnce(super::SvgUpdater<C>)) -> Self::Output {
+            self.render_element($tag, f)
+        }
     }
 }
 
@@ -122,7 +131,12 @@ pub trait SvgBuilder<C: crate::component::Component>: Sized {
     }
 
     create_methods_for_tags! {
+        animate_transform "animateTransform"
         circle
+        filter
+        fe_gaussian_blur "feGaussianBlur"
+        fe_offset "feOffset"
+        g
         line
     }
 
@@ -262,6 +276,10 @@ impl<'a, C: crate::component::Component> sealed::SvgBuilder<C> for SvgNodesOwned
     // fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C> {
     //     self.0.get_match_if_updater()
     // }
+}
+
+impl<'a, C: crate::component::Component> SvgBuilder<C> for SvgNodesOwned<'a, C> {
+    type Output = Self;
 }
 
 impl<'a, C: crate::component::Component> From<super::SvgUpdater<'a, C>> for SvgNodesOwned<'a, C> {
@@ -409,3 +427,4 @@ impl<'n, 'h, C: crate::component::Component> sealed::SvgBuilder<C> for SvgNodes<
 impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgNodes<'n, 'h, C> {
     type Output = Self;
 }
+
