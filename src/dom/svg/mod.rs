@@ -3,6 +3,7 @@ use wasm_bindgen::UnwrapThrowExt;
 mod attributes;
 mod nodes;
 mod renderable;
+mod non_keyed_list;
 
 pub use attributes::*;
 pub use nodes::*;
@@ -24,6 +25,17 @@ impl super::Element {
 }
 
 impl super::NodeList {
+    fn create_new_svg_element(
+        &mut self,
+        tag: &str,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        let svg = super::Element::new_svg_element(tag);
+        svg.insert_before(parent, next_sibling);
+        self.0.push(super::Node::Element(svg));
+    }
+
     pub fn check_or_create_svg_element_ns(
         &mut self,
         tag: &str,
@@ -33,12 +45,36 @@ impl super::NodeList {
         next_sibling: Option<&web_sys::Node>,
     ) -> super::ElementStatus {
         if index == self.0.len() {
-            let svg = super::Element::new_svg_element(tag);
-            svg.insert_before(parent, next_sibling);
-            self.0.push(super::Node::Element(svg));
+            self.create_new_svg_element(tag, parent, next_sibling);
             super::ElementStatus::JustCreated
         } else {
             parent_status
+        }
+    }
+
+    // TODO: Need to reduce code duplication of this and the non-svg method
+    pub fn check_or_create_svg_element_for_non_keyed_list(
+        &mut self,
+        tag: &str,
+        index: usize,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+        use_template: bool,
+    ) -> super::ElementStatus {
+        let item_count = self.0.len();
+        if index < item_count {
+            super::ElementStatus::Existing
+        } else if !use_template || item_count == 0 {
+            self.create_new_svg_element(tag, parent, next_sibling);
+            super::ElementStatus::JustCreated
+        } else {
+            let element = self.0[0].clone();
+            match &element {
+                super::Node::Element(element) => element.insert_before(parent, next_sibling),
+                _ => panic!("non-keyed-list svg: internal bug?"),
+            }
+            self.0.push(element);
+            super::ElementStatus::JustCloned
         }
     }
 }
@@ -99,4 +135,28 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
 
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
+
+    pub fn list_with_render<I, R>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+        tag: &str,
+        render: R,
+    ) where
+        for<'i, 'c> R: Fn(&'i I, SvgUpdater<'c, C>),
+    {
+        let parent = self.element.ws_element.as_ref();
+        let use_template = mode.use_template();
+
+        let mut non_keyed_list_updater = non_keyed_list::NonKeyedListUpdater::new(
+            self.comp,
+            self.state,
+            &mut self.element.nodes,
+            tag,
+            parent,
+            None,
+            use_template,
+        );
+        non_keyed_list_updater.update(items, render);
+    }
 }

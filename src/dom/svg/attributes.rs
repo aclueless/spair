@@ -120,6 +120,7 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         str     dur
         str     fill
         str     filter_attr "filter"
+        str     from
         f64     height
         str     id
         str     r#in "in"
@@ -131,6 +132,7 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         f64     stroke_width "stroke-width"
         str     style
         str     r#type "type"
+        str     to
         str     transform
         str     view_box "viewBox"
         f64     width
@@ -209,5 +211,49 @@ impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::SvgU
             .check_f64_attribute(self.index, value);
         self.index += 1;
         rs
+    }
+}
+
+impl<'a, C: crate::component::Component> SvgAttributeSetter<C> for SvgStaticAttributes<'a, C> where
+    C: crate::component::Component
+{
+}
+
+impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::SvgStaticAttributes<'a, C> {
+    fn ws_html_element(&self) -> &web_sys::HtmlElement {
+        self.0.ws_html_element()
+    }
+
+    fn ws_element(&self) -> &web_sys::Element {
+        sealed::AttributeSetter::ws_element(&self.0)
+        //self.0.ws_element()
+    }
+
+    fn require_set_listener(&mut self) -> bool {
+        true
+    }
+
+    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
+        self.0.store_listener(listener);
+    }
+
+    fn check_bool_attribute(&mut self, value: bool) -> bool {
+        self.0.check_bool_attribute(value)
+    }
+
+    fn check_str_attribute(&mut self, value: &str) -> bool {
+        self.0.check_str_attribute(value)
+    }
+
+    fn check_i32_attribute(&mut self, value: i32) -> bool {
+        self.0.check_i32_attribute(value)
+    }
+
+    fn check_u32_attribute(&mut self, value: u32) -> bool {
+        self.0.check_u32_attribute(value)
+    }
+
+    fn check_f64_attribute(&mut self, value: f64) -> bool {
+        self.0.check_f64_attribute(value)
     }
 }

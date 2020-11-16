@@ -2,16 +2,29 @@
 use spair::prelude::*;
 
 struct Clock {
-    time: f64,
+    time: js_sys::Date,
 }
 
 impl spair::Component for Clock {
     type Routes = ();
     fn render(&self, element: spair::Element<Self>) {
+        let hours_angle =
+            360.0 * self.time.get_hours() as f64 / 12.0 + self.time.get_minutes() as f64 / 2.0;
+        let minutes_angle = 360.0 * self.time.get_minutes() as f64 / 60.0;
+        let seconds_angle = 360.0 * self.time.get_seconds() as f64 / 60.0;
+
+        let h_from = format!("{} 100 100", hours_angle);
+        let h_to = format!("{} 100 100", hours_angle + 360.0);
+        let m_from = format!("{} 100 100", minutes_angle);
+        let m_to = format!("{} 100 100", minutes_angle + 360.0);
+        let s_from = format!("{} 100 100", seconds_angle);
+        let s_to = format!("{} 100 100", seconds_angle + 360.0);
+
         element._svg(|s| {
             s.view_box("0 0 200 200")
                 .width(400.0)
                 .height(400.0)
+                .static_nodes()
                 .filter(|f| {
                     f.id("innerShadow")
                         .str_attr("x", "-20%")
@@ -19,14 +32,10 @@ impl spair::Component for Clock {
                         .str_attr("width", "140%")
                         .str_attr("height", "140%")
                         .fe_gaussian_blur(|b| {
-                            b.r#in("SourceGraphic")
-                                .std_deviation(3.0)
-                                .result("blue");
+                            b.r#in("SourceGraphic").std_deviation(3.0).result("blue");
                         })
                         .fe_offset(|o| {
-                            o.r#in("blur")
-                                .dx(2.5)
-                                .dy(2.5);
+                            o.r#in("blur").dx(2.5).dy(2.5);
                         });
                 })
                 .g(|g| {
@@ -40,58 +49,83 @@ impl spair::Component for Clock {
                     })
                     .circle(|c| {
                         c.id("circle")
-                        .style("stroke: #FFFFFF; stroke-width: 12px; fill:#20B7AF")
-                        .cx(100.0)
-                        .cy(100.0)
-                        .r(80.0);
+                            .style("stroke: #FFFFFF; stroke-width: 12px; fill:#20B7AF")
+                            .cx(100.0)
+                            .cy(100.0)
+                            .r(80.0);
                     });
                 })
+                .nodes()
                 .g(|g| {
-                    g
-                    .line(|l| {
-                        l.x1(100.0)
+                    g.line(|l| {
+                        l.static_attributes()
+                            .x1(100.0)
                             .y1(100.0)
                             .x2(100.0)
                             .y2(55.0)
-                            .transform("rotate(80 100 100)")
+                            //.transform("rotate(80 100 100)")
                             .style("stroke-width: 4px; stroke: #fffbf9;")
                             .id("hourhand")
                             .animate_transform(|a| {
-                                a.attribute_name("transform")
+                                a.from(&h_from)
+                                    .to(&h_to)
+                                    .static_attributes()
+                                    .attribute_name("transform")
                                     .attribute_type("XML")
                                     .r#type("rotate")
                                     .dur("43200s")
                                     .repeat_count("indefinite");
                             });
-                    }).line(|l| {
-                        l.x1(100.0)
+                    })
+                    .line(|l| {
+                        l.static_attributes()
+                            .x1(100.0)
                             .y1(100.0)
                             .x2(100.0)
                             .y2(40.0)
-                            .style("stroke-width: 3px; stroke: #fdfdfd;")
+                            .style("stroke-width: 2px; stroke: #fdfdfd;")
                             .id("minutehand")
                             .animate_transform(|a| {
-                                a.attribute_name("transform")
+                                a.from(&m_from)
+                                    .to(&m_to)
+                                    .static_attributes()
+                                    .attribute_name("transform")
                                     .attribute_type("XML")
                                     .r#type("rotate")
                                     .dur("3600s")
                                     .repeat_count("indefinite");
                             });
-                    }).line(|l| {
-                        l.x1(100.0)
+                    })
+                    .line(|l| {
+                        l.static_attributes()
+                            .x1(100.0)
                             .y1(100.0)
                             .x2(100.0)
                             .y2(30.0)
-                            .style("stroke-width: 2px; stroke: #C1EFED;")
+                            .style("stroke-width: 1px; stroke: #C1EFED;")
                             .id("secondhand")
                             .animate_transform(|a| {
-                                a.attribute_name("transform")
+                                a.from(&s_from)
+                                    .to(&s_to)
+                                    .static_attributes()
+                                    .attribute_name("transform")
                                     .attribute_type("XML")
                                     .r#type("rotate")
                                     .dur("60s")
                                     .repeat_count("indefinite");
                             });
                     });
+                })
+                .static_nodes()
+                .g(|g| {
+                    g.list_with_render(1..=12, spair::ListElementCreation::Clone, "line", |n, l| {
+                        l.x1(100.0)
+                            .y1(30.0)
+                            .x2(100.0)
+                            .y2(40.0)
+                            .transform(&format!("rotate({} 100 100)", *n as f64 * 360.0 / 12.0))
+                            .stroke("white");
+                    })
                 })
                 .circle(|c| {
                     c.id("center")
@@ -126,7 +160,7 @@ impl spair::Component for Clock {
 impl spair::Application for Clock {
     fn with_comp(_: spair::Comp<Self>) -> Self {
         Self {
-            time: js_sys::Date::now(),
+            time: js_sys::Date::new_0(),
         }
     }
 }
