@@ -3,6 +3,21 @@ use spair::prelude::*;
 
 struct Clock {
     time: js_sys::Date,
+    comp: spair::Comp<Self>,
+    clock_closure: Option<gloo_timers::callback::Interval>,
+}
+
+impl Clock {
+    fn start_clock(&mut self) {
+        self.clock_closure = Some(gloo_timers::callback::Interval::new(
+            1000,
+            self.comp.callback(Self::update_clock),
+        ));
+    }
+
+    fn update_clock(&mut self) {
+        self.time = js_sys::Date::new_0();
+    }
 }
 
 impl spair::Component for Clock {
@@ -13,14 +28,20 @@ impl spair::Component for Clock {
         let minutes_angle = 360.0 * self.time.get_minutes() as f64 / 60.0;
         let seconds_angle = 360.0 * self.time.get_seconds() as f64 / 60.0;
 
-        let h_from = format!("{} 100 100", hours_angle);
-        let h_to = format!("{} 100 100", hours_angle + 360.0);
-        let m_from = format!("{} 100 100", minutes_angle);
-        let m_to = format!("{} 100 100", minutes_angle + 360.0);
-        let s_from = format!("{} 100 100", seconds_angle);
-        let s_to = format!("{} 100 100", seconds_angle + 360.0);
+        let h_transform = format!("rotate({} 100 100)", hours_angle);
+        // let h_from = format!("{} 100 100", hours_angle);
+        // let h_to = format!("{} 100 100", hours_angle + 360.0);
 
-        element._svg(|s| {
+        let m_transform = format!("rotate({} 100 100)", minutes_angle);
+        // let m_from = format!("{} 100 100", minutes_angle);
+        // let m_to = format!("{} 100 100", minutes_angle + 360.0);
+
+        let s_transform = format!("rotate({} 100 100)", seconds_angle);
+        // let s_from = format!("{} 100 100", seconds_angle);
+        // let s_to = format!("{} 100 100", seconds_angle + 360.0);
+
+        element
+        ._svg(|s| {
             s.view_box("0 0 200 200")
                 .width(400.0)
                 .height(400.0)
@@ -58,62 +79,67 @@ impl spair::Component for Clock {
                 .nodes()
                 .g(|g| {
                     g.line(|l| {
-                        l.static_attributes()
+                        l.transform(&h_transform)
+                            .static_attributes()
                             .x1(100.0)
                             .y1(100.0)
                             .x2(100.0)
                             .y2(55.0)
-                            //.transform("rotate(80 100 100)")
                             .style("stroke-width: 4px; stroke: #fffbf9;")
                             .id("hourhand")
-                            .animate_transform(|a| {
-                                a.from(&h_from)
-                                    .to(&h_to)
-                                    .static_attributes()
-                                    .attribute_name("transform")
-                                    .attribute_type("XML")
-                                    .r#type("rotate")
-                                    .dur("43200s")
-                                    .repeat_count("indefinite");
-                            });
+                            // .animate_transform(|a| {
+                            //     a.from(&h_from)
+                            //         .to(&h_to)
+                            //         .static_attributes()
+                            //         .attribute_name("transform")
+                            //         .attribute_type("XML")
+                            //         .r#type("rotate")
+                            //         .dur("43200s")
+                            //         .repeat_count("indefinite");
+                            // })
+                            ;
                     })
                     .line(|l| {
-                        l.static_attributes()
+                        l.transform(&m_transform)
+                            .static_attributes()
                             .x1(100.0)
                             .y1(100.0)
                             .x2(100.0)
                             .y2(40.0)
                             .style("stroke-width: 2px; stroke: #fdfdfd;")
                             .id("minutehand")
-                            .animate_transform(|a| {
-                                a.from(&m_from)
-                                    .to(&m_to)
-                                    .static_attributes()
-                                    .attribute_name("transform")
-                                    .attribute_type("XML")
-                                    .r#type("rotate")
-                                    .dur("3600s")
-                                    .repeat_count("indefinite");
-                            });
+                            // .animate_transform(|a| {
+                            //     a.from(&m_from)
+                            //         .to(&m_to)
+                            //         .static_attributes()
+                            //         .attribute_name("transform")
+                            //         .attribute_type("XML")
+                            //         .r#type("rotate")
+                            //         .dur("3600s")
+                            //         .repeat_count("indefinite");
+                            // })
+                            ;
                     })
                     .line(|l| {
-                        l.static_attributes()
+                        l.transform(&s_transform)
+                            .static_attributes()
                             .x1(100.0)
                             .y1(100.0)
                             .x2(100.0)
                             .y2(30.0)
                             .style("stroke-width: 1px; stroke: #C1EFED;")
                             .id("secondhand")
-                            .animate_transform(|a| {
-                                a.from(&s_from)
-                                    .to(&s_to)
-                                    .static_attributes()
-                                    .attribute_name("transform")
-                                    .attribute_type("XML")
-                                    .r#type("rotate")
-                                    .dur("60s")
-                                    .repeat_count("indefinite");
-                            });
+                            // .animate_transform(|a| {
+                            //     a.from(&s_from)
+                            //         .to(&s_to)
+                            //         .static_attributes()
+                            //         .attribute_name("transform")
+                            //         .attribute_type("XML")
+                            //         .r#type("rotate")
+                            //         .dur("60s")
+                            //         .repeat_count("indefinite");
+                            // })
+                            ;
                     });
                 })
                 .static_nodes()
@@ -158,15 +184,19 @@ impl spair::Component for Clock {
 // }
 
 impl spair::Application for Clock {
-    fn with_comp(_: spair::Comp<Self>) -> Self {
-        Self {
+    fn with_comp(comp: spair::Comp<Self>) -> Self {
+        let mut s = Self {
             time: js_sys::Date::new_0(),
-        }
+            comp,
+            clock_closure: None,
+        };
+        s.start_clock();
+        s
     }
 }
 
 #[wasm_bindgen(start)]
 pub fn start() {
-    wasm_logger::init(wasm_logger::Config::default());
+    //wasm_logger::init(wasm_logger::Config::default());
     Clock::mount_to("root");
 }
