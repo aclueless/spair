@@ -1,4 +1,4 @@
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 pub struct SvgStaticAttributes<'a, C>(super::SvgUpdater<'a, C>);
 
@@ -113,6 +113,7 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
     create_methods_for_attributes! {
         str     attribute_name "attributeName"
         str     attribute_type "attributeType"
+        str     class
         f64     cx
         f64     cy
         f64     dx
@@ -123,6 +124,7 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         str     from
         f64     height
         str     id
+        str     preserve_aspect_ratio "preserveAspectRatio"
         str     r#in "in"
         f64     r
         str     repeat_count "repeatCount"
@@ -142,6 +144,25 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         f64     y
         f64     y1
         f64     y2
+    }
+
+    // Copied from crate::dom::attributes
+    // TODO: Simimilar code should be reuse
+    fn class_if(mut self, class_name: &str, class_on: bool) -> Self {
+        if self.check_bool_attribute(class_on) {
+            if class_on {
+                self.ws_element()
+                    .class_list()
+                    .add_1(class_name)
+                    .expect_throw("Unable to add class");
+            } else {
+                self.ws_element()
+                    .class_list()
+                    .remove_1(class_name)
+                    .expect_throw("Unable to remove class");
+            }
+        }
+        self
     }
 }
 
