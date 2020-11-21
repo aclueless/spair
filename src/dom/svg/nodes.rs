@@ -131,8 +131,14 @@ pub trait SvgBuilder<C: crate::component::Component>: Sized {
     }
 
     create_methods_for_tags! {
+        a
+        animate
+        animate_motion "animateMotion"
         animate_transform "animateTransform"
         circle
+        clip_path "clipPath"
+        defs
+        desc
         filter
         fe_gaussian_blur "feGaussianBlur"
         fe_offset "feOffset"
