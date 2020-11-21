@@ -121,7 +121,7 @@ impl NodeList {
         }
     }
 
-    fn static_text(
+    pub(super) fn static_text(
         &mut self,
         index: usize,
         text: &str,
@@ -133,7 +133,7 @@ impl NodeList {
         }
     }
 
-    fn update_text(
+    pub(super) fn update_text(
         &mut self,
         index: usize,
         text: &str,

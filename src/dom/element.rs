@@ -187,7 +187,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     pub fn done(self) {}
 
     pub fn render(self, value: impl crate::renderable::Render<C>) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = super::NodesOwned::from_el_updater(self);
+        let mut nodes_owned = self.nodes();
         let nodes = nodes_owned.nodes_ref();
         value.render(nodes);
         nodes_owned
@@ -197,7 +197,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self,
         value: &impl crate::renderable::RenderRef<C>,
     ) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = super::NodesOwned::from_el_updater(self);
+        let mut nodes_owned = self.nodes();
         let nodes = nodes_owned.nodes_ref();
         value.render(nodes);
         nodes_owned
@@ -207,7 +207,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self,
         value: impl crate::renderable::StaticRender<C>,
     ) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = super::NodesOwned::from_el_updater(self);
+        let mut nodes_owned = self.nodes();
         let static_nodes = nodes_owned.static_nodes_ref();
         value.render(static_nodes);
         nodes_owned

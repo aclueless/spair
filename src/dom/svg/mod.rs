@@ -116,6 +116,9 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         self.element.ws_element.clone()
     }
 
+        /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
+    pub fn done(self) {}
+
     pub fn clear(self) {
         let parent = self.element.ws_element.as_ref();
         self.element.nodes.clear(parent);
@@ -133,8 +136,19 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         SvgStaticNodesOwned::from_svg_updater(self)
     }
 
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
+    pub fn render(self, value: impl super::SvgRender<C>) -> SvgNodesOwned<'a, C> {
+        let mut nodes_owned = self.nodes();
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    pub fn r#static(self, value: impl super::SvgStaticRender<C>) -> SvgNodesOwned<'a, C> {
+        let mut nodes_owned = self.nodes();
+        let static_nodes = nodes_owned.static_nodes_ref();
+        value.render(static_nodes);
+        nodes_owned
+    }
 
     pub fn list_with_render<I, R>(
         self,

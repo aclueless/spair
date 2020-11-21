@@ -1,4 +1,4 @@
-// https://codepen.io/mohebifar/pen/KwdeMz
+// Based on https://codepen.io/mohebifar/pen/KwdeMz
 use spair::prelude::*;
 
 struct Clock {
@@ -23,25 +23,15 @@ impl Clock {
 impl spair::Component for Clock {
     type Routes = ();
     fn render(&self, element: spair::Element<Self>) {
-        let hours_angle =
-            360.0 * self.time.get_hours() as f64 / 12.0 + self.time.get_minutes() as f64 / 2.0;
-        let minutes_angle = 360.0 * self.time.get_minutes() as f64 / 60.0;
         let seconds_angle = 360.0 * self.time.get_seconds() as f64 / 60.0;
+        let minutes_angle = 360.0 * self.time.get_minutes() as f64 / 60.0 + seconds_angle / 60.0;
+        let hours_angle = (360.0 * self.time.get_hours() as f64 + minutes_angle) / 12.0;
 
         let h_transform = format!("rotate({} 100 100)", hours_angle);
-        // let h_from = format!("{} 100 100", hours_angle);
-        // let h_to = format!("{} 100 100", hours_angle + 360.0);
-
         let m_transform = format!("rotate({} 100 100)", minutes_angle);
-        // let m_from = format!("{} 100 100", minutes_angle);
-        // let m_to = format!("{} 100 100", minutes_angle + 360.0);
-
         let s_transform = format!("rotate({} 100 100)", seconds_angle);
-        // let s_from = format!("{} 100 100", seconds_angle);
-        // let s_to = format!("{} 100 100", seconds_angle + 360.0);
 
-        element
-        ._svg(|s| {
+        element._svg(|s| {
             s.view_box("0 0 200 200")
                 .width(400.0)
                 .height(400.0)
@@ -76,6 +66,43 @@ impl spair::Component for Clock {
                             .r(80.0);
                     });
                 })
+                .g(|g| {
+                    g.list_with_render(1..=60, spair::ListElementCreation::Clone, "g", |&n, g| {
+                        let degree = 360.0 * n as f64 / 60.0;
+                        if n % 5 == 0 {
+                            let length = 58.0;
+                            let dr = degree.to_radians();
+                            let dx = dr.sin() * length;
+                            let dy = - dr.cos() * length;
+                            g.line(|l| {
+                                l.x1(100.0)
+                                    .y1(29.0)
+                                    .x2(100.0)
+                                    .y2(32.0)
+                                    .transform(&format!("rotate({} 100 100)", degree))
+                                    .stroke("white")
+                                    .stroke_width(2.0);
+                            })
+                            .text(|t| {
+                                t.x(100.0)
+                                    .y(106.0)
+                                    .text_anchor("middle")
+                                    .transform(&format!("translate({} {})", dx, dy))
+                                    .render(n / 5)
+                                    .done()
+                            });
+                        } else {
+                            g.line(|l| {
+                                l.x1(100.0)
+                                    .y1(30.0)
+                                    .x2(100.0)
+                                    .y2(32.0)
+                                    .transform(&format!("rotate({} 100 100)", degree))
+                                    .stroke("white");
+                            });
+                        }
+                    })
+                })
                 .nodes()
                 .g(|g| {
                     g.line(|l| {
@@ -86,18 +113,7 @@ impl spair::Component for Clock {
                             .x2(100.0)
                             .y2(55.0)
                             .style("stroke-width: 4px; stroke: #fffbf9;")
-                            .id("hourhand")
-                            // .animate_transform(|a| {
-                            //     a.from(&h_from)
-                            //         .to(&h_to)
-                            //         .static_attributes()
-                            //         .attribute_name("transform")
-                            //         .attribute_type("XML")
-                            //         .r#type("rotate")
-                            //         .dur("43200s")
-                            //         .repeat_count("indefinite");
-                            // })
-                            ;
+                            .id("hourhand");
                     })
                     .line(|l| {
                         l.transform(&m_transform)
@@ -107,18 +123,7 @@ impl spair::Component for Clock {
                             .x2(100.0)
                             .y2(40.0)
                             .style("stroke-width: 2px; stroke: #fdfdfd;")
-                            .id("minutehand")
-                            // .animate_transform(|a| {
-                            //     a.from(&m_from)
-                            //         .to(&m_to)
-                            //         .static_attributes()
-                            //         .attribute_name("transform")
-                            //         .attribute_type("XML")
-                            //         .r#type("rotate")
-                            //         .dur("3600s")
-                            //         .repeat_count("indefinite");
-                            // })
-                            ;
+                            .id("minutehand");
                     })
                     .line(|l| {
                         l.transform(&s_transform)
@@ -128,31 +133,10 @@ impl spair::Component for Clock {
                             .x2(100.0)
                             .y2(30.0)
                             .style("stroke-width: 1px; stroke: #C1EFED;")
-                            .id("secondhand")
-                            // .animate_transform(|a| {
-                            //     a.from(&s_from)
-                            //         .to(&s_to)
-                            //         .static_attributes()
-                            //         .attribute_name("transform")
-                            //         .attribute_type("XML")
-                            //         .r#type("rotate")
-                            //         .dur("60s")
-                            //         .repeat_count("indefinite");
-                            // })
-                            ;
+                            .id("secondhand");
                     });
                 })
                 .static_nodes()
-                .g(|g| {
-                    g.list_with_render(1..=12, spair::ListElementCreation::Clone, "line", |n, l| {
-                        l.x1(100.0)
-                            .y1(30.0)
-                            .x2(100.0)
-                            .y2(40.0)
-                            .transform(&format!("rotate({} 100 100)", *n as f64 * 360.0 / 12.0))
-                            .stroke("white");
-                    })
-                })
                 .circle(|c| {
                     c.id("center")
                         .cx(100.0)

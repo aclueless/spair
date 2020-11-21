@@ -256,6 +256,14 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
         self.0.comp.clone()
     }
 
+    pub(super) fn nodes_ref<'n>(&'n mut self) -> SvgNodes<'n, 'a, C> {
+        SvgNodes(&mut self.0)
+    }
+
+    pub(super) fn static_nodes_ref<'n>(&'n mut self) -> SvgStaticNodes<'n, 'a, C> {
+        SvgStaticNodes(&mut self.0)
+    }
+
     pub fn static_nodes(self) -> SvgStaticNodesOwned<'a, C> {
         SvgStaticNodesOwned(self.0)
     }
@@ -385,13 +393,13 @@ impl<'n, 'h, C: crate::component::Component> SvgStaticNodes<'n, 'h, C> {
         self
     }
 
-    // pub(crate) fn static_text(self, text: &str) -> Self {
-    //     self.0
-    //         .nodes
-    //         .static_text(self.0.index, text, self.0.parent, self.0.next_sibling);
-    //     self.0.index += 1;
-    //     self
-    // }
+    pub(crate) fn static_text(self, text: &str) -> Self {
+        self.0
+            .nodes
+            .static_text(self.0.index, text, self.0.parent, self.0.next_sibling);
+        self.0.index += 1;
+        self
+    }
 }
 
 pub struct SvgNodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut SvgNodeListUpdater<'h, C>);
@@ -421,13 +429,13 @@ impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
         self
     }
 
-    // pub(crate) fn update_text(self, text: &str) -> Self {
-    //     self.0
-    //         .nodes
-    //         .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
-    //     self.0.index += 1;
-    //     self
-    // }
+    pub(crate) fn update_text(self, text: &str) -> Self {
+        self.0
+            .nodes
+            .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
+        self.0.index += 1;
+        self
+    }
 }
 
 impl<'n, 'h, C: crate::component::Component> sealed::SvgBuilder<C> for SvgStaticNodes<'n, 'h, C> {
