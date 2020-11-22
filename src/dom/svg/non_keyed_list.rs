@@ -30,11 +30,7 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
         }
     }
 
-    pub fn update<I, R>(
-        &mut self,
-        items: impl IntoIterator<Item = I>,
-        render: R,
-    )
+    pub fn update<I, R>(&mut self, items: impl IntoIterator<Item = I>, render: R)
     where
         for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
     {

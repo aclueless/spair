@@ -26,7 +26,11 @@ impl std::fmt::Debug for Attribute {
 pub struct AttributeList(Vec<Attribute>);
 
 impl AttributeList {
-    pub(super) fn store_listener(&mut self, index: usize, listener: Box<dyn crate::events::Listener>) {
+    pub(super) fn store_listener(
+        &mut self,
+        index: usize,
+        listener: Box<dyn crate::events::Listener>,
+    ) {
         if index < self.0.len() {
             self.0[index] = Attribute::EventListener(listener);
         } else {

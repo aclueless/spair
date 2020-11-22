@@ -2,8 +2,8 @@ use wasm_bindgen::UnwrapThrowExt;
 
 mod attributes;
 mod nodes;
-mod renderable;
 mod non_keyed_list;
+mod renderable;
 
 pub use attributes::*;
 pub use nodes::*;
@@ -116,7 +116,7 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         self.element.ws_element.clone()
     }
 
-        /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
+    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
 
     pub fn clear(self) {

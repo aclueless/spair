@@ -24,7 +24,7 @@ impl<'a, C: crate::component::Component> SvgNodeListUpdater<'a, C> {
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::SvgUpdater<C> {
         let status = self.nodes.check_or_create_svg_element_ns(
-        //let status = self.nodes.check_or_create_element(
+            //let status = self.nodes.check_or_create_element(
             tag,
             self.index,
             self.parent_status,
@@ -366,7 +366,9 @@ impl<'a, C: crate::component::Component> SvgBuilder<C> for super::SvgStaticAttri
     type Output = SvgNodesOwned<'a, C>;
 }
 
-pub struct SvgStaticNodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut SvgNodeListUpdater<'h, C>);
+pub struct SvgStaticNodes<'n, 'h: 'n, C: crate::component::Component>(
+    &'n mut SvgNodeListUpdater<'h, C>,
+);
 
 impl<'n, 'h, C: crate::component::Component> SvgStaticNodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
@@ -489,4 +491,3 @@ impl<'n, 'h, C: crate::component::Component> sealed::SvgBuilder<C> for SvgNodes<
 impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgNodes<'n, 'h, C> {
     type Output = Self;
 }
-

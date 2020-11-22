@@ -136,8 +136,8 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         str          class
         str          clip
         str          clip_path "clip-path"
-        str          clip_rule "clip-rule"
         str          clip_path_units "clipPathUnits"
+        str          clip_rule "clip-rule"
         str          color
         str          color_interpolation "color-interpolation"
         str          color_interpolation_filters "color-interpolation-filters"
@@ -168,11 +168,13 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         str          fill
         str          fill_opacity "fill-opacity"
         str          fill_rule "fill-rule"
-        str          filter_attr "filter"
+        str          filter_attr "filter"   // rename `filter` to `filter_attr` because conflicting with <filter> element
         str          filter_res "filterRes"
         str          filter_units "filterUnits"
         str          flood_color "flood-color"
         str          flood_opacity "flood-opacity"
+        str          font_family "font-family"
+        str          font_size "font-size"
         str          font_size_adjust "font-size-adjust"
         str          font_stretch "font-stretch"
         str          font_style "font-style"
@@ -195,6 +197,7 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         f64          height
         str          horiz_adv_x "horiz-adv-x"
         str          horiz_origin_x "horiz-origin-x"
+        str          href
         str          hreflang
         str          id
         str          ideographic
@@ -248,6 +251,7 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         str          overline_thickness "overline-thickness"
         str          paint_order "paint-order"
         str          panose_1 "panose-1"
+        str          path
         str          path_length "pathLength"
         str          pattern_content_units "patternContentUnits"
         str          pattern_transform "patternTransform"
@@ -318,6 +322,7 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         str          text_length "textLength"
         str          to
         str          transform
+        str          transform_origin "transform-origin"
         str          r#type "type"
         str          u1
         str          u2
@@ -345,15 +350,15 @@ pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
         str          word_spacing "word-spacing"
         str          writing_mode "writing-mode"
         f64          x
-        str          x_height "x-height"
         f64          x1
         f64          x2
+        str          x_height "x-height"
         str          x_channel_selector "xChannelSelector"
-        str          xml_base "xml:base"
+        // str          xml_base "xml:base"
         str          xml_lang "xml:lang"
-        str          xml_space "xml:space"
-        str          xmlns
-        str          xmlns_xlink "xmlns:xlink"
+        // str          xml_space "xml:space"
+        // str          xmlns
+        // str          xmlns_xlink "xmlns:xlink"
         f64          y
         f64          y1
         f64          y2
@@ -456,7 +461,9 @@ impl<'a, C: crate::component::Component> SvgAttributeSetter<C> for SvgStaticAttr
 {
 }
 
-impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::SvgStaticAttributes<'a, C> {
+impl<'a, C: crate::component::Component> sealed::AttributeSetter
+    for super::SvgStaticAttributes<'a, C>
+{
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
         self.0.ws_html_element()
     }

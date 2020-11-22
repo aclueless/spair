@@ -19,7 +19,7 @@ pub use dom::attribute_types::*;
 pub use dom::KeyedListItem;
 pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
 #[cfg(feature = "svg")]
-pub use dom::{SvgNodes, SvgStaticNodes, SvgRender};
+pub use dom::{SvgNodes, SvgRender, SvgStaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};
