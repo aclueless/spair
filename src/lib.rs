@@ -18,6 +18,8 @@ pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
 pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
+#[cfg(feature = "svg")]
+pub use dom::{SvgNodes, SvgRender, SvgStaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};
@@ -34,6 +36,8 @@ pub mod prelude {
     pub use crate::application::Application;
     pub use crate::component::Component;
     pub use crate::dom::{AttributeSetter, DomBuilder};
+    #[cfg(feature = "svg")]
+    pub use crate::dom::{SvgAttributeSetter, SvgBuilder};
     pub use crate::fetch::{FetchOptionsSetter, IntoFetchArgs, RawDataMode};
     pub use crate::routing::Routes;
     pub use wasm_bindgen;

@@ -26,7 +26,11 @@ impl std::fmt::Debug for Attribute {
 pub struct AttributeList(Vec<Attribute>);
 
 impl AttributeList {
-    fn store_listener(&mut self, index: usize, listener: Box<dyn crate::events::Listener>) {
+    pub(super) fn store_listener(
+        &mut self,
+        index: usize,
+        listener: Box<dyn crate::events::Listener>,
+    ) {
         if index < self.0.len() {
             self.0[index] = Attribute::EventListener(listener);
         } else {
@@ -34,7 +38,7 @@ impl AttributeList {
         }
     }
 
-    fn check_bool_attribute(&mut self, index: usize, value: bool) -> bool {
+    pub(super) fn check_bool_attribute(&mut self, index: usize, value: bool) -> bool {
         match self.0.get_mut(index) {
             None => {
                 self.0.push(Attribute::Bool(value));
@@ -51,7 +55,7 @@ impl AttributeList {
         }
     }
 
-    fn check_i32_attribute(&mut self, index: usize, value: i32) -> bool {
+    pub(super) fn check_i32_attribute(&mut self, index: usize, value: i32) -> bool {
         match self.0.get_mut(index) {
             None => {
                 self.0.push(Attribute::I32(value));
@@ -68,7 +72,7 @@ impl AttributeList {
         }
     }
 
-    fn check_u32_attribute(&mut self, index: usize, value: u32) -> bool {
+    pub(super) fn check_u32_attribute(&mut self, index: usize, value: u32) -> bool {
         match self.0.get_mut(index) {
             None => {
                 self.0.push(Attribute::U32(value));
@@ -85,7 +89,7 @@ impl AttributeList {
         }
     }
 
-    fn check_f64_attribute(&mut self, index: usize, value: f64) -> bool {
+    pub(super) fn check_f64_attribute(&mut self, index: usize, value: f64) -> bool {
         match self.0.get_mut(index) {
             None => {
                 self.0.push(Attribute::F64(value));
@@ -104,7 +108,7 @@ impl AttributeList {
         }
     }
 
-    fn check_str_attribute(&mut self, index: usize, value: &str) -> bool {
+    pub(super) fn check_str_attribute(&mut self, index: usize, value: &str) -> bool {
         match self.0.get_mut(index) {
             None => {
                 self.0.push(Attribute::String(value.to_string()));

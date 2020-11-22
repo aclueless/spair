@@ -17,6 +17,7 @@ keyed-list = []
 partial-non-keyed-list = []
 fetch-json = [ "serde_json" ]
 fetch-ron = [ "ron" ]
+svg = []
 
 [workspace]
 members = [
@@ -24,6 +25,7 @@ members = [
     "examples/fetch",
     "examples/todomvc",
     "examples/components",
+    "examples/svg_clock",
 ]
 
 [dev-dependencies]
