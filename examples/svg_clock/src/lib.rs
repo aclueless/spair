@@ -27,11 +27,7 @@ impl spair::Component for Clock {
         let minutes_angle = 360.0 * self.time.get_minutes() as f64 / 60.0 + seconds_angle / 60.0;
         let hours_angle = (360.0 * self.time.get_hours() as f64 + minutes_angle) / 12.0;
 
-        let h_transform = format!("rotate({} 100 100)", hours_angle);
-        let m_transform = format!("rotate({} 100 100)", minutes_angle);
-        let s_transform = format!("rotate({} 100 100)", seconds_angle);
-
-        element._svg(|s| {
+        element.svg(|s| {
             s.view_box("0 0 200 200")
                 .width(400.0)
                 .height(400.0)
@@ -67,73 +63,58 @@ impl spair::Component for Clock {
                     });
                 })
                 .g(|g| {
-                    g.list_with_render(1..=60, spair::ListElementCreation::Clone, "g", |&n, g| {
-                        let degree = 360.0 * n as f64 / 60.0;
-                        if n % 5 == 0 {
-                            let length = 58.0;
-                            let dr = degree.to_radians();
-                            let dx = dr.sin() * length;
-                            let dy = - dr.cos() * length;
-                            g.line(|l| {
-                                l.x1(100.0)
-                                    .y1(29.0)
-                                    .x2(100.0)
-                                    .y2(32.0)
-                                    .transform(&format!("rotate({} 100 100)", degree))
-                                    .stroke("white")
-                                    .stroke_width(2.0);
-                            })
-                            .text(|t| {
-                                t.x(100.0)
-                                    .y(106.0)
-                                    .text_anchor("middle")
-                                    .transform(&format!("translate({} {})", dx, dy))
-                                    .render(n / 5)
-                                    .done()
-                            });
-                        } else {
-                            g.line(|l| {
-                                l.x1(100.0)
-                                    .y1(30.0)
-                                    .x2(100.0)
-                                    .y2(32.0)
-                                    .transform(&format!("rotate({} 100 100)", degree))
-                                    .stroke("white");
-                            });
-                        }
-                    })
+                    g.list_with_render(
+                        1..=60,
+                        spair::ListElementCreation::Clone,
+                        "g",
+                        |&n, g| {
+                            let degree = 360.0 * n as f64 / 60.0;
+                            if n % 5 == 0 {
+                                let length = 58.0;
+                                let dr = degree.to_radians();
+                                let dx = dr.sin() * length;
+                                let dy = -dr.cos() * length;
+                                g.render(Stick{
+                                    width: 2,
+                                    y1: 29,
+                                    y2: 32,
+                                    angle: degree,
+                                })
+                                .text(|t| {
+                                    t.x(100.0)
+                                        .y(106.0)
+                                        .text_anchor("middle")
+                                        .transform(&format!("translate({} {})", dx, dy))
+                                        .render(n / 5)
+                                        .done()
+                                });
+                            } else {
+                                g.render(Stick{
+                                    width: 1,
+                                    y1: 30,
+                                    y2: 32,
+                                    angle: degree,
+                                });
+                            }
+                        },
+                    )
                 })
                 .nodes()
                 .g(|g| {
-                    g.line(|l| {
-                        l.transform(&h_transform)
-                            .static_attributes()
-                            .x1(100.0)
-                            .y1(100.0)
-                            .x2(100.0)
-                            .y2(55.0)
-                            .style("stroke-width: 4px; stroke: #fffbf9;")
-                            .id("hourhand");
+                    g.render(Hand {
+                        width: 4,
+                        y2: 55,
+                        angle: hours_angle,
                     })
-                    .line(|l| {
-                        l.transform(&m_transform)
-                            .static_attributes()
-                            .x1(100.0)
-                            .y1(100.0)
-                            .x2(100.0)
-                            .y2(40.0)
-                            .style("stroke-width: 2px; stroke: #fdfdfd;")
-                            .id("minutehand");
+                    .render(Hand {
+                        width: 2,
+                        y2: 40,
+                        angle: minutes_angle,
                     })
-                    .line(|l| {
-                        l.transform(&s_transform)
-                            .static_attributes()
-                            .x1(100.0)
-                            .y1(100.0)
-                            .x2(100.0)
-                            .y2(30.0)
-                            .style("stroke-width: 1px; stroke: #C1EFED;")
-                            .id("secondhand");
+                    .render(Hand {
+                        width: 1,
+                        y2: 30,
+                        angle: seconds_angle,
                     });
                 })
                 .static_nodes()
@@ -148,24 +129,48 @@ impl spair::Component for Clock {
     }
 }
 
-// struct Line {
-//     width: f64,
-//     height: f64,
-//     color: &'static str,
-// }
+struct Stick {
+    width: u8,
+    y1: u8,
+    y2: u8,
+    angle: f64,
+}
 
-// impl spair::SvgRender<Clock> for Line {
-//     fn render(self, nodes: spair::SvgNodes<Clock>) {
-//         nodes.line(|l| {
-//             l.x1(50.0)
-//                 .y1(50.0)
-//                 .x2(0.0)
-//                 .y2(self.height)
-//                 .stroke(self.color)
-//                 .stroke_width(self.width);
-//         });
-//     }
-// }
+impl spair::SvgRender<Clock> for Stick {
+    fn render(self, nodes: spair::SvgNodes<Clock>) {
+        nodes.line(|l| {
+            l.transform(&format!("rotate({} 100 100)", self.angle))
+                .x1(100.0)
+                .y1(self.y1 as f64)
+                .x2(100.0)
+                .y2(self.y2 as f64)
+                .stroke("white")
+                .stroke_width(self.width as f64);
+        });
+    }
+}
+
+
+struct Hand {
+    width: u8,
+    y2: u8,
+    angle: f64,
+}
+
+impl spair::SvgRender<Clock> for Hand {
+    fn render(self, nodes: spair::SvgNodes<Clock>) {
+        nodes.line(|l| {
+            l.transform(&format!("rotate({} 100 100)", self.angle))
+                .static_attributes()
+                .x1(100.0)
+                .y1(100.0)
+                .x2(100.0)
+                .y2(self.y2 as f64)
+                .stroke("white")
+                .stroke_width(self.width as f64);
+        });
+    }
+}
 
 impl spair::Application for Clock {
     fn with_comp(comp: spair::Comp<Self>) -> Self {
@@ -182,5 +187,5 @@ impl spair::Application for Clock {
 #[wasm_bindgen(start)]
 pub fn start() {
     //wasm_logger::init(wasm_logger::Config::default());
-    Clock::mount_to("root");
+    Clock::mount_to_body();
 }

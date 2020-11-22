@@ -685,7 +685,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
     }
 
     #[cfg(feature = "svg")]
-    fn _svg(self, f: impl FnOnce(super::SvgUpdater<C>)) -> Self::Output {
+    fn svg(self, f: impl FnOnce(super::SvgUpdater<C>)) -> Self::Output {
         use sealed::DomBuilder;
         let mut this: Self::Output = self.into();
         if this.require_render() {
