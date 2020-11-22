@@ -517,7 +517,10 @@ impl<C: WithParentComp + Component> ChildComp<C> {
         rc_comp
     }
 
-    pub fn with_parent_and_state_editor(parent: &Comp<C::Parent>, edit: impl FnOnce(&mut C)) -> Self {
+    pub fn with_parent_and_state_editor(
+        parent: &Comp<C::Parent>,
+        edit: impl FnOnce(&mut C),
+    ) -> Self {
         let rc_comp = ChildComp::new(None);
         let mut state = C::with_parent_and_comp(parent, rc_comp.comp());
         edit(&mut state);

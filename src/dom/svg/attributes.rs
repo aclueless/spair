@@ -84,7 +84,6 @@ mod sealed {
     }
 }
 
-
 pub trait SvgAttributeSetter<C>: Sized + sealed::AttributeSetter {
     // TODO: Some items in this trait are copied from dom::attributes. Should be a common trait?
     create_methods_for_events! {

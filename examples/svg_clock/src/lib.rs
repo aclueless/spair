@@ -63,42 +63,37 @@ impl spair::Component for Clock {
                     });
                 })
                 .g(|g| {
-                    g.list_with_render(
-                        1..=60,
-                        spair::ListElementCreation::Clone,
-                        "g",
-                        |&n, g| {
-                            let degree = 360.0 * n as f64 / 60.0;
-                            if n % 5 == 0 {
-                                let length = 58.0;
-                                let dr = degree.to_radians();
-                                let dx = dr.sin() * length;
-                                let dy = -dr.cos() * length;
-                                g.render(Stick{
-                                    width: 2,
-                                    y1: 29,
-                                    y2: 32,
-                                    angle: degree,
-                                })
-                                .text(|t| {
-                                    t.x(100.0)
-                                        .y(101.0)
-                                        .text_anchor("middle")
-                                        .dominant_baseline("middle")
-                                        .transform(&format!("translate({} {})", dx, dy))
-                                        .render(n / 5)
-                                        .done()
-                                });
-                            } else {
-                                g.render(Stick{
-                                    width: 1,
-                                    y1: 30,
-                                    y2: 32,
-                                    angle: degree,
-                                });
-                            }
-                        },
-                    )
+                    g.list_with_render(1..=60, spair::ListElementCreation::Clone, "g", |&n, g| {
+                        let degree = 360.0 * n as f64 / 60.0;
+                        if n % 5 == 0 {
+                            let length = 58.0;
+                            let dr = degree.to_radians();
+                            let dx = dr.sin() * length;
+                            let dy = -dr.cos() * length;
+                            g.render(Stick {
+                                width: 2,
+                                y1: 29,
+                                y2: 32,
+                                angle: degree,
+                            })
+                            .text(|t| {
+                                t.x(100.0)
+                                    .y(101.0)
+                                    .text_anchor("middle")
+                                    .dominant_baseline("middle")
+                                    .transform(&format!("translate({} {})", dx, dy))
+                                    .render(n / 5)
+                                    .done()
+                            });
+                        } else {
+                            g.render(Stick {
+                                width: 1,
+                                y1: 30,
+                                y2: 32,
+                                angle: degree,
+                            });
+                        }
+                    })
                 })
                 .nodes()
                 .g(|g| {
@@ -150,7 +145,6 @@ impl spair::SvgRender<Clock> for Stick {
         });
     }
 }
-
 
 struct Hand {
     width: u8,
