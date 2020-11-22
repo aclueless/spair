@@ -484,7 +484,7 @@ impl RawData for String {
     }
 
     fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
-        js_value.as_string().ok_or_else(|| FetchError::NotAString)
+        js_value.as_string().ok_or(FetchError::NotAString)
     }
 }
 
