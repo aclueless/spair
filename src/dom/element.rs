@@ -5,7 +5,7 @@ pub struct Element {
     pub element_type: super::ElementType,
     pub ws_element: web_sys::Element,
     pub attributes: super::attributes::AttributeList,
-    pub nodes: super::NodeList,
+    pub nodes: super::nodes::NodeList,
 }
 
 impl Clone for Element {

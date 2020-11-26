@@ -6,14 +6,14 @@ pub struct NonKeyedListUpdater<'a, C> {
     use_template: bool,
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
-    list: &'a mut crate::dom::NodeList,
+    list: &'a mut crate::dom::nodes::NodeList,
 }
 
 impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
     pub fn new(
         comp: &'a crate::component::Comp<C>,
         state: &'a C,
-        list: &'a mut crate::dom::NodeList,
+        list: &'a mut crate::dom::nodes::NodeList,
         tag: &'a str,
         parent: &'a web_sys::Node,
         next_sibling: Option<&'a web_sys::Node>,

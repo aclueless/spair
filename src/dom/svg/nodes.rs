@@ -6,7 +6,7 @@ pub(crate) struct SvgNodeListUpdater<'a, C> {
     parent_status: crate::dom::ElementStatus,
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
-    nodes: &'a mut crate::dom::NodeList,
+    nodes: &'a mut crate::dom::nodes::NodeList,
 }
 
 impl<'a, C: crate::component::Component> SvgNodeListUpdater<'a, C> {

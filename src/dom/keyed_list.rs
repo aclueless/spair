@@ -716,7 +716,8 @@ mod keyed_list_tests {
         }
 
         fn collect_from_keyed_list(&self) -> Vec<String> {
-            if let super::super::Node::KeyedList(kl) = self.root.nodes.0.first().unwrap_throw() {
+            if let crate::dom::nodes::Node::KeyedList(kl) = self.root.nodes.0.first().unwrap_throw()
+            {
                 kl.active
                     .iter()
                     .map(|item| {
@@ -729,7 +730,7 @@ mod keyed_list_tests {
                             .unwrap_throw()
                     })
                     .map(|item| match item {
-                        super::super::Node::Text(text) => text.text.clone(),
+                        crate::dom::nodes::Node::Text(text) => text.text.clone(),
                         _ => panic!("Should be a text?"),
                     })
                     .collect()

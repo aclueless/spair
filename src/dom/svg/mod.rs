@@ -24,7 +24,7 @@ impl super::Element {
     }
 }
 
-impl super::NodeList {
+impl crate::dom::nodes::NodeList {
     fn create_new_svg_element(
         &mut self,
         tag: &str,
@@ -33,7 +33,7 @@ impl super::NodeList {
     ) {
         let svg = super::Element::new_svg_element(tag);
         svg.insert_before(parent, next_sibling);
-        self.0.push(super::Node::Element(svg));
+        self.0.push(crate::dom::nodes::Node::Element(svg));
     }
 
     pub fn check_or_create_svg_element_ns(
@@ -70,7 +70,9 @@ impl super::NodeList {
         } else {
             let element = self.0[0].clone();
             match &element {
-                super::Node::Element(element) => element.insert_before(parent, next_sibling),
+                crate::dom::nodes::Node::Element(element) => {
+                    element.insert_before(parent, next_sibling)
+                }
                 _ => panic!("non-keyed-list svg: internal bug?"),
             }
             self.0.push(element);

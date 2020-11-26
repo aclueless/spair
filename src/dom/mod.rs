@@ -19,9 +19,9 @@ use attribute_types::AsStr;
 // the `lib.rs` must selectively export items from `dom` to expose to users.
 pub use element::*;
 pub use html::attributes::*;
+pub use html::nodes::*;
 #[cfg(feature = "keyed-list")]
 pub use keyed_list::*;
-pub use nodes::*;
 pub use non_keyed_list::*;
 
 #[cfg(feature = "svg")]
