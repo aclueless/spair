@@ -127,6 +127,7 @@ impl SelectElementValue {
     }
 }
 
+// TODO: remove all pub(super) for fields in this struct
 pub struct ElementUpdater<'a, C> {
     pub(super) comp: &'a crate::component::Comp<C>,
     pub(super) state: &'a C,
@@ -166,9 +167,75 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         &self.element.ws_element
     }
 
+    pub fn ws_html_element(&self) -> &web_sys::HtmlElement {
+        self.element.ws_element.unchecked_ref()
+    }
+
+    pub fn element_type(&self) -> crate::dom::ElementType {
+        self.element.element_type
+    }
+
     pub fn clear(self) {
         let parent = self.element.ws_element.as_ref();
         self.element.nodes.clear(parent);
+    }
+
+    pub fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
+        self.element.attributes.store_listener(self.index, listener);
+        self.index += 1;
+    }
+
+    pub fn check_bool_attribute(&mut self, value: bool) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_bool_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    pub fn check_str_attribute(&mut self, value: &str) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_str_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    pub fn check_i32_attribute(&mut self, value: i32) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_i32_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    pub fn check_u32_attribute(&mut self, value: u32) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_u32_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    pub fn check_f64_attribute(&mut self, value: f64) -> bool {
+        let rs = self
+            .element
+            .attributes
+            .check_f64_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    pub fn set_selected_value(&mut self, value: Option<&str>) {
+        self.select_element_value.set_selected_value(value);
+    }
+
+    pub fn set_selected_index(&mut self, index: Option<usize>) {
+        self.select_element_value.set_selected_index(index);
     }
 
     pub fn static_attributes(self) -> super::StaticAttributes<'a, C> {
