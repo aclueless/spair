@@ -4,7 +4,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 pub struct Element {
     pub element_type: super::ElementType,
     pub ws_element: web_sys::Element,
-    pub attributes: super::AttributeList,
+    pub attributes: super::attributes::AttributeList,
     pub nodes: super::NodeList,
 }
 

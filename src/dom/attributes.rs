@@ -126,74 +126,99 @@ impl AttributeList {
     }
 }
 
-pub struct StaticAttributes<'a, C: crate::component::Component>(super::ElementUpdater<'a, C>);
+pub trait AttributeSetter {
+    fn ws_html_element(&self) -> &web_sys::HtmlElement;
+    fn ws_element(&self) -> &web_sys::Element;
+    fn element_type(&self) -> crate::dom::ElementType;
+    fn require_set_listener(&mut self) -> bool;
+    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>);
 
-impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
-    pub(super) fn new(eu: super::ElementUpdater<'a, C>) -> Self {
-        Self(eu)
+    // Check if the attribute need to be set (and store the new value for the next check)
+    fn check_bool_attribute(&mut self, value: bool) -> bool;
+    fn check_str_attribute(&mut self, value: &str) -> bool;
+    fn check_i32_attribute(&mut self, value: i32) -> bool;
+    fn check_u32_attribute(&mut self, value: u32) -> bool;
+    fn check_f64_attribute(&mut self, value: f64) -> bool;
+
+    fn set_selected_value(&mut self, value: Option<&str>);
+    fn set_selected_index(&mut self, index: Option<usize>);
+
+    fn set_bool_attribute(&mut self, name: &str, value: bool) {
+        if self.check_bool_attribute(value) {
+            if value {
+                self.ws_element()
+                    .set_attribute(name, "")
+                    .expect_throw("Unable to set bool attribute");
+            } else {
+                self.ws_element()
+                    .remove_attribute(name)
+                    .expect_throw("Unable to remove bool attribute");
+            }
+        }
     }
 
-    pub fn nodes(self) -> super::NodesOwned<'a, C> {
-        self.0.nodes()
+    fn set_str_attribute(&mut self, name: &str, value: &str) {
+        if self.check_str_attribute(value) {
+            self.ws_element()
+                .set_attribute(name, value)
+                .expect_throw("Unable to set string attribute");
+        }
     }
 
-    pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
-        self.0.static_nodes()
+    fn set_i32_attribute(&mut self, name: &str, value: i32) {
+        if self.check_i32_attribute(value) {
+            self.ws_element()
+                .set_attribute(name, &value.to_string())
+                .expect_throw("Unable to set string attribute");
+        }
     }
 
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
-
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> super::NodesOwned<'a, C> {
-        self.0.render(value)
+    fn set_u32_attribute(&mut self, name: &str, value: u32) {
+        if self.check_u32_attribute(value) {
+            self.ws_element()
+                .set_attribute(name, &value.to_string())
+                .expect_throw("Unable to set string attribute");
+        }
     }
 
-    pub fn render_ref(
-        self,
-        value: &impl crate::renderable::RenderRef<C>,
-    ) -> super::NodesOwned<'a, C> {
-        self.0.render_ref(value)
+    fn set_f64_attribute(&mut self, name: &str, value: f64) {
+        if self.check_f64_attribute(value) {
+            self.ws_element()
+                .set_attribute(name, &value.to_string())
+                .expect_throw("Unable to set string attribute");
+        }
     }
 
-    pub fn r#static(
-        self,
-        value: impl crate::renderable::StaticRender<C>,
-    ) -> super::NodesOwned<'a, C> {
-        self.0.r#static(value)
-    }
-
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    where
-        I: crate::renderable::ListItem<C>,
-    {
-        self.0.list(items, mode)
-    }
-
-    pub fn list_with_render<I, R>(
-        self,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-        tag: &str,
-        render: R,
-    ) where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
-    {
-        self.0.list_with_render(items, mode, tag, render)
-    }
-
-    #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    where
-        for<'k> I: super::KeyedListItem<'k, C>,
-    {
-        self.0.keyed_list(items, mode)
-    }
-
-    pub fn component<CC: crate::component::Component>(
-        self,
-        child: &crate::component::ChildComp<CC>,
-    ) {
-        self.0.component(child);
+    fn value_str(&mut self, value: &str) {
+        if self.check_str_attribute(value) {
+            let element = self.ws_element();
+            match self.element_type() {
+                super::ElementType::Input => {
+                    let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
+                    input.set_value(value);
+                }
+                super::ElementType::Select => {
+                    // It has no effect if you set a value for
+                    // a <select> element before adding its <option>s,
+                    // the hacking should finish in the list() method.
+                    // Is there a better solution?
+                    self.set_selected_value(Some(value));
+                }
+                super::ElementType::TextArea => {
+                    let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
+                    text_area.set_value(value);
+                }
+                super::ElementType::Option => {
+                    let option = element.unchecked_ref::<web_sys::HtmlOptionElement>();
+                    option.set_value(value);
+                }
+                super::ElementType::Other => {
+                    log::warn!(
+                        ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
+                    );
+                }
+            }
+        }
     }
 }
 
@@ -263,7 +288,7 @@ macro_rules! create_methods_for_attributes {
         }
     };
     (@each $method_name:ident $attribute_name:expr => AsStr) => {
-        fn $method_name(mut self, value: impl super::AsStr) -> Self {
+        fn $method_name(mut self, value: impl crate::dom::AsStr) -> Self {
             self.set_str_attribute($attribute_name, value.as_str());
             self
         }
@@ -274,702 +299,4 @@ macro_rules! create_methods_for_attributes {
             self
         }
     };
-}
-
-mod sealed {
-    use super::super::ElementType;
-    use wasm_bindgen::{JsCast, UnwrapThrowExt};
-
-    pub trait AttributeSetter {
-        fn ws_html_element(&self) -> &web_sys::HtmlElement;
-        fn ws_element(&self) -> &web_sys::Element;
-        fn element_type(&self) -> crate::dom::ElementType;
-        fn require_set_listener(&mut self) -> bool;
-        fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>);
-
-        // Check if the attribute need to be set (and store the new value for the next check)
-        fn check_bool_attribute(&mut self, value: bool) -> bool;
-        fn check_str_attribute(&mut self, value: &str) -> bool;
-        fn check_i32_attribute(&mut self, value: i32) -> bool;
-        fn check_u32_attribute(&mut self, value: u32) -> bool;
-        fn check_f64_attribute(&mut self, value: f64) -> bool;
-
-        fn set_selected_value(&mut self, value: Option<&str>);
-        fn set_selected_index(&mut self, index: Option<usize>);
-
-        fn set_bool_attribute(&mut self, name: &str, value: bool) {
-            if self.check_bool_attribute(value) {
-                if value {
-                    self.ws_element()
-                        .set_attribute(name, "")
-                        .expect_throw("Unable to set bool attribute");
-                } else {
-                    self.ws_element()
-                        .remove_attribute(name)
-                        .expect_throw("Unable to remove bool attribute");
-                }
-            }
-        }
-
-        fn set_str_attribute(&mut self, name: &str, value: &str) {
-            if self.check_str_attribute(value) {
-                self.ws_element()
-                    .set_attribute(name, value)
-                    .expect_throw("Unable to set string attribute");
-            }
-        }
-
-        fn set_i32_attribute(&mut self, name: &str, value: i32) {
-            if self.check_i32_attribute(value) {
-                self.ws_element()
-                    .set_attribute(name, &value.to_string())
-                    .expect_throw("Unable to set string attribute");
-            }
-        }
-
-        fn set_u32_attribute(&mut self, name: &str, value: u32) {
-            if self.check_u32_attribute(value) {
-                self.ws_element()
-                    .set_attribute(name, &value.to_string())
-                    .expect_throw("Unable to set string attribute");
-            }
-        }
-
-        fn set_f64_attribute(&mut self, name: &str, value: f64) {
-            if self.check_f64_attribute(value) {
-                self.ws_element()
-                    .set_attribute(name, &value.to_string())
-                    .expect_throw("Unable to set string attribute");
-            }
-        }
-
-        fn value_str(&mut self, value: &str) {
-            if self.check_str_attribute(value) {
-                let element = self.ws_element();
-                match self.element_type() {
-                    ElementType::Input => {
-                        let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
-                        input.set_value(value);
-                    }
-                    ElementType::Select => {
-                        // It has no effect if you set a value for
-                        // a <select> element before adding its <option>s,
-                        // the hacking should finish in the list() method.
-                        // Is there a better solution?
-                        self.set_selected_value(Some(value));
-                    }
-                    ElementType::TextArea => {
-                        let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
-                        text_area.set_value(value);
-                    }
-                    ElementType::Option => {
-                        let option = element.unchecked_ref::<web_sys::HtmlOptionElement>();
-                        option.set_value(value);
-                    }
-                    ElementType::Other => {
-                        log::warn!(
-                        ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
-                    );
-                    }
-                }
-            }
-        }
-    }
-}
-
-pub trait AttributeSetter<C>: Sized + sealed::AttributeSetter
-where
-    C: crate::component::Component,
-{
-    create_methods_for_events! {
-        on_focus Focus,
-        on_blur Blur,
-
-        on_aux_click AuxClick,
-        on_click Click,
-        on_double_click DoubleClick,
-        on_mouse_enter MouseEnter,
-        on_mouse_over MouseOver,
-        on_mouse_move MouseMove,
-        on_mouse_down MouseDown,
-        on_mouse_up MouseUp,
-        on_mouse_leave MouseLeave,
-        on_mouse_out MouseOut,
-        on_context_menu ContextMenu,
-
-        on_wheel Wheel,
-        on_select UiSelect,
-
-        on_input Input,
-
-        on_key_down KeyDown,
-        on_key_press KeyPress,
-        on_key_up KeyUp,
-
-        on_change Change,
-        on_reset Reset,
-        on_submit Submit,
-        on_pointer_lock_change PointerLockChange,
-        on_pointer_lock_error PointerLockError,
-
-        on_ended Ended,
-    }
-
-    fn bool_attr(mut self, name: &str, value: bool) -> Self {
-        self.set_bool_attribute(name, value);
-        self
-    }
-
-    fn str_attr(mut self, name: &str, value: &str) -> Self {
-        self.set_str_attribute(name, value);
-        self
-    }
-
-    fn i32_attr(mut self, name: &str, value: i32) -> Self {
-        self.set_i32_attribute(name, value);
-        self
-    }
-
-    fn u32_attr(mut self, name: &str, value: u32) -> Self {
-        self.set_u32_attribute(name, value);
-        self
-    }
-
-    fn f64_attr(mut self, name: &str, value: f64) -> Self {
-        self.set_f64_attribute(name, value);
-        self
-    }
-
-    create_methods_for_attributes! {
-        str     abbr
-        str     accept
-        str     accept_charset "accept-charset"
-        str     action
-        str     allow
-        str     allow_full_screen "allowfullscreen"
-        bool    allow_payment_request "allowpaymentrequest"
-        str     alt
-        AsStr   auto_complete "autocomplete"
-        bool    auto_play "autoplay"
-        str     cite
-        //str     class
-        u32     cols
-        u32     col_span "colspan"
-        bool    controls
-        str     coords
-        AsStr   cross_origin "crossorigin"
-        str     data
-        str     date_time "datetime"
-        AsStr   decoding
-        bool    default
-        str     dir_name "dirname"
-        bool    disabled
-        str     download
-        AsStr   enc_type "enctype"
-        str     r#for "for"
-        str     form
-        str     form_action "formaction"
-        AsStr   form_enc_type "formenctype"
-        AsStr   form_method "formmethod"
-        bool    form_no_validate "formnovalidate"
-        AsStr   form_target "formtarget"
-        str     headers
-        u32     height
-        bool    hidden
-        f64     high
-        str     href_str "href" // method named `href` is used for routing
-        str     href_lang "hreflang"
-        bool    is_map "ismap"
-        AsStr   kind
-        str     label
-        bool    r#loop "loop"
-        f64     low
-        // ??   max: what type? split into multiple methods?
-        i32     max_length "maxlength"
-        str     media
-        AsStr   method
-        // ??   min: similar to max
-        i32     min_length "minlength"
-        bool    multiple
-        bool    muted
-        str     name
-        bool    no_validate "novalidate"
-        bool    open
-        f64     optimum
-        str     pattern
-        str     ping
-        str     placeholder
-        str     poster
-        bool    plays_inline "playsinline"
-        AsStr   pre_load "preload"
-        bool    read_only "readonly"
-        AsStr   referrer_policy "referrerpolicy"
-        str     rel
-        // ??     rellist
-        bool    required
-        bool    reversed
-        u32     rows
-        u32     row_span "rowspan"
-        // ?? sandbox
-        bool    selected
-        AsStr   scope
-        u32     size
-        str     sizes
-        u32     span_attr "span" // rename to `span_attr` to avoid conflict with DomBuilder::span
-        str     src
-        str     src_doc "srcdoc"
-        str     src_lang "srclang"
-        str     src_set "srcset"
-        i32     start
-        str     step
-        str     style
-        AsStr   target
-        str     title
-        AsStr   r#type "type"
-        str     use_map "usemap"
-        u32     width
-        AsStr   wrap
-    }
-
-    /// Only execute `input.set_checked` if the value changed.
-    fn checked_if_changed(mut self, value: bool) -> Self {
-        if self.check_bool_attribute(value) {
-            self.checked(value)
-        } else {
-            self
-        }
-    }
-
-    /// Always execute `input.set_checked` with the given value. This is
-    /// useful in situation like in TodoMVC example. TodoMVC spec requires
-    /// that when the app in a filtered mode, for example, just display
-    /// active todos, if an item is checked (completed) by clicking the
-    /// input, the app should hide the todo item. In such a situation, the
-    /// DOM item is checked, but Spair DOM is not checked yet. But the
-    /// checked item was filtered out (hidden), and only active todos
-    /// are displayed, all of them are unchecked which match the state in
-    /// Spair DOM, hence Spair skip setting check, leaving the DOM checked
-    /// but display an unchecked item. In my understand, this only occurs
-    /// with non-keyed list. I choose always setting checked to avoid
-    /// surprise for new users. `checked_if_changed` can be used to reduce
-    /// interaction with DOM if it does not bug you.
-    fn checked(self, value: bool) -> Self {
-        let element = self.ws_element();
-        if self.element_type() == super::ElementType::Input {
-            let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
-            input.set_checked(value);
-        } else {
-            log::warn!(".checked() is called on an element that is not <input>");
-        }
-        self
-    }
-
-    /// This method should only execute in static mode.
-    fn class(self, class_name: &str) -> Self {
-        self.ws_element()
-            .class_list()
-            .add_1(class_name)
-            .expect_throw("Unable to add class");
-        self
-    }
-
-    fn class_if(mut self, class_name: &str, class_on: bool) -> Self {
-        if self.check_bool_attribute(class_on) {
-            if class_on {
-                self.ws_element()
-                    .class_list()
-                    .add_1(class_name)
-                    .expect_throw("Unable to add class");
-            } else {
-                self.ws_element()
-                    .class_list()
-                    .remove_1(class_name)
-                    .expect_throw("Unable to remove class");
-            }
-        }
-        self
-    }
-
-    fn enabled(self, value: bool) -> Self {
-        self.disabled(!value)
-    }
-
-    fn focus(mut self, value: bool) -> Self {
-        if value && self.check_bool_attribute(value) {
-            self.ws_html_element()
-                .focus()
-                .expect_throw("Unable to set focus");
-        }
-        self
-    }
-
-    fn href(mut self, value: &C::Routes) -> Self {
-        use crate::routing::Routes;
-        let url = value.url();
-        if self.check_str_attribute(&url) {
-            self.set_str_attribute("href", &url);
-        }
-        self
-    }
-
-    fn id(mut self, id: &str) -> Self {
-        if self.check_str_attribute(id) {
-            self.ws_element().set_id(id);
-        }
-        self
-    }
-
-    fn max(self, value: impl AttributeMax<Self>) -> Self {
-        value.update(self)
-    }
-
-    fn min(self, value: impl AttributeMin<Self>) -> Self {
-        value.update(self)
-    }
-
-    fn selected_value(mut self, value: Option<&str>) -> Self {
-        if self.element_type() == super::ElementType::Select {
-            // TODO: check to find change of value?
-
-            // It has no effect if you set a value for
-            // a <select> element before adding its <option>s,
-            // the hacking should finish in the list() method.
-            // Is there a better solution?
-            self.set_selected_value(value);
-        } else {
-            log::warn!(".selected_value() can only be called on <select>");
-        }
-        self
-    }
-
-    fn selected_index(mut self, index: Option<usize>) -> Self {
-        if self.element_type() == super::ElementType::Select {
-            // TODO: check to find change of index?
-
-            // It has no effect if you set a selected index for
-            // a <select> element before adding its <option>s,
-            // the hacking should finish in the list() method.
-            // Is there a better solution?
-            self.set_selected_index(index);
-        } else {
-            log::warn!(".selected_index() is called on an element that is not <select>");
-        }
-        self
-    }
-
-    fn value(self, value: impl AttributeValue<Self>) -> Self {
-        value.update(self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeSetter<C> for StaticAttributes<'a, C> where
-    C: crate::component::Component
-{
-}
-
-impl<'a, C: crate::component::Component> sealed::AttributeSetter for StaticAttributes<'a, C> {
-    fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.0.element.ws_element.unchecked_ref()
-    }
-
-    fn ws_element(&self) -> &web_sys::Element {
-        &self.0.element.ws_element
-    }
-
-    fn element_type(&self) -> super::ElementType {
-        self.0.element.element_type
-    }
-
-    fn require_set_listener(&mut self) -> bool {
-        if self.0.status == super::ElementStatus::Existing {
-            // When self.require_init == false, self.store_listener will not be invoked.
-            // We must update the index here to count over the static events.
-            self.0.index += 1;
-            false
-        } else {
-            // A cloned element requires its event handlers to be set because the events
-            // are not cloned.
-            true
-        }
-    }
-
-    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
-        self.0
-            .element
-            .attributes
-            .store_listener(self.0.index, listener);
-        self.0.index += 1;
-    }
-
-    fn check_bool_attribute(&mut self, _value: bool) -> bool {
-        self.0.status == super::ElementStatus::JustCreated
-        // no need to store the value for static attributes
-    }
-
-    fn check_str_attribute(&mut self, _value: &str) -> bool {
-        self.0.status == super::ElementStatus::JustCreated
-        // no need to store the value for static attributes
-    }
-
-    fn check_i32_attribute(&mut self, _value: i32) -> bool {
-        self.0.status == super::ElementStatus::JustCreated
-        // no need to store the value for static attributes
-    }
-
-    fn check_u32_attribute(&mut self, _value: u32) -> bool {
-        self.0.status == super::ElementStatus::JustCreated
-        // no need to store the value for static attributes
-    }
-
-    fn check_f64_attribute(&mut self, _value: f64) -> bool {
-        self.0.status == super::ElementStatus::JustCreated
-        // no need to store the value for static attributes
-    }
-
-    fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0.select_element_value.set_selected_value(value);
-    }
-
-    fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0.select_element_value.set_selected_index(index);
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeSetter<C> for super::ElementUpdater<'a, C> where
-    C: crate::component::Component
-{
-}
-
-impl<'a, C: crate::component::Component> sealed::AttributeSetter for super::ElementUpdater<'a, C> {
-    fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.element.ws_element.unchecked_ref()
-    }
-
-    fn ws_element(&self) -> &web_sys::Element {
-        &self.element.ws_element
-    }
-
-    fn element_type(&self) -> super::ElementType {
-        self.element.element_type
-    }
-
-    fn require_set_listener(&mut self) -> bool {
-        true
-    }
-
-    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
-        self.element.attributes.store_listener(self.index, listener);
-        self.index += 1;
-    }
-
-    fn check_bool_attribute(&mut self, value: bool) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_bool_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn check_str_attribute(&mut self, value: &str) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_str_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn check_i32_attribute(&mut self, value: i32) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_i32_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn check_u32_attribute(&mut self, value: u32) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_u32_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn check_f64_attribute(&mut self, value: f64) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_f64_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn set_selected_value(&mut self, value: Option<&str>) {
-        self.select_element_value.set_selected_value(value);
-    }
-
-    fn set_selected_index(&mut self, index: Option<usize>) {
-        self.select_element_value.set_selected_index(index);
-    }
-}
-
-// TODO: Should all these (below) be produced by macros?
-
-pub trait AttributeValue<U> {
-    fn update(self, u: U) -> U;
-}
-
-// &str
-impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a, C>> for &str {
-    fn update(self, mut u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        use sealed::AttributeSetter;
-        u.value_str(self);
-        u
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>> for &str {
-    fn update(self, mut u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        use sealed::AttributeSetter;
-        u.value_str(self);
-        u
-    }
-}
-
-// &String
-impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a, C>> for &String {
-    fn update(self, mut u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        use sealed::AttributeSetter;
-        u.value_str(self);
-        u
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>>
-    for &String
-{
-    fn update(self, mut u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        use sealed::AttributeSetter;
-        u.value_str(self);
-        u
-    }
-}
-
-// Option<&str>
-impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a, C>>
-    for Option<&str>
-{
-    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.selected_value(self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>>
-    for Option<&str>
-{
-    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.selected_value(self)
-    }
-}
-
-// f64
-impl<'a, C: crate::component::Component> AttributeValue<super::ElementUpdater<'a, C>> for f64 {
-    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.f64_attr("value", self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeValue<super::StaticAttributes<'a, C>> for f64 {
-    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.f64_attr("value", self)
-    }
-}
-
-pub trait AttributeMax<U> {
-    fn update(self, u: U) -> U;
-}
-
-// &str
-impl<'a, C: crate::component::Component> AttributeMax<super::ElementUpdater<'a, C>> for &str {
-    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.str_attr("max", self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeMax<super::StaticAttributes<'a, C>> for &str {
-    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.str_attr("max", self)
-    }
-}
-
-// &String
-impl<'a, C: crate::component::Component> AttributeMax<super::ElementUpdater<'a, C>> for &String {
-    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.str_attr("max", self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeMax<super::StaticAttributes<'a, C>> for &String {
-    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.str_attr("max", self)
-    }
-}
-
-// f64
-impl<'a, C: crate::component::Component> AttributeMax<super::ElementUpdater<'a, C>> for f64 {
-    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.f64_attr("max", self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeMax<super::StaticAttributes<'a, C>> for f64 {
-    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.f64_attr("max", self)
-    }
-}
-
-pub trait AttributeMin<U> {
-    fn update(self, u: U) -> U;
-}
-
-// &str
-impl<'a, C: crate::component::Component> AttributeMin<super::ElementUpdater<'a, C>> for &str {
-    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.str_attr("min", self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeMin<super::StaticAttributes<'a, C>> for &str {
-    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.str_attr("min", self)
-    }
-}
-
-// &String
-impl<'a, C: crate::component::Component> AttributeMin<super::ElementUpdater<'a, C>> for &String {
-    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.str_attr("min", self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeMin<super::StaticAttributes<'a, C>> for &String {
-    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.str_attr("min", self)
-    }
-}
-
-// f64
-impl<'a, C: crate::component::Component> AttributeMin<super::ElementUpdater<'a, C>> for f64 {
-    fn update(self, u: super::ElementUpdater<'a, C>) -> super::ElementUpdater<'a, C> {
-        u.f64_attr("min", self)
-    }
-}
-
-impl<'a, C: crate::component::Component> AttributeMin<super::StaticAttributes<'a, C>> for f64 {
-    fn update(self, u: super::StaticAttributes<'a, C>) -> super::StaticAttributes<'a, C> {
-        u.f64_attr("min", self)
-    }
 }
