@@ -103,7 +103,7 @@ impl<T: wasm_bindgen::JsCast> WsRef<T> {
 
     pub fn set<C: component::Component>(&self, element: &crate::Element<C>) {
         use wasm_bindgen::JsCast;
-        *self.0.borrow_mut() = Some(element.ws_element().unchecked_into());
+        *self.0.borrow_mut() = Some(element.ws_element().clone().unchecked_into());
     }
 
     pub fn execute(&self, f: impl FnOnce(&T)) {

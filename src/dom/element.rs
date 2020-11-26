@@ -162,8 +162,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self.comp.clone()
     }
 
-    pub fn ws_element(&self) -> web_sys::Element {
-        self.element.ws_element.clone()
+    pub fn ws_element(&self) -> &web_sys::Element {
+        &self.element.ws_element
     }
 
     pub fn clear(self) {
