@@ -1,82 +1,5 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub struct StaticAttributes<'a, C>(crate::dom::ElementUpdater<'a, C>);
-
-impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticAttributes<'a, C> {
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(eu)
-    }
-}
-
-impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
-    pub fn nodes(self) -> crate::dom::NodesOwned<'a, C> {
-        self.0.nodes()
-    }
-
-    pub fn static_nodes(self) -> crate::dom::StaticNodesOwned<'a, C> {
-        self.0.static_nodes()
-    }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
-
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> crate::dom::NodesOwned<'a, C> {
-        self.0.render(value)
-    }
-
-    pub fn render_ref(
-        self,
-        value: &impl crate::renderable::RenderRef<C>,
-    ) -> crate::dom::NodesOwned<'a, C> {
-        self.0.render_ref(value)
-    }
-
-    pub fn r#static(
-        self,
-        value: impl crate::renderable::StaticRender<C>,
-    ) -> crate::dom::NodesOwned<'a, C> {
-        self.0.r#static(value)
-    }
-
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: crate::dom::ListElementCreation)
-    where
-        I: crate::renderable::ListItem<C>,
-    {
-        self.0
-            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
-    }
-
-    pub fn list_with_render<I, R>(
-        self,
-        items: impl IntoIterator<Item = I>,
-        mode: crate::dom::ListElementCreation,
-        tag: &str,
-        render: R,
-    ) where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
-    {
-        self.0.list_with_render(items, mode, tag, render)
-    }
-
-    #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(
-        self,
-        items: impl IntoIterator<Item = I>,
-        mode: crate::dom::ListElementCreation,
-    ) where
-        for<'k> I: crate::dom::KeyedListItem<'k, C>,
-    {
-        self.0.keyed_list(items, mode)
-    }
-
-    pub fn component<CC: crate::component::Component>(
-        self,
-        child: &crate::component::ChildComp<CC>,
-    ) {
-        self.0.component(child);
-    }
-}
-
 pub trait AttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter
 where
     C: crate::component::Component,
@@ -325,6 +248,83 @@ where
 
     fn value(self, value: impl AttributeValue<Self>) -> Self {
         value.update(self)
+    }
+}
+
+pub struct StaticAttributes<'a, C>(crate::dom::ElementUpdater<'a, C>);
+
+impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticAttributes<'a, C> {
+    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
+        Self(eu)
+    }
+}
+
+impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
+    pub fn nodes(self) -> crate::dom::NodesOwned<'a, C> {
+        self.0.nodes()
+    }
+
+    pub fn static_nodes(self) -> crate::dom::StaticNodesOwned<'a, C> {
+        self.0.static_nodes()
+    }
+
+    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
+    pub fn done(self) {}
+
+    pub fn render(self, value: impl crate::renderable::Render<C>) -> crate::dom::NodesOwned<'a, C> {
+        self.0.render(value)
+    }
+
+    pub fn render_ref(
+        self,
+        value: &impl crate::renderable::RenderRef<C>,
+    ) -> crate::dom::NodesOwned<'a, C> {
+        self.0.render_ref(value)
+    }
+
+    pub fn r#static(
+        self,
+        value: impl crate::renderable::StaticRender<C>,
+    ) -> crate::dom::NodesOwned<'a, C> {
+        self.0.r#static(value)
+    }
+
+    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: crate::dom::ListElementCreation)
+    where
+        I: crate::renderable::ListItem<C>,
+    {
+        self.0
+            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+    }
+
+    pub fn list_with_render<I, R>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: crate::dom::ListElementCreation,
+        tag: &str,
+        render: R,
+    ) where
+        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+    {
+        self.0.list_with_render(items, mode, tag, render)
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list<I>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: crate::dom::ListElementCreation,
+    ) where
+        for<'k> I: crate::dom::KeyedListItem<'k, C>,
+    {
+        self.0.keyed_list(items, mode)
+    }
+
+    pub fn component<CC: crate::component::Component>(
+        self,
+        child: &crate::component::ChildComp<CC>,
+    ) {
+        self.0.component(child);
     }
 }
 
