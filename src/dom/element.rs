@@ -87,7 +87,7 @@ impl Element {
     }
 }
 
-pub enum SelectedOption {
+enum SelectedOption {
     None,
     Value(String),
     Index(usize),

@@ -8,11 +8,11 @@ impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticNodesOwned<'a, C> 
 
 impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     pub fn state(&self) -> &'a C {
-        self.0.state
+        self.0.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp.clone()
+        self.0.comp()
     }
 
     pub fn nodes(self) -> NodesOwned<'a, C> {
@@ -44,10 +44,10 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
         mut self,
         value: impl crate::renderable::ListItemStaticText<C>,
     ) -> Self {
-        if self.0.parent_status != crate::dom::ElementStatus::Existing {
+        if self.0.parent_status() != crate::dom::ElementStatus::Existing {
             value.render(self.nodes()).static_nodes()
         } else {
-            self.0.index += 1;
+            self.0.next_index();
             self
         }
     }
@@ -77,11 +77,11 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     }
 
     pub fn state(&self) -> &'a C {
-        self.0.state
+        self.0.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp.clone()
+        self.0.comp()
     }
 
     pub fn static_nodes(self) -> StaticNodesOwned<'a, C> {
@@ -113,19 +113,16 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         mut self,
         value: impl crate::renderable::ListItemStaticText<C>,
     ) -> Self {
-        if self.0.parent_status != crate::dom::ElementStatus::Existing {
+        if self.0.parent_status() != crate::dom::ElementStatus::Existing {
             value.render(self)
         } else {
-            self.0.index += 1;
+            self.0.next_index();
             self
         }
     }
 
     pub(crate) fn update_text(mut self, text: &str) -> Self {
-        self.0
-            .nodes
-            .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
-        self.0.index += 1;
+        self.0.update_text(text);
         self
     }
 
@@ -256,15 +253,15 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     for StaticNodesOwned<'a, C>
 {
     fn require_render(&self) -> bool {
-        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
     }
 
     fn just_created(&self) -> bool {
-        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+        self.0.just_created()
     }
 
     fn next_index(&mut self) {
-        self.0.index += 1;
+        self.0.next_index()
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
@@ -281,11 +278,7 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     }
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        element.insert_before(self.0.parent, self.0.next_sibling);
-        self.0
-            .nodes
-            .0
-            .push(crate::dom::nodes::Node::Element(element));
+        self.0.store_raw_wrapper(element);
     }
 }
 
@@ -299,11 +292,11 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for No
     }
 
     fn just_created(&self) -> bool {
-        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+        self.0.just_created()
     }
 
     fn next_index(&mut self) {
-        self.0.index += 1;
+        self.0.next_index()
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
@@ -320,11 +313,7 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for No
     }
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        element.insert_before(self.0.parent, self.0.next_sibling);
-        self.0
-            .nodes
-            .0
-            .push(crate::dom::nodes::Node::Element(element));
+        self.0.store_raw_wrapper(element);
     }
 }
 
@@ -338,11 +327,11 @@ pub struct StaticNodes<'n, 'h: 'n, C: crate::component::Component>(
 
 impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
-        self.0.state
+        self.0.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp.clone()
+        self.0.comp()
     }
 
     pub fn nodes(self) -> Nodes<'n, 'h, C> {
@@ -367,23 +356,8 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
         self
     }
 
-    // pub fn static_text_of_keyed_item(
-    //     mut self,
-    //     value: impl crate::renderable::ListItemStaticText<C>,
-    // ) -> Self {
-    //     if self.0.parent_status != crate::dom::ElementStatus::Existing {
-    //         value.render(self.nodes()).static_nodes()
-    //     } else {
-    //         self.0.index += 1;
-    //         self
-    //     }
-    // }
-
     pub(crate) fn static_text(self, text: &str) -> Self {
-        self.0
-            .nodes
-            .static_text(self.0.index, text, self.0.parent, self.0.next_sibling);
-        self.0.index += 1;
+        self.0.static_text(text);
         self
     }
 }
@@ -394,11 +368,11 @@ pub struct Nodes<'n, 'h: 'n, C: crate::component::Component>(
 
 impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
-        self.0.state
+        self.0.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp.clone()
+        self.0.comp()
     }
 
     pub fn static_nodes(self) -> StaticNodes<'n, 'h, C> {
@@ -423,23 +397,8 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
         self
     }
 
-    // pub fn static_text_of_keyed_item(
-    //     mut self,
-    //     value: impl crate::renderable::ListItemStaticText<C>,
-    // ) -> Self {
-    //     if self.0.parent_status != crate::dom::ElementStatus::Existing {
-    //         value.render(self)
-    //     } else {
-    //         self.0.index += 1;
-    //         self
-    //     }
-    // }
-
     pub(crate) fn update_text(self, text: &str) -> Self {
-        self.0
-            .nodes
-            .update_text(self.0.index, text, self.0.parent, self.0.next_sibling);
-        self.0.index += 1;
+        self.0.update_text(text);
         self
     }
 
@@ -463,15 +422,15 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     for StaticNodes<'n, 'h, C>
 {
     fn require_render(&self) -> bool {
-        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
     }
 
     fn just_created(&self) -> bool {
-        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+        self.0.just_created()
     }
 
     fn next_index(&mut self) {
-        self.0.index += 1;
+        self.0.next_index()
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
@@ -488,11 +447,7 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     }
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        element.insert_before(self.0.parent, self.0.next_sibling);
-        self.0
-            .nodes
-            .0
-            .push(crate::dom::nodes::Node::Element(element));
+        self.0.store_raw_wrapper(element);
     }
 }
 
@@ -506,11 +461,11 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
     }
 
     fn just_created(&self) -> bool {
-        self.0.parent_status == crate::dom::ElementStatus::JustCreated
+        self.0.just_created()
     }
 
     fn next_index(&mut self) {
-        self.0.index += 1;
+        self.0.next_index();
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
@@ -527,11 +482,7 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
     }
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        element.insert_before(self.0.parent, self.0.next_sibling);
-        self.0
-            .nodes
-            .0
-            .push(crate::dom::nodes::Node::Element(element));
+        self.0.store_raw_wrapper(element);
     }
 }
 

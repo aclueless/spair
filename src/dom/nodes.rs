@@ -336,18 +336,17 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
     }
 }
 
-// TODO: remove pub(in)
-pub(crate) struct NodeListUpdater<'a, C> {
-    pub(in crate::dom) comp: &'a crate::component::Comp<C>,
-    pub(in crate::dom) state: &'a C,
+pub struct NodeListUpdater<'a, C> {
+    comp: &'a crate::component::Comp<C>,
+    state: &'a C,
 
-    pub(in crate::dom) index: usize,
-    pub(in crate::dom) parent_status: super::ElementStatus,
-    pub(in crate::dom) parent: &'a web_sys::Node,
-    pub(in crate::dom) next_sibling: Option<&'a web_sys::Node>,
-    pub(in crate::dom) nodes: &'a mut NodeList,
+    index: usize,
+    parent_status: super::ElementStatus,
+    parent: &'a web_sys::Node,
+    next_sibling: Option<&'a web_sys::Node>,
+    nodes: &'a mut NodeList,
     #[cfg(feature = "partial-non-keyed-list")]
-    pub(in crate::dom) select_element_value: super::SelectElementValue,
+    select_element_value: super::SelectElementValue,
 }
 
 #[cfg(feature = "partial-non-keyed-list")]
@@ -375,9 +374,40 @@ impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
     }
 }
 
-// TODO: remove (super)
 impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
-    pub(super) fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
+    pub fn state(&self) -> &'a C {
+        self.state
+    }
+
+    pub fn comp(&self) -> crate::component::Comp<C> {
+        self.comp.clone()
+    }
+
+    pub fn parent_status(&self) -> super::ElementStatus {
+        self.parent_status
+    }
+
+    pub fn just_created(&self) -> bool {
+        self.parent_status == crate::dom::ElementStatus::JustCreated
+    }
+
+    pub fn next_index(&mut self) {
+        self.index += 1;
+    }
+
+    pub fn update_text(&mut self, text: &str) {
+        self.nodes
+            .update_text(self.index, text, self.parent, self.next_sibling);
+        self.index += 1;
+    }
+
+    pub fn static_text(&mut self, text: &str) {
+        self.nodes
+            .static_text(self.index, text, self.parent, self.next_sibling);
+        self.index += 1;
+    }
+
+    pub fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
         let status = self.nodes.check_or_create_element(
             tag,
             self.index,
@@ -391,7 +421,7 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     }
 
     #[cfg(feature = "svg")]
-    pub(super) fn get_svg_element_and_increase_index(&mut self) -> super::SvgUpdater<C> {
+    pub fn get_svg_element_and_increase_index(&mut self) -> super::SvgUpdater<C> {
         let status = self.nodes.check_or_create_svg_element_ns(
             "svg",
             self.index,
@@ -404,7 +434,7 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
         super::SvgUpdater::new(self.comp, self.state, element, status)
     }
 
-    pub(super) fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {
+    pub fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {
         let match_if = self
             .nodes
             .fragmented_node_list(self.index, self.parent, self.next_sibling);
@@ -443,6 +473,11 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
         );
         let _select_element_value_will_be_set_on_dropping =
             non_keyed_list_updater.update(items, render);
+    }
+
+    pub fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
+        element.insert_before(self.parent, self.next_sibling);
+        self.nodes.0.push(crate::dom::nodes::Node::Element(element));
     }
 }
 
