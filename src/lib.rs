@@ -17,7 +17,7 @@ pub use component::{
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
-pub use dom::{ElementUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
+pub use dom::{HtmlUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
 #[cfg(feature = "svg")]
 pub use dom::{SvgNodes, SvgRender, SvgStaticNodes};
 // TODO selectively export event traits only?
@@ -101,9 +101,9 @@ impl<T: wasm_bindgen::JsCast> WsRef<T> {
         self.0.borrow()
     }
 
-    pub fn set<C: component::Component>(&self, element: &crate::Element<C>) {
+    pub fn set<C: component::Component>(&self, element: &crate::dom::HtmlUpdater<C>) {
         use wasm_bindgen::JsCast;
-        *self.0.borrow_mut() = Some(element.ws_element().clone().unchecked_into());
+        *self.0.borrow_mut() = Some(element.ws_element_clone().unchecked_into());
     }
 
     pub fn execute(&self, f: impl FnOnce(&T)) {

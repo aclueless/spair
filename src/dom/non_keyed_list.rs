@@ -38,7 +38,7 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
         render: R,
     ) -> RememberSettingSelectedOption
     where
-        for<'i, 'c> R: Fn(&'i I, super::ElementUpdater<'c, C>),
+        for<'i, 'c> R: Fn(&'i I, crate::dom::HtmlUpdater<'c, C>),
     {
         let mut index = 0;
         for item in items {
@@ -51,7 +51,7 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
             );
             let element = self.list.get_element(index);
             let eu = super::ElementUpdater::new(self.comp, self.state, element, status);
-            render(&item, eu);
+            render(&item, eu.into());
             index += 1;
         }
         self.clear_after(index);

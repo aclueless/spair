@@ -27,7 +27,7 @@ trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C>
             &mut old_item.as_mut().unwrap_throw().1,
             super::ElementStatus::Existing,
         );
-        self.render(eu);
+        self.render(eu.into());
         *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
     }
 }
@@ -216,7 +216,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
                 super::ElementStatus::JustCreated,
             );
 
-            items_state_iter.peek().unwrap_throw().render(eu);
+            items_state_iter.peek().unwrap_throw().render(eu.into());
         }
         loop {
             let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
@@ -435,7 +435,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
             let eu = super::ElementUpdater::new(self.comp, self.state, &mut element, status);
 
-            item_state.render(eu);
+            item_state.render(eu.into());
             if !lis {
                 let next_sibling = self
                     .list_context
@@ -505,7 +505,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
             let eu = super::ElementUpdater::new(self.comp, self.state, &mut element, status);
 
-            item_state.render(eu);
+            item_state.render(eu.into());
             element.insert_before(
                 self.list_context.parent,
                 self.list_context

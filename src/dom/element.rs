@@ -280,6 +280,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         nodes_owned
     }
 
+    pub fn update_text(self, text: &str) -> super::NodesOwned<'a, C> {
+        let nodes_owned = self.nodes();
+        nodes_owned.update_text(text)
+    }
+
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
         I: crate::renderable::ListItem<C>,

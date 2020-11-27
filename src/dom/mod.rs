@@ -18,8 +18,7 @@ use attribute_types::AsStr;
 // All items from these modules are visible here but `dom` is private,
 // the `lib.rs` must selectively export items from `dom` to expose to users.
 pub use element::*;
-pub use html::attributes::*;
-pub use html::nodes::*;
+pub use html::{attributes::*, nodes::*, HtmlUpdater};
 #[cfg(feature = "keyed-list")]
 pub use keyed_list::*;
 pub use non_keyed_list::*;

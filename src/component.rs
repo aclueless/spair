@@ -435,7 +435,7 @@ impl<C: Component> CompInstance<C> {
             crate::dom::ElementStatus::Existing
         };
         let eu = crate::dom::ElementUpdater::new(comp, state, &mut self.root_element, status);
-        state.render(eu);
+        state.render(eu.into());
     }
 
     fn extra_update(
