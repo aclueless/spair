@@ -13,8 +13,8 @@ mod html;
 #[cfg(feature = "svg")]
 mod svg;
 
-//#[cfg(feature = "svg")]
-//mod svg2;
+#[cfg(feature = "svg")]
+mod svg2;
 
 use attribute_types::AsStr;
 

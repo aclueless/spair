@@ -421,6 +421,20 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     }
 
     #[cfg(feature = "svg")]
+    fn get_element_and_increase_index_for_svg(&mut self, tag: &str) -> super::SvgUpdater<C> {
+        let status = self.nodes.check_or_create_svg_element_ns(
+            tag,
+            self.index,
+            self.parent_status,
+            self.parent,
+            self.next_sibling,
+        );
+        let element = self.nodes.get_element(self.index);
+        self.index += 1;
+        super::SvgUpdater::new(self.comp, self.state, element, status)
+    }
+
+    #[cfg(feature = "svg")]
     pub fn get_svg_element_and_increase_index(&mut self) -> super::SvgUpdater<C> {
         let status = self.nodes.check_or_create_svg_element_ns(
             "svg",
