@@ -164,7 +164,7 @@ impl<'a, C: crate::component::Component> attributes::AttributeSetter<C> for Html
 
 impl<'a, C: crate::component::Component> From<HtmlUpdater<'a, C>> for nodes::NodesOwned<'a, C> {
     fn from(hu: HtmlUpdater<'a, C>) -> Self {
-        Self::from_el_updater(hu.0)
+        Self::from(hu.0)
     }
 }
 

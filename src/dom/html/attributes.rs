@@ -1,12 +1,14 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub struct StaticAttributes<'a, C: crate::component::Component>(crate::dom::ElementUpdater<'a, C>);
+pub struct StaticAttributes<'a, C>(crate::dom::ElementUpdater<'a, C>);
 
-impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
-    pub(in crate::dom) fn new(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
+impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticAttributes<'a, C> {
+    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self(eu)
     }
+}
 
+impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     pub fn nodes(self) -> crate::dom::NodesOwned<'a, C> {
         self.0.nodes()
     }

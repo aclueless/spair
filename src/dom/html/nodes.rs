@@ -1,16 +1,12 @@
-pub struct StaticNodesOwned<'a, C: crate::component::Component>(
-    crate::dom::nodes::NodeListUpdater<'a, C>,
-);
+pub struct StaticNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
+
+impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticNodesOwned<'a, C> {
+    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
+        Self(eu.into())
+    }
+}
 
 impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
-    // pub(in crate::dom) fn new(u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
-    //     Self(u)
-    // }
-
-    pub(in crate::dom) fn from_el_updater(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(crate::dom::nodes::NodeListUpdater::from_el_updater(eu))
-    }
-
     pub fn state(&self) -> &'a C {
         self.0.state
     }
@@ -57,19 +53,21 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     }
 }
 
-pub struct NodesOwned<'a, C: crate::component::Component>(
-    crate::dom::nodes::NodeListUpdater<'a, C>,
-);
+pub struct NodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
+
+impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for NodesOwned<'a, C> {
+    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
+        Self(eu.into())
+    }
+}
+
+impl<'a, C> From<crate::dom::nodes::NodeListUpdater<'a, C>> for NodesOwned<'a, C> {
+    fn from(nlu: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
+        Self(nlu)
+    }
+}
 
 impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
-    pub(in crate::dom) fn new(u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
-        Self(u)
-    }
-
-    pub(in crate::dom) fn from_el_updater(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(crate::dom::nodes::NodeListUpdater::from_el_updater(eu))
-    }
-
     pub(in crate::dom) fn nodes_ref<'n>(&'n mut self) -> Nodes<'n, 'a, C> {
         Nodes(&mut self.0)
     }
@@ -539,14 +537,6 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
 
 impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> {
     type Output = Self;
-}
-
-impl<'a, C: crate::component::Component> From<crate::dom::ElementUpdater<'a, C>>
-    for NodesOwned<'a, C>
-{
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self::from_el_updater(eu)
-    }
 }
 
 impl<'a, C: crate::component::Component> DomBuilder<C> for crate::dom::ElementUpdater<'a, C> {

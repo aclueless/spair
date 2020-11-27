@@ -239,15 +239,15 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     pub fn static_attributes(self) -> super::StaticAttributes<'a, C> {
-        super::StaticAttributes::new(self)
+        super::StaticAttributes::from(self)
     }
 
     pub fn nodes(self) -> super::NodesOwned<'a, C> {
-        super::NodesOwned::from_el_updater(self)
+        super::NodesOwned::from(self)
     }
 
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
-        super::StaticNodesOwned::from_el_updater(self)
+        super::StaticNodesOwned::from(self)
     }
 
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`

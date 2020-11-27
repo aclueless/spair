@@ -320,7 +320,7 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
             super::ElementStatus::Existing
         };
 
-        super::NodesOwned::new(NodeListUpdater {
+        NodeListUpdater {
             comp: self.comp,
             state: self.state,
 
@@ -331,7 +331,8 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
             next_sibling: Some(&self.match_if.end_node),
             #[cfg(feature = "partial-non-keyed-list")]
             select_element_value: super::SelectElementValue::none(),
-        })
+        }
+        .into()
     }
 }
 
@@ -356,8 +357,8 @@ impl<'a, C> Drop for NodeListUpdater<'a, C> {
     }
 }
 
-impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
-    pub fn from_el_updater(eu: super::ElementUpdater<'a, C>) -> Self {
+impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
+    fn from(eu: super::ElementUpdater<'a, C>) -> Self {
         Self {
             comp: eu.comp,
             state: eu.state,
@@ -370,7 +371,9 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
             select_element_value: eu.select_element_value,
         }
     }
+}
 
+impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     pub(super) fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
         let status = self.nodes.check_or_create_element(
             tag,
