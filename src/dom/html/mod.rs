@@ -25,11 +25,11 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     // }
 
     pub fn state(&self) -> &'a C {
-        self.0.state
+        self.0.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp.clone()
+        self.0.comp()
     }
 
     pub fn static_attributes(self) -> attributes::StaticAttributes<'a, C> {

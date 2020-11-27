@@ -127,15 +127,38 @@ impl SelectElementValue {
     }
 }
 
-// TODO: remove all pub(super) for fields in this struct
 pub struct ElementUpdater<'a, C> {
-    pub(super) comp: &'a crate::component::Comp<C>,
-    pub(super) state: &'a C,
+    comp: &'a crate::component::Comp<C>,
+    state: &'a C,
 
-    pub(super) index: usize,
-    pub(super) status: super::ElementStatus,
-    pub(super) element: &'a mut Element,
-    pub(super) select_element_value: SelectElementValue,
+    index: usize,
+    status: super::ElementStatus,
+    element: &'a mut Element,
+    select_element_value: SelectElementValue,
+}
+
+impl<'a, C> ElementUpdater<'a, C> {
+    pub fn into_parts(
+        self,
+    ) -> (
+        &'a crate::component::Comp<C>,
+        &'a C,
+        super::ElementStatus,
+        &'a mut Element,
+        SelectElementValue,
+    ) {
+        (
+            self.comp,
+            self.state,
+            self.status,
+            self.element,
+            self.select_element_value,
+        )
+    }
+
+    pub fn select_element_value_mut(&mut self) -> &mut SelectElementValue {
+        &mut self.select_element_value
+    }
 }
 
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
@@ -171,13 +194,21 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self.element.ws_element.unchecked_ref()
     }
 
-    pub fn element_type(&self) -> crate::dom::ElementType {
+    pub fn element_type(&self) -> super::ElementType {
         self.element.element_type
+    }
+
+    pub fn status(&self) -> super::ElementStatus {
+        self.status
     }
 
     pub fn clear(self) {
         let parent = self.element.ws_element.as_ref();
         self.element.nodes.clear(parent);
+    }
+
+    pub fn next_index(&mut self) {
+        self.index += 1;
     }
 
     pub fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
@@ -249,9 +280,6 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
         super::StaticNodesOwned::from(self)
     }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
 
     pub fn render(self, value: impl crate::renderable::Render<C>) -> super::NodesOwned<'a, C> {
         let mut nodes_owned = self.nodes();

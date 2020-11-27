@@ -336,6 +336,7 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
     }
 }
 
+// TODO: remove pub(in)
 pub(crate) struct NodeListUpdater<'a, C> {
     pub(in crate::dom) comp: &'a crate::component::Comp<C>,
     pub(in crate::dom) state: &'a C,
@@ -359,20 +360,22 @@ impl<'a, C> Drop for NodeListUpdater<'a, C> {
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
     fn from(eu: super::ElementUpdater<'a, C>) -> Self {
+        let (comp, state, status, element, _select_element_value) = eu.into_parts();
         Self {
-            comp: eu.comp,
-            state: eu.state,
+            comp,
+            state,
             index: 0,
-            parent_status: eu.status,
-            parent: eu.element.ws_element.as_ref(),
+            parent_status: status,
+            parent: element.ws_element.as_ref(),
             next_sibling: None,
-            nodes: &mut eu.element.nodes,
+            nodes: &mut element.nodes,
             #[cfg(feature = "partial-non-keyed-list")]
-            select_element_value: eu.select_element_value,
+            select_element_value: _select_element_value,
         }
     }
 }
 
+// TODO: remove (super)
 impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     pub(super) fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
         let status = self.nodes.check_or_create_element(

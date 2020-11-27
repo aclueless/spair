@@ -383,10 +383,10 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     }
 
     fn require_set_listener(&mut self) -> bool {
-        if self.0.status == crate::dom::ElementStatus::Existing {
+        if self.0.status() == crate::dom::ElementStatus::Existing {
             // self.store_listener will not be invoked.
             // We must update the index here to count over the static events.
-            self.0.index += 1;
+            self.0.next_index();
             false
         } else {
             // A cloned element requires its event handlers to be set because the events
@@ -400,36 +400,36 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     }
 
     fn check_bool_attribute(&mut self, _value: bool) -> bool {
-        self.0.status == crate::dom::ElementStatus::JustCreated
+        self.0.status() == crate::dom::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn check_str_attribute(&mut self, _value: &str) -> bool {
-        self.0.status == crate::dom::ElementStatus::JustCreated
+        self.0.status() == crate::dom::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn check_i32_attribute(&mut self, _value: i32) -> bool {
-        self.0.status == crate::dom::ElementStatus::JustCreated
+        self.0.status() == crate::dom::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn check_u32_attribute(&mut self, _value: u32) -> bool {
-        self.0.status == crate::dom::ElementStatus::JustCreated
+        self.0.status() == crate::dom::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn check_f64_attribute(&mut self, _value: f64) -> bool {
-        self.0.status == crate::dom::ElementStatus::JustCreated
+        self.0.status() == crate::dom::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
 
     fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0.select_element_value.set_selected_value(value);
+        self.0.select_element_value_mut().set_selected_value(value);
     }
 
     fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0.select_element_value.set_selected_index(index);
+        self.0.select_element_value_mut().set_selected_index(index);
     }
 }
 
