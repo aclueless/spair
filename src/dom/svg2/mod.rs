@@ -1,7 +1,79 @@
-mod attributes;
-mod nodes;
+use wasm_bindgen::UnwrapThrowExt;
+
+pub mod attributes;
+pub mod nodes;
 
 static SVG_NAMESPACE: &'static str = "http://www.w3.org/2000/svg";
+
+impl super::Element {
+    pub fn new_svg_element(tag: &str) -> Self {
+        Self {
+            element_type: "svg".into(),
+            ws_element: crate::utils::document()
+                .create_element_ns(Some(SVG_NAMESPACE), tag)
+                .expect_throw("Unable to create new svg element"),
+            attributes: Default::default(),
+            nodes: Default::default(),
+        }
+    }
+}
+
+impl crate::dom::nodes::NodeList {
+    fn create_new_svg_element(
+        &mut self,
+        tag: &str,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        let svg = super::Element::new_svg_element(tag);
+        svg.insert_before(parent, next_sibling);
+        self.0.push(crate::dom::nodes::Node::Element(svg));
+    }
+
+    pub fn check_or_create_svg_element_ns(
+        &mut self,
+        tag: &str,
+        index: usize,
+        parent_status: super::ElementStatus,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) -> super::ElementStatus {
+        if index == self.0.len() {
+            self.create_new_svg_element(tag, parent, next_sibling);
+            super::ElementStatus::JustCreated
+        } else {
+            parent_status
+        }
+    }
+
+    // TODO: Need to reduce code duplication of this and the non-svg method
+    pub fn check_or_create_svg_element_for_non_keyed_list(
+        &mut self,
+        tag: &str,
+        index: usize,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+        use_template: bool,
+    ) -> super::ElementStatus {
+        let item_count = self.0.len();
+        if index < item_count {
+            super::ElementStatus::Existing
+        } else if !use_template || item_count == 0 {
+            self.create_new_svg_element(tag, parent, next_sibling);
+            super::ElementStatus::JustCreated
+        } else {
+            let element = self.0[0].clone();
+            match &element {
+                crate::dom::nodes::Node::Element(element) => {
+                    element.insert_before(parent, next_sibling)
+                }
+                _ => panic!("non-keyed-list svg: internal bug?"),
+            }
+            self.0.push(element);
+            super::ElementStatus::JustCloned
+        }
+    }
+}
 
 pub trait SvgRender<C: crate::component::Component> {
     fn render(self, nodes: nodes::SvgNodes<C>);
@@ -73,18 +145,18 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
     }
 
     pub fn nodes(self) -> nodes::SvgNodesOwned<'a, C> {
-        self.0.nodes()
+        self.0.svg_nodes()
     }
 
     pub fn static_nodes(self) -> nodes::SvgStaticNodesOwned<'a, C> {
-        self.0.static_nodes()
+        self.0.svg_static_nodes()
     }
 
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
 
     pub fn render(self, value: impl SvgRender<C>) -> nodes::SvgNodesOwned<'a, C> {
-        self.0.render(value)
+        self.0.svg_render(value)
     }
 
     // pub fn render_ref(
@@ -95,7 +167,7 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
     // }
 
     pub fn r#static(self, value: impl SvgStaticRender<C>) -> nodes::SvgNodesOwned<'a, C> {
-        self.0.r#static(value)
+        self.0.svg_static(value)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
@@ -196,12 +268,12 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter for
 {
 }
 
-// impl<'a, C: crate::component::Component> From<SvgUpdater<'a, C>> for nodes::NodesOwned<'a, C> {
-//     fn from(hu: SvgUpdater<'a, C>) -> Self {
-//         Self::from(hu.0)
-//     }
-// }
+impl<'a, C: crate::component::Component> From<SvgUpdater<'a, C>> for nodes::SvgNodesOwned<'a, C> {
+    fn from(su: SvgUpdater<'a, C>) -> Self {
+        Self::from(su.0)
+    }
+}
 
-// impl<'a, C: crate::component::Component> nodes::DomBuilder<C> for SvgUpdater<'a, C> {
-//     type Output = nodes::NodesOwned<'a, C>;
-// }
+impl<'a, C: crate::component::Component> nodes::SvgBuilder<C> for SvgUpdater<'a, C> {
+    type Output = nodes::SvgNodesOwned<'a, C>;
+}

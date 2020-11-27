@@ -392,3 +392,65 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         }
     }
 }
+
+#[cfg(feature = "svg")]
+impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
+    pub fn svg_nodes(self) -> super::SvgNodesOwned<'a, C> {
+        super::SvgNodesOwned::from(self)
+    }
+
+    pub fn svg_static_nodes(self) -> super::SvgStaticNodesOwned<'a, C> {
+        super::SvgStaticNodesOwned::from(self)
+    }
+
+    pub fn svg_render(self, value: impl super::SvgRender<C>) -> super::SvgNodesOwned<'a, C> {
+        let mut nodes_owned = self.svg_nodes();
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    // pub fn render_ref(
+    //     self,
+    //     value: &impl crate::renderable::RenderRef<C>,
+    // ) -> super::NodesOwned<'a, C> {
+    //     let mut nodes_owned = self.nodes();
+    //     let nodes = nodes_owned.nodes_ref();
+    //     value.render(nodes);
+    //     nodes_owned
+    // }
+
+    pub fn svg_static(
+        self,
+        value: impl super::SvgStaticRender<C>,
+    ) -> super::SvgNodesOwned<'a, C> {
+        let mut nodes_owned = self.svg_nodes();
+        let static_nodes = nodes_owned.static_nodes_ref();
+        value.render(static_nodes);
+        nodes_owned
+    }
+
+    pub fn sv_list_with_render<I, R>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+        tag: &str,
+        render: R,
+    ) where
+        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
+    {
+        let parent = self.element.ws_element.as_ref();
+        let use_template = mode.use_template();
+
+        let mut non_keyed_list_updater = non_keyed_list::NonKeyedListUpdater::new(
+            self.comp,
+            self.state,
+            &mut self.element.nodes,
+            tag,
+            parent,
+            None,
+            use_template,
+        );
+        non_keyed_list_updater.update(items, render);
+    }
+}

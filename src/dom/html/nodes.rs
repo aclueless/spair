@@ -97,7 +97,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
         use crate::dom::nodes::DomBuilder;
         let mut this: Self::Output = self.into();
         if this.require_render() {
-            f(this.get_svg_element_and_increase_index());
+            f(this.get_svg_element_and_increase_index("svg"));
         } else {
             this.next_index();
         }
@@ -269,8 +269,8 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     }
 
     #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self) -> crate::dom::SvgUpdater<C> {
-        self.0.get_svg_element_and_increase_index()
+    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
+        self.0.get_svg_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
@@ -304,8 +304,8 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for No
     }
 
     #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self) -> crate::dom::SvgUpdater<C> {
-        self.0.get_svg_element_and_increase_index()
+    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
+        self.0.get_svg_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
@@ -438,8 +438,8 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     }
 
     #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self) -> crate::dom::SvgUpdater<C> {
-        self.0.get_svg_element_and_increase_index()
+    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
+        self.0.get_svg_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
@@ -473,8 +473,8 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
     }
 
     #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self) -> crate::dom::SvgUpdater<C> {
-        self.0.get_svg_element_and_increase_index()
+    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
+        self.0.get_svg_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
@@ -490,9 +490,9 @@ impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> 
     type Output = Self;
 }
 
-impl<'a, C: crate::component::Component> DomBuilder<C> for crate::dom::ElementUpdater<'a, C> {
-    type Output = NodesOwned<'a, C>;
-}
+// impl<'a, C: crate::component::Component> DomBuilder<C> for crate::dom::ElementUpdater<'a, C> {
+//     type Output = NodesOwned<'a, C>;
+// }
 
 impl<'a, C: crate::component::Component> From<crate::dom::StaticAttributes<'a, C>>
     for NodesOwned<'a, C>
