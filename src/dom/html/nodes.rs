@@ -150,7 +150,7 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
 macro_rules! create_methods_for_tags {
     ($($tag:ident)+) => {
         $(
-            fn $tag(self, f: impl FnOnce(crate::dom::ElementUpdater<C>)) -> Self::Output {
+            fn $tag(self, f: impl FnOnce(super::HtmlUpdater<C>)) -> Self::Output {
                 self.render_element(stringify!($tag), f)
             }
         )+
@@ -167,11 +167,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
         this
     }
 
-    fn render_element(
-        self,
-        tag: &str,
-        f: impl FnOnce(crate::dom::ElementUpdater<C>),
-    ) -> Self::Output {
+    fn render_element(self, tag: &str, f: impl FnOnce(super::HtmlUpdater<C>)) -> Self::Output {
         use crate::dom::nodes::DomBuilder;
         let mut this: Self::Output = self.into();
         if this.require_render() {
@@ -273,7 +269,7 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
         self.0.index += 1;
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
         self.0.get_element_and_increase_index(tag)
     }
 
@@ -312,7 +308,7 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for No
         self.0.index += 1;
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
         self.0.get_element_and_increase_index(tag)
     }
 
@@ -480,7 +476,7 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
         self.0.index += 1;
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
         self.0.get_element_and_increase_index(tag)
     }
 
@@ -519,7 +515,7 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
         self.0.index += 1;
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
         self.0.get_element_and_increase_index(tag)
     }
 

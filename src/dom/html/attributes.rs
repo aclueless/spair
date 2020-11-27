@@ -40,7 +40,8 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     where
         I: crate::renderable::ListItem<C>,
     {
-        self.0.list(items, mode)
+        self.0
+            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
     }
 
     pub fn list_with_render<I, R>(
@@ -368,20 +369,20 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     for StaticAttributes<'a, C>
 {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.0.element.ws_element.unchecked_ref()
+        self.0.ws_html_element()
     }
 
     fn ws_element(&self) -> &web_sys::Element {
-        &self.0.element.ws_element
+        self.0.ws_element()
     }
 
     fn element_type(&self) -> crate::dom::ElementType {
-        self.0.element.element_type
+        self.0.element_type()
     }
 
     fn require_set_listener(&mut self) -> bool {
         if self.0.status == crate::dom::ElementStatus::Existing {
-            // When self.require_init == false, self.store_listener will not be invoked.
+            // self.store_listener will not be invoked.
             // We must update the index here to count over the static events.
             self.0.index += 1;
             false
@@ -393,11 +394,7 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     }
 
     fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
-        self.0
-            .element
-            .attributes
-            .store_listener(self.0.index, listener);
-        self.0.index += 1;
+        self.0.store_listener(listener)
     }
 
     fn check_bool_attribute(&mut self, _value: bool) -> bool {
@@ -434,89 +431,6 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     }
 }
 
-impl<'a, C: crate::component::Component> AttributeSetter<C> for crate::dom::ElementUpdater<'a, C> where
-    C: crate::component::Component
-{
-}
-
-impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
-    for crate::dom::ElementUpdater<'a, C>
-{
-    fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.element.ws_element.unchecked_ref()
-    }
-
-    fn ws_element(&self) -> &web_sys::Element {
-        &self.element.ws_element
-    }
-
-    fn element_type(&self) -> crate::dom::ElementType {
-        self.element.element_type
-    }
-
-    fn require_set_listener(&mut self) -> bool {
-        true
-    }
-
-    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
-        self.element.attributes.store_listener(self.index, listener);
-        self.index += 1;
-    }
-
-    fn check_bool_attribute(&mut self, value: bool) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_bool_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn check_str_attribute(&mut self, value: &str) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_str_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn check_i32_attribute(&mut self, value: i32) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_i32_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn check_u32_attribute(&mut self, value: u32) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_u32_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn check_f64_attribute(&mut self, value: f64) -> bool {
-        let rs = self
-            .element
-            .attributes
-            .check_f64_attribute(self.index, value);
-        self.index += 1;
-        rs
-    }
-
-    fn set_selected_value(&mut self, value: Option<&str>) {
-        self.select_element_value.set_selected_value(value);
-    }
-
-    fn set_selected_index(&mut self, index: Option<usize>) {
-        self.select_element_value.set_selected_index(index);
-    }
-}
-
 // TODO: Should all these (below) be produced by macros?
 
 pub trait AttributeValue<U> {
@@ -524,10 +438,8 @@ pub trait AttributeValue<U> {
 }
 
 // &str
-impl<'a, C: crate::component::Component> AttributeValue<crate::dom::ElementUpdater<'a, C>>
-    for &str
-{
-    fn update(self, mut u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> AttributeValue<crate::dom::HtmlUpdater<'a, C>> for &str {
+    fn update(self, mut u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         use crate::dom::attributes::AttributeSetter;
         u.value_str(self);
         u
@@ -548,10 +460,10 @@ impl<'a, C: crate::component::Component> AttributeValue<crate::dom::StaticAttrib
 }
 
 // &String
-impl<'a, C: crate::component::Component> AttributeValue<crate::dom::ElementUpdater<'a, C>>
+impl<'a, C: crate::component::Component> AttributeValue<crate::dom::HtmlUpdater<'a, C>>
     for &String
 {
-    fn update(self, mut u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+    fn update(self, mut u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         use crate::dom::attributes::AttributeSetter;
         u.value_str(self);
         u
@@ -572,10 +484,10 @@ impl<'a, C: crate::component::Component> AttributeValue<crate::dom::StaticAttrib
 }
 
 // Option<&str>
-impl<'a, C: crate::component::Component> AttributeValue<crate::dom::ElementUpdater<'a, C>>
+impl<'a, C: crate::component::Component> AttributeValue<crate::dom::HtmlUpdater<'a, C>>
     for Option<&str>
 {
-    fn update(self, u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+    fn update(self, u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         u.selected_value(self)
     }
 }
@@ -589,8 +501,8 @@ impl<'a, C: crate::component::Component> AttributeValue<crate::dom::StaticAttrib
 }
 
 // f64
-impl<'a, C: crate::component::Component> AttributeValue<crate::dom::ElementUpdater<'a, C>> for f64 {
-    fn update(self, u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> AttributeValue<crate::dom::HtmlUpdater<'a, C>> for f64 {
+    fn update(self, u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         u.f64_attr("value", self)
     }
 }
@@ -608,8 +520,8 @@ pub trait AttributeMax<U> {
 }
 
 // &str
-impl<'a, C: crate::component::Component> AttributeMax<crate::dom::ElementUpdater<'a, C>> for &str {
-    fn update(self, u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> AttributeMax<crate::dom::HtmlUpdater<'a, C>> for &str {
+    fn update(self, u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         u.str_attr("max", self)
     }
 }
@@ -623,10 +535,8 @@ impl<'a, C: crate::component::Component> AttributeMax<crate::dom::StaticAttribut
 }
 
 // &String
-impl<'a, C: crate::component::Component> AttributeMax<crate::dom::ElementUpdater<'a, C>>
-    for &String
-{
-    fn update(self, u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> AttributeMax<crate::dom::HtmlUpdater<'a, C>> for &String {
+    fn update(self, u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         u.str_attr("max", self)
     }
 }
@@ -640,8 +550,8 @@ impl<'a, C: crate::component::Component> AttributeMax<crate::dom::StaticAttribut
 }
 
 // f64
-impl<'a, C: crate::component::Component> AttributeMax<crate::dom::ElementUpdater<'a, C>> for f64 {
-    fn update(self, u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> AttributeMax<crate::dom::HtmlUpdater<'a, C>> for f64 {
+    fn update(self, u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         u.f64_attr("max", self)
     }
 }
@@ -657,8 +567,8 @@ pub trait AttributeMin<U> {
 }
 
 // &str
-impl<'a, C: crate::component::Component> AttributeMin<crate::dom::ElementUpdater<'a, C>> for &str {
-    fn update(self, u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> AttributeMin<crate::dom::HtmlUpdater<'a, C>> for &str {
+    fn update(self, u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         u.str_attr("min", self)
     }
 }
@@ -672,10 +582,8 @@ impl<'a, C: crate::component::Component> AttributeMin<crate::dom::StaticAttribut
 }
 
 // &String
-impl<'a, C: crate::component::Component> AttributeMin<crate::dom::ElementUpdater<'a, C>>
-    for &String
-{
-    fn update(self, u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> AttributeMin<crate::dom::HtmlUpdater<'a, C>> for &String {
+    fn update(self, u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         u.str_attr("min", self)
     }
 }
@@ -689,8 +597,8 @@ impl<'a, C: crate::component::Component> AttributeMin<crate::dom::StaticAttribut
 }
 
 // f64
-impl<'a, C: crate::component::Component> AttributeMin<crate::dom::ElementUpdater<'a, C>> for f64 {
-    fn update(self, u: crate::dom::ElementUpdater<'a, C>) -> crate::dom::ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> AttributeMin<crate::dom::HtmlUpdater<'a, C>> for f64 {
+    fn update(self, u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
         u.f64_attr("min", self)
     }
 }

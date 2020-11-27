@@ -32,6 +32,10 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         self.0.comp.clone()
     }
 
+    pub fn static_attributes(self) -> attributes::StaticAttributes<'a, C> {
+        self.0.static_attributes()
+    }
+
     pub fn nodes(self) -> nodes::NodesOwned<'a, C> {
         self.0.nodes()
     }
