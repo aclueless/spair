@@ -35,7 +35,7 @@ pub use wasm_bindgen_futures::JsFuture;
 pub mod prelude {
     pub use crate::application::Application;
     pub use crate::component::Component;
-    pub use crate::dom::{AttributeSetter, DomBuilder};
+    pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
     #[cfg(feature = "svg")]
     pub use crate::dom::{SvgAttributeSetter, SvgBuilder};
     pub use crate::fetch::{FetchOptionsSetter, IntoFetchArgs, RawDataMode};

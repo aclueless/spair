@@ -16,14 +16,6 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         self.0.ws_element().clone()
     }
 
-    // pub(super) fn nodes_ref<'n>(&'n mut self) -> Nodes<'n, 'a, C> {
-    //     Nodes(&mut self.0)
-    // }
-
-    // pub(super) fn static_nodes_ref<'n>(&'n mut self) -> StaticNodes<'n, 'a, C> {
-    //     StaticNodes(&mut self.0)
-    // }
-
     pub fn state(&self) -> &'a C {
         self.0.state()
     }
@@ -64,10 +56,6 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     ) -> nodes::NodesOwned<'a, C> {
         self.0.r#static(value)
     }
-
-    // pub(crate) fn update_text(self, text: &str) -> nodes::NodesOwned<'a, C> {
-    //     self.0.update_text(text)
-    // }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
@@ -158,6 +146,11 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
 }
 
 impl<'a, C: crate::component::Component> attributes::AttributeSetter<C> for HtmlUpdater<'a, C> where
+    C: crate::component::Component
+{
+}
+
+impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter for HtmlUpdater<'a, C> where
     C: crate::component::Component
 {
 }

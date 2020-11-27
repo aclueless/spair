@@ -81,40 +81,6 @@ pub trait AttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter
 where
     C: crate::component::Component,
 {
-    create_methods_for_events! {
-        on_focus Focus,
-        on_blur Blur,
-
-        on_aux_click AuxClick,
-        on_click Click,
-        on_double_click DoubleClick,
-        on_mouse_enter MouseEnter,
-        on_mouse_over MouseOver,
-        on_mouse_move MouseMove,
-        on_mouse_down MouseDown,
-        on_mouse_up MouseUp,
-        on_mouse_leave MouseLeave,
-        on_mouse_out MouseOut,
-        on_context_menu ContextMenu,
-
-        on_wheel Wheel,
-        on_select UiSelect,
-
-        on_input Input,
-
-        on_key_down KeyDown,
-        on_key_press KeyPress,
-        on_key_up KeyUp,
-
-        on_change Change,
-        on_reset Reset,
-        on_submit Submit,
-        on_pointer_lock_change PointerLockChange,
-        on_pointer_lock_error PointerLockError,
-
-        on_ended Ended,
-    }
-
     fn bool_attr(mut self, name: &str, value: bool) -> Self {
         self.set_bool_attribute(name, value);
         self
@@ -364,6 +330,13 @@ where
 
 impl<'a, C: crate::component::Component> AttributeSetter<C> for StaticAttributes<'a, C> where
     C: crate::component::Component
+{
+}
+
+impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter
+    for StaticAttributes<'a, C>
+where
+    C: crate::component::Component,
 {
 }
 
