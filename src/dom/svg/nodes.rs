@@ -114,8 +114,6 @@ pub trait SvgBuilder<C: crate::component::Component>: Sized {
     }
 }
 
-//get_element_and_increase_index_for_svg
-
 pub struct SvgStaticNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
 impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgStaticNodesOwned<'a, C> {
     fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
@@ -247,11 +245,6 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
         self
     }
 
-    pub(crate) fn update_text(mut self, text: &str) -> Self {
-        self.0.update_text(text);
-        self
-    }
-
     #[cfg(feature = "partial-non-keyed-list")]
     pub fn list_with_render<I, R>(
         mut self,
@@ -297,7 +290,6 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for Sv
 impl<'a, C: crate::component::Component> SvgBuilder<C> for SvgNodesOwned<'a, C> {
     type Output = Self;
 }
-
 
 impl<'n, 'h, C: crate::component::Component> SvgStaticNodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
@@ -368,7 +360,6 @@ impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgStaticNodes<'n
     type Output = Self;
 }
 
-
 impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
         self.0.state()
@@ -421,7 +412,9 @@ impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
     }
 }
 
-impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for SvgNodes<'n, 'h, C> {
+impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
+    for SvgNodes<'n, 'h, C>
+{
     fn require_render(&self) -> bool {
         true
     }

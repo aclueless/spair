@@ -116,7 +116,7 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     }
 
     #[cfg(feature = "svg")]
-    pub fn svg(mut self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> StaticNodesOwned<'a,C> {
+    pub fn svg(mut self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> StaticNodesOwned<'a, C> {
         // where are in static mode
         if self.0.parent_status() == crate::dom::ElementStatus::JustCreated {
             self.0.svg(f);

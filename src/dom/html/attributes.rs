@@ -274,7 +274,7 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     }
 
     #[cfg(feature = "svg")]
-    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> crate::dom::NodesOwned<'a,C> {
+    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> crate::dom::NodesOwned<'a, C> {
         // Although this is StaticAttributes. But we are switching from setting attributes
         // to adding nodes. The default mode for adding nodes is update-mode.
         self.0.svg(f)

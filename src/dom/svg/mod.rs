@@ -128,10 +128,6 @@ impl<'a, C> From<super::ElementUpdater<'a, C>> for SvgUpdater<'a, C> {
 }
 
 impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
-    pub(crate) fn ws_element_clone(&self) -> web_sys::Element {
-        self.0.ws_element().clone()
-    }
-
     /// Use this method when you are done with your object. It is useful in single-line closures
     /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
     /// but found `something-else`"

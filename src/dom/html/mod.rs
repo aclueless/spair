@@ -42,7 +42,7 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     }
 
     #[cfg(feature = "svg")]
-    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a,C> {
+    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
         self.0.svg(f)
     }
 

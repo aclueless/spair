@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::UnwrapThrowExt;
 
 pub trait SvgAttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter {
     fn bool_attr(mut self, name: &str, value: bool) -> Self {
@@ -459,4 +459,3 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
         self.0.select_element_value_mut().set_selected_index(index);
     }
 }
-

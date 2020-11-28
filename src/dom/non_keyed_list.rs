@@ -71,11 +71,7 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
     }
 
     #[cfg(feature = "svg")]
-    pub fn svg_update<I, R>(
-        &mut self,
-        items: impl IntoIterator<Item = I>,
-        render: R,
-    )
+    pub fn svg_update<I, R>(&mut self, items: impl IntoIterator<Item = I>, render: R)
     where
         for<'i, 'c> R: Fn(&'i I, crate::dom::SvgUpdater<'c, C>),
     {

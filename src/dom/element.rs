@@ -420,10 +420,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     //     nodes_owned
     // }
 
-    pub fn svg_static(
-        self,
-        value: impl super::SvgStaticRender<C>,
-    ) -> super::SvgNodesOwned<'a, C> {
+    pub fn svg_static(self, value: impl super::SvgStaticRender<C>) -> super::SvgNodesOwned<'a, C> {
         let mut nodes_owned = self.svg_nodes();
         let static_nodes = nodes_owned.static_nodes_ref();
         value.render(static_nodes);
@@ -454,7 +451,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         non_keyed_list_updater.svg_update(items, render);
     }
 
-    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a,C> {
+    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
         let nodes = self.nodes();
         nodes.svg(f)
     }
