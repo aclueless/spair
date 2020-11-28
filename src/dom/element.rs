@@ -281,27 +281,21 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         super::StaticNodesOwned::from(self)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> super::NodesOwned<'a, C> {
+    pub fn render(self, value: impl super::Render<C>) -> super::NodesOwned<'a, C> {
         let mut nodes_owned = self.nodes();
         let nodes = nodes_owned.nodes_ref();
         value.render(nodes);
         nodes_owned
     }
 
-    pub fn render_ref(
-        self,
-        value: &impl crate::renderable::RenderRef<C>,
-    ) -> super::NodesOwned<'a, C> {
+    pub fn render_ref(self, value: &impl super::RenderRef<C>) -> super::NodesOwned<'a, C> {
         let mut nodes_owned = self.nodes();
         let nodes = nodes_owned.nodes_ref();
         value.render(nodes);
         nodes_owned
     }
 
-    pub fn r#static(
-        self,
-        value: impl crate::renderable::StaticRender<C>,
-    ) -> super::NodesOwned<'a, C> {
+    pub fn r#static(self, value: impl super::StaticRender<C>) -> super::NodesOwned<'a, C> {
         let mut nodes_owned = self.nodes();
         let static_nodes = nodes_owned.static_nodes_ref();
         value.render(static_nodes);
@@ -315,7 +309,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
-        I: crate::renderable::ListItem<C>,
+        I: super::ListItem<C>,
     {
         self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
     }
@@ -412,7 +406,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
 
     // pub fn render_ref(
     //     self,
-    //     value: &impl crate::renderable::RenderRef<C>,
+    //     value: &impl super::RenderRef<C>,
     // ) -> super::NodesOwned<'a, C> {
     //     let mut nodes_owned = self.nodes();
     //     let nodes = nodes_owned.nodes_ref();

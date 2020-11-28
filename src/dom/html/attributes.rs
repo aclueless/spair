@@ -280,27 +280,27 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         self.0.svg(f)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> crate::dom::NodesOwned<'a, C> {
+    pub fn render(self, value: impl crate::dom::Render<C>) -> crate::dom::NodesOwned<'a, C> {
         self.0.render(value)
     }
 
     pub fn render_ref(
         self,
-        value: &impl crate::renderable::RenderRef<C>,
+        value: &impl crate::dom::RenderRef<C>,
     ) -> crate::dom::NodesOwned<'a, C> {
         self.0.render_ref(value)
     }
 
     pub fn r#static(
         self,
-        value: impl crate::renderable::StaticRender<C>,
+        value: impl crate::dom::StaticRender<C>,
     ) -> crate::dom::NodesOwned<'a, C> {
         self.0.r#static(value)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: crate::dom::ListElementCreation)
     where
-        I: crate::renderable::ListItem<C>,
+        I: crate::dom::ListItem<C>,
     {
         self.0
             .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);

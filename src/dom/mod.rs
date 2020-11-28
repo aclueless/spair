@@ -20,7 +20,7 @@ use attribute_types::AsStr;
 // from `dom` to expose to users.
 pub use attributes::EventSetter;
 pub use element::*;
-pub use html::{attributes::*, nodes::*, HtmlUpdater};
+pub use html::{attributes::*, nodes::*, renderable::*, HtmlUpdater};
 #[cfg(feature = "keyed-list")]
 pub use keyed_list::*;
 pub use non_keyed_list::*;

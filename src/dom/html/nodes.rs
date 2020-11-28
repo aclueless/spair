@@ -153,35 +153,35 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
         NodesOwned(self.0)
     }
 
-    pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
+    pub fn render(mut self, value: impl crate::dom::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
         self
     }
 
-    pub fn render_ref(mut self, value: &impl crate::renderable::RenderRef<C>) -> Self {
+    pub fn render_ref(mut self, value: &impl crate::dom::RenderRef<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
         self
     }
 
-    pub fn r#static(mut self, value: impl crate::renderable::StaticRender<C>) -> Self {
+    pub fn r#static(mut self, value: impl crate::dom::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(&mut self.0);
         value.render(static_nodes);
         self
     }
 
-    pub fn static_text_of_keyed_item(
-        mut self,
-        value: impl crate::renderable::ListItemStaticText<C>,
-    ) -> Self {
-        if self.0.parent_status() != crate::dom::ElementStatus::Existing {
-            value.render(self.nodes()).static_nodes()
-        } else {
-            self.0.next_index();
-            self
-        }
-    }
+    // pub fn static_text_of_keyed_item(
+    //     mut self,
+    //     value: impl crate::dom::ListItemStaticText<C>,
+    // ) -> Self {
+    //     if self.0.parent_status() != crate::dom::ElementStatus::Existing {
+    //         value.render(self.nodes()).static_nodes()
+    //     } else {
+    //         self.0.next_index();
+    //         self
+    //     }
+    // }
 }
 
 impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
@@ -216,35 +216,35 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         StaticNodesOwned(self.0)
     }
 
-    pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
+    pub fn render(mut self, value: impl crate::dom::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
         self
     }
 
-    pub fn render_ref(mut self, value: &impl crate::renderable::RenderRef<C>) -> Self {
+    pub fn render_ref(mut self, value: &impl crate::dom::RenderRef<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
         self
     }
 
-    pub fn r#static(mut self, value: impl crate::renderable::StaticRender<C>) -> Self {
+    pub fn r#static(mut self, value: impl crate::dom::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(&mut self.0);
         value.render(static_nodes);
         self
     }
 
-    pub fn static_text_of_keyed_item(
-        mut self,
-        value: impl crate::renderable::ListItemStaticText<C>,
-    ) -> Self {
-        if self.0.parent_status() != crate::dom::ElementStatus::Existing {
-            value.render(self)
-        } else {
-            self.0.next_index();
-            self
-        }
-    }
+    // pub fn static_text_of_keyed_item(
+    //     mut self,
+    //     value: impl crate::dom::ListItemStaticText<C>,
+    // ) -> Self {
+    //     if self.0.parent_status() != crate::dom::ElementStatus::Existing {
+    //         value.render(self)
+    //     } else {
+    //         self.0.next_index();
+    //         self
+    //     }
+    // }
 
     pub(crate) fn update_text(mut self, text: &str) -> Self {
         self.0.update_text(text);
@@ -291,19 +291,19 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
         Nodes(self.0)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
+    pub fn render(self, value: impl crate::dom::Render<C>) -> Self {
         let nodes = Nodes(self.0);
         value.render(nodes);
         self
     }
 
-    pub fn render_ref(self, value: &impl crate::renderable::RenderRef<C>) -> Self {
+    pub fn render_ref(self, value: &impl crate::dom::RenderRef<C>) -> Self {
         let nodes = Nodes(self.0);
         value.render(nodes);
         self
     }
 
-    pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
+    pub fn r#static(self, value: impl crate::dom::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(self.0);
         value.render(static_nodes);
         self
@@ -334,19 +334,19 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
         StaticNodes(self.0)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> Self {
+    pub fn render(self, value: impl crate::dom::Render<C>) -> Self {
         let nodes = Nodes(self.0);
         value.render(nodes);
         self
     }
 
-    pub fn render_ref(self, value: &impl crate::renderable::RenderRef<C>) -> Self {
+    pub fn render_ref(self, value: &impl crate::dom::RenderRef<C>) -> Self {
         let nodes = Nodes(self.0);
         value.render(nodes);
         self
     }
 
-    pub fn r#static(self, value: impl crate::renderable::StaticRender<C>) -> Self {
+    pub fn r#static(self, value: impl crate::dom::StaticRender<C>) -> Self {
         let static_nodes = StaticNodes(self.0);
         value.render(static_nodes);
         self

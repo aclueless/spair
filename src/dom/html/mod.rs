@@ -1,5 +1,6 @@
 pub mod attributes;
 pub mod nodes;
+pub mod renderable;
 
 /// This struct provide methods for setting properties/attributes and adding child nodes for
 /// HTML elements.
@@ -46,27 +47,21 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         self.0.svg(f)
     }
 
-    pub fn render(self, value: impl crate::renderable::Render<C>) -> nodes::NodesOwned<'a, C> {
+    pub fn render(self, value: impl renderable::Render<C>) -> nodes::NodesOwned<'a, C> {
         self.0.render(value)
     }
 
-    pub fn render_ref(
-        self,
-        value: &impl crate::renderable::RenderRef<C>,
-    ) -> nodes::NodesOwned<'a, C> {
+    pub fn render_ref(self, value: &impl renderable::RenderRef<C>) -> nodes::NodesOwned<'a, C> {
         self.0.render_ref(value)
     }
 
-    pub fn r#static(
-        self,
-        value: impl crate::renderable::StaticRender<C>,
-    ) -> nodes::NodesOwned<'a, C> {
+    pub fn r#static(self, value: impl renderable::StaticRender<C>) -> nodes::NodesOwned<'a, C> {
         self.0.r#static(value)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
-        I: crate::renderable::ListItem<C>,
+        I: renderable::ListItem<C>,
     {
         self.0
             .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);

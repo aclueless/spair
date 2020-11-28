@@ -1,14 +1,12 @@
 use crate::utils::PeekableDoubleEnded;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub trait KeyedListItem<'a, C: crate::component::Component>:
-    crate::renderable::ListItem<C>
-{
+pub trait KeyedListItem<'a, C: crate::component::Component>: crate::dom::ListItem<C> {
     type Key: 'a + Into<Key> + PartialEq<Key>;
     fn key(&self) -> Self::Key;
 }
 
-trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C> {
+trait UpdateItem<C: crate::component::Component>: crate::dom::ListItem<C> {
     fn update_existing_item(
         &self,
         comp: &crate::component::Comp<C>,
@@ -32,7 +30,7 @@ trait UpdateItem<C: crate::component::Component>: crate::renderable::ListItem<C>
     }
 }
 
-impl<C: crate::component::Component, T: crate::renderable::ListItem<C>> UpdateItem<C> for T {}
+impl<C: crate::component::Component, T: crate::dom::ListItem<C>> UpdateItem<C> for T {}
 
 #[derive(Default)]
 pub struct KeyedList {
@@ -740,7 +738,7 @@ mod keyed_list_tests {
         }
     }
 
-    impl crate::renderable::ListItem<()> for &&'static str {
+    impl crate::dom::ListItem<()> for &&'static str {
         const ROOT_ELEMENT_TAG: &'static str = "span";
         fn render(&self, span: crate::Element<()>) {
             span.render(**self);

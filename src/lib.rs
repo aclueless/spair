@@ -6,7 +6,6 @@ mod component;
 mod dom;
 mod events;
 mod fetch;
-mod renderable;
 mod routing;
 mod utils;
 
@@ -17,13 +16,15 @@ pub use component::{
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::KeyedListItem;
-pub use dom::{HtmlUpdater as Element, ListElementCreation, Nodes, RawWrapper, StaticNodes};
+pub use dom::{
+    HtmlUpdater as Element, ListElementCreation, ListItem, Nodes, RawWrapper, Render, RenderRef,
+    StaticNodes, StaticRender,
+};
 #[cfg(feature = "svg")]
 pub use dom::{SvgNodes, SvgRender, SvgStaticNodes};
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};
-pub use renderable::*;
 pub use routing::Routes;
 pub use utils::{document, into_input, into_select, window};
 

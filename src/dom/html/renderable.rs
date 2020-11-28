@@ -1,6 +1,6 @@
 /// This module provides traits that help users define how their types should be rendered.
 /// Implementation for primitive types are also provided.
-use crate::dom::{Nodes, NodesOwned, StaticNodes};
+use crate::dom::{Nodes, StaticNodes};
 
 pub trait Render<C: crate::component::Component> {
     fn render(self, nodes: Nodes<C>);
@@ -24,13 +24,13 @@ where
     }
 }
 
-mod sealed {
-    pub trait ListItemStaticText {}
-}
+// mod sealed {
+//     pub trait ListItemStaticText {}
+// }
 
-pub trait ListItemStaticText<C: crate::component::Component>: sealed::ListItemStaticText {
-    fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C>;
-}
+// pub trait ListItemStaticText<C: crate::component::Component>: sealed::ListItemStaticText {
+//     fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C>;
+// }
 
 macro_rules! impl_render_with_to_string {
     ($($type:ident)+) => {
@@ -47,12 +47,12 @@ macro_rules! impl_render_with_to_string {
                 }
             }
 
-            impl sealed::ListItemStaticText for $type {}
-            impl<C: crate::component::Component> ListItemStaticText<C> for $type {
-                fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
-                    nodes.update_text(&self.to_string())
-                }
-            }
+            // impl sealed::ListItemStaticText for $type {}
+            // impl<C: crate::component::Component> ListItemStaticText<C> for $type {
+            //     fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
+            //         nodes.update_text(&self.to_string())
+            //     }
+            // }
         )+
     }
 }
@@ -85,19 +85,19 @@ impl<C: crate::component::Component> Render<C> for &String {
     }
 }
 
-impl sealed::ListItemStaticText for &str {}
-impl<C: crate::component::Component> ListItemStaticText<C> for &str {
-    fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
-        nodes.update_text(self)
-    }
-}
+// impl sealed::ListItemStaticText for &str {}
+// impl<C: crate::component::Component> ListItemStaticText<C> for &str {
+//     fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
+//         nodes.update_text(self)
+//     }
+// }
 
-impl sealed::ListItemStaticText for &String {}
-impl<C: crate::component::Component> ListItemStaticText<C> for &String {
-    fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
-        nodes.update_text(self)
-    }
-}
+// impl sealed::ListItemStaticText for &String {}
+// impl<C: crate::component::Component> ListItemStaticText<C> for &String {
+//     fn render(self, nodes: NodesOwned<C>) -> NodesOwned<C> {
+//         nodes.update_text(self)
+//     }
+// }
 
 pub trait ListItem<C: crate::component::Component> {
     const ROOT_ELEMENT_TAG: &'static str;
