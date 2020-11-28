@@ -416,7 +416,6 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
 }
 
 // TODO: Should all these (below) be produced by macros?
-
 pub trait AttributeValue<U> {
     fn update(self, u: U) -> U;
 }

@@ -505,10 +505,7 @@ pub trait DomBuilder<C> {
     fn require_render(&self) -> bool;
     fn just_created(&self) -> bool;
     fn next_index(&mut self);
-    //fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C>;
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C>;
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C>;
     fn store_raw_wrapper(&mut self, element: crate::dom::Element);
-    // #[cfg(feature = "svg")]
-    // fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C>;
 }

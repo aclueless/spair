@@ -496,10 +496,6 @@ impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> 
     type Output = Self;
 }
 
-// impl<'a, C: crate::component::Component> DomBuilder<C> for crate::dom::ElementUpdater<'a, C> {
-//     type Output = NodesOwned<'a, C>;
-// }
-
 impl<'a, C: crate::component::Component> From<crate::dom::StaticAttributes<'a, C>>
     for NodesOwned<'a, C>
 {
