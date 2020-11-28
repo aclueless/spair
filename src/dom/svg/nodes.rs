@@ -115,22 +115,21 @@ pub trait SvgBuilder<C: crate::component::Component>: Sized {
 }
 
 pub struct SvgStaticNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
+pub struct SvgNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
+pub struct SvgStaticNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
+pub struct SvgNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
+
 impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgStaticNodesOwned<'a, C> {
     fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self(eu.into())
     }
 }
 
-pub struct SvgNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
 impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgNodesOwned<'a, C> {
     fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self(eu.into())
     }
 }
-
-pub struct SvgStaticNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
-
-pub struct SvgNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
 
 impl<'a, C: crate::component::Component> SvgStaticNodesOwned<'a, C> {
     /// Use this method when you are done with your object. It is useful in single-line closures

@@ -94,10 +94,35 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 }
 
 pub struct StaticNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
+pub struct NodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
+pub struct StaticNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
+pub struct Nodes<'n, 'h: 'n, C>(
+    &'n mut crate::dom::nodes::NodeListUpdater<'h, C>,
+);
 
 impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticNodesOwned<'a, C> {
     fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self(eu.into())
+    }
+}
+
+impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for NodesOwned<'a, C> {
+    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
+        Self(eu.into())
+    }
+}
+
+impl<'a, C> From<crate::dom::nodes::NodeListUpdater<'a, C>> for NodesOwned<'a, C> {
+    fn from(nlu: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
+        Self(nlu)
+    }
+}
+
+impl<'a, C: crate::component::Component> From<crate::dom::StaticAttributes<'a, C>>
+    for NodesOwned<'a, C>
+{
+    fn from(sa: crate::dom::StaticAttributes<'a, C>) -> Self {
+        sa.nodes()
     }
 }
 
@@ -158,20 +183,6 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
             self.0.next_index();
             self
         }
-    }
-}
-
-pub struct NodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
-
-impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for NodesOwned<'a, C> {
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(eu.into())
-    }
-}
-
-impl<'a, C> From<crate::dom::nodes::NodeListUpdater<'a, C>> for NodesOwned<'a, C> {
-    fn from(nlu: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
-        Self(nlu)
     }
 }
 
@@ -258,72 +269,6 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     }
 }
 
-impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
-    for StaticNodesOwned<'a, C>
-{
-    fn require_render(&self) -> bool {
-        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
-    }
-
-    fn just_created(&self) -> bool {
-        self.0.just_created()
-    }
-
-    fn next_index(&mut self) {
-        self.0.next_index()
-    }
-
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
-    }
-
-    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
-    }
-
-    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
-    }
-}
-
-impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodesOwned<'a, C> {
-    type Output = Self;
-}
-
-impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for NodesOwned<'a, C> {
-    fn require_render(&self) -> bool {
-        true
-    }
-
-    fn just_created(&self) -> bool {
-        self.0.just_created()
-    }
-
-    fn next_index(&mut self) {
-        self.0.next_index()
-    }
-
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
-    }
-
-    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
-    }
-
-    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
-    }
-}
-
-impl<'a, C: crate::component::Component> DomBuilder<C> for NodesOwned<'a, C> {
-    type Output = Self;
-}
-
-pub struct StaticNodes<'n, 'h: 'n, C: crate::component::Component>(
-    &'n mut crate::dom::nodes::NodeListUpdater<'h, C>,
-);
-
 impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
         self.0.state()
@@ -371,10 +316,6 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
         self
     }
 }
-
-pub struct Nodes<'n, 'h: 'n, C: crate::component::Component>(
-    &'n mut crate::dom::nodes::NodeListUpdater<'h, C>,
-);
 
 impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
@@ -434,6 +375,60 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     }
 }
 
+impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
+    for StaticNodesOwned<'a, C>
+{
+    fn require_render(&self) -> bool {
+        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.just_created()
+    }
+
+    fn next_index(&mut self) {
+        self.0.next_index()
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+        self.0.get_element_and_increase_index(tag)
+    }
+
+    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
+        self.0.get_match_if_updater()
+    }
+
+    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
+        self.0.store_raw_wrapper(element);
+    }
+}
+
+impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for NodesOwned<'a, C> {
+    fn require_render(&self) -> bool {
+        true
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.just_created()
+    }
+
+    fn next_index(&mut self) {
+        self.0.next_index()
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+        self.0.get_element_and_increase_index(tag)
+    }
+
+    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
+        self.0.get_match_if_updater()
+    }
+
+    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
+        self.0.store_raw_wrapper(element);
+    }
+}
+
 impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     for StaticNodes<'n, 'h, C>
 {
@@ -462,10 +457,6 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     }
 }
 
-impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for StaticNodes<'n, 'h, C> {
-    type Output = Self;
-}
-
 impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for Nodes<'n, 'h, C> {
     fn require_render(&self) -> bool {
         true
@@ -492,16 +483,20 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
     }
 }
 
-impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> {
+impl<'a, C: crate::component::Component> DomBuilder<C> for StaticNodesOwned<'a, C> {
     type Output = Self;
 }
 
-impl<'a, C: crate::component::Component> From<crate::dom::StaticAttributes<'a, C>>
-    for NodesOwned<'a, C>
-{
-    fn from(sa: crate::dom::StaticAttributes<'a, C>) -> Self {
-        sa.nodes()
-    }
+impl<'a, C: crate::component::Component> DomBuilder<C> for NodesOwned<'a, C> {
+    type Output = Self;
+}
+
+impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for StaticNodes<'n, 'h, C> {
+    type Output = Self;
+}
+
+impl<'n, 'h, C: crate::component::Component> DomBuilder<C> for Nodes<'n, 'h, C> {
+    type Output = Self;
 }
 
 impl<'a, C: crate::component::Component> DomBuilder<C> for crate::dom::StaticAttributes<'a, C> {
