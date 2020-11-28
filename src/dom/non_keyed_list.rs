@@ -32,7 +32,7 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
         }
     }
 
-    pub fn update<I, R>(
+    pub fn html_update<I, R>(
         &mut self,
         items: impl IntoIterator<Item = I>,
         render: R,
@@ -68,5 +68,31 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
         } else {
             self.list.clear_after(index, self.parent);
         }
+    }
+
+    #[cfg(feature = "svg")]
+    pub fn svg_update<I, R>(
+        &mut self,
+        items: impl IntoIterator<Item = I>,
+        render: R,
+    )
+    where
+        for<'i, 'c> R: Fn(&'i I, crate::dom::SvgUpdater<'c, C>),
+    {
+        let mut index = 0;
+        for item in items {
+            let status = self.list.check_or_create_svg_element_for_non_keyed_list(
+                self.tag,
+                index,
+                self.parent,
+                self.next_sibling,
+                self.use_template,
+            );
+            let element = self.list.get_element(index);
+            let eu = super::ElementUpdater::new(self.comp, self.state, element, status);
+            render(&item, eu.into());
+            index += 1;
+        }
+        self.clear_after(index);
     }
 }

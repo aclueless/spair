@@ -22,7 +22,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
         use crate::dom::nodes::DomBuilder;
         let mut this: Self::Output = self.into();
         if this.require_render() {
-            f(this.get_element_and_increase_index(tag));
+            f(this.get_element_and_increase_index(tag).into());
         } else {
             this.next_index();
         }
@@ -91,18 +91,6 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 
         this
     }
-
-    #[cfg(feature = "svg")]
-    fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> Self::Output {
-        use crate::dom::nodes::DomBuilder;
-        let mut this: Self::Output = self.into();
-        if this.require_render() {
-            f(this.get_svg_element_and_increase_index("svg"));
-        } else {
-            this.next_index();
-        }
-        this
-    }
 }
 
 pub struct StaticNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
@@ -120,6 +108,17 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
 
     pub fn comp(&self) -> crate::component::Comp<C> {
         self.0.comp()
+    }
+
+    #[cfg(feature = "svg")]
+    pub fn svg(mut self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> StaticNodesOwned<'a,C> {
+        // where are in static mode
+        if self.0.parent_status() == crate::dom::ElementStatus::JustCreated {
+            self.0.svg(f);
+        } else {
+            self.0.next_index();
+        }
+        self
     }
 
     pub fn nodes(self) -> NodesOwned<'a, C> {
@@ -189,6 +188,12 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
 
     pub fn comp(&self) -> crate::component::Comp<C> {
         self.0.comp()
+    }
+
+    #[cfg(feature = "svg")]
+    pub fn svg(mut self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> Self {
+        self.0.svg(f);
+        self
     }
 
     pub fn static_nodes(self) -> StaticNodesOwned<'a, C> {
@@ -264,13 +269,8 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
         self.0.next_index()
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
         self.0.get_element_and_increase_index(tag)
-    }
-
-    #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
-        self.0.get_svg_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
@@ -299,13 +299,8 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for No
         self.0.next_index()
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
         self.0.get_element_and_increase_index(tag)
-    }
-
-    #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
-        self.0.get_svg_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
@@ -332,6 +327,17 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
 
     pub fn comp(&self) -> crate::component::Comp<C> {
         self.0.comp()
+    }
+
+    #[cfg(feature = "svg")]
+    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> Self {
+        // where are in static mode
+        if self.0.parent_status() == crate::dom::ElementStatus::JustCreated {
+            self.0.svg(f);
+        } else {
+            self.0.next_index();
+        }
+        self
     }
 
     pub fn nodes(self) -> Nodes<'n, 'h, C> {
@@ -373,6 +379,12 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
 
     pub fn comp(&self) -> crate::component::Comp<C> {
         self.0.comp()
+    }
+
+    #[cfg(feature = "svg")]
+    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> Self {
+        self.0.svg(f);
+        self
     }
 
     pub fn static_nodes(self) -> StaticNodes<'n, 'h, C> {
@@ -433,13 +445,8 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
         self.0.next_index()
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
         self.0.get_element_and_increase_index(tag)
-    }
-
-    #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
-        self.0.get_svg_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
@@ -468,13 +475,8 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
         self.0.next_index();
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> super::HtmlUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
         self.0.get_element_and_increase_index(tag)
-    }
-
-    #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
-        self.0.get_svg_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {

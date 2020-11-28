@@ -36,6 +36,11 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         self.0.static_nodes()
     }
 
+    #[cfg(feature = "svg")]
+    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a,C> {
+        self.0.svg(f)
+    }
+
     /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
     pub fn done(self) {}
 

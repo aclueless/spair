@@ -341,7 +341,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             None,
             use_template,
         );
-        let _must_set_select_element_value = non_keyed_list_updater.update(items, render);
+        let _must_set_select_element_value = non_keyed_list_updater.html_update(items, render);
 
         // The hack start in AttributeSetter::value
         self.select_element_value.set_select_element_value(parent);
@@ -430,7 +430,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         nodes_owned
     }
 
-    pub fn sv_list_with_render<I, R>(
+    pub fn svg_list_with_render<I, R>(
         self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
@@ -442,7 +442,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         let parent = self.element.ws_element.as_ref();
         let use_template = mode.use_template();
 
-        let mut non_keyed_list_updater = non_keyed_list::NonKeyedListUpdater::new(
+        let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
             self.comp,
             self.state,
             &mut self.element.nodes,
@@ -451,6 +451,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             None,
             use_template,
         );
-        non_keyed_list_updater.update(items, render);
+        non_keyed_list_updater.svg_update(items, render);
+    }
+
+    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a,C> {
+        let nodes = self.nodes();
+        nodes.svg(f)
     }
 }

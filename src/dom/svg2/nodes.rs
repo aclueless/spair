@@ -31,7 +31,7 @@ pub trait SvgBuilder<C: crate::component::Component>: Sized {
         use crate::dom::nodes::DomBuilder;
         let mut this: Self::Output = self.into();
         if this.require_render() {
-            f(this.get_svg_element_and_increase_index(tag));
+            f(this.get_element_and_increase_index(tag).into());
         } else {
             this.next_index();
         }
@@ -184,11 +184,7 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
         self.0.next_index()
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::HtmlUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
-    }
-
-    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
         self.0.get_svg_element_and_increase_index(tag)
     }
 
@@ -281,11 +277,7 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for Sv
         self.0.next_index()
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::HtmlUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
-    }
-
-    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
         self.0.get_svg_element_and_increase_index(tag)
     }
 
@@ -355,11 +347,7 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
         self.0.next_index()
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::HtmlUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
-    }
-
-    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
         self.0.get_svg_element_and_increase_index(tag)
     }
 
@@ -442,12 +430,7 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
         self.0.next_index();
     }
 
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::HtmlUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
-    }
-
-    #[cfg(feature = "svg")]
-    fn get_svg_element_and_increase_index(&mut self, tag: &str) -> crate::dom::SvgUpdater<C> {
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
         self.0.get_svg_element_and_increase_index(tag)
     }
 
@@ -468,7 +451,7 @@ impl<'a, C: crate::component::Component> From<crate::dom::SvgStaticAttributes<'a
     for SvgNodesOwned<'a, C>
 {
     fn from(sa: crate::dom::SvgStaticAttributes<'a, C>) -> Self {
-        sa.svg_nodes()
+        sa.nodes()
     }
 }
 

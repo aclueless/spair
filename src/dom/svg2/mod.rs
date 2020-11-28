@@ -170,13 +170,13 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         self.0.svg_static(value)
     }
 
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    where
-        I: crate::renderable::ListItem<C>,
-    {
-        self.0
-            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
-    }
+    // pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    // where
+    //     I: crate::renderable::ListItem<C>,
+    // {
+    //     self.0
+    //         .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+    // }
 
     pub fn list_with_render<I, R>(
         self,
@@ -185,25 +185,25 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         tag: &str,
         render: R,
     ) where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+        for<'i, 'c> R: Fn(&'i I, SvgUpdater<'c, C>),
     {
-        self.0.list_with_render(items, mode, tag, render)
+        self.0.svg_list_with_render(items, mode, tag, render)
     }
 
-    #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    where
-        for<'k> I: super::KeyedListItem<'k, C>,
-    {
-        self.0.keyed_list(items, mode)
-    }
+    // #[cfg(feature = "keyed-list")]
+    // pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    // where
+    //     for<'k> I: super::KeyedListItem<'k, C>,
+    // {
+    //     self.0.keyed_list(items, mode)
+    // }
 
-    pub fn component<CC: crate::component::Component>(
-        self,
-        child: &crate::component::ChildComp<CC>,
-    ) {
-        self.0.component(child)
-    }
+    // pub fn component<CC: crate::component::Component>(
+    //     self,
+    //     child: &crate::component::ChildComp<CC>,
+    // ) {
+    //     self.0.component(child)
+    // }
 }
 
 impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
