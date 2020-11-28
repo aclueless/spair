@@ -11,11 +11,8 @@ mod non_keyed_list;
 
 mod html;
 
-// #[cfg(feature = "svg")]
-// mod svg;
-
 #[cfg(feature = "svg")]
-mod svg2;
+mod svg;
 
 use attribute_types::AsStr;
 
@@ -29,7 +26,7 @@ pub use keyed_list::*;
 pub use non_keyed_list::*;
 
 #[cfg(feature = "svg")]
-pub use svg2::{SvgUpdater, SvgRender, SvgStaticRender, attributes::*, nodes::*};
+pub use svg::{SvgUpdater, SvgRender, SvgStaticRender, attributes::*, nodes::*};
 
 // This is currently created by both `Nodes::Iter::update_text()` and `Nodes::Iter::static_text()`
 pub struct Text {
