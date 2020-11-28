@@ -96,9 +96,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 pub struct StaticNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
 pub struct NodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
 pub struct StaticNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
-pub struct Nodes<'n, 'h: 'n, C>(
-    &'n mut crate::dom::nodes::NodeListUpdater<'h, C>,
-);
+pub struct Nodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
 
 impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticNodesOwned<'a, C> {
     fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {

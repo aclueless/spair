@@ -131,6 +131,14 @@ impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgNodesOwned<'a, C> {
     }
 }
 
+impl<'a, C: crate::component::Component> From<crate::dom::SvgStaticAttributes<'a, C>>
+    for SvgNodesOwned<'a, C>
+{
+    fn from(sa: crate::dom::SvgStaticAttributes<'a, C>) -> Self {
+        sa.nodes()
+    }
+}
+
 impl<'a, C: crate::component::Component> SvgStaticNodesOwned<'a, C> {
     /// Use this method when you are done with your object. It is useful in single-line closures
     /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
@@ -166,38 +174,6 @@ impl<'a, C: crate::component::Component> SvgStaticNodesOwned<'a, C> {
         value.render(static_nodes);
         self
     }
-}
-
-impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
-    for SvgStaticNodesOwned<'a, C>
-{
-    fn require_render(&self) -> bool {
-        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
-    }
-
-    fn just_created(&self) -> bool {
-        self.0.just_created()
-    }
-
-    fn next_index(&mut self) {
-        self.0.next_index()
-    }
-
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_svg_element_and_increase_index(tag)
-    }
-
-    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
-    }
-
-    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
-    }
-}
-
-impl<'a, C: crate::component::Component> SvgBuilder<C> for SvgStaticNodesOwned<'a, C> {
-    type Output = Self;
 }
 
 impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
@@ -260,36 +236,6 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
     }
 }
 
-impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for SvgNodesOwned<'a, C> {
-    fn require_render(&self) -> bool {
-        true
-    }
-
-    fn just_created(&self) -> bool {
-        self.0.just_created()
-    }
-
-    fn next_index(&mut self) {
-        self.0.next_index()
-    }
-
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_svg_element_and_increase_index(tag)
-    }
-
-    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
-    }
-
-    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
-    }
-}
-
-impl<'a, C: crate::component::Component> SvgBuilder<C> for SvgNodesOwned<'a, C> {
-    type Output = Self;
-}
-
 impl<'n, 'h, C: crate::component::Component> SvgStaticNodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
         self.0.state()
@@ -325,38 +271,6 @@ impl<'n, 'h, C: crate::component::Component> SvgStaticNodes<'n, 'h, C> {
         self.0.static_text(text);
         self
     }
-}
-
-impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
-    for SvgStaticNodes<'n, 'h, C>
-{
-    fn require_render(&self) -> bool {
-        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
-    }
-
-    fn just_created(&self) -> bool {
-        self.0.just_created()
-    }
-
-    fn next_index(&mut self) {
-        self.0.next_index()
-    }
-
-    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_svg_element_and_increase_index(tag)
-    }
-
-    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
-    }
-
-    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
-    }
-}
-
-impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgStaticNodes<'n, 'h, C> {
-    type Output = Self;
 }
 
 impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
@@ -411,6 +325,88 @@ impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
     }
 }
 
+impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
+    for SvgStaticNodesOwned<'a, C>
+{
+    fn require_render(&self) -> bool {
+        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.just_created()
+    }
+
+    fn next_index(&mut self) {
+        self.0.next_index()
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+        self.0.get_svg_element_and_increase_index(tag)
+    }
+
+    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
+        self.0.get_match_if_updater()
+    }
+
+    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
+        self.0.store_raw_wrapper(element);
+    }
+}
+
+impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for SvgNodesOwned<'a, C> {
+    fn require_render(&self) -> bool {
+        true
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.just_created()
+    }
+
+    fn next_index(&mut self) {
+        self.0.next_index()
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+        self.0.get_svg_element_and_increase_index(tag)
+    }
+
+    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
+        self.0.get_match_if_updater()
+    }
+
+    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
+        self.0.store_raw_wrapper(element);
+    }
+}
+
+impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
+    for SvgStaticNodes<'n, 'h, C>
+{
+    fn require_render(&self) -> bool {
+        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
+    }
+
+    fn just_created(&self) -> bool {
+        self.0.just_created()
+    }
+
+    fn next_index(&mut self) {
+        self.0.next_index()
+    }
+
+    fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
+        self.0.get_svg_element_and_increase_index(tag)
+    }
+
+    fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
+        self.0.get_match_if_updater()
+    }
+
+    fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
+        self.0.store_raw_wrapper(element);
+    }
+}
+
 impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     for SvgNodes<'n, 'h, C>
 {
@@ -439,16 +435,20 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     }
 }
 
-impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgNodes<'n, 'h, C> {
+impl<'a, C: crate::component::Component> SvgBuilder<C> for SvgStaticNodesOwned<'a, C> {
     type Output = Self;
 }
 
-impl<'a, C: crate::component::Component> From<crate::dom::SvgStaticAttributes<'a, C>>
-    for SvgNodesOwned<'a, C>
-{
-    fn from(sa: crate::dom::SvgStaticAttributes<'a, C>) -> Self {
-        sa.nodes()
-    }
+impl<'a, C: crate::component::Component> SvgBuilder<C> for SvgNodesOwned<'a, C> {
+    type Output = Self;
+}
+
+impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgStaticNodes<'n, 'h, C> {
+    type Output = Self;
+}
+
+impl<'n, 'h, C: crate::component::Component> SvgBuilder<C> for SvgNodes<'n, 'h, C> {
+    type Output = Self;
 }
 
 impl<'a, C: crate::component::Component> SvgBuilder<C> for crate::dom::SvgStaticAttributes<'a, C> {
