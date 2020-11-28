@@ -135,6 +135,11 @@ pub struct SvgStaticNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpda
 pub struct SvgNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
 
 impl<'a, C: crate::component::Component> SvgStaticNodesOwned<'a, C> {
+    /// Use this method when you are done with your object. It is useful in single-line closures
+    /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
+    /// but found `something-else`"
+    pub fn done(self) {}
+
     pub fn state(&self) -> &'a C {
         self.0.state()
     }
@@ -146,9 +151,6 @@ impl<'a, C: crate::component::Component> SvgStaticNodesOwned<'a, C> {
     pub fn nodes(self) -> SvgNodesOwned<'a, C> {
         SvgNodesOwned(self.0)
     }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
 
     pub fn render(mut self, value: impl super::SvgRender<C>) -> Self {
         let nodes = SvgNodes(&mut self.0);
@@ -210,6 +212,11 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
         SvgStaticNodes(&mut self.0)
     }
 
+    /// Use this method when you are done with your object. It is useful in single-line closures
+    /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
+    /// but found `something-else`"
+    pub fn done(self) {}
+
     pub fn state(&self) -> &'a C {
         self.0.state()
     }
@@ -221,9 +228,6 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
     pub fn static_nodes(self) -> SvgStaticNodesOwned<'a, C> {
         SvgStaticNodesOwned(self.0)
     }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
 
     pub fn render(mut self, value: impl super::SvgRender<C>) -> Self {
         let nodes = SvgNodes(&mut self.0);

@@ -132,6 +132,11 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         self.0.ws_element().clone()
     }
 
+    /// Use this method when you are done with your object. It is useful in single-line closures
+    /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
+    /// but found `something-else`"
+    pub fn done(self) {}
+
     pub fn state(&self) -> &'a C {
         self.0.state()
     }
@@ -151,9 +156,6 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
     pub fn static_nodes(self) -> nodes::SvgStaticNodesOwned<'a, C> {
         self.0.svg_static_nodes()
     }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
 
     pub fn render(self, value: impl SvgRender<C>) -> nodes::SvgNodesOwned<'a, C> {
         self.0.svg_render(value)

@@ -260,6 +260,11 @@ impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticAttributes<'a, C> 
 }
 
 impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
+    /// Use this method when you are done with your object. It is useful in single-line closures
+    /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
+    /// but found `something-else`"
+    pub fn done(self) {}
+
     pub fn nodes(self) -> crate::dom::NodesOwned<'a, C> {
         self.0.nodes()
     }
@@ -274,9 +279,6 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         // to adding nodes. The default mode for adding nodes is update-mode.
         self.0.svg(f)
     }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
 
     pub fn render(self, value: impl crate::renderable::Render<C>) -> crate::dom::NodesOwned<'a, C> {
         self.0.render(value)

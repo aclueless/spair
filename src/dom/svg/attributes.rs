@@ -312,6 +312,11 @@ impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgStaticAttributes<'a, 
 }
 
 impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
+    /// Use this method when you are done with your object. It is useful in single-line closures
+    /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
+    /// but found `something-else`"
+    pub fn done(self) {}
+
     pub fn nodes(self) -> crate::dom::SvgNodesOwned<'a, C> {
         self.0.svg_nodes()
     }
@@ -319,9 +324,6 @@ impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
     pub fn static_nodes(self) -> crate::dom::SvgStaticNodesOwned<'a, C> {
         self.0.svg_static_nodes()
     }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
 
     pub fn render(self, value: impl super::SvgRender<C>) -> crate::dom::SvgNodesOwned<'a, C> {
         self.0.svg_render(value)

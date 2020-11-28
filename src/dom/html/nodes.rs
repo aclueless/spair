@@ -102,6 +102,11 @@ impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticNodesOwned<'a, C> 
 }
 
 impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
+    /// Use this method when you are done with your object. It is useful in single-line closures
+    /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
+    /// but found `something-else`"
+    pub fn done(self) {}
+
     pub fn state(&self) -> &'a C {
         self.0.state()
     }
@@ -124,9 +129,6 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     pub fn nodes(self) -> NodesOwned<'a, C> {
         NodesOwned(self.0)
     }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
 
     pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
@@ -182,6 +184,11 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         StaticNodes(&mut self.0)
     }
 
+    /// Use this method when you are done with your object. It is useful in single-line closures
+    /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
+    /// but found `something-else`"
+    pub fn done(self) {}
+
     pub fn state(&self) -> &'a C {
         self.0.state()
     }
@@ -199,9 +206,6 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     pub fn static_nodes(self) -> StaticNodesOwned<'a, C> {
         StaticNodesOwned(self.0)
     }
-
-    /// Use this method when the compiler complains about expected `()` but found something else and you don't want to add a `;`
-    pub fn done(self) {}
 
     pub fn render(mut self, value: impl crate::renderable::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
