@@ -356,9 +356,9 @@ impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
         tag: &str,
         render: R,
     ) where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
     {
-        self.0.list_with_render(items, mode, tag, render)
+        self.0.svg_list_with_render(items, mode, tag, render)
     }
 
     // #[cfg(feature = "keyed-list")]
@@ -379,3 +379,82 @@ impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
     //     self.0.component(child);
     // }
 }
+
+impl<'a, C: crate::component::Component> SvgAttributeSetter<C> for SvgStaticAttributes<'a, C> where
+    C: crate::component::Component
+{
+}
+
+impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter
+    for SvgStaticAttributes<'a, C>
+where
+    C: crate::component::Component,
+{
+}
+
+impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
+    for SvgStaticAttributes<'a, C>
+{
+    fn ws_html_element(&self) -> &web_sys::HtmlElement {
+        self.0.ws_html_element()
+    }
+
+    fn ws_element(&self) -> &web_sys::Element {
+        self.0.ws_element()
+    }
+
+    fn element_type(&self) -> crate::dom::ElementType {
+        self.0.element_type()
+    }
+
+    fn require_set_listener(&mut self) -> bool {
+        if self.0.status() == crate::dom::ElementStatus::Existing {
+            // self.store_listener will not be invoked.
+            // We must update the index here to count over the static events.
+            self.0.next_index();
+            false
+        } else {
+            // A cloned element requires its event handlers to be set because the events
+            // are not cloned.
+            true
+        }
+    }
+
+    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
+        self.0.store_listener(listener)
+    }
+
+    fn check_bool_attribute(&mut self, _value: bool) -> bool {
+        self.0.status() == crate::dom::ElementStatus::JustCreated
+        // no need to store the value for static attributes
+    }
+
+    fn check_str_attribute(&mut self, _value: &str) -> bool {
+        self.0.status() == crate::dom::ElementStatus::JustCreated
+        // no need to store the value for static attributes
+    }
+
+    fn check_i32_attribute(&mut self, _value: i32) -> bool {
+        self.0.status() == crate::dom::ElementStatus::JustCreated
+        // no need to store the value for static attributes
+    }
+
+    fn check_u32_attribute(&mut self, _value: u32) -> bool {
+        self.0.status() == crate::dom::ElementStatus::JustCreated
+        // no need to store the value for static attributes
+    }
+
+    fn check_f64_attribute(&mut self, _value: f64) -> bool {
+        self.0.status() == crate::dom::ElementStatus::JustCreated
+        // no need to store the value for static attributes
+    }
+
+    fn set_selected_value(&mut self, value: Option<&str>) {
+        self.0.select_element_value_mut().set_selected_value(value);
+    }
+
+    fn set_selected_index(&mut self, index: Option<usize>) {
+        self.0.select_element_value_mut().set_selected_index(index);
+    }
+}
+
