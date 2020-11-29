@@ -318,9 +318,9 @@ impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
         render: R,
     ) -> Self
     where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
     {
-        self.0.list_with_render(items, mode, tag, render);
+        self.0.svg_list_with_render(items, mode, tag, render);
         self
     }
 }
