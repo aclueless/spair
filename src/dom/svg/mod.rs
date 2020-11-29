@@ -246,14 +246,6 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     fn check_f64_attribute(&mut self, value: f64) -> bool {
         self.0.check_f64_attribute(value)
     }
-
-    fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0.set_selected_value(value)
-    }
-
-    fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0.set_selected_index(index)
-    }
 }
 
 impl<'a, C: crate::component::Component> attributes::SvgAttributeSetter<C> for SvgUpdater<'a, C> where

@@ -450,12 +450,4 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
         self.0.status() == crate::dom::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
-
-    fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0.select_element_value_mut().set_selected_value(value);
-    }
-
-    fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0.select_element_value_mut().set_selected_index(index);
-    }
 }

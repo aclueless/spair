@@ -140,8 +140,8 @@ pub trait AttributeSetter {
     fn check_u32_attribute(&mut self, value: u32) -> bool;
     fn check_f64_attribute(&mut self, value: f64) -> bool;
 
-    fn set_selected_value(&mut self, value: Option<&str>);
-    fn set_selected_index(&mut self, index: Option<usize>);
+    fn set_selected_value(&mut self, _value: Option<&str>) {}
+    fn set_selected_index(&mut self, _index: Option<usize>) {}
 
     fn set_bool_attribute(&mut self, name: &str, value: bool) {
         if self.check_bool_attribute(value) {
