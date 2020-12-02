@@ -93,26 +93,52 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
     }
 }
 
-pub struct StaticNodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
-pub struct NodesOwned<'a, C>(crate::dom::nodes::NodeListUpdater<'a, C>);
-pub struct StaticNodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
-pub struct Nodes<'n, 'h: 'n, C>(&'n mut crate::dom::nodes::NodeListUpdater<'h, C>);
+pub struct HtmlNodeListUpdater<'a, C> {
+    u: crate::dom::nodes::NodeListUpdater<'a, C>,
+    #[cfg(feature = "partial-non-keyed-list")]
+    select_element_value: super::SelectElementValue,
+}
 
-impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticNodesOwned<'a, C> {
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(eu.into())
+impl<'a, C> From<super::HtmlUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
+    fn from(u: super::HtmlUpdater<'a, C>) -> Self {
+        Self {
+            u: From::from(u.u),
+            #[cfg(feature = "partial-non-keyed-list")]
+            select_element_value: u.select_element_value,
+        }
     }
 }
 
-impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for NodesOwned<'a, C> {
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(eu.into())
+impl<'a, C> From<crate::dom::nodes::NodeListUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
+    fn from(u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
+        Self {
+            u: From::from(u),
+            #[cfg(feature = "partial-non-keyed-list")]
+            select_element_value: super::SelectElementValue::none(),
+        }
+    }
+}
+
+pub struct StaticNodesOwned<'a, C>(HtmlNodeListUpdater<'a, C>);
+pub struct NodesOwned<'a, C>(HtmlNodeListUpdater<'a, C>);
+pub struct StaticNodes<'n, 'h: 'n, C>(&'n mut HtmlNodeListUpdater<'h, C>);
+pub struct Nodes<'n, 'h: 'n, C>(&'n mut HtmlNodeListUpdater<'h, C>);
+
+impl<'a, C> From<super::HtmlUpdater<'a, C>> for StaticNodesOwned<'a, C> {
+    fn from(u: super::HtmlUpdater<'a, C>) -> Self {
+        Self(u.into())
+    }
+}
+
+impl<'a, C> From<super::HtmlUpdater<'a, C>> for NodesOwned<'a, C> {
+    fn from(u: super::HtmlUpdater<'a, C>) -> Self {
+        Self(u.into())
     }
 }
 
 impl<'a, C> From<crate::dom::nodes::NodeListUpdater<'a, C>> for NodesOwned<'a, C> {
-    fn from(nlu: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
-        Self(nlu)
+    fn from(u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
+        Self(u.into())
     }
 }
 
@@ -131,20 +157,20 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     pub fn done(self) {}
 
     pub fn state(&self) -> &'a C {
-        self.0.state()
+        self.0.u.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp()
+        self.0.u.comp()
     }
 
     #[cfg(feature = "svg")]
     pub fn svg(mut self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> StaticNodesOwned<'a, C> {
         // where are in static mode
-        if self.0.parent_status() == crate::dom::ElementStatus::JustCreated {
-            self.0.svg(f);
+        if self.0.u.parent_status() == crate::dom::ElementStatus::JustCreated {
+            self.0.u.svg(f);
         } else {
-            self.0.next_index();
+            self.0.u.next_index();
         }
         self
     }
@@ -175,10 +201,10 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     //     mut self,
     //     value: impl crate::dom::ListItemStaticText<C>,
     // ) -> Self {
-    //     if self.0.parent_status() != crate::dom::ElementStatus::Existing {
+    //     if self.0.u.parent_status() != crate::dom::ElementStatus::Existing {
     //         value.render(self.nodes()).static_nodes()
     //     } else {
-    //         self.0.next_index();
+    //         self.0.u.next_index();
     //         self
     //     }
     // }
@@ -199,16 +225,16 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     pub fn done(self) {}
 
     pub fn state(&self) -> &'a C {
-        self.0.state()
+        self.0.u.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp()
+        self.0.u.comp()
     }
 
     #[cfg(feature = "svg")]
     pub fn svg(mut self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> Self {
-        self.0.svg(f);
+        self.0.u.svg(f);
         self
     }
 
@@ -238,16 +264,16 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     //     mut self,
     //     value: impl crate::dom::ListItemStaticText<C>,
     // ) -> Self {
-    //     if self.0.parent_status() != crate::dom::ElementStatus::Existing {
+    //     if self.0.u.parent_status() != crate::dom::ElementStatus::Existing {
     //         value.render(self)
     //     } else {
-    //         self.0.next_index();
+    //         self.0.u.next_index();
     //         self
     //     }
     // }
 
     pub(crate) fn update_text(mut self, text: &str) -> Self {
-        self.0.update_text(text);
+        self.0.u.update_text(text);
         self
     }
 
@@ -269,20 +295,20 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
 
 impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
-        self.0.state()
+        self.0.u.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp()
+        self.0.u.comp()
     }
 
     #[cfg(feature = "svg")]
     pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> Self {
         // where are in static mode
-        if self.0.parent_status() == crate::dom::ElementStatus::JustCreated {
-            self.0.svg(f);
+        if self.0.u.parent_status() == crate::dom::ElementStatus::JustCreated {
+            self.0.u.svg(f);
         } else {
-            self.0.next_index();
+            self.0.u.next_index();
         }
         self
     }
@@ -310,23 +336,23 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
     }
 
     pub(crate) fn static_text(self, text: &str) -> Self {
-        self.0.static_text(text);
+        self.0.u.static_text(text);
         self
     }
 }
 
 impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     pub fn state(&self) -> &'n C {
-        self.0.state()
+        self.0.u.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp()
+        self.0.u.comp()
     }
 
     #[cfg(feature = "svg")]
     pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> Self {
-        self.0.svg(f);
+        self.0.u.svg(f);
         self
     }
 
@@ -353,7 +379,7 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     }
 
     pub(crate) fn update_text(self, text: &str) -> Self {
-        self.0.update_text(text);
+        self.0.u.update_text(text);
         self
     }
 
@@ -377,27 +403,27 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     for StaticNodesOwned<'a, C>
 {
     fn require_render(&self) -> bool {
-        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
+        self.0.u.parent_status() == crate::dom::ElementStatus::JustCreated
     }
 
     fn just_created(&self) -> bool {
-        self.0.just_created()
+        self.0.u.just_created()
     }
 
     fn next_index(&mut self) {
-        self.0.next_index()
+        self.0.u.next_index()
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
+        self.0.u.get_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
+        self.0.u.get_match_if_updater()
     }
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
+        self.0.u.store_raw_wrapper(element);
     }
 }
 
@@ -407,23 +433,23 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for No
     }
 
     fn just_created(&self) -> bool {
-        self.0.just_created()
+        self.0.u.just_created()
     }
 
     fn next_index(&mut self) {
-        self.0.next_index()
+        self.0.u.next_index()
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
+        self.0.u.get_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
+        self.0.u.get_match_if_updater()
     }
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
+        self.0.u.store_raw_wrapper(element);
     }
 }
 
@@ -431,27 +457,27 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     for StaticNodes<'n, 'h, C>
 {
     fn require_render(&self) -> bool {
-        self.0.parent_status() == crate::dom::ElementStatus::JustCreated
+        self.0.u.parent_status() == crate::dom::ElementStatus::JustCreated
     }
 
     fn just_created(&self) -> bool {
-        self.0.just_created()
+        self.0.u.just_created()
     }
 
     fn next_index(&mut self) {
-        self.0.next_index()
+        self.0.u.next_index()
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
+        self.0.u.get_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
+        self.0.u.get_match_if_updater()
     }
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
+        self.0.u.store_raw_wrapper(element);
     }
 }
 
@@ -461,23 +487,23 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
     }
 
     fn just_created(&self) -> bool {
-        self.0.just_created()
+        self.0.u.just_created()
     }
 
     fn next_index(&mut self) {
-        self.0.next_index();
+        self.0.u.next_index();
     }
 
     fn get_element_and_increase_index(&mut self, tag: &str) -> crate::dom::ElementUpdater<C> {
-        self.0.get_element_and_increase_index(tag)
+        self.0.u.get_element_and_increase_index(tag)
     }
 
     fn get_match_if_and_increase_index(&mut self) -> crate::dom::nodes::MatchIfUpdater<C> {
-        self.0.get_match_if_updater()
+        self.0.u.get_match_if_updater()
     }
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
-        self.0.store_raw_wrapper(element);
+        self.0.u.store_raw_wrapper(element);
     }
 }
 

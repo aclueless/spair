@@ -305,11 +305,18 @@ pub trait SvgAttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter
 
 pub struct SvgStaticAttributes<'a, C>(crate::dom::ElementUpdater<'a, C>);
 
-impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgStaticAttributes<'a, C> {
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(eu)
+impl<'a, C> From<crate::dom::HtmlUpdater<'a, C>> for SvgStaticAttributes<'a, C> {
+    fn from(u: crate::dom::HtmlUpdater<'a, C>) -> Self {
+        Self(u.u)
     }
 }
+
+impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgStaticAttributes<'a, C> {
+    fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
+        Self(u)
+    }
+}
+
 
 impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
     /// Use this method when you are done with your object. It is useful in single-line closures

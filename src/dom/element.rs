@@ -134,7 +134,6 @@ pub struct ElementUpdater<'a, C> {
     index: usize,
     status: super::ElementStatus,
     element: &'a mut Element,
-    select_element_value: SelectElementValue,
 }
 
 impl<'a, C> ElementUpdater<'a, C> {
@@ -145,19 +144,15 @@ impl<'a, C> ElementUpdater<'a, C> {
         &'a C,
         super::ElementStatus,
         &'a mut Element,
-        SelectElementValue,
+        //SelectElementValue,
     ) {
         (
             self.comp,
             self.state,
             self.status,
             self.element,
-            self.select_element_value,
+            //self.select_element_value,
         )
-    }
-
-    pub fn select_element_value_mut(&mut self) -> &mut SelectElementValue {
-        &mut self.select_element_value
     }
 }
 
@@ -174,7 +169,6 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             index: 0,
             status,
             element,
-            select_element_value: SelectElementValue::none(),
         }
     }
 
@@ -184,6 +178,10 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
 
     pub fn comp(&self) -> crate::component::Comp<C> {
         self.comp.clone()
+    }
+
+    pub fn comp_ref(&self) -> &crate::component::Comp<C> {
+        self.comp
     }
 
     pub fn ws_element(&self) -> &web_sys::Element {
@@ -261,61 +259,15 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         rs
     }
 
-    pub fn set_selected_value(&mut self, value: Option<&str>) {
-        self.select_element_value.set_selected_value(value);
-    }
-
-    pub fn set_selected_index(&mut self, index: Option<usize>) {
-        self.select_element_value.set_selected_index(index);
-    }
-
-    pub fn static_attributes(self) -> super::StaticAttributes<'a, C> {
-        super::StaticAttributes::from(self)
-    }
-
-    pub fn nodes(self) -> super::NodesOwned<'a, C> {
-        super::NodesOwned::from(self)
-    }
-
-    pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
-        super::StaticNodesOwned::from(self)
-    }
-
-    pub fn render(self, value: impl super::Render<C>) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = self.nodes();
-        let nodes = nodes_owned.nodes_ref();
-        value.render(nodes);
-        nodes_owned
-    }
-
-    pub fn render_ref(self, value: &impl super::RenderRef<C>) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = self.nodes();
-        let nodes = nodes_owned.nodes_ref();
-        value.render(nodes);
-        nodes_owned
-    }
-
-    pub fn r#static(self, value: impl super::StaticRender<C>) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = self.nodes();
-        let static_nodes = nodes_owned.static_nodes_ref();
-        value.render(static_nodes);
-        nodes_owned
-    }
-
-    pub fn update_text(self, text: &str) -> super::NodesOwned<'a, C> {
-        let nodes_owned = self.nodes();
-        nodes_owned.update_text(text)
-    }
-
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    where
-        I: super::ListItem<C>,
-    {
-        self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
-    }
+    // pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    // where
+    //     I: super::ListItem<C>,
+    // {
+    //     self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+    // }
 
     pub fn list_with_render<I, R>(
-        self,
+        &mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
         tag: &str,
@@ -338,11 +290,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         let _must_set_select_element_value = non_keyed_list_updater.html_update(items, render);
 
         // The hack start in AttributeSetter::value
-        self.select_element_value.set_select_element_value(parent);
+        //self.select_element_value.set_select_element_value(parent);
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    pub fn keyed_list<I>(&mut self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
@@ -366,7 +318,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         keyed_list_updater.update(items.into_iter());
 
         // The hack start in AttributeSetter::value
-        self.select_element_value.set_select_element_value(parent);
+        // self.select_element_value.set_select_element_value(parent);
     }
 
     pub fn component<CC: crate::component::Component>(
@@ -386,6 +338,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         }
     }
 }
+
 
 #[cfg(feature = "svg")]
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
@@ -445,8 +398,9 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         non_keyed_list_updater.svg_update(items, render);
     }
 
-    pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
-        let nodes = self.nodes();
-        nodes.svg(f)
-    }
+    // pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
+    //     let nodes = self.nodes();
+    //     nodes.svg(f)
+    // }
 }
+

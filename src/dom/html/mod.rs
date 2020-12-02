@@ -4,18 +4,40 @@ pub mod renderable;
 
 /// This struct provide methods for setting properties/attributes and adding child nodes for
 /// HTML elements.
-pub struct HtmlUpdater<'a, C>(crate::dom::element::ElementUpdater<'a, C>);
+pub struct HtmlUpdater<'a, C>{
+    pub (super)u: crate::dom::element::ElementUpdater<'a, C>,
+    select_element_value: crate::dom::SelectElementValue,
+}
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for HtmlUpdater<'a, C> {
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(eu)
+    fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
+        Self {
+            u,
+            select_element_value: crate::dom::SelectElementValue::none(),
+        }
     }
 }
 
 impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     pub(crate) fn ws_element_clone(&self) -> web_sys::Element {
-        self.0.ws_element().clone()
+        self.u.ws_element().clone()
     }
+
+    pub(super) fn status(&self) -> super::ElementStatus {
+        self.u.status()
+    }
+
+    pub(super) fn select_element_value_mut(&mut self) -> &mut crate::dom::SelectElementValue {
+        &mut self.select_element_value
+    }
+
+    // pub(super) fn set_selected_value(&mut self, value: Option<&str>) {
+    //     self.select_element_value.set_selected_value(value);
+    // }
+
+    // pub(super) fn set_selected_index(&mut self, index: Option<usize>) {
+    //     self.select_element_value.set_selected_index(index);
+    // }
 
     /// Use this method when you are done with your object. It is useful in single-line closures
     /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
@@ -23,52 +45,67 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     pub fn done(self) {}
 
     pub fn state(&self) -> &'a C {
-        self.0.state()
+        self.u.state()
     }
 
     pub fn comp(&self) -> crate::component::Comp<C> {
-        self.0.comp()
+        self.u.comp()
     }
 
     pub fn static_attributes(self) -> attributes::StaticAttributes<'a, C> {
-        self.0.static_attributes()
+        attributes::StaticAttributes::from(self)
     }
 
-    pub fn nodes(self) -> nodes::NodesOwned<'a, C> {
-        self.0.nodes()
+    pub fn nodes(self) -> super::NodesOwned<'a, C> {
+        nodes::NodesOwned::from(self)
     }
 
-    pub fn static_nodes(self) -> nodes::StaticNodesOwned<'a, C> {
-        self.0.static_nodes()
+    pub fn static_nodes(self) -> super::StaticNodesOwned<'a, C> {
+        nodes::StaticNodesOwned::from(self)
     }
+
+    pub fn render(self, value: impl super::Render<C>) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = self.nodes();
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    pub fn render_ref(self, value: &impl super::RenderRef<C>) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = self.nodes();
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    pub fn r#static(self, value: impl super::StaticRender<C>) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = self.nodes();
+        let static_nodes = nodes_owned.static_nodes_ref();
+        value.render(static_nodes);
+        nodes_owned
+    }
+
+    pub fn update_text(self, text: &str) -> super::NodesOwned<'a, C> {
+        let nodes_owned = self.nodes();
+        nodes_owned.update_text(text)
+    }
+
 
     #[cfg(feature = "svg")]
     pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
-        self.0.svg(f)
-    }
-
-    pub fn render(self, value: impl renderable::Render<C>) -> nodes::NodesOwned<'a, C> {
-        self.0.render(value)
-    }
-
-    pub fn render_ref(self, value: &impl renderable::RenderRef<C>) -> nodes::NodesOwned<'a, C> {
-        self.0.render_ref(value)
-    }
-
-    pub fn r#static(self, value: impl renderable::StaticRender<C>) -> nodes::NodesOwned<'a, C> {
-        self.0.r#static(value)
+        self._svg(f)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
         I: renderable::ListItem<C>,
     {
-        self.0
+        self
             .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
     }
 
     pub fn list_with_render<I, R>(
-        self,
+        mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
         tag: &str,
@@ -76,7 +113,11 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.0.list_with_render(items, mode, tag, render)
+        self.u.list_with_render(items, mode, tag, render);
+
+        //The hack start in AttributeSetter::value
+        let parent = self.u.ws_element().as_ref();
+        self.select_element_value.set_select_element_value(parent);
     }
 
     #[cfg(feature = "keyed-list")]
@@ -84,14 +125,18 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
-        self.0.keyed_list(items, mode)
+        self.u.keyed_list(items, mode);
+
+        // The hack start in AttributeSetter::value
+        let parent = self.u.ws_element().as_ref();
+        self.select_element_value.set_select_element_value(parent);
     }
 
     pub fn component<CC: crate::component::Component>(
         self,
         child: &crate::component::ChildComp<CC>,
     ) {
-        self.0.component(child)
+        self.u.component(child)
     }
 }
 
@@ -99,15 +144,15 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     for HtmlUpdater<'a, C>
 {
     fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.0.ws_html_element()
+        self.u.ws_html_element()
     }
 
     fn ws_element(&self) -> &web_sys::Element {
-        self.0.ws_element()
+        self.u.ws_element()
     }
 
     fn element_type(&self) -> crate::dom::ElementType {
-        self.0.element_type()
+        self.u.element_type()
     }
 
     fn require_set_listener(&mut self) -> bool {
@@ -115,35 +160,37 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     }
 
     fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
-        self.0.store_listener(listener);
+        self.u.store_listener(listener);
     }
 
     fn check_bool_attribute(&mut self, value: bool) -> bool {
-        self.0.check_bool_attribute(value)
+        self.u.check_bool_attribute(value)
     }
 
     fn check_str_attribute(&mut self, value: &str) -> bool {
-        self.0.check_str_attribute(value)
+        self.u.check_str_attribute(value)
     }
 
     fn check_i32_attribute(&mut self, value: i32) -> bool {
-        self.0.check_i32_attribute(value)
+        self.u.check_i32_attribute(value)
     }
 
     fn check_u32_attribute(&mut self, value: u32) -> bool {
-        self.0.check_u32_attribute(value)
+        self.u.check_u32_attribute(value)
     }
 
     fn check_f64_attribute(&mut self, value: f64) -> bool {
-        self.0.check_f64_attribute(value)
+        self.u.check_f64_attribute(value)
     }
 
     fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0.set_selected_value(value)
+        //self.u.set_selected_value(value)
+        self.select_element_value.set_selected_value(value);
     }
 
     fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0.set_selected_index(index)
+        //self.u.set_selected_index(index)
+        self.select_element_value.set_selected_index(index);
     }
 }
 
@@ -157,12 +204,77 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter for
 {
 }
 
-impl<'a, C: crate::component::Component> From<HtmlUpdater<'a, C>> for nodes::NodesOwned<'a, C> {
-    fn from(hu: HtmlUpdater<'a, C>) -> Self {
-        Self::from(hu.0)
-    }
-}
+// impl<'a, C: crate::component::Component> From<HtmlUpdater<'a, C>> for nodes::NodesOwned<'a, C> {
+//     fn from(hu: HtmlUpdater<'a, C>) -> Self {
+//         Self::from(hu)
+//     }
+// }
 
 impl<'a, C: crate::component::Component> nodes::DomBuilder<C> for HtmlUpdater<'a, C> {
     type Output = nodes::NodesOwned<'a, C>;
+}
+
+#[cfg(feature = "svg")]
+impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
+    pub fn svg_nodes(self) -> super::SvgNodesOwned<'a, C> {
+        super::SvgNodesOwned::from(self)
+    }
+
+    pub fn svg_static_nodes(self) -> super::SvgStaticNodesOwned<'a, C> {
+        super::SvgStaticNodesOwned::from(self)
+    }
+
+    pub fn svg_render(self, value: impl super::SvgRender<C>) -> super::SvgNodesOwned<'a, C> {
+        let mut nodes_owned = self.svg_nodes();
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    // pub fn render_ref(
+    //     self,
+    //     value: &impl super::RenderRef<C>,
+    // ) -> super::NodesOwned<'a, C> {
+    //     let mut nodes_owned = self.nodes();
+    //     let nodes = nodes_owned.nodes_ref();
+    //     value.render(nodes);
+    //     nodes_owned
+    // }
+
+    pub fn svg_static(self, value: impl super::SvgStaticRender<C>) -> super::SvgNodesOwned<'a, C> {
+        let mut nodes_owned = self.svg_nodes();
+        let static_nodes = nodes_owned.static_nodes_ref();
+        value.render(static_nodes);
+        nodes_owned
+    }
+
+    pub fn svg_list_with_render<I, R>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+        tag: &str,
+        render: R,
+    ) where
+        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
+    {
+        let (comp, state, _, element) = self.u.into_parts();
+        let parent = element.ws_element.as_ref();
+        let use_template = mode.use_template();
+
+        let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
+            comp,
+            state,
+            &mut element.nodes,
+            tag,
+            parent,
+            None,
+            use_template,
+        );
+        non_keyed_list_updater.svg_update(items, render);
+    }
+
+    pub fn _svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
+        let nodes = self.nodes();
+        nodes.svg(f)
+    }
 }

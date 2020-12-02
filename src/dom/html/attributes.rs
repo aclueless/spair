@@ -251,11 +251,11 @@ where
     }
 }
 
-pub struct StaticAttributes<'a, C>(crate::dom::ElementUpdater<'a, C>);
+pub struct StaticAttributes<'a, C>(crate::dom::HtmlUpdater<'a, C>);
 
-impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for StaticAttributes<'a, C> {
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(eu)
+impl<'a, C> From<crate::dom::HtmlUpdater<'a, C>> for StaticAttributes<'a, C> {
+    fn from(u: crate::dom::HtmlUpdater<'a, C>) -> Self {
+        Self(u)
     }
 }
 
@@ -368,7 +368,7 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
         if self.0.status() == crate::dom::ElementStatus::Existing {
             // self.store_listener will not be invoked.
             // We must update the index here to count over the static events.
-            self.0.next_index();
+            self.0.u.next_index();
             false
         } else {
             // A cloned element requires its event handlers to be set because the events

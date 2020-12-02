@@ -345,8 +345,6 @@ pub struct NodeListUpdater<'a, C> {
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
     nodes: &'a mut NodeList,
-    #[cfg(feature = "partial-non-keyed-list")]
-    select_element_value: super::SelectElementValue,
 }
 
 #[cfg(feature = "partial-non-keyed-list")]
@@ -359,7 +357,7 @@ impl<'a, C> Drop for NodeListUpdater<'a, C> {
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
     fn from(eu: super::ElementUpdater<'a, C>) -> Self {
-        let (comp, state, status, element, _select_element_value) = eu.into_parts();
+        let (comp, state, status, element) = eu.into_parts();
         Self {
             comp,
             state,
@@ -368,8 +366,6 @@ impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
             parent: element.ws_element.as_ref(),
             next_sibling: None,
             nodes: &mut element.nodes,
-            #[cfg(feature = "partial-non-keyed-list")]
-            select_element_value: _select_element_value,
         }
     }
 }
