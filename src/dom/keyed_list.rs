@@ -195,14 +195,17 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         }
     }
 
-    pub fn update<I>(&mut self, items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator)
+    pub fn update<I>(
+        &mut self,
+        items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
+    ) -> super::RememberSettingSelectedOption
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
         // No items? Just clear the current list.
         if self.list_context.new_item_count == 0 {
             self.remove_all_old_items();
-            return;
+            return super::RememberSettingSelectedOption;
         }
 
         let mut items_state_iter = items_state_iter.peekable_double_ended();
@@ -227,6 +230,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         }
 
         self.update_other_items_in_middle(&mut items_state_iter);
+        super::RememberSettingSelectedOption
     }
 
     fn update_same_key_items_from_start<I>(
@@ -771,12 +775,12 @@ mod keyed_list_tests {
         let mut pa = PhantomApp::new();
 
         let empty: Vec<&'static str> = Vec::new();
-        pa.updater().keyed_list(&empty, mode);
+        let _ = pa.updater().keyed_list(&empty, mode);
         assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -785,7 +789,7 @@ mod keyed_list_tests {
 
         // Random shuffle + addition
         let data = vec!["f", "b", "d", "l", "g", "i", "m", "j", "a", "h", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(
             Some("fbdlgimjahk"),
             pa.root.ws_element().text_content().as_deref()
@@ -793,13 +797,13 @@ mod keyed_list_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
 
         // Empty the list
-        pa.updater().keyed_list(&empty, mode);
+        let _ = pa.updater().keyed_list(&empty, mode);
         assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         // Add back
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -808,7 +812,7 @@ mod keyed_list_tests {
 
         // Forward
         let data = vec!["a", "i", "b", "c", "d", "e", "f", "g", "h", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("aibcdefghjk"),
@@ -817,7 +821,7 @@ mod keyed_list_tests {
 
         // Backward
         let data = vec!["a", "i", "c", "d", "e", "f", "g", "h", "b", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("aicdefghbjk"),
@@ -826,7 +830,7 @@ mod keyed_list_tests {
 
         // Swap
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -835,7 +839,7 @@ mod keyed_list_tests {
 
         // Remove middle
         let data = vec!["a", "b", "c", "d", "i", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdijk"),
@@ -844,7 +848,7 @@ mod keyed_list_tests {
 
         // Insert middle
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -853,7 +857,7 @@ mod keyed_list_tests {
 
         // Remove start
         let data = vec!["d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("defghijk"),
@@ -862,7 +866,7 @@ mod keyed_list_tests {
 
         // Insert start
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
@@ -871,7 +875,7 @@ mod keyed_list_tests {
 
         // Remove end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefgh"),
@@ -880,7 +884,7 @@ mod keyed_list_tests {
 
         // Append end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        pa.updater().keyed_list(&data, mode);
+        let _ = pa.updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),

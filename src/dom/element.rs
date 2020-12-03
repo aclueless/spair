@@ -180,10 +180,6 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self.comp.clone()
     }
 
-    pub fn comp_ref(&self) -> &crate::component::Comp<C> {
-        self.comp
-    }
-
     pub fn ws_element(&self) -> &web_sys::Element {
         &self.element.ws_element
     }
@@ -200,10 +196,10 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self.status
     }
 
-    pub fn clear(self) {
-        let parent = self.element.ws_element.as_ref();
-        self.element.nodes.clear(parent);
-    }
+    // pub fn clear_nodes(self) {
+    //     let parent = self.element.ws_element.as_ref();
+    //     self.element.nodes.clear(parent);
+    // }
 
     pub fn next_index(&mut self) {
         self.index += 1;
@@ -259,20 +255,14 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         rs
     }
 
-    // pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    // where
-    //     I: super::ListItem<C>,
-    // {
-    //     self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
-    // }
-
     pub fn list_with_render<I, R>(
         &mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
         tag: &str,
         render: R,
-    ) where
+    ) -> super::RememberSettingSelectedOption
+    where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
         let parent = self.element.ws_element.as_ref();
@@ -287,14 +277,15 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             None,
             use_template,
         );
-        let _must_set_select_element_value = non_keyed_list_updater.html_update(items, render);
-
-        // The hack start in AttributeSetter::value
-        //self.select_element_value.set_select_element_value(parent);
+        non_keyed_list_updater.html_update(items, render)
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(&mut self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    pub fn keyed_list<I>(
+        &mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+    ) -> super::RememberSettingSelectedOption
     where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
@@ -315,10 +306,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
                 use_template,
             ),
         };
-        keyed_list_updater.update(items.into_iter());
-
-        // The hack start in AttributeSetter::value
-        // self.select_element_value.set_select_element_value(parent);
+        keyed_list_updater.update(items.into_iter())
     }
 
     pub fn component<CC: crate::component::Component>(
@@ -339,7 +327,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 }
 
-
+// Both SvgUpdater and SvgStaticAttributes just wrap around ElementUpdater, so these methods
+// should be impled on it.
 #[cfg(feature = "svg")]
 impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     pub fn svg_nodes(self) -> super::SvgNodesOwned<'a, C> {
@@ -403,4 +392,3 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     //     nodes.svg(f)
     // }
 }
-

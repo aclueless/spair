@@ -317,7 +317,6 @@ impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgStaticAttributes<'a, 
     }
 }
 
-
 impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
     /// Use this method when you are done with your object. It is useful in single-line closures
     /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`

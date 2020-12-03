@@ -96,7 +96,15 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 pub struct HtmlNodeListUpdater<'a, C> {
     u: crate::dom::nodes::NodeListUpdater<'a, C>,
     #[cfg(feature = "partial-non-keyed-list")]
-    select_element_value: super::SelectElementValue,
+    select_element_value: crate::dom::SelectElementValue,
+}
+
+#[cfg(feature = "partial-non-keyed-list")]
+impl<'a, C> Drop for HtmlNodeListUpdater<'a, C> {
+    fn drop(&mut self) {
+        self.select_element_value
+            .set_select_element_value(self.u.parent());
+    }
 }
 
 impl<'a, C> From<super::HtmlUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
@@ -112,9 +120,9 @@ impl<'a, C> From<super::HtmlUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
 impl<'a, C> From<crate::dom::nodes::NodeListUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
     fn from(u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
         Self {
-            u: From::from(u),
+            u,
             #[cfg(feature = "partial-non-keyed-list")]
-            select_element_value: super::SelectElementValue::none(),
+            select_element_value: crate::dom::SelectElementValue::none(),
         }
     }
 }
@@ -288,7 +296,7 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.0.list_with_render(items, mode, tag, render);
+        self.0.u.list_with_render(items, mode, tag, render);
         self
     }
 }
@@ -394,7 +402,7 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.0.list_with_render(items, mode, tag, render);
+        self.0.u.list_with_render(items, mode, tag, render);
         self
     }
 }

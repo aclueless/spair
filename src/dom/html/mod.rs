@@ -4,8 +4,8 @@ pub mod renderable;
 
 /// This struct provide methods for setting properties/attributes and adding child nodes for
 /// HTML elements.
-pub struct HtmlUpdater<'a, C>{
-    pub (super)u: crate::dom::element::ElementUpdater<'a, C>,
+pub struct HtmlUpdater<'a, C> {
+    pub(super) u: crate::dom::element::ElementUpdater<'a, C>,
     select_element_value: crate::dom::SelectElementValue,
 }
 
@@ -90,7 +90,6 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         nodes_owned.update_text(text)
     }
 
-
     #[cfg(feature = "svg")]
     pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
         self._svg(f)
@@ -100,8 +99,7 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     where
         I: renderable::ListItem<C>,
     {
-        self
-            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+        self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
     }
 
     pub fn list_with_render<I, R>(
@@ -113,23 +111,27 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        self.u.list_with_render(items, mode, tag, render);
+        let _must_set_select_element_value_after_this =
+            self.u.list_with_render(items, mode, tag, render);
 
         //The hack start in AttributeSetter::value
-        let parent = self.u.ws_element().as_ref();
-        self.select_element_value.set_select_element_value(parent);
+        self.select_element_value
+            .set_select_element_value(self.u.ws_element().as_ref());
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    where
+    pub fn keyed_list<I>(
+        mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+    ) where
         for<'k> I: super::KeyedListItem<'k, C>,
     {
-        self.u.keyed_list(items, mode);
+        let _must_set_select_element_value_after_this = self.u.keyed_list(items, mode);
 
-        // The hack start in AttributeSetter::value
-        let parent = self.u.ws_element().as_ref();
-        self.select_element_value.set_select_element_value(parent);
+        //The hack start in AttributeSetter::value
+        self.select_element_value
+            .set_select_element_value(self.u.ws_element().as_ref());
     }
 
     pub fn component<CC: crate::component::Component>(

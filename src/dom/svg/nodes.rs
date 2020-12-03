@@ -143,7 +143,6 @@ impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgNodesOwned<'a, C> {
     }
 }
 
-
 impl<'a, C: crate::component::Component> From<crate::dom::SvgStaticAttributes<'a, C>>
     for SvgNodesOwned<'a, C>
 {

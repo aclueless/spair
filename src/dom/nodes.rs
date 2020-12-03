@@ -329,8 +329,6 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
             nodes: &mut self.match_if.nodes,
             parent: self.parent,
             next_sibling: Some(&self.match_if.end_node),
-            #[cfg(feature = "partial-non-keyed-list")]
-            select_element_value: super::SelectElementValue::none(),
         }
         .into()
     }
@@ -347,14 +345,6 @@ pub struct NodeListUpdater<'a, C> {
     nodes: &'a mut NodeList,
 }
 
-#[cfg(feature = "partial-non-keyed-list")]
-impl<'a, C> Drop for NodeListUpdater<'a, C> {
-    fn drop(&mut self) {
-        self.select_element_value
-            .set_select_element_value(self.parent);
-    }
-}
-
 impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
     fn from(eu: super::ElementUpdater<'a, C>) -> Self {
         let (comp, state, status, element) = eu.into_parts();
@@ -367,6 +357,12 @@ impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
             next_sibling: None,
             nodes: &mut element.nodes,
         }
+    }
+}
+
+impl<'a, C> NodeListUpdater<'a, C> {
+    pub fn parent(&self) -> &web_sys::Node {
+        self.parent
     }
 }
 
