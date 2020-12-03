@@ -1,6 +1,44 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub trait AttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter
+pub trait AttributeValueSetter: Sized + crate::dom::attributes::AttributeSetter
+{
+    fn set_selected_value(&mut self, value: Option<&str>);
+    fn set_selected_index(&mut self, index: Option<usize>);
+
+    fn value_str(&mut self, value: &str) {
+        if self.check_str_attribute(value) {
+            let element = self.ws_element();
+            match self.element_type() {
+                crate::dom::ElementType::Input => {
+                    let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
+                    input.set_value(value);
+                }
+                crate::dom::ElementType::Select => {
+                    // It has no effect if you set a value for
+                    // a <select> element before adding its <option>s,
+                    // the hacking should finish in the list() method.
+                    // Is there a better solution?
+                    self.set_selected_value(Some(value));
+                }
+                crate::dom::ElementType::TextArea => {
+                    let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
+                    text_area.set_value(value);
+                }
+                crate::dom::ElementType::Option => {
+                    let option = element.unchecked_ref::<web_sys::HtmlOptionElement>();
+                    option.set_value(value);
+                }
+                crate::dom::ElementType::Other => {
+                    log::warn!(
+                        ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
+                    );
+                }
+            }
+        }
+    }
+}
+
+pub trait AttributeSetter<C>: Sized + AttributeValueSetter //crate::dom::attributes::AttributeSetter
 where
     C: crate::component::Component,
 {
@@ -337,6 +375,15 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
     }
 }
 
+impl<'a, C: crate::component::Component> AttributeValueSetter for StaticAttributes<'a, C> {
+    fn set_selected_value(&mut self, value: Option<&str>) {
+        self.0.select_element_value_mut().set_selected_value(value);
+    }
+
+    fn set_selected_index(&mut self, index: Option<usize>) {
+        self.0.select_element_value_mut().set_selected_index(index);
+    }
+}
 impl<'a, C: crate::component::Component> AttributeSetter<C> for StaticAttributes<'a, C> where
     C: crate::component::Component
 {
@@ -405,14 +452,6 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
         self.0.status() == crate::dom::ElementStatus::JustCreated
         // no need to store the value for static attributes
     }
-
-    fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0.select_element_value_mut().set_selected_value(value);
-    }
-
-    fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0.select_element_value_mut().set_selected_index(index);
-    }
 }
 
 // TODO: Should all these (below) be produced by macros?
@@ -423,7 +462,6 @@ pub trait AttributeValue<U> {
 // &str
 impl<'a, C: crate::component::Component> AttributeValue<crate::dom::HtmlUpdater<'a, C>> for &str {
     fn update(self, mut u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
-        use crate::dom::attributes::AttributeSetter;
         u.value_str(self);
         u
     }
@@ -436,7 +474,6 @@ impl<'a, C: crate::component::Component> AttributeValue<crate::dom::StaticAttrib
         self,
         mut u: crate::dom::StaticAttributes<'a, C>,
     ) -> crate::dom::StaticAttributes<'a, C> {
-        use crate::dom::attributes::AttributeSetter;
         u.value_str(self);
         u
     }
@@ -447,7 +484,6 @@ impl<'a, C: crate::component::Component> AttributeValue<crate::dom::HtmlUpdater<
     for &String
 {
     fn update(self, mut u: crate::dom::HtmlUpdater<'a, C>) -> crate::dom::HtmlUpdater<'a, C> {
-        use crate::dom::attributes::AttributeSetter;
         u.value_str(self);
         u
     }
@@ -460,7 +496,6 @@ impl<'a, C: crate::component::Component> AttributeValue<crate::dom::StaticAttrib
         self,
         mut u: crate::dom::StaticAttributes<'a, C>,
     ) -> crate::dom::StaticAttributes<'a, C> {
-        use crate::dom::attributes::AttributeSetter;
         u.value_str(self);
         u
     }

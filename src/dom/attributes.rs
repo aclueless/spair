@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::{UnwrapThrowExt};
 
 enum Attribute {
     EventListener(Box<dyn crate::events::Listener>),
@@ -140,9 +140,6 @@ pub trait AttributeSetter {
     fn check_u32_attribute(&mut self, value: u32) -> bool;
     fn check_f64_attribute(&mut self, value: f64) -> bool;
 
-    fn set_selected_value(&mut self, _value: Option<&str>) {}
-    fn set_selected_index(&mut self, _index: Option<usize>) {}
-
     fn set_bool_attribute(&mut self, name: &str, value: bool) {
         if self.check_bool_attribute(value) {
             if value {
@@ -186,38 +183,6 @@ pub trait AttributeSetter {
             self.ws_element()
                 .set_attribute(name, &value.to_string())
                 .expect_throw("Unable to set string attribute");
-        }
-    }
-
-    fn value_str(&mut self, value: &str) {
-        if self.check_str_attribute(value) {
-            let element = self.ws_element();
-            match self.element_type() {
-                super::ElementType::Input => {
-                    let input = element.unchecked_ref::<web_sys::HtmlInputElement>();
-                    input.set_value(value);
-                }
-                super::ElementType::Select => {
-                    // It has no effect if you set a value for
-                    // a <select> element before adding its <option>s,
-                    // the hacking should finish in the list() method.
-                    // Is there a better solution?
-                    self.set_selected_value(Some(value));
-                }
-                super::ElementType::TextArea => {
-                    let text_area = element.unchecked_ref::<web_sys::HtmlTextAreaElement>();
-                    text_area.set_value(value);
-                }
-                super::ElementType::Option => {
-                    let option = element.unchecked_ref::<web_sys::HtmlOptionElement>();
-                    option.set_value(value);
-                }
-                super::ElementType::Other => {
-                    log::warn!(
-                        ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
-                    );
-                }
-            }
         }
     }
 }

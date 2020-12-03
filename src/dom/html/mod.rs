@@ -185,6 +185,9 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
         self.u.check_f64_attribute(value)
     }
 
+}
+
+impl<'a, C: crate::component::Component> attributes::AttributeValueSetter for HtmlUpdater<'a, C> {
     fn set_selected_value(&mut self, value: Option<&str>) {
         //self.u.set_selected_value(value)
         self.select_element_value.set_selected_value(value);
@@ -195,7 +198,6 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
         self.select_element_value.set_selected_index(index);
     }
 }
-
 impl<'a, C: crate::component::Component> attributes::AttributeSetter<C> for HtmlUpdater<'a, C> where
     C: crate::component::Component
 {

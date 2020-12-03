@@ -144,14 +144,12 @@ impl<'a, C> ElementUpdater<'a, C> {
         &'a C,
         super::ElementStatus,
         &'a mut Element,
-        //SelectElementValue,
     ) {
         (
             self.comp,
             self.state,
             self.status,
             self.element,
-            //self.select_element_value,
         )
     }
 }
@@ -386,9 +384,4 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         );
         non_keyed_list_updater.svg_update(items, render);
     }
-
-    // pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
-    //     let nodes = self.nodes();
-    //     nodes.svg(f)
-    // }
 }
