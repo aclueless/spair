@@ -50,8 +50,8 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
                 self.use_template,
             );
             let element = self.list.get_element(index);
-            let eu = super::ElementUpdater::new(self.comp, self.state, element, status);
-            render(&item, eu.into());
+            let u = super::ElementUpdater::new(self.comp, self.state, element, status);
+            render(&item, u.into());
             index += 1;
         }
         self.clear_after(index);
@@ -85,8 +85,8 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
                 self.use_template,
             );
             let element = self.list.get_element(index);
-            let eu = super::ElementUpdater::new(self.comp, self.state, element, status);
-            render(&item, eu.into());
+            let u = super::ElementUpdater::new(self.comp, self.state, element, status);
+            render(&item, u.into());
             index += 1;
         }
         self.clear_after(index);

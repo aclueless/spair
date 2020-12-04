@@ -184,7 +184,6 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     fn check_f64_attribute(&mut self, value: f64) -> bool {
         self.u.check_f64_attribute(value)
     }
-
 }
 
 impl<'a, C: crate::component::Component> attributes::AttributeValueSetter for HtmlUpdater<'a, C> {
@@ -209,8 +208,8 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter for
 }
 
 // impl<'a, C: crate::component::Component> From<HtmlUpdater<'a, C>> for nodes::NodesOwned<'a, C> {
-//     fn from(hu: HtmlUpdater<'a, C>) -> Self {
-//         Self::from(hu)
+//     fn from(u: HtmlUpdater<'a, C>) -> Self {
+//         Self::from(u)
 //     }
 // }
 

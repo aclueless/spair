@@ -122,8 +122,8 @@ impl<C: crate::component::Component> SvgStaticRender<C> for &str {
 pub struct SvgUpdater<'a, C>(crate::dom::element::ElementUpdater<'a, C>);
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for SvgUpdater<'a, C> {
-    fn from(eu: crate::dom::ElementUpdater<'a, C>) -> Self {
-        Self(eu)
+    fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
+        Self(u)
     }
 }
 
@@ -259,8 +259,8 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter for
 }
 
 impl<'a, C: crate::component::Component> From<SvgUpdater<'a, C>> for nodes::SvgNodesOwned<'a, C> {
-    fn from(su: SvgUpdater<'a, C>) -> Self {
-        Self::from(su.0)
+    fn from(u: SvgUpdater<'a, C>) -> Self {
+        Self::from(u.0)
     }
 }
 

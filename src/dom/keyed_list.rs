@@ -19,13 +19,13 @@ trait UpdateItem<C: crate::component::Component>: crate::dom::ListItem<C> {
         let mut old_item = old_item.unwrap_throw().1.take();
         fn_insert(&old_item.as_ref().unwrap_throw().1, next_sibling);
 
-        let eu = super::ElementUpdater::new(
+        let u = super::ElementUpdater::new(
             comp,
             state,
             &mut old_item.as_mut().unwrap_throw().1,
             super::ElementStatus::Existing,
         );
-        self.render(eu.into());
+        self.render(u.into());
         *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
     }
 }
@@ -210,14 +210,14 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
 
         let mut items_state_iter = items_state_iter.peekable_double_ended();
         if self.list_context.require_init_template {
-            let eu = super::ElementUpdater::new(
+            let u = super::ElementUpdater::new(
                 self.comp,
                 self.state,
                 self.list_context.template.as_mut().unwrap(),
                 super::ElementStatus::JustCreated,
             );
 
-            items_state_iter.peek().unwrap_throw().render(eu.into());
+            items_state_iter.peek().unwrap_throw().render(u.into());
         }
         loop {
             let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
@@ -435,9 +435,9 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
                 None => self.create_element_for_new_item(I::ROOT_ELEMENT_TAG),
             };
 
-            let eu = super::ElementUpdater::new(self.comp, self.state, &mut element, status);
+            let u = super::ElementUpdater::new(self.comp, self.state, &mut element, status);
 
-            item_state.render(eu.into());
+            item_state.render(u.into());
             if !lis {
                 let next_sibling = self
                     .list_context
@@ -505,9 +505,9 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item(I::ROOT_ELEMENT_TAG);
 
-            let eu = super::ElementUpdater::new(self.comp, self.state, &mut element, status);
+            let u = super::ElementUpdater::new(self.comp, self.state, &mut element, status);
 
-            item_state.render(eu.into());
+            item_state.render(u.into());
             element.insert_before(
                 self.list_context.parent,
                 self.list_context

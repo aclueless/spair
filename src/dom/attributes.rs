@@ -1,4 +1,4 @@
-use wasm_bindgen::{UnwrapThrowExt};
+use wasm_bindgen::UnwrapThrowExt;
 
 enum Attribute {
     EventListener(Box<dyn crate::events::Listener>),

@@ -346,8 +346,8 @@ pub struct NodeListUpdater<'a, C> {
 }
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
-    fn from(eu: super::ElementUpdater<'a, C>) -> Self {
-        let (comp, state, status, element) = eu.into_parts();
+    fn from(u: super::ElementUpdater<'a, C>) -> Self {
+        let (comp, state, status, element) = u.into_parts();
         Self {
             comp,
             state,

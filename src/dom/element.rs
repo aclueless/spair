@@ -145,12 +145,7 @@ impl<'a, C> ElementUpdater<'a, C> {
         super::ElementStatus,
         &'a mut Element,
     ) {
-        (
-            self.comp,
-            self.state,
-            self.status,
-            self.element,
-        )
+        (self.comp, self.state, self.status, self.element)
     }
 }
 

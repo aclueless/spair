@@ -1,7 +1,6 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub trait AttributeValueSetter: Sized + crate::dom::attributes::AttributeSetter
-{
+pub trait AttributeValueSetter: Sized + crate::dom::attributes::AttributeSetter {
     fn set_selected_value(&mut self, value: Option<&str>);
     fn set_selected_index(&mut self, index: Option<usize>);
 
@@ -38,7 +37,7 @@ pub trait AttributeValueSetter: Sized + crate::dom::attributes::AttributeSetter
     }
 }
 
-pub trait AttributeSetter<C>: Sized + AttributeValueSetter //crate::dom::attributes::AttributeSetter
+pub trait AttributeSetter<C>: Sized + AttributeValueSetter
 where
     C: crate::component::Component,
 {
