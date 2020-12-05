@@ -28,22 +28,26 @@ impl Clone for Element {
 }
 
 impl Element {
-    pub fn new(tag: &str) -> Self {
+    pub fn new_ns(ns: Option<&'static str>, tag: &str) -> Self {
+        let document = crate::utils::document();
         Self {
             element_type: tag.into(),
-            ws_element: crate::utils::document()
-                .create_element(tag)
-                .expect_throw("Unable to create new element"),
+            ws_element: if ns.is_none() {
+                document.create_element(tag)
+            } else {
+                document.create_element_ns(ns, tag)
+            }
+            .expect_throw("Unable to create new element"),
             attributes: Default::default(),
             nodes: Default::default(),
         }
     }
 
-    pub fn new_in(tag: &str, parent: &web_sys::Node, next_sibling: Option<&web_sys::Node>) -> Self {
-        let element = super::Element::new(tag);
-        element.insert_before(parent, next_sibling);
-        element
-    }
+    // pub fn new_in(tag: &str, parent: &web_sys::Node, next_sibling: Option<&web_sys::Node>) -> Self {
+    //     let element = super::Element::new(tag);
+    //     element.insert_before(parent, next_sibling);
+    //     element
+    // }
 
     pub(crate) fn from_ws_element(ws_element: web_sys::Element) -> Self {
         Self {

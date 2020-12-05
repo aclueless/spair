@@ -194,7 +194,7 @@ impl<C> RcComp<C> {
             .unwrap_or_else(|| {
                 // Just an element to create CompInstance, the element will be replace by the
                 // actual node when attaching to the DOM
-                (crate::dom::Element::new("div"), MountStatus::Never)
+                (crate::dom::Element::new_ns(None, "div"), MountStatus::Never)
             });
 
         Self(Rc::new(RefCell::new(CompInstance {

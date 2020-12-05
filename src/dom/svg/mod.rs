@@ -1,34 +1,34 @@
-use wasm_bindgen::UnwrapThrowExt;
+//use wasm_bindgen::UnwrapThrowExt;
 
 pub mod attributes;
 pub mod nodes;
 
 static SVG_NAMESPACE: &'static str = "http://www.w3.org/2000/svg";
 
-impl super::Element {
-    pub fn new_svg_element(tag: &str) -> Self {
-        Self {
-            element_type: "svg".into(),
-            ws_element: crate::utils::document()
-                .create_element_ns(Some(SVG_NAMESPACE), tag)
-                .expect_throw("Unable to create new svg element"),
-            attributes: Default::default(),
-            nodes: Default::default(),
-        }
-    }
-}
+// impl super::Element {
+//     pub fn new_svg_element(tag: &str) -> Self {
+//         Self {
+//             element_type: "svg".into(),
+//             ws_element: crate::utils::document()
+//                 .create_element_ns(Some(SVG_NAMESPACE), tag)
+//                 .expect_throw("Unable to create new svg element"),
+//             attributes: Default::default(),
+//             nodes: Default::default(),
+//         }
+//     }
+// }
 
 impl crate::dom::nodes::NodeList {
-    fn create_new_svg_element(
-        &mut self,
-        tag: &str,
-        parent: &web_sys::Node,
-        next_sibling: Option<&web_sys::Node>,
-    ) {
-        let svg = super::Element::new_svg_element(tag);
-        svg.insert_before(parent, next_sibling);
-        self.0.push(crate::dom::nodes::Node::Element(svg));
-    }
+    // fn create_new_svg_element(
+    //     &mut self,
+    //     tag: &str,
+    //     parent: &web_sys::Node,
+    //     next_sibling: Option<&web_sys::Node>,
+    // ) {
+    //     let svg = super::Element::new_svg_element(tag);
+    //     svg.insert_before(parent, next_sibling);
+    //     self.0.push(crate::dom::nodes::Node::Element(svg));
+    // }
 
     pub fn check_or_create_svg_element_ns(
         &mut self,
@@ -39,7 +39,7 @@ impl crate::dom::nodes::NodeList {
         next_sibling: Option<&web_sys::Node>,
     ) -> super::ElementStatus {
         if index == self.0.len() {
-            self.create_new_svg_element(tag, parent, next_sibling);
+            self.create_new_element_ns(Some(SVG_NAMESPACE), tag, parent, next_sibling);
             super::ElementStatus::JustCreated
         } else {
             parent_status
@@ -59,7 +59,7 @@ impl crate::dom::nodes::NodeList {
         if index < item_count {
             super::ElementStatus::Existing
         } else if !use_template || item_count == 0 {
-            self.create_new_svg_element(tag, parent, next_sibling);
+            self.create_new_element_ns(Some(SVG_NAMESPACE), tag, parent, next_sibling);
             super::ElementStatus::JustCreated
         } else {
             let element = self.0[0].clone();

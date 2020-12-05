@@ -65,7 +65,7 @@ impl KeyedList {
 
         let require_init_template = use_template && self.template.is_none();
         if require_init_template {
-            self.template = Some(super::Element::new(root_item_tag));
+            self.template = Some(super::Element::new_ns(None, root_item_tag));
         }
         let template = self.template.as_mut();
         let new_item_count = self.active.len();
@@ -191,7 +191,10 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
     fn create_element_for_new_item(&self, tag: &str) -> (super::Element, super::ElementStatus) {
         match &self.list_context.template {
             Some(template) => (Clone::clone(*template), super::ElementStatus::JustCloned),
-            None => (super::Element::new(tag), super::ElementStatus::JustCreated),
+            None => (
+                super::Element::new_ns(None, tag),
+                super::ElementStatus::JustCreated,
+            ),
         }
     }
 
@@ -614,7 +617,7 @@ mod keyed_list_tests {
                 item_state: &(),
                 old_element: Some(super::OldElement {
                     index,
-                    element: super::super::Element::new("div"),
+                    element: super::super::Element::new_ns(None, "div"),
                 }),
                 lis: false,
             }
@@ -700,7 +703,7 @@ mod keyed_list_tests {
 
     impl PhantomApp {
         fn new() -> Self {
-            let root = super::super::Element::new("div");
+            let root = super::super::Element::new_ns(None, "div");
             let _rc = crate::component::RcComp::new(Some(root.ws_element().clone()));
             _rc.set_state(());
 

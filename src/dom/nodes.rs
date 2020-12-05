@@ -43,17 +43,16 @@ impl NodeList {
         }
     }
 
-    fn create_new_element(
+    pub(super) fn create_new_element_ns(
         &mut self,
+        ns: Option<&'static str>,
         tag: &str,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
     ) {
-        self.0.push(Node::Element(super::Element::new_in(
-            tag,
-            parent,
-            next_sibling,
-        )));
+        let e = super::Element::new_ns(ns, tag);
+        e.insert_before(parent, next_sibling);
+        self.0.push(Node::Element(e));
     }
 
     pub(super) fn check_or_create_element(
@@ -65,7 +64,7 @@ impl NodeList {
         next_sibling: Option<&web_sys::Node>,
     ) -> super::ElementStatus {
         if index == self.0.len() {
-            self.create_new_element(tag, parent, next_sibling);
+            self.create_new_element_ns(None, tag, parent, next_sibling);
             super::ElementStatus::JustCreated
         } else {
             parent_status
@@ -84,7 +83,7 @@ impl NodeList {
         if index < item_count {
             super::ElementStatus::Existing
         } else if !use_template || item_count == 0 {
-            self.create_new_element(tag, parent, next_sibling);
+            self.create_new_element_ns(None, tag, parent, next_sibling);
             super::ElementStatus::JustCreated
         } else {
             let element = self.0[0].clone();
