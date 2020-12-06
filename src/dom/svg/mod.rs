@@ -2,34 +2,11 @@
 
 pub mod attributes;
 pub mod nodes;
+pub mod renderable;
 
 pub static SVG_NAMESPACE: &'static str = "http://www.w3.org/2000/svg";
 
-// impl super::Element {
-//     pub fn new_svg_element(tag: &str) -> Self {
-//         Self {
-//             element_type: "svg".into(),
-//             ws_element: crate::utils::document()
-//                 .create_element_ns(Some(SVG_NAMESPACE), tag)
-//                 .expect_throw("Unable to create new svg element"),
-//             attributes: Default::default(),
-//             nodes: Default::default(),
-//         }
-//     }
-// }
-
 impl crate::dom::nodes::NodeList {
-    // fn create_new_svg_element(
-    //     &mut self,
-    //     tag: &str,
-    //     parent: &web_sys::Node,
-    //     next_sibling: Option<&web_sys::Node>,
-    // ) {
-    //     let svg = super::Element::new_svg_element(tag);
-    //     svg.insert_before(parent, next_sibling);
-    //     self.0.push(crate::dom::nodes::Node::Element(svg));
-    // }
-
     pub fn check_or_create_svg_element(
         &mut self,
         tag: &str,
@@ -72,48 +49,6 @@ impl crate::dom::nodes::NodeList {
             self.0.push(element);
             super::ElementStatus::JustCloned
         }
-    }
-}
-
-pub trait SvgRender<C: crate::component::Component> {
-    fn render(self, nodes: nodes::SvgNodes<C>);
-}
-
-pub trait SvgStaticRender<C: crate::component::Component> {
-    fn render(self, nodes: nodes::SvgStaticNodes<C>);
-}
-
-macro_rules! impl_render_with_to_string {
-    ($($type:ident)+) => {
-        $(
-            impl<C: crate::component::Component> SvgRender<C> for $type {
-                fn render(self, nodes: nodes::SvgNodes<C>) {
-                    nodes.update_text(&self.to_string());
-                }
-            }
-
-            impl<C: crate::component::Component> SvgStaticRender<C> for $type {
-                fn render(self, nodes: nodes::SvgStaticNodes<C>) {
-                    nodes.static_text(&self.to_string());
-                }
-            }
-        )+
-    }
-}
-
-impl_render_with_to_string! {
-    i8 i16 i32 i64 u8 u16 u32 u64 isize usize f32 f64 bool char
-}
-
-impl<C: crate::component::Component> SvgRender<C> for &str {
-    fn render(self, nodes: nodes::SvgNodes<C>) {
-        nodes.update_text(self);
-    }
-}
-
-impl<C: crate::component::Component> SvgStaticRender<C> for &str {
-    fn render(self, nodes: nodes::SvgStaticNodes<C>) {
-        nodes.static_text(self);
     }
 }
 
@@ -215,18 +150,21 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         self.0.svg_static_nodes()
     }
 
-    pub fn render(self, value: impl SvgRender<C>) -> nodes::SvgNodesOwned<'a, C> {
+    pub fn render(self, value: impl renderable::SvgRender<C>) -> nodes::SvgNodesOwned<'a, C> {
         self.0.svg_render(value)
     }
 
     // pub fn render_ref(
     //     self,
-    //     value: &impl SvgRenderRef<C>,
+    //     value: &impl renderable::SvgRenderRef<C>,
     // ) -> nodes::SvgNodesOwned<'a, C> {
     //     self.0.render_ref(value)
     // }
 
-    pub fn r#static(self, value: impl SvgStaticRender<C>) -> nodes::SvgNodesOwned<'a, C> {
+    pub fn r#static(
+        self,
+        value: impl renderable::SvgStaticRender<C>,
+    ) -> nodes::SvgNodesOwned<'a, C> {
         self.0.svg_static(value)
     }
 

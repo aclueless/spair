@@ -331,7 +331,7 @@ impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
         self.0.svg_static_nodes()
     }
 
-    pub fn render(self, value: impl super::SvgRender<C>) -> crate::dom::SvgNodesOwned<'a, C> {
+    pub fn render(self, value: impl crate::dom::SvgRender<C>) -> crate::dom::SvgNodesOwned<'a, C> {
         self.0.svg_render(value)
     }
 
@@ -344,7 +344,7 @@ impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
 
     pub fn r#static(
         self,
-        value: impl super::SvgStaticRender<C>,
+        value: impl crate::dom::SvgStaticRender<C>,
     ) -> crate::dom::SvgNodesOwned<'a, C> {
         self.0.svg_static(value)
     }

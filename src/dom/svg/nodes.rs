@@ -169,19 +169,19 @@ impl<'a, C: crate::component::Component> SvgStaticNodesOwned<'a, C> {
         SvgNodesOwned(self.0)
     }
 
-    pub fn render(mut self, value: impl super::SvgRender<C>) -> Self {
+    pub fn render(mut self, value: impl crate::dom::SvgRender<C>) -> Self {
         let nodes = SvgNodes(&mut self.0);
         value.render(nodes);
         self
     }
 
-    // pub fn render_ref(mut self, value: &impl super::SvgRenderRef<C>) -> Self {
+    // pub fn render_ref(mut self, value: &impl crate::dom::SvgRenderRef<C>) -> Self {
     //     let nodes = SvgNodes(&mut self.0);
     //     value.render(nodes);
     //     self
     // }
 
-    pub fn r#static(mut self, value: impl super::SvgStaticRender<C>) -> Self {
+    pub fn r#static(mut self, value: impl crate::dom::SvgStaticRender<C>) -> Self {
         let static_nodes = SvgStaticNodes(&mut self.0);
         value.render(static_nodes);
         self
@@ -214,19 +214,19 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
         SvgStaticNodesOwned(self.0)
     }
 
-    pub fn render(mut self, value: impl super::SvgRender<C>) -> Self {
+    pub fn render(mut self, value: impl crate::dom::SvgRender<C>) -> Self {
         let nodes = SvgNodes(&mut self.0);
         value.render(nodes);
         self
     }
 
-    // pub fn render_ref(mut self, value: &impl super::SvgRenderRef<C>) -> Self {
+    // pub fn render_ref(mut self, value: &impl crate::dom::SvgRenderRef<C>) -> Self {
     //     let nodes = SvgNodes(&mut self.0);
     //     value.render(nodes);
     //     self
     // }
 
-    pub fn r#static(mut self, value: impl super::SvgStaticRender<C>) -> Self {
+    pub fn r#static(mut self, value: impl crate::dom::SvgStaticRender<C>) -> Self {
         let static_nodes = SvgStaticNodes(&mut self.0);
         value.render(static_nodes);
         self
@@ -241,7 +241,7 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
         render: R,
     ) -> Self
     where
-        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
+        for<'i, 'c> R: Fn(&'i I, crate::dom::SvgUpdater<'c, C>),
     {
         self.0.svg_list_with_render(items, mode, tag, render);
         self
@@ -261,19 +261,19 @@ impl<'n, 'h, C: crate::component::Component> SvgStaticNodes<'n, 'h, C> {
         SvgNodes(self.0)
     }
 
-    pub fn render(self, value: impl super::SvgRender<C>) -> Self {
+    pub fn render(self, value: impl crate::dom::SvgRender<C>) -> Self {
         let nodes = SvgNodes(self.0);
         value.render(nodes);
         self
     }
 
-    // pub fn render_ref(self, value: &impl super::SvgRenderRef<C>) -> Self {
+    // pub fn render_ref(self, value: &impl crate::dom::SvgRenderRef<C>) -> Self {
     //     let nodes = SvgNodes(self.0);
     //     value.render(nodes);
     //     self
     // }
 
-    pub fn r#static(self, value: impl super::SvgStaticRender<C>) -> Self {
+    pub fn r#static(self, value: impl crate::dom::SvgStaticRender<C>) -> Self {
         let static_nodes = SvgStaticNodes(self.0);
         value.render(static_nodes);
         self
@@ -298,19 +298,19 @@ impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
         SvgStaticNodes(self.0)
     }
 
-    pub fn render(self, value: impl super::SvgRender<C>) -> Self {
+    pub fn render(self, value: impl crate::dom::SvgRender<C>) -> Self {
         let nodes = SvgNodes(self.0);
         value.render(nodes);
         self
     }
 
-    // pub fn render_ref(self, value: &impl super::SvgRenderRef<C>) -> Self {
+    // pub fn render_ref(self, value: &impl crate::dom::SvgRenderRef<C>) -> Self {
     //     let nodes = SvgNodes(self.0);
     //     value.render(nodes);
     //     self
     // }
 
-    pub fn r#static(self, value: impl super::SvgStaticRender<C>) -> Self {
+    pub fn r#static(self, value: impl crate::dom::SvgStaticRender<C>) -> Self {
         let static_nodes = SvgStaticNodes(self.0);
         value.render(static_nodes);
         self
@@ -330,7 +330,7 @@ impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
         render: R,
     ) -> Self
     where
-        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
+        for<'i, 'c> R: Fn(&'i I, crate::dom::SvgUpdater<'c, C>),
     {
         self.0.svg_list_with_render(items, mode, tag, render);
         self

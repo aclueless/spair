@@ -1,17 +1,16 @@
 /// This module provides traits that help users define how their types should be rendered.
 /// Implementation for primitive types are also provided.
-use crate::dom::{Nodes, StaticNodes};
 
 pub trait Render<C: crate::component::Component> {
-    fn render(self, nodes: Nodes<C>);
+    fn render(self, nodes: crate::dom::Nodes<C>);
 }
 
 pub trait StaticRender<C: crate::component::Component> {
-    fn render(self, nodes: StaticNodes<C>);
+    fn render(self, nodes: crate::dom::StaticNodes<C>);
 }
 
 pub trait RenderRef<C: crate::component::Component> {
-    fn render(&self, nodes: Nodes<C>);
+    fn render(&self, nodes: crate::dom::Nodes<C>);
 }
 
 impl<C, T> RenderRef<C> for T
@@ -19,7 +18,7 @@ where
     C: crate::component::Component,
     for<'t> &'t T: Render<C>,
 {
-    fn render(&self, nodes: Nodes<C>) {
+    fn render(&self, nodes: crate::dom::Nodes<C>) {
         Render::render(self, nodes);
     }
 }
@@ -36,13 +35,13 @@ macro_rules! impl_render_with_to_string {
     ($($type:ident)+) => {
         $(
             impl<C: crate::component::Component> Render<C> for $type {
-                fn render(self, nodes: Nodes<C>) {
+                fn render(self, nodes: crate::dom::Nodes<C>) {
                     nodes.update_text(&self.to_string());
                 }
             }
 
             impl<C: crate::component::Component> StaticRender<C> for $type {
-                fn render(self, nodes: StaticNodes<C>) {
+                fn render(self, nodes: crate::dom::StaticNodes<C>) {
                     nodes.static_text(&self.to_string());
                 }
             }
@@ -62,25 +61,25 @@ impl_render_with_to_string! {
 }
 
 impl<C: crate::component::Component> StaticRender<C> for &str {
-    fn render(self, nodes: StaticNodes<C>) {
+    fn render(self, nodes: crate::dom::StaticNodes<C>) {
         nodes.static_text(self);
     }
 }
 
 impl<C: crate::component::Component> StaticRender<C> for &String {
-    fn render(self, nodes: StaticNodes<C>) {
+    fn render(self, nodes: crate::dom::StaticNodes<C>) {
         nodes.static_text(self);
     }
 }
 
 impl<C: crate::component::Component> Render<C> for &str {
-    fn render(self, nodes: Nodes<C>) {
+    fn render(self, nodes: crate::dom::Nodes<C>) {
         nodes.update_text(self);
     }
 }
 
 impl<C: crate::component::Component> Render<C> for &String {
-    fn render(self, nodes: Nodes<C>) {
+    fn render(self, nodes: crate::dom::Nodes<C>) {
         nodes.update_text(self);
     }
 }

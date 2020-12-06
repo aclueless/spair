@@ -25,7 +25,7 @@ pub use html::{attributes::*, nodes::*, renderable::*, HtmlUpdater};
 pub use keyed_list::*;
 pub use non_keyed_list::*;
 #[cfg(feature = "svg")]
-pub use svg::{attributes::*, nodes::*, SvgRender, SvgStaticRender, SvgUpdater, SVG_NAMESPACE};
+pub use svg::{attributes::*, nodes::*, renderable::*, SvgUpdater, SVG_NAMESPACE};
 
 // This is currently created by both `Nodes::Iter::update_text()` and `Nodes::Iter::static_text()`
 pub struct Text {
