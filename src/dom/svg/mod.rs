@@ -63,7 +63,7 @@ impl<'a, C: crate::component::Component> super::ElementUpdater<'a, C> {
         super::SvgStaticNodesOwned::from(self)
     }
 
-    pub fn svg_render(self, value: impl super::SvgRender<C>) -> super::SvgNodesOwned<'a, C> {
+    pub fn svg_render(self, value: impl renderable::SvgRender<C>) -> super::SvgNodesOwned<'a, C> {
         let mut nodes_owned = self.svg_nodes();
         let nodes = nodes_owned.nodes_ref();
         value.render(nodes);
@@ -80,7 +80,10 @@ impl<'a, C: crate::component::Component> super::ElementUpdater<'a, C> {
     //     nodes_owned
     // }
 
-    pub fn svg_static(self, value: impl super::SvgStaticRender<C>) -> super::SvgNodesOwned<'a, C> {
+    pub fn svg_static(
+        self,
+        value: impl renderable::SvgStaticRender<C>,
+    ) -> super::SvgNodesOwned<'a, C> {
         let mut nodes_owned = self.svg_nodes();
         let static_nodes = nodes_owned.static_nodes_ref();
         value.render(static_nodes);

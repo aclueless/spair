@@ -203,4 +203,3 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter for
 impl<'a, C: crate::component::Component> nodes::DomBuilder<C> for HtmlUpdater<'a, C> {
     type Output = nodes::NodesOwned<'a, C>;
 }
-
