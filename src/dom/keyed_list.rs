@@ -188,6 +188,19 @@ pub struct KeyedListUpdater<'a, C> {
 }
 
 impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
+    fn update_with_render<I, R, U>(
+        &mut self,
+        items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
+        render: R,
+    ) -> super::RememberSettingSelectedOption
+    where
+        for<'i> R: Fn(&'i I, U),
+        for<'c> U: From<crate::dom::ElementUpdater<'c, C>>,
+    {
+        //
+        super::RememberSettingSelectedOption
+    }
+
     fn create_element_for_new_item(&self, tag: &str) -> (super::Element, super::ElementStatus) {
         match &self.list_context.template {
             Some(template) => (Clone::clone(*template), super::ElementStatus::JustCloned),
