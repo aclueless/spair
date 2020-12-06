@@ -31,14 +31,6 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         &mut self.select_element_value
     }
 
-    // pub(super) fn set_selected_value(&mut self, value: Option<&str>) {
-    //     self.select_element_value.set_selected_value(value);
-    // }
-
-    // pub(super) fn set_selected_index(&mut self, index: Option<usize>) {
-    //     self.select_element_value.set_selected_index(index);
-    // }
-
     /// Use this method when you are done with your object. It is useful in single-line closures
     /// where you don't want to add a semicolon `;` but the compiler complains that "expected `()`
     /// but found `something-else`"
@@ -92,7 +84,8 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
 
     #[cfg(feature = "svg")]
     pub fn svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
-        self._svg(f)
+        let nodes = self.nodes();
+        nodes.svg(f)
     }
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
@@ -207,77 +200,7 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::EventSetter for
 {
 }
 
-// impl<'a, C: crate::component::Component> From<HtmlUpdater<'a, C>> for nodes::NodesOwned<'a, C> {
-//     fn from(u: HtmlUpdater<'a, C>) -> Self {
-//         Self::from(u)
-//     }
-// }
-
 impl<'a, C: crate::component::Component> nodes::DomBuilder<C> for HtmlUpdater<'a, C> {
     type Output = nodes::NodesOwned<'a, C>;
 }
 
-#[cfg(feature = "svg")]
-impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
-    pub fn svg_nodes(self) -> super::SvgNodesOwned<'a, C> {
-        super::SvgNodesOwned::from(self)
-    }
-
-    pub fn svg_static_nodes(self) -> super::SvgStaticNodesOwned<'a, C> {
-        super::SvgStaticNodesOwned::from(self)
-    }
-
-    pub fn svg_render(self, value: impl super::SvgRender<C>) -> super::SvgNodesOwned<'a, C> {
-        let mut nodes_owned = self.svg_nodes();
-        let nodes = nodes_owned.nodes_ref();
-        value.render(nodes);
-        nodes_owned
-    }
-
-    // pub fn render_ref(
-    //     self,
-    //     value: &impl super::RenderRef<C>,
-    // ) -> super::NodesOwned<'a, C> {
-    //     let mut nodes_owned = self.nodes();
-    //     let nodes = nodes_owned.nodes_ref();
-    //     value.render(nodes);
-    //     nodes_owned
-    // }
-
-    pub fn svg_static(self, value: impl super::SvgStaticRender<C>) -> super::SvgNodesOwned<'a, C> {
-        let mut nodes_owned = self.svg_nodes();
-        let static_nodes = nodes_owned.static_nodes_ref();
-        value.render(static_nodes);
-        nodes_owned
-    }
-
-    pub fn svg_list_with_render<I, R>(
-        self,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-        tag: &str,
-        render: R,
-    ) where
-        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
-    {
-        let (comp, state, _, element) = self.u.into_parts();
-        let parent = element.ws_element.as_ref();
-        let use_template = mode.use_template();
-
-        let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
-            comp,
-            state,
-            &mut element.nodes,
-            tag,
-            parent,
-            None,
-            use_template,
-        );
-        non_keyed_list_updater.svg_update(items, render);
-    }
-
-    pub fn _svg(self, f: impl FnOnce(crate::dom::SvgUpdater<C>)) -> super::NodesOwned<'a, C> {
-        let nodes = self.nodes();
-        nodes.svg(f)
-    }
-}

@@ -96,19 +96,6 @@ impl<'a, C: crate::component::Component> super::ElementUpdater<'a, C> {
     ) where
         for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
     {
-        // let parent = self.element.ws_element.as_ref();
-        // let use_template = mode.use_template();
-
-        // let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
-        //     self.comp,
-        //     self.state,
-        //     &mut self.element.nodes,
-        //     tag,
-        //     parent,
-        //     None,
-        //     use_template,
-        // );
-        // non_keyed_list_updater.svg_update(items, render);
         self.non_keyed_list_updater(mode, tag)
             .svg_update(items, render);
     }
