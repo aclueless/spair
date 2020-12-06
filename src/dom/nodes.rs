@@ -43,7 +43,7 @@ impl NodeList {
         }
     }
 
-    pub(super) fn create_new_element_ns(
+    pub fn create_new_element_ns(
         &mut self,
         ns: Option<&'static str>,
         tag: &str,
@@ -55,7 +55,7 @@ impl NodeList {
         self.0.push(Node::Element(e));
     }
 
-    pub(super) fn check_or_create_element(
+    pub fn check_or_create_element(
         &mut self,
         tag: &str,
         index: usize,
@@ -120,7 +120,7 @@ impl NodeList {
         }
     }
 
-    pub(super) fn static_text(
+    pub fn static_text(
         &mut self,
         index: usize,
         text: &str,
@@ -132,7 +132,7 @@ impl NodeList {
         }
     }
 
-    pub(super) fn update_text(
+    pub fn update_text(
         &mut self,
         index: usize,
         text: &str,
@@ -413,7 +413,7 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
 
     #[cfg(feature = "svg")]
     pub fn get_svg_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C> {
-        let status = self.nodes.check_or_create_svg_element_ns(
+        let status = self.nodes.check_or_create_svg_element(
             tag,
             self.index,
             self.parent_status,

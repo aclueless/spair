@@ -3,7 +3,7 @@
 pub mod attributes;
 pub mod nodes;
 
-static SVG_NAMESPACE: &'static str = "http://www.w3.org/2000/svg";
+pub static SVG_NAMESPACE: &'static str = "http://www.w3.org/2000/svg";
 
 // impl super::Element {
 //     pub fn new_svg_element(tag: &str) -> Self {
@@ -30,7 +30,7 @@ impl crate::dom::nodes::NodeList {
     //     self.0.push(crate::dom::nodes::Node::Element(svg));
     // }
 
-    pub fn check_or_create_svg_element_ns(
+    pub fn check_or_create_svg_element(
         &mut self,
         tag: &str,
         index: usize,
@@ -114,6 +114,68 @@ impl<C: crate::component::Component> SvgRender<C> for &str {
 impl<C: crate::component::Component> SvgStaticRender<C> for &str {
     fn render(self, nodes: nodes::SvgStaticNodes<C>) {
         nodes.static_text(self);
+    }
+}
+
+// Both SvgUpdater and SvgStaticAttributes just wrap around ElementUpdater, so these methods
+// should be impled on it.
+impl<'a, C: crate::component::Component> super::ElementUpdater<'a, C> {
+    pub fn svg_nodes(self) -> super::SvgNodesOwned<'a, C> {
+        super::SvgNodesOwned::from(self)
+    }
+
+    pub fn svg_static_nodes(self) -> super::SvgStaticNodesOwned<'a, C> {
+        super::SvgStaticNodesOwned::from(self)
+    }
+
+    pub fn svg_render(self, value: impl super::SvgRender<C>) -> super::SvgNodesOwned<'a, C> {
+        let mut nodes_owned = self.svg_nodes();
+        let nodes = nodes_owned.nodes_ref();
+        value.render(nodes);
+        nodes_owned
+    }
+
+    // pub fn render_ref(
+    //     self,
+    //     value: &impl super::RenderRef<C>,
+    // ) -> super::NodesOwned<'a, C> {
+    //     let mut nodes_owned = self.nodes();
+    //     let nodes = nodes_owned.nodes_ref();
+    //     value.render(nodes);
+    //     nodes_owned
+    // }
+
+    pub fn svg_static(self, value: impl super::SvgStaticRender<C>) -> super::SvgNodesOwned<'a, C> {
+        let mut nodes_owned = self.svg_nodes();
+        let static_nodes = nodes_owned.static_nodes_ref();
+        value.render(static_nodes);
+        nodes_owned
+    }
+
+    pub fn svg_list_with_render<I, R>(
+        mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+        tag: &'a str,
+        render: R,
+    ) where
+        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
+    {
+        // let parent = self.element.ws_element.as_ref();
+        // let use_template = mode.use_template();
+
+        // let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
+        //     self.comp,
+        //     self.state,
+        //     &mut self.element.nodes,
+        //     tag,
+        //     parent,
+        //     None,
+        //     use_template,
+        // );
+        // non_keyed_list_updater.svg_update(items, render);
+        self.non_keyed_list_updater(mode, tag)
+            .svg_update(items, render);
     }
 }
 

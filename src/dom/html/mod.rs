@@ -106,7 +106,7 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
-        tag: &str,
+        tag: &'a str,
         render: R,
     ) where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),

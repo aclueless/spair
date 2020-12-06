@@ -32,10 +32,10 @@ impl Element {
         let document = crate::utils::document();
         Self {
             element_type: tag.into(),
-            ws_element: if ns.is_none() {
-                document.create_element(tag)
-            } else {
+            ws_element: if ns.is_some() {
                 document.create_element_ns(ns, tag)
+            } else {
+                document.create_element(tag)
             }
             .expect_throw("Unable to create new element"),
             attributes: Default::default(),
@@ -252,29 +252,50 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         rs
     }
 
+    pub fn non_keyed_list_updater(
+        &mut self,
+        mode: super::ListElementCreation,
+        tag: &'a str,
+    ) -> super::NonKeyedListUpdater<C> {
+        //let parent = self.element.ws_element.as_ref();
+        let use_template = mode.use_template();
+
+        super::NonKeyedListUpdater::new(
+            self.comp,
+            self.state,
+            &mut self.element.nodes,
+            tag,
+            self.element.ws_element.as_ref(),
+            None,
+            use_template,
+        )
+    }
+
     pub fn list_with_render<I, R>(
         &mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
-        tag: &str,
+        tag: &'a str,
         render: R,
     ) -> super::RememberSettingSelectedOption
     where
         for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
     {
-        let parent = self.element.ws_element.as_ref();
-        let use_template = mode.use_template();
+        // let parent = self.element.ws_element.as_ref();
+        // let use_template = mode.use_template();
 
-        let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
-            self.comp,
-            self.state,
-            &mut self.element.nodes,
-            tag,
-            parent,
-            None,
-            use_template,
-        );
-        non_keyed_list_updater.html_update(items, render)
+        // let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
+        //     self.comp,
+        //     self.state,
+        //     &mut self.element.nodes,
+        //     tag,
+        //     parent,
+        //     None,
+        //     use_template,
+        // );
+        // non_keyed_list_updater.html_update(items, render)
+        self.non_keyed_list_updater(mode, tag)
+            .html_update(items, render)
     }
 
     #[cfg(feature = "keyed-list")]
@@ -321,66 +342,5 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
                 .nodes
                 .store_component_handle(child.comp().into());
         }
-    }
-}
-
-// Both SvgUpdater and SvgStaticAttributes just wrap around ElementUpdater, so these methods
-// should be impled on it.
-#[cfg(feature = "svg")]
-impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
-    pub fn svg_nodes(self) -> super::SvgNodesOwned<'a, C> {
-        super::SvgNodesOwned::from(self)
-    }
-
-    pub fn svg_static_nodes(self) -> super::SvgStaticNodesOwned<'a, C> {
-        super::SvgStaticNodesOwned::from(self)
-    }
-
-    pub fn svg_render(self, value: impl super::SvgRender<C>) -> super::SvgNodesOwned<'a, C> {
-        let mut nodes_owned = self.svg_nodes();
-        let nodes = nodes_owned.nodes_ref();
-        value.render(nodes);
-        nodes_owned
-    }
-
-    // pub fn render_ref(
-    //     self,
-    //     value: &impl super::RenderRef<C>,
-    // ) -> super::NodesOwned<'a, C> {
-    //     let mut nodes_owned = self.nodes();
-    //     let nodes = nodes_owned.nodes_ref();
-    //     value.render(nodes);
-    //     nodes_owned
-    // }
-
-    pub fn svg_static(self, value: impl super::SvgStaticRender<C>) -> super::SvgNodesOwned<'a, C> {
-        let mut nodes_owned = self.svg_nodes();
-        let static_nodes = nodes_owned.static_nodes_ref();
-        value.render(static_nodes);
-        nodes_owned
-    }
-
-    pub fn svg_list_with_render<I, R>(
-        self,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-        tag: &str,
-        render: R,
-    ) where
-        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
-    {
-        let parent = self.element.ws_element.as_ref();
-        let use_template = mode.use_template();
-
-        let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
-            self.comp,
-            self.state,
-            &mut self.element.nodes,
-            tag,
-            parent,
-            None,
-            use_template,
-        );
-        non_keyed_list_updater.svg_update(items, render);
     }
 }
