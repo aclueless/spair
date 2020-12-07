@@ -1,9 +1,10 @@
-mod keyed_list_with_render;
-
 use crate::utils::PeekableDoubleEnded;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub trait KeyedListItem<'a, C: crate::component::Component>: crate::dom::ListItem<C> {
+mod keyed_list_with_render;
+pub use keyed_list_with_render::*;
+
+pub trait Keyed<'a> {
     type Key: 'a + Into<Key> + PartialEq<Key>;
     fn key(&self) -> Self::Key;
 }
@@ -205,7 +206,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
     ) -> super::RememberSettingSelectedOption
     where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'k> I: Keyed<'k> + super::ListItem<C>,
     {
         // No items? Just clear the current list.
         if self.list_context.new_item_count == 0 {
@@ -243,7 +244,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'k> I: Keyed<'k> + super::ListItem<C>,
     {
         let mut count = 0;
         loop {
@@ -278,7 +279,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         >,
     ) -> usize
     where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'k> I: Keyed<'k> + super::ListItem<C>,
     {
         let mut count = 0;
         loop {
@@ -320,7 +321,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'k> I: Keyed<'k> + super::ListItem<C>,
     {
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
@@ -361,7 +362,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         >,
     ) -> usize
     where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'k> I: Keyed<'k> + super::ListItem<C>,
     {
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
@@ -400,7 +401,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         &mut self,
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'k> I: Keyed<'k> + super::ListItem<C>,
     {
         if items_state_iter.peek().is_none() {
             self.remove_remain_items();
@@ -505,7 +506,7 @@ impl<'a, C: crate::component::Component> KeyedListUpdater<'a, C> {
         &mut self,
         items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'k> I: Keyed<'k> + super::ListItem<C>,
     {
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item(I::ROOT_ELEMENT_TAG);
@@ -713,13 +714,14 @@ mod keyed_list_tests {
             Self { root, _rc, comp }
         }
 
-        fn updater(&mut self) -> super::super::ElementUpdater<()> {
+        fn updater(&mut self) -> super::super::HtmlUpdater<()> {
             super::super::ElementUpdater::new(
                 &self.comp,
                 &(),
                 &mut self.root,
                 super::super::ElementStatus::Existing,
             )
+            .into()
         }
 
         fn collect_from_keyed_list(&self) -> Vec<String> {
@@ -754,7 +756,7 @@ mod keyed_list_tests {
         }
     }
 
-    impl<'a> super::KeyedListItem<'a, ()> for &&'static str {
+    impl<'a> super::Keyed<'a> for &&'static str {
         type Key = &'a str;
         fn key(&self) -> Self::Key {
             self

@@ -1,12 +1,25 @@
+pub trait FromElementUpdater<'a, C> {
+    fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self;
+}
+
+impl<'a, C> FromElementUpdater<'a, C> for crate::dom::HtmlUpdater<'a, C> {
+    fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
+        From::from(u)
+    }
+}
+
 impl<'a, C: crate::component::Component> super::KeyedListUpdater<'a, C> {
-    fn update_with_render<I, R, U>(
+    pub fn update_with_render<I, G, K, R, U>(
         &mut self,
         items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
+        get_key: G,
         render: R,
     ) -> crate::dom::RememberSettingSelectedOption
     where
+        for<'i> G: Fn(&'i I) -> K,
+        K: 'a + Into<super::Key> + PartialEq<super::Key>,
         for<'i> R: Fn(&'i I, U),
-        for<'c> U: From<crate::dom::ElementUpdater<'c, C>>,
+        for<'c> U: FromElementUpdater<'c, C>,
     {
         // No items? Just clear the current list.
         if self.list_context.new_item_count == 0 {

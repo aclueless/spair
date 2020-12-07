@@ -15,7 +15,7 @@ pub use component::{
 };
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
-pub use dom::KeyedListItem;
+pub use dom::Keyed;
 pub use dom::{
     HtmlUpdater as Element, ListElementCreation, ListItem, Nodes, RawWrapper, Render, RenderRef,
     StaticNodes, StaticRender,

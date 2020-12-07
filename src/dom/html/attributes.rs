@@ -361,7 +361,7 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         items: impl IntoIterator<Item = I>,
         mode: crate::dom::ListElementCreation,
     ) where
-        for<'k> I: crate::dom::KeyedListItem<'k, C>,
+        for<'k> I: crate::dom::Keyed<'k> + crate::dom::ListItem<C>,
     {
         self.0.keyed_list(items, mode)
     }

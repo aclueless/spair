@@ -118,9 +118,12 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
     ) where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'k> I: super::Keyed<'k> + super::ListItem<C>,
     {
-        let _must_set_select_element_value_after_this = self.u.keyed_list(items, mode);
+        //let _must_set_select_element_value_after_this = self.u.keyed_list(items, mode);
+        let _must_set_select_element_value_after_this =
+            self.u
+                .keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render);
 
         //The hack start in AttributeSetter::value
         self.select_element_value

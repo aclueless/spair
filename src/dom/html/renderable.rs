@@ -109,3 +109,15 @@ impl<C: crate::component::Component, T: ListItem<C>> ListItem<C> for &T {
         (*self).render(item);
     }
 }
+
+pub trait ListItemR<'a, C: crate::component::Component> {
+    const ROOT_ELEMENT_TAG: &'static str;
+    fn render(&self, item: crate::dom::HtmlUpdater<'a, C>);
+}
+
+impl<'a, C: crate::component::Component, T: ListItemR<'a, C>> ListItemR<'a, C> for &T {
+    const ROOT_ELEMENT_TAG: &'static str = T::ROOT_ELEMENT_TAG;
+    fn render(&self, item: crate::dom::HtmlUpdater<'a, C>) {
+        (*self).render(item);
+    }
+}

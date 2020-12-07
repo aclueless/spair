@@ -271,14 +271,49 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             .html_update(items, render)
     }
 
+    // #[cfg(feature = "keyed-list")]
+    // pub fn keyed_list<I>(
+    //     &mut self,
+    //     items: impl IntoIterator<Item = I>,
+    //     mode: super::ListElementCreation,
+    // ) -> super::RememberSettingSelectedOption
+    // where
+    //     for<'k> I: super::KeyedListItem<'k, C>,
+    // {
+    //    // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
+    //    // we need to collect items into a vec to know exact size
+    //     let items: Vec<_> = items.into_iter().collect();
+
+    //     let parent = self.element.ws_element.as_ref();
+    //     let use_template = mode.use_template();
+
+    //     let mut keyed_list_updater = super::KeyedListUpdater {
+    //         comp: self.comp,
+    //         state: self.state,
+    //         list_context: self.element.nodes.keyed_list_context(
+    //             I::ROOT_ELEMENT_TAG,
+    //             parent,
+    //             items.len(),
+    //             use_template,
+    //         ),
+    //     };
+    //     keyed_list_updater.update(items.into_iter())
+    // }
+
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(
+    pub fn keyed_list_with_render<I, G, K, R, U>(
         &mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
-    ) -> super::RememberSettingSelectedOption
+        tag: &'a str,
+        get_key: G,
+        render: R,
+    ) -> crate::dom::RememberSettingSelectedOption
     where
-        for<'k> I: super::KeyedListItem<'k, C>,
+        for<'i> G: Fn(&'i I) -> K,
+        K: 'a + Into<super::Key> + PartialEq<super::Key>,
+        for<'i> R: Fn(&'i I, U),
+        for<'c> U: crate::dom::FromElementUpdater<'c, C>,
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size
@@ -291,13 +326,14 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             comp: self.comp,
             state: self.state,
             list_context: self.element.nodes.keyed_list_context(
-                I::ROOT_ELEMENT_TAG,
+                tag,
                 parent,
                 items.len(),
                 use_template,
             ),
         };
-        keyed_list_updater.update(items.into_iter())
+        //keyed_list_updater.update_with_render(items.into_iter(), get_key, render)
+        crate::dom::RememberSettingSelectedOption
     }
 
     pub fn component<CC: crate::component::Component>(
