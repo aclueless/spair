@@ -55,3 +55,94 @@ impl<'a, C: crate::component::Component> super::KeyedListUpdater<'a, C> {
         crate::dom::RememberSettingSelectedOption
     }
 }
+
+#[cfg(test)]
+mod keyed_list_with_render_tests {
+    use wasm_bindgen::UnwrapThrowExt;
+    use wasm_bindgen_test::*;
+    struct Unit;
+    impl crate::component::Component for Unit {
+        type Routes = ();
+        fn render(&self, _: crate::Element<Self>) {}
+    }
+
+    struct PhantomApp {
+        root: crate::dom::Element,
+        _rc: crate::component::RcComp<Unit>,
+        comp: crate::component::Comp<Unit>,
+    }
+
+    impl PhantomApp {
+        fn new() -> Self {
+            let root = crate::dom::Element::new_ns(None, "div");
+            let _rc = crate::component::RcComp::new(Some(root.ws_element().clone()));
+            _rc.set_state(Unit);
+
+            let comp = _rc.comp();
+            Self { root, _rc, comp }
+        }
+
+        fn updater(&mut self) -> crate::dom::HtmlUpdater<Unit> {
+            crate::dom::ElementUpdater::new(
+                &self.comp,
+                &Unit,
+                &mut self.root,
+                crate::dom::ElementStatus::Existing,
+            )
+            .into()
+        }
+
+        fn collect_from_keyed_list(&self) -> Vec<String> {
+            if let crate::dom::nodes::Node::KeyedList(kl) = self.root.nodes.0.first().unwrap_throw()
+            {
+                kl.active
+                    .iter()
+                    .map(|item| {
+                        item.as_ref()
+                            .unwrap_throw()
+                            .1
+                            .nodes
+                            .0
+                            .first()
+                            .unwrap_throw()
+                    })
+                    .map(|item| match item {
+                        crate::dom::nodes::Node::Text(text) => text.text.clone(),
+                        _ => panic!("Should be a text?"),
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            }
+        }
+    }
+
+    fn render(item: &&str, span: crate::Element<()>) {
+        span.render(*item);
+    }
+
+    fn get_key<'a>(item: &'a &str) -> &'a str {
+        *item
+    }
+
+    #[wasm_bindgen_test]
+    fn keyed_list_with_template() {
+        keyed_list(crate::dom::ListElementCreation::Clone);
+    }
+
+    #[wasm_bindgen_test]
+    fn keyed_list_no_template() {
+        keyed_list(crate::dom::ListElementCreation::New);
+    }
+
+    fn keyed_list(mode: crate::dom::ListElementCreation) {
+        let mut pa = PhantomApp::new();
+
+        let empty: Vec<&'static str> = Vec::new();
+        let _ = pa
+            .updater()
+            .keyed_list_with_render(&empty, mode, "span", get_key, render);
+        assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
+        assert_eq!(empty, pa.collect_from_keyed_list());
+    }
+}

@@ -693,31 +693,32 @@ mod keyed_list_tests {
         assert_eq!(rs, [0, 3, 4, 5, 9]);
     }
 
-    impl crate::component::Component for () {
+    struct Unit;
+    impl crate::component::Component for Unit {
         type Routes = ();
         fn render(&self, _: crate::Element<Self>) {}
     }
 
     struct PhantomApp {
         root: super::super::Element,
-        _rc: crate::component::RcComp<()>,
-        comp: crate::component::Comp<()>,
+        _rc: crate::component::RcComp<Unit>,
+        comp: crate::component::Comp<Unit>,
     }
 
     impl PhantomApp {
         fn new() -> Self {
             let root = super::super::Element::new_ns(None, "div");
             let _rc = crate::component::RcComp::new(Some(root.ws_element().clone()));
-            _rc.set_state(());
+            _rc.set_state(Unit);
 
             let comp = _rc.comp();
             Self { root, _rc, comp }
         }
 
-        fn updater(&mut self) -> super::super::HtmlUpdater<()> {
+        fn updater(&mut self) -> super::super::HtmlUpdater<Unit> {
             super::super::ElementUpdater::new(
                 &self.comp,
-                &(),
+                &Unit,
                 &mut self.root,
                 super::super::ElementStatus::Existing,
             )
@@ -749,9 +750,9 @@ mod keyed_list_tests {
         }
     }
 
-    impl crate::dom::ListItem<()> for &&'static str {
+    impl crate::dom::ListItem<Unit> for &&'static str {
         const ROOT_ELEMENT_TAG: &'static str = "span";
-        fn render(&self, span: crate::Element<()>) {
+        fn render(&self, span: crate::Element<Unit>) {
             span.render(**self);
         }
     }
@@ -762,14 +763,6 @@ mod keyed_list_tests {
             self
         }
     }
-
-    // fn render(item: &&str, span: crate::Element<()>) {
-    //     span.render(*item);
-    // }
-
-    // fn get_key<'a>(item: &'a &str) -> &'a str {
-    //     *item
-    // }
 
     #[wasm_bindgen_test]
     fn keyed_list_with_template() {
