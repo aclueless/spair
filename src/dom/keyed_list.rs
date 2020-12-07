@@ -763,6 +763,14 @@ mod keyed_list_tests {
         }
     }
 
+    // fn render(item: &&str, span: crate::Element<()>) {
+    //     span.render(*item);
+    // }
+
+    // fn get_key<'a>(item: &'a &str) -> &'a str {
+    //     *item
+    // }
+
     #[wasm_bindgen_test]
     fn keyed_list_with_template() {
         keyed_list(super::super::ListElementCreation::Clone);
@@ -783,6 +791,9 @@ mod keyed_list_tests {
 
         let empty: Vec<&'static str> = Vec::new();
         let _ = pa.updater().keyed_list(&empty, mode);
+        // let _ = pa
+        //     .updater()
+        //     .keyed_list_with_render(empty, mode, "span", get_key, render);
         assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 

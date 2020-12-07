@@ -120,10 +120,29 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     ) where
         for<'k> I: super::Keyed<'k> + super::ListItem<C>,
     {
-        //let _must_set_select_element_value_after_this = self.u.keyed_list(items, mode);
-        let _must_set_select_element_value_after_this =
-            self.u
-                .keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render);
+        self.u.keyed_list(items, mode);
+        //The hack start in AttributeSetter::value
+        self.select_element_value
+            .set_select_element_value(self.u.ws_element().as_ref());
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list_with_render<I, G, K, R, U>(
+        &mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+        tag: &'a str,
+        get_key: G,
+        render: R,
+    ) where
+        for<'i> G: Fn(&'i I) -> K,
+        K: 'a + Into<super::Key> + PartialEq<super::Key>,
+        for<'i> R: Fn(&'i I, U),
+        for<'c> U: From<crate::dom::ElementUpdater<'c, C>>,
+    {
+        let _must_set_select_element_value_after_this = self
+            .u
+            .keyed_list_with_render(items, mode, tag, get_key, render);
 
         //The hack start in AttributeSetter::value
         self.select_element_value
