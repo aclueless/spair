@@ -301,8 +301,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_with_render<I, G, K, R, U>(
-        &mut self,
+    pub fn keyed_list_with_render<'u, I, G, K, R, U>(
+        &'a mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
         tag: &'a str,
@@ -310,16 +310,18 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         render: R,
     ) -> crate::dom::RememberSettingSelectedOption
     where
-        for<'i> G: Fn(&'i I) -> K,
-        K: 'a + Into<super::Key> + PartialEq<super::Key>,
-        for<'i> R: Fn(&'i I, U),
-        for<'c> U: From<crate::dom::ElementUpdater<'c, C>>,
+        'a: 'u,
+        I: Copy,
+        G: Fn(I) -> K,
+        K: Into<super::Key> + PartialEq<super::Key>,
+        R: Fn(I, U),
+        U: From<crate::dom::ElementUpdater<'u, C>>,
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size
         let items: Vec<_> = items.into_iter().collect();
 
-        let parent = self.element.ws_element.as_ref();
+        //let parent = self.element.ws_element.as_ref();
         let use_template = mode.use_template();
 
         let mut keyed_list_updater = super::KeyedListUpdater {
@@ -327,7 +329,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             state: self.state,
             list_context: self.element.nodes.keyed_list_context(
                 tag,
-                parent,
+                self.element.ws_element.as_ref(),
                 items.len(),
                 use_template,
             ),

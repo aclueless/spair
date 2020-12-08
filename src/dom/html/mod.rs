@@ -127,7 +127,7 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_with_render<I, G, K, R, U>(
+    pub fn keyed_list_with_render<'u, I, G, K, R, U>(
         &mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
@@ -135,16 +135,18 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         get_key: G,
         render: R,
     ) where
-        for<'i> G: Fn(&'i I) -> K,
-        K: 'a + Into<super::Key> + PartialEq<super::Key>,
-        for<'i> R: Fn(&'i I, U),
-        for<'c> U: From<crate::dom::ElementUpdater<'c, C>>,
+        //'a: 'u,
+        I: Copy,
+        G: Fn(I) -> K,
+        K: Into<super::Key> + PartialEq<super::Key>,
+        R: Fn(I, U),
+        U: From<crate::dom::ElementUpdater<'u, C>>,
     {
-        let _must_set_select_element_value_after_this = self
-            .u
-            .keyed_list_with_render(items, mode, tag, get_key, render);
+        // let _must_set_select_element_value_after_this = self
+        //     .u
+        //     .keyed_list_with_render(items, mode, tag, get_key, render);
 
-        //The hack start in AttributeSetter::value
+        // The hack start in AttributeSetter::value
         self.select_element_value
             .set_select_element_value(self.u.ws_element().as_ref());
     }
