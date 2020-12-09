@@ -1,35 +1,48 @@
 use crate::utils::PeekableDoubleEnded;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub trait FromElementUpdater<'a, C> {
-    fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self;
+pub struct HtmlListItemRender<'a, I, C>(&'a dyn Fn(I, crate::dom::HtmlUpdater<'a, C>));
+#[cfg(feature = "svg")]
+pub struct SvgListItemRender<'a, I, C>(&'a dyn Fn(I, crate::dom::SvgUpdater<'a, C>));
+
+pub trait ListItemRender<'a, I, C> {
+    fn execute(&self, item: I, u: crate::dom::ElementUpdater<'a, C>);
 }
 
-impl<'a, C> FromElementUpdater<'a, C> for crate::dom::HtmlUpdater<'a, C> {
-    fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
-        From::from(u)
+impl<'a, I: Copy, C> ListItemRender<'a, I, C> for HtmlListItemRender<'a, I, C> {
+    fn execute(&self, i: I, u: crate::dom::ElementUpdater<'a, C>) {
+        self.0(i, u.into())
     }
 }
 
-impl<'a, C: crate::component::Component> super::KeyedListUpdater<'a, C> {
-    pub fn update_with_render<'u, I, G, K, R, U>(
-        &'a mut self,
+pub struct KeyedListUpdater2<'a, C, G, R> {
+    pub comp: &'a crate::component::Comp<C>,
+    pub state: &'a C,
+
+    pub list_context: super::KeyedListContext<'a>,
+    pub get_key: G,
+    pub render: R,
+}
+
+impl<'a, C, G, R> KeyedListUpdater2<'a, C, G, R>
+// where
+//C: crate::component::Component,
+// I: Copy,
+// G: Fn(I) -> K,
+// K: Into<super::Key> + PartialEq<super::Key>,
+// for<'u> R: ListItemRender<'u, I, C>,
+{
+    pub fn update_with_render<I, K>(
+        mut self,
         items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
-        get_key: G,
-        render: R,
+        //get_key: G,
+        //render: R,
     ) -> crate::dom::RememberSettingSelectedOption
     where
-        'a: 'u,
         I: Copy,
         G: Fn(I) -> K,
         K: Into<super::Key> + PartialEq<super::Key>,
-        R: Fn(I, U),
-        U: From<crate::dom::ElementUpdater<'u, C>>,
-        // G: Fn(&I) -> K,
-        // K: 'k + Into<super::Key> + PartialEq<super::Key>,
-        // R: Fn(&I, U),
-        // U: From<crate::dom::ElementUpdater<'u, C>>,
-        //for<'u> U: FromElementUpdater<'u, C>,
+        for<'u> R: ListItemRender<'u, I, C>,
     {
         // No items? Just clear the current list.
 
@@ -46,22 +59,61 @@ impl<'a, C: crate::component::Component> super::KeyedListUpdater<'a, C> {
                 self.list_context.template.as_mut().unwrap(),
                 crate::dom::ElementStatus::JustCreated,
             );
-            render(*items_state_iter.peek().unwrap_throw(), u.into());
+            self.render
+                .execute(*items_state_iter.peek().unwrap_throw(), u);
         }
 
-        // loop {
-        //     let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
-        //     count += self.update_same_key_items_from_end(&mut items_state_iter);
-        //     count += self.update_moved_forward_item(&mut items_state_iter);
-        //     count += self.update_moved_backward_item(&mut items_state_iter);
-        //     if count == 0 {
-        //         break;
-        //     }
-        // }
+        loop {
+            let mut count = self.update_same_key_items_from_start2(&mut items_state_iter);
+            //     count += self.update_same_key_items_from_end(&mut items_state_iter);
+            //     count += self.update_moved_forward_item(&mut items_state_iter);
+            //     count += self.update_moved_backward_item(&mut items_state_iter);
+            //     if count == 0 {
+            //         break;
+            //     }
+        }
 
         // self.update_other_items_in_middle(&mut items_state_iter);
 
         crate::dom::RememberSettingSelectedOption
+    }
+
+    fn update_same_key_items_from_start2<I, K>(
+        &mut self,
+        items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        // get_key: G,
+        // render: R,
+    ) -> usize
+    where
+        I: Copy,
+        G: Fn(I) -> K,
+        K: Into<super::Key> + PartialEq<super::Key>,
+        for<'u> R: ListItemRender<'u, I, C>,
+    {
+        // let mut count = 0;
+        // loop {
+        //     match (items_state_iter.peek(), self.list_context.old.peek()) {
+        //         (Some(item_state), Some(item)) => {
+        //             let item = item
+        //                 .1
+        //                 .as_ref()
+        //                 .expect_throw("Why an old item None? - update_same_key_items_from_start");
+        //             if !item_state.key().eq(&item.0) {
+        //                 return count;
+        //             }
+        //         }
+        //         _ => return count,
+        //     }
+        //     count += 1;
+        //     items_state_iter.next().unwrap_throw().update_existing_item(
+        //         self.comp,
+        //         self.state,
+        //         self.list_context.old.next(),
+        //         self.list_context.new.next(),
+        //         None,
+        //         |_, _| {},
+        //     );
+        // }
     }
 }
 

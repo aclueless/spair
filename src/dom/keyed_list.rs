@@ -1,9 +1,6 @@
 use crate::utils::PeekableDoubleEnded;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-mod keyed_list_with_render;
-pub use keyed_list_with_render::*;
-
 pub trait Keyed<'a> {
     type Key: 'a + Into<Key> + PartialEq<Key>;
     fn key(&self) -> Self::Key;

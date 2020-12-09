@@ -6,6 +6,9 @@ mod attributes;
 mod element;
 #[cfg(feature = "keyed-list")]
 mod keyed_list;
+#[cfg(feature = "keyed-list")]
+mod keyed_list_with_render;
+
 mod nodes;
 mod non_keyed_list;
 
@@ -23,6 +26,8 @@ pub use element::*;
 pub use html::{attributes::*, nodes::*, renderable::*, HtmlUpdater};
 #[cfg(feature = "keyed-list")]
 pub use keyed_list::*;
+#[cfg(feature = "keyed-list")]
+pub use keyed_list_with_render::*;
 pub use non_keyed_list::*;
 #[cfg(feature = "svg")]
 pub use svg::{attributes::*, nodes::*, renderable::*, SvgUpdater, SVG_NAMESPACE};
