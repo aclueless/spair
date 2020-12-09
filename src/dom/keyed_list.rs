@@ -34,11 +34,11 @@ impl<C: crate::component::Component, T: crate::dom::ListItem<C>> UpdateItem<C> f
 
 #[derive(Default)]
 pub struct KeyedList {
-    active: Vec<Option<(Key, super::Element)>>,
+    pub active: Vec<Option<(Key, super::Element)>>,
     // The primary reason for the double buffer is for easy implementation, performance go after.
-    buffer: Vec<Option<(Key, super::Element)>>,
-    template: Option<super::Element>,
-    old_elements_map: std::collections::HashMap<Key, OldElement>,
+    pub buffer: Vec<Option<(Key, super::Element)>>,
+    pub template: Option<super::Element>,
+    pub old_elements_map: std::collections::HashMap<Key, OldElement>,
 }
 
 impl Clone for KeyedList {
@@ -166,18 +166,18 @@ impl PartialEq<Key> for u64 {
 }
 
 pub struct KeyedListContext<'a> {
-    parent: &'a web_sys::Node,
-    old: crate::utils::PeekableDoubleEndedIterator<
+    pub parent: &'a web_sys::Node,
+    pub old: crate::utils::PeekableDoubleEndedIterator<
         std::iter::Enumerate<std::slice::IterMut<'a, Option<(Key, super::Element)>>>,
     >,
-    new: crate::utils::PeekableDoubleEndedIterator<
+    pub new: crate::utils::PeekableDoubleEndedIterator<
         std::slice::IterMut<'a, Option<(Key, super::Element)>>,
     >,
-    old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
-    new_item_count: usize,
-    next_sibling: Option<web_sys::Element>,
-    template: Option<&'a mut super::Element>,
-    require_init_template: bool,
+    pub old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
+    pub new_item_count: usize,
+    pub next_sibling: Option<web_sys::Element>,
+    pub template: Option<&'a mut super::Element>,
+    pub require_init_template: bool,
 }
 
 pub struct KeyedListUpdater<'a, C> {
@@ -535,7 +535,7 @@ struct ItemWithLis<I> {
 }
 
 #[derive(Debug)]
-struct OldElement {
+pub struct OldElement {
     index: usize,
     element: super::Element,
 }

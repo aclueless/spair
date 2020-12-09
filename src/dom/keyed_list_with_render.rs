@@ -25,13 +25,31 @@ pub struct KeyedListUpdater2<'a, C, G, R> {
 }
 
 impl<'a, C, G, R> KeyedListUpdater2<'a, C, G, R>
-// where
-//C: crate::component::Component,
-// I: Copy,
-// G: Fn(I) -> K,
-// K: Into<super::Key> + PartialEq<super::Key>,
-// for<'u> R: ListItemRender<'u, I, C>,
+where
+    C: crate::component::Component,
+    // I: Copy,
+    // G: Fn(I) -> K,
+    // K: Into<super::Key> + PartialEq<super::Key>,
+    // for<'u> R: ListItemRender<'u, I, C>,
 {
+    fn remove_all_old_items(&mut self) {
+        self.list_context.parent.set_text_content(None);
+        while let Some((_, item)) = self.list_context.old.next() {
+            item.take()
+                .expect_throw("Why no item in old list? - remove_all_old_items");
+        }
+    }
+
+    fn remove_remain_items(&mut self) {
+        let parent = self.list_context.parent;
+        while let Some((_, item)) = self.list_context.old.next() {
+            item.take()
+                .expect_throw("Why no item in old list? - remove_remain_items")
+                .1
+                .remove_from(parent);
+        }
+    }
+
     pub fn update_with_render<I, K>(
         mut self,
         items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
@@ -114,6 +132,7 @@ impl<'a, C, G, R> KeyedListUpdater2<'a, C, G, R>
         //         |_, _| {},
         //     );
         // }
+        0
     }
 }
 
