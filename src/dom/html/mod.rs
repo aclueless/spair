@@ -143,9 +143,9 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         let render = |item: I, element: super::ElementUpdater<C>| {
             render(item, element.into());
         };
-        // let _must_set_select_element_value_after_this = self
-        //     .u
-        //     .keyed_list_with_render(items, mode, tag, get_key, render);
+        let _must_set_select_element_value_after_this = self
+            .u
+            .keyed_list_with_render(items, mode, tag, get_key, render);
 
         // The hack start in AttributeSetter::value
         self.select_element_value

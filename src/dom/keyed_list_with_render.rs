@@ -84,12 +84,43 @@ impl KeyedList2 {
 }
 
 pub struct KeyedListUpdater2<'a, C, G, R> {
+    pub list_context: KeyedListContext2<'a>,
+    pub state_and_fns: StateAndFns<'a, C, G, R>,
+}
+
+pub struct StateAndFns<'a, C, G, R> {
     pub comp: &'a crate::component::Comp<C>,
     pub state: &'a C,
-
-    pub list_context: KeyedListContext2<'a>,
     pub get_key: G,
     pub render: R,
+}
+
+impl<'a, C, G, R> StateAndFns<'a, C, G, R>
+where
+    C: crate::component::Component,
+{
+    fn update_existing_item<I>(
+        &self,
+        item_state: I,
+        old_item: Option<(usize, &mut std::option::Option<(Key2, super::Element)>)>,
+        new_item: Option<&mut std::option::Option<(Key2, super::Element)>>,
+        next_sibling: Option<&web_sys::Element>,
+        fn_insert: impl FnOnce(&super::Element, Option<&web_sys::Element>),
+    ) where
+        for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
+    {
+        let mut old_item = old_item.unwrap_throw().1.take();
+        fn_insert(&old_item.as_ref().unwrap_throw().1, next_sibling);
+
+        let u = super::ElementUpdater::new(
+            self.comp,
+            self.state,
+            &mut old_item.as_mut().unwrap_throw().1,
+            super::ElementStatus::Existing,
+        );
+        (self.render)(item_state, u);
+        *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
+    }
 }
 
 pub struct KeyedListContext2<'a> {
@@ -183,12 +214,12 @@ where
         let mut items_state_iter = items_state_iter.peekable_double_ended();
         if self.list_context.require_init_template {
             let u = crate::dom::ElementUpdater::new(
-                self.comp,
-                self.state,
+                self.state_and_fns.comp,
+                self.state_and_fns.state,
                 self.list_context.template.as_mut().unwrap(),
                 crate::dom::ElementStatus::JustCreated,
             );
-            (self.render)(*items_state_iter.peek().unwrap_throw(), u);
+            (self.state_and_fns.render)(*items_state_iter.peek().unwrap_throw(), u);
         }
 
         //loop {
@@ -235,13 +266,13 @@ where
         let mut items_state_iter = items_state_iter.peekable_double_ended();
         if self.list_context.require_init_template {
             let u = super::ElementUpdater::new(
-                self.comp,
-                self.state,
+                self.state_and_fns.comp,
+                self.state_and_fns.state,
                 self.list_context.template.as_mut().unwrap(),
                 super::ElementStatus::JustCreated,
             );
 
-            (self.render)(*items_state_iter.peek().unwrap_throw(), u);
+            (self.state_and_fns.render)(*items_state_iter.peek().unwrap_throw(), u);
         }
         loop {
             let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
@@ -255,29 +286,6 @@ where
 
         self.update_other_items_in_middle(&mut items_state_iter);
         super::RememberSettingSelectedOption
-    }
-
-    fn update_existing_item<I>(
-        &self,
-        item_state: I,
-        old_item: Option<(usize, &mut std::option::Option<(Key2, super::Element)>)>,
-        new_item: Option<&mut std::option::Option<(Key2, super::Element)>>,
-        next_sibling: Option<&web_sys::Element>,
-        fn_insert: impl FnOnce(&super::Element, Option<&web_sys::Element>),
-    ) where
-        for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
-    {
-        let mut old_item = old_item.unwrap_throw().1.take();
-        fn_insert(&old_item.as_ref().unwrap_throw().1, next_sibling);
-
-        let u = super::ElementUpdater::new(
-            self.comp,
-            self.state,
-            &mut old_item.as_mut().unwrap_throw().1,
-            super::ElementStatus::Existing,
-        );
-        (self.render)(item_state, u);
-        *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
     }
 
     fn update_same_key_items_from_start<I, K>(
@@ -298,7 +306,7 @@ where
                         .1
                         .as_ref()
                         .expect_throw("Why an old item None? - update_same_key_items_from_start");
-                    if !(self.get_key)(*item_state).eq(&item.0) {
+                    if !(self.state_and_fns.get_key)(*item_state).eq(&item.0) {
                         return count;
                     }
                 }
@@ -307,8 +315,8 @@ where
             count += 1;
             /*
             items_state_iter.next().unwrap_throw().update_existing_item(
-                self.comp,
-                self.state,
+                self.state_and_fns.comp,
+                self.state_and_fns.state,
                 self.list_context.old.next(),
                 self.list_context.new.next(),
                 None,
@@ -317,7 +325,7 @@ where
             */
             let old = self.list_context.old.next();
             let new = self.list_context.new.next();
-            self.update_existing_item(
+            self.state_and_fns.update_existing_item(
                 items_state_iter.next().unwrap_throw(),
                 old,
                 new,
@@ -351,7 +359,7 @@ where
                         .as_ref()
                         .expect_throw("Why an old item None? - update_same_key_items_from_end");
 
-                    if !(self.get_key)(*item_state).eq(&item.0) {
+                    if !(self.state_and_fns.get_key)(*item_state).eq(&item.0) {
                         return count;
                     }
                     item.1.ws_element().clone()
@@ -363,8 +371,8 @@ where
             //     .next_back()
             //     .unwrap_throw()
             //     .update_existing_item(
-            //         self.comp,
-            //         self.state,
+            //         self.state_and_fns.comp,
+            //         self.state_and_fns.state,
             //         self.list_context.old.next_back(),
             //         self.list_context.new.next_back(),
             //         None,
@@ -372,7 +380,7 @@ where
             //     );
             let old = self.list_context.old.next_back();
             let new = self.list_context.new.next_back();
-            self.update_existing_item(
+            self.state_and_fns.update_existing_item(
                 items_state_iter.next_back().unwrap_throw(),
                 old,
                 new,
@@ -400,7 +408,7 @@ where
                     .as_ref()
                     .expect_throw("Why an old item None? - update_same_key_items_from_end");
                 //if !item_state.key().eq(&item.0) {
-                if !(self.get_key)(*item_state).eq(&item.0) {
+                if !(self.state_and_fns.get_key)(*item_state).eq(&item.0) {
                     return 0;
                 }
             }
@@ -414,8 +422,8 @@ where
             .and_then(|item| item.1.as_ref().map(|item| item.1.ws_element()));
         let parent = self.list_context.parent;
         // items_state_iter.next().unwrap_throw().update_existing_item(
-        //     self.comp,
-        //     self.state,
+        //     self.state_and_fns.comp,
+        //     self.state_and_fns.state,
         //     moved,
         //     self.list_context.new.next(),
         //     next_sibling,
@@ -423,7 +431,7 @@ where
         //         element.insert_before(parent, next_sibling.map(|element| element.unchecked_ref()));
         //     },
         // );
-        self.update_existing_item(
+        self.state_and_fns.update_existing_item(
             items_state_iter.next().unwrap_throw(),
             moved,
             self.list_context.new.next(),
@@ -454,7 +462,7 @@ where
                     .as_ref()
                     .expect_throw("Why an old item None? - update_same_key_items_from_end");
                 //if !item_state.key().eq(&item.0) {
-                if !(self.get_key)(*item_state).eq(&item.0) {
+                if !(self.state_and_fns.get_key)(*item_state).eq(&item.0) {
                     return 0;
                 }
                 item.1.ws_element().clone()
@@ -465,8 +473,8 @@ where
         //     .next_back()
         //     .unwrap_throw()
         //     .update_existing_item(
-        //         self.comp,
-        //         self.state,
+        //         self.state_and_fns.comp,
+        //         self.state_and_fns.state,
         //         self.list_context.old.next(),
         //         self.list_context.new.next_back(),
         //         self.list_context.next_sibling.as_ref(),
@@ -477,7 +485,7 @@ where
         //             );
         //         },
         //     );
-        self.update_existing_item(
+        self.state_and_fns.update_existing_item(
             items_state_iter.next_back().unwrap_throw(),
             self.list_context.old.next(),
             self.list_context.new.next_back(),
@@ -522,7 +530,7 @@ where
                     .list_context
                     .old_elements_map
                     //.remove(&item.key().into());
-                    .remove(&(self.get_key)(item).into());
+                    .remove(&(self.state_and_fns.get_key)(item).into());
                 ItemWithLis2::new(item, old_element)
             })
             .collect();
@@ -541,10 +549,15 @@ where
                 None => self.create_element_for_new_item(),
             };
 
-            let u = super::ElementUpdater::new(self.comp, self.state, &mut element, status);
+            let u = super::ElementUpdater::new(
+                self.state_and_fns.comp,
+                self.state_and_fns.state,
+                &mut element,
+                status,
+            );
 
             //item_state.render(u.into());
-            (self.render)(item_state, u);
+            (self.state_and_fns.render)(item_state, u);
             if !lis {
                 let next_sibling = self
                     .list_context
@@ -560,7 +573,7 @@ where
                 .new
                 .next_back()
                 .expect_throw("Why new-list overflow?") =
-                Some(((self.get_key)(item_state).into(), element));
+                Some(((self.state_and_fns.get_key)(item_state).into(), element));
         }
     }
 
@@ -616,10 +629,15 @@ where
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item();
 
-            let u = super::ElementUpdater::new(self.comp, self.state, &mut element, status);
+            let u = super::ElementUpdater::new(
+                self.state_and_fns.comp,
+                self.state_and_fns.state,
+                &mut element,
+                status,
+            );
 
             //item_state.render(u.into());
-            (self.render)(item_state, u);
+            (self.state_and_fns.render)(item_state, u);
             element.insert_before(
                 self.list_context.parent,
                 self.list_context
@@ -632,7 +650,7 @@ where
                 .new
                 .next()
                 .expect_throw("new remain items") =
-                Some(((self.get_key)(item_state).into(), element));
+                Some(((self.state_and_fns.get_key)(item_state).into(), element));
         }
     }
 }

@@ -323,16 +323,18 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         let use_template = mode.use_template();
 
         let keyed_list_updater = super::KeyedListUpdater2 {
-            comp: self.comp,
-            state: self.state,
             list_context: self.element.nodes.keyed_list_context2(
                 tag,
                 self.element.ws_element.as_ref(),
                 items.len(),
                 use_template,
             ),
-            get_key,
-            render,
+            state_and_fns: super::StateAndFns {
+                comp: self.comp,
+                state: self.state,
+                get_key,
+                render,
+            },
         };
         keyed_list_updater.update_with_render(items.into_iter())
         //crate::dom::RememberSettingSelectedOption
