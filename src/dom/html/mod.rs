@@ -127,21 +127,22 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_with_render<'u, I, G, K, R, U>(
-        &mut self,
+    pub fn keyed_list_with_render<I, G, K, R>(
+        mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
         tag: &'a str,
         get_key: G,
         render: R,
     ) where
-        //'a: 'u,
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<super::Key> + PartialEq<super::Key>,
-        R: Fn(I, U),
-        U: From<crate::dom::ElementUpdater<'u, C>>,
+        K: Into<super::Key2> + PartialEq<super::Key2>,
+        for<'u> R: Fn(I, HtmlUpdater<'u, C>),
     {
+        let render = |item: I, element: super::ElementUpdater<C>| {
+            render(item, element.into());
+        };
         // let _must_set_select_element_value_after_this = self
         //     .u
         //     .keyed_list_with_render(items, mode, tag, get_key, render);
@@ -150,6 +151,31 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         self.select_element_value
             .set_select_element_value(self.u.ws_element().as_ref());
     }
+
+    // #[cfg(feature = "keyed-list")]
+    // pub fn keyed_list_with_render<'u, I, G, K, R, U>(
+    //     &mut self,
+    //     items: impl IntoIterator<Item = I>,
+    //     mode: super::ListElementCreation,
+    //     tag: &'a str,
+    //     get_key: G,
+    //     render: R,
+    // ) where
+    //'a: 'u,
+    //     I: Copy,
+    //     G: Fn(I) -> K,
+    //     K: Into<super::Key> + PartialEq<super::Key>,
+    //     R: Fn(I, U),
+    //     U: From<crate::dom::ElementUpdater<'u, C>>,
+    // {
+    // let _must_set_select_element_value_after_this = self
+    //     .u
+    //     .keyed_list_with_render(items, mode, tag, get_key, render);
+
+    // The hack start in AttributeSetter::value
+    //     self.select_element_value
+    //         .set_select_element_value(self.u.ws_element().as_ref());
+    // }
 
     pub fn component<CC: crate::component::Component>(
         self,

@@ -301,8 +301,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn update_with_render<I, G, K, R>(
-        mut self,
+    pub fn keyed_list_with_render<I, G, K, R>(
+        &mut self,
         items: impl IntoIterator<Item = I>,
         mode: super::ListElementCreation,
         tag: &'a str,
@@ -312,8 +312,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<super::Key> + PartialEq<super::Key>,
-        for<'u> R: super::ListItemRender<'u, I, C>,
+        K: Into<super::Key2> + PartialEq<super::Key2>,
+        for<'u> R: Fn(I, ElementUpdater<'u, C>),
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size
@@ -325,7 +325,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         let keyed_list_updater = super::KeyedListUpdater2 {
             comp: self.comp,
             state: self.state,
-            list_context: self.element.nodes.keyed_list_context(
+            list_context: self.element.nodes.keyed_list_context2(
                 tag,
                 self.element.ws_element.as_ref(),
                 items.len(),

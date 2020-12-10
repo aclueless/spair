@@ -191,6 +191,33 @@ impl NodeList {
         }
     }
 
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list_context2<'a>(
+        &'a mut self,
+        root_item_tag: &'a str,
+        parent: &'a web_sys::Node,
+        exact_count_of_new_items: usize,
+        use_template: bool,
+    ) -> super::KeyedListContext2<'a> {
+        if self.0.is_empty() {
+            self.0.push(Node::KeyedList2(Default::default()));
+        }
+
+        match self
+            .0
+            .first_mut()
+            .expect_throw("Expect a keyed list as the first item of the node list")
+        {
+            Node::KeyedList2(list) => list.create_context(
+                root_item_tag,
+                exact_count_of_new_items,
+                parent,
+                use_template,
+            ),
+            _ => panic!("Why not a keyed list?"),
+        }
+    }
+
     pub fn store_component_handle(&mut self, any: AnyComponentHandle) {
         let any = Node::ComponentHandle(any);
         if let Some(first) = self.0.first_mut() {
@@ -208,6 +235,8 @@ pub enum Node {
     FragmentedNodeList(FragmentedNodeList),
     #[cfg(feature = "keyed-list")]
     KeyedList(super::KeyedList),
+    #[cfg(feature = "keyed-list")]
+    KeyedList2(super::KeyedList2),
     ComponentHandle(AnyComponentHandle),
 }
 
@@ -219,6 +248,8 @@ impl Node {
             Self::FragmentedNodeList(mi) => mi.clear(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.clear(parent),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList2(list) => list.clear(parent),
             Self::ComponentHandle(_) => {
                 // The component is the only child of an element
                 parent.set_text_content(None);
@@ -234,6 +265,8 @@ impl Node {
             Self::FragmentedNodeList(mi) => mi.append_to(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.append_to(parent),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList2(list) => list.append_to(parent),
             Self::ComponentHandle(_) => {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");
