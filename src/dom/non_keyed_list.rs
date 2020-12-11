@@ -58,6 +58,33 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
         RememberSettingSelectedOption
     }
 
+    pub fn html_update2<I, R>(
+        &mut self,
+        items: impl IntoIterator<Item = I>,
+        render: R,
+    ) -> RememberSettingSelectedOption
+    where
+        I: Copy,
+        for<'u> R: Fn(I, crate::dom::HtmlUpdater<'u, C>),
+    {
+        let mut index = 0;
+        for item in items {
+            let status = self.list.check_or_create_element_for_non_keyed_list(
+                self.tag,
+                index,
+                self.parent,
+                self.next_sibling,
+                self.use_template,
+            );
+            let element = self.list.get_element(index);
+            let u = super::ElementUpdater::new(self.comp, self.state, element, status);
+            render(item, u.into());
+            index += 1;
+        }
+        self.clear_after(index);
+        RememberSettingSelectedOption
+    }
+
     fn clear_after(&mut self, index: usize) {
         if index >= self.list.count() {
             return;

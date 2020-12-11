@@ -271,6 +271,21 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             .html_update(items, render)
     }
 
+    pub fn list_with_render2<I, R>(
+        &mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+        tag: &'a str,
+        render: R,
+    ) -> super::RememberSettingSelectedOption
+    where
+        I: Copy,
+        for<'u> R: Fn(I, crate::Element<'u, C>),
+    {
+        self.non_keyed_list_updater(mode, tag)
+            .html_update2(items, render)
+    }
+
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list<I>(
         &mut self,

@@ -112,6 +112,32 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
             .set_select_element_value(self.u.ws_element().as_ref());
     }
 
+    pub fn list2<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    where
+        I: Copy,
+        I: renderable::ListItem2<C>,
+    {
+        self.list_with_render2(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+    }
+
+    pub fn list_with_render2<I, R>(
+        mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+        tag: &'a str,
+        render: R,
+    ) where
+        I: Copy,
+        for<'u> R: Fn(I, HtmlUpdater<'u, C>),
+    {
+        let _must_set_select_element_value_after_this =
+            self.u.list_with_render2(items, mode, tag, render);
+
+        //The hack start in AttributeSetter::value
+        self.select_element_value
+            .set_select_element_value(self.u.ws_element().as_ref());
+    }
+
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list<I>(
         mut self,
