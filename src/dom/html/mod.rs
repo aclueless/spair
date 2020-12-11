@@ -91,7 +91,7 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
         I: Copy,
-        I: renderable::ListItem2<C>,
+        I: renderable::ListItemRender<C>,
     {
         self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
     }
@@ -117,7 +117,7 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
     where
-        for<'k> I: Copy + super::Keyed2<'k> + super::ListItem2<C>,
+        for<'k> I: Copy + super::Keyed<'k> + super::ListItemRender<C>,
     {
         self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render);
     }
@@ -133,7 +133,7 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     ) where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<super::Key2> + PartialEq<super::Key2>,
+        K: Into<super::Key> + PartialEq<super::Key>,
         for<'u> R: Fn(I, HtmlUpdater<'u, C>),
     {
         let render = |item: I, element: super::ElementUpdater<C>| {

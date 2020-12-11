@@ -284,7 +284,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<super::Key2> + PartialEq<super::Key2>,
+        K: Into<super::Key> + PartialEq<super::Key>,
         for<'u> R: Fn(I, ElementUpdater<'u, C>),
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
@@ -294,8 +294,8 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         //let parent = self.element.ws_element.as_ref();
         let use_template = mode.use_template();
 
-        let mut keyed_list_updater = super::KeyedListUpdater2 {
-            list_context: self.element.nodes.keyed_list_context2(
+        let mut keyed_list_updater = super::KeyedListUpdater {
+            list_context: self.element.nodes.keyed_list_context(
                 tag,
                 self.element.ws_element.as_ref(),
                 items.len(),

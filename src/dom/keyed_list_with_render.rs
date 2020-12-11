@@ -1,21 +1,21 @@
 use crate::utils::PeekableDoubleEnded;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub trait Keyed2<'a> {
-    type Key: 'a + Into<Key2> + PartialEq<Key2>;
+pub trait Keyed<'a> {
+    type Key: 'a + Into<Key> + PartialEq<Key>;
     fn key(self) -> Self::Key;
 }
 
 #[derive(Default)]
-pub struct KeyedList2 {
-    active: Vec<Option<(Key2, super::Element)>>,
+pub struct KeyedList {
+    active: Vec<Option<(Key, super::Element)>>,
     // The primary reason for the double buffer is for easy implementation, performance go after.
-    buffer: Vec<Option<(Key2, super::Element)>>,
+    buffer: Vec<Option<(Key, super::Element)>>,
     template: Option<super::Element>,
-    old_elements_map: std::collections::HashMap<Key2, OldElement2>,
+    old_elements_map: std::collections::HashMap<Key, OldElement>,
 }
 
-impl Clone for KeyedList2 {
+impl Clone for KeyedList {
     fn clone(&self) -> Self {
         // No clone for keyed list
         Self {
@@ -27,14 +27,14 @@ impl Clone for KeyedList2 {
     }
 }
 
-impl KeyedList2 {
+impl KeyedList {
     pub fn create_context<'a>(
         &'a mut self,
         root_item_tag: &'a str,
         new_item_count: usize,
         parent: &'a web_sys::Node,
         use_template: bool,
-    ) -> KeyedListContext2<'a> {
+    ) -> KeyedListContext<'a> {
         self.pre_update(new_item_count);
 
         let require_init_template = use_template && self.template.is_none();
@@ -43,7 +43,7 @@ impl KeyedList2 {
         }
         let template = self.template.as_mut();
         let new_item_count = self.active.len();
-        KeyedListContext2 {
+        KeyedListContext {
             parent,
             root_item_tag,
             old: self.buffer.iter_mut().enumerate().peekable_double_ended(),
@@ -88,8 +88,8 @@ impl KeyedList2 {
     }
 }
 
-pub struct KeyedListUpdater2<'a, C, G, R> {
-    pub list_context: KeyedListContext2<'a>,
+pub struct KeyedListUpdater<'a, C, G, R> {
+    pub list_context: KeyedListContext<'a>,
     pub state_and_fns: StateAndFns<'a, C, G, R>,
 }
 
@@ -107,8 +107,8 @@ where
     fn update_existing_item<I>(
         &self,
         item_state: I,
-        old_item: Option<(usize, &mut std::option::Option<(Key2, super::Element)>)>,
-        new_item: Option<&mut std::option::Option<(Key2, super::Element)>>,
+        old_item: Option<(usize, &mut std::option::Option<(Key, super::Element)>)>,
+        new_item: Option<&mut std::option::Option<(Key, super::Element)>>,
         next_sibling: Option<&web_sys::Element>,
         fn_insert: impl FnOnce(&super::Element, Option<&web_sys::Element>),
     ) where
@@ -128,16 +128,16 @@ where
     }
 }
 
-pub struct KeyedListContext2<'a> {
+pub struct KeyedListContext<'a> {
     parent: &'a web_sys::Node,
     root_item_tag: &'a str,
     old: crate::utils::PeekableDoubleEndedIterator<
-        std::iter::Enumerate<std::slice::IterMut<'a, Option<(Key2, super::Element)>>>,
+        std::iter::Enumerate<std::slice::IterMut<'a, Option<(Key, super::Element)>>>,
     >,
     new: crate::utils::PeekableDoubleEndedIterator<
-        std::slice::IterMut<'a, Option<(Key2, super::Element)>>,
+        std::slice::IterMut<'a, Option<(Key, super::Element)>>,
     >,
-    old_elements_map: &'a mut std::collections::HashMap<Key2, OldElement2>,
+    old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
     new_item_count: usize,
     next_sibling: Option<web_sys::Element>,
     template: Option<&'a mut super::Element>,
@@ -145,58 +145,58 @@ pub struct KeyedListContext2<'a> {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone)]
-pub enum Key2 {
+pub enum Key {
     String(String),
     Signed(i64),
     Unsigned(u64),
 }
 
-impl From<&str> for Key2 {
+impl From<&str> for Key {
     fn from(value: &str) -> Self {
-        Key2::String(value.to_string())
+        Key::String(value.to_string())
     }
 }
 
-impl From<i64> for Key2 {
+impl From<i64> for Key {
     fn from(value: i64) -> Self {
-        Key2::Signed(value)
+        Key::Signed(value)
     }
 }
 
-impl From<u64> for Key2 {
+impl From<u64> for Key {
     fn from(value: u64) -> Self {
-        Key2::Unsigned(value)
+        Key::Unsigned(value)
     }
 }
 
-impl PartialEq<Key2> for &str {
-    fn eq(&self, other: &Key2) -> bool {
+impl PartialEq<Key> for &str {
+    fn eq(&self, other: &Key) -> bool {
         match other {
-            Key2::String(value) => value == self,
+            Key::String(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl PartialEq<Key2> for i64 {
-    fn eq(&self, other: &Key2) -> bool {
+impl PartialEq<Key> for i64 {
+    fn eq(&self, other: &Key) -> bool {
         match other {
-            Key2::Signed(value) => value == self,
+            Key::Signed(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl PartialEq<Key2> for u64 {
-    fn eq(&self, other: &Key2) -> bool {
+impl PartialEq<Key> for u64 {
+    fn eq(&self, other: &Key) -> bool {
         match other {
-            Key2::Unsigned(value) => value == self,
+            Key::Unsigned(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl<'a, C, G, R> KeyedListUpdater2<'a, C, G, R>
+impl<'a, C, G, R> KeyedListUpdater<'a, C, G, R>
 where
     C: crate::component::Component,
 {
@@ -217,7 +217,7 @@ where
     where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<Key2> + PartialEq<Key2>,
+        K: Into<Key> + PartialEq<Key>,
         for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
     {
         // No items? Just clear the current list.
@@ -259,7 +259,7 @@ where
     where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<Key2> + PartialEq<Key2>,
+        K: Into<Key> + PartialEq<Key>,
         for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
     {
         let mut count = 0;
@@ -296,7 +296,7 @@ where
     where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<Key2> + PartialEq<Key2>,
+        K: Into<Key> + PartialEq<Key>,
         for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
     {
         let mut count = 0;
@@ -337,7 +337,7 @@ where
     where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<Key2> + PartialEq<Key2>,
+        K: Into<Key> + PartialEq<Key>,
         for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
     {
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
@@ -381,7 +381,7 @@ where
     where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<Key2> + PartialEq<Key2>,
+        K: Into<Key> + PartialEq<Key>,
         for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
     {
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
@@ -420,7 +420,7 @@ where
     ) where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<Key2> + PartialEq<Key2>,
+        K: Into<Key> + PartialEq<Key>,
         for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
     {
         if items_state_iter.peek().is_none() {
@@ -443,14 +443,14 @@ where
                     .list_context
                     .old_elements_map
                     .remove(&(self.state_and_fns.get_key)(item).into());
-                ItemWithLis2::new(item, old_element)
+                ItemWithLis::new(item, old_element)
             })
             .collect();
         longest_increasing_subsequence(&mut items_with_lis);
 
         self.remove_old_elements_that_still_in_old_elements_map();
 
-        for ItemWithLis2 {
+        for ItemWithLis {
             item_state,
             old_element,
             lis,
@@ -496,7 +496,7 @@ where
             );
             self.list_context
                 .old_elements_map
-                .insert(key, OldElement2 { index, element });
+                .insert(key, OldElement { index, element });
         }
     }
 
@@ -534,7 +534,7 @@ where
     ) where
         I: Copy,
         G: Fn(I) -> K,
-        K: Into<Key2> + PartialEq<Key2>,
+        K: Into<Key> + PartialEq<Key>,
         for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
     {
         for item_state in items_state_iter {
@@ -566,20 +566,20 @@ where
 }
 
 #[derive(Debug)]
-struct ItemWithLis2<I> {
+struct ItemWithLis<I> {
     item_state: I,
-    old_element: Option<OldElement2>,
+    old_element: Option<OldElement>,
     lis: bool,
 }
 
 #[derive(Debug)]
-pub struct OldElement2 {
+pub struct OldElement {
     index: usize,
     element: super::Element,
 }
 
-impl<I> ItemWithLis2<I> {
-    fn new(item_state: I, old_element: Option<OldElement2>) -> Self {
+impl<I> ItemWithLis<I> {
+    fn new(item_state: I, old_element: Option<OldElement>) -> Self {
         Self {
             item_state,
             old_element,
@@ -589,7 +589,7 @@ impl<I> ItemWithLis2<I> {
 }
 
 // Copied from https://github.com/axelf4/lis and modified to work with Spair.
-fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis2<I>]) {
+fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis<I>]) {
     let mut p = vec![0; items.len()];
     // indices of the new items
     let mut m = Vec::with_capacity(items.len());
@@ -650,11 +650,11 @@ mod keyed_list_with_render_tests {
     use wasm_bindgen::UnwrapThrowExt;
     use wasm_bindgen_test::*;
 
-    impl super::ItemWithLis2<&()> {
+    impl super::ItemWithLis<&()> {
         fn index(index: usize) -> Self {
             Self {
                 item_state: &(),
-                old_element: Some(super::OldElement2 {
+                old_element: Some(super::OldElement {
                     index,
                     element: super::super::Element::new_ns(None, "div"),
                 }),
@@ -670,7 +670,7 @@ mod keyed_list_with_render_tests {
         }
     }
 
-    fn collect_lis(mut items: Vec<super::ItemWithLis2<&()>>) -> Vec<usize> {
+    fn collect_lis(mut items: Vec<super::ItemWithLis<&()>>) -> Vec<usize> {
         super::longest_increasing_subsequence(&mut items[..]);
         items
             .iter()
@@ -689,7 +689,7 @@ mod keyed_list_with_render_tests {
     fn collect_lis_from_index(indices: &[usize]) -> Vec<usize> {
         let items = indices
             .iter()
-            .map(|i| super::ItemWithLis2::index(*i))
+            .map(|i| super::ItemWithLis::index(*i))
             .collect();
         collect_lis(items)
     }
@@ -697,16 +697,16 @@ mod keyed_list_with_render_tests {
     #[wasm_bindgen_test]
     fn lis_with_none() {
         let items = vec![
-            super::ItemWithLis2::index(5),
-            super::ItemWithLis2::index(1),
-            super::ItemWithLis2::index(3),
-            super::ItemWithLis2::none(),
-            super::ItemWithLis2::index(6),
-            super::ItemWithLis2::index(8),
-            super::ItemWithLis2::none(),
-            super::ItemWithLis2::index(9),
-            super::ItemWithLis2::index(0),
-            super::ItemWithLis2::index(7),
+            super::ItemWithLis::index(5),
+            super::ItemWithLis::index(1),
+            super::ItemWithLis::index(3),
+            super::ItemWithLis::none(),
+            super::ItemWithLis::index(6),
+            super::ItemWithLis::index(8),
+            super::ItemWithLis::none(),
+            super::ItemWithLis::index(9),
+            super::ItemWithLis::index(0),
+            super::ItemWithLis::index(7),
         ];
         let rs = collect_lis(items);
         let expected = [1, 3, 6, 8, 9];
@@ -762,8 +762,7 @@ mod keyed_list_with_render_tests {
         }
 
         fn collect_from_keyed_list(&self) -> Vec<String> {
-            if let crate::dom::nodes::Node::KeyedList2(kl) =
-                self.root.nodes.0.first().unwrap_throw()
+            if let crate::dom::nodes::Node::KeyedList(kl) = self.root.nodes.0.first().unwrap_throw()
             {
                 kl.active
                     .iter()

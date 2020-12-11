@@ -98,7 +98,7 @@ impl<C: crate::component::Component> Render<C> for &String {
 //     }
 // }
 
-pub trait ListItem2<C: crate::component::Component> {
+pub trait ListItemRender<C: crate::component::Component> {
     const ROOT_ELEMENT_TAG: &'static str;
     fn render(self, item: crate::dom::HtmlUpdater<C>);
 }

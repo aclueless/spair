@@ -165,15 +165,15 @@ impl NodeList {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_context2<'a>(
+    pub fn keyed_list_context<'a>(
         &'a mut self,
         root_item_tag: &'a str,
         parent: &'a web_sys::Node,
         exact_count_of_new_items: usize,
         use_template: bool,
-    ) -> super::KeyedListContext2<'a> {
+    ) -> super::KeyedListContext<'a> {
         if self.0.is_empty() {
-            self.0.push(Node::KeyedList2(Default::default()));
+            self.0.push(Node::KeyedList(Default::default()));
         }
 
         match self
@@ -181,7 +181,7 @@ impl NodeList {
             .first_mut()
             .expect_throw("Expect a keyed list as the first item of the node list")
         {
-            Node::KeyedList2(list) => list.create_context(
+            Node::KeyedList(list) => list.create_context(
                 root_item_tag,
                 exact_count_of_new_items,
                 parent,
@@ -207,7 +207,7 @@ pub enum Node {
     Text(super::Text),
     FragmentedNodeList(FragmentedNodeList),
     #[cfg(feature = "keyed-list")]
-    KeyedList2(super::KeyedList2),
+    KeyedList(super::KeyedList),
     ComponentHandle(AnyComponentHandle),
 }
 
@@ -218,7 +218,7 @@ impl Node {
             Self::Text(text) => text.remove_from(parent),
             Self::FragmentedNodeList(mi) => mi.clear(parent),
             #[cfg(feature = "keyed-list")]
-            Self::KeyedList2(list) => list.clear(parent),
+            Self::KeyedList(list) => list.clear(parent),
             Self::ComponentHandle(_) => {
                 // The component is the only child of an element
                 parent.set_text_content(None);
@@ -233,7 +233,7 @@ impl Node {
             Self::Text(text) => text.append_to(parent),
             Self::FragmentedNodeList(mi) => mi.append_to(parent),
             #[cfg(feature = "keyed-list")]
-            Self::KeyedList2(list) => list.append_to(parent),
+            Self::KeyedList(list) => list.append_to(parent),
             Self::ComponentHandle(_) => {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");
