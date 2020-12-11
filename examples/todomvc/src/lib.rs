@@ -339,9 +339,9 @@ impl spair::Render<App> for Info {
     }
 }
 
-impl spair::ListItem<App> for &TodoItem {
+impl spair::ListItem2<App> for &TodoItem {
     const ROOT_ELEMENT_TAG: &'static str = "li";
-    fn render(&self, li: spair::Element<App>) {
+    fn render(self, li: spair::Element<App>) {
         let comp = li.comp();
         let state = li.state();
         let id = self.id;

@@ -63,7 +63,7 @@ impl spair::Component for Clock {
                     });
                 })
                 .g(|g| {
-                    g.list_with_render(1..=60, spair::ListElementCreation::Clone, "g", |&n, g| {
+                    g.list_with_render(1..=60, spair::ListElementCreation::Clone, "g", |n, g| {
                         let degree = 360.0 * n as f64 / 60.0;
                         if n % 5 == 0 {
                             let length = 58.0;
