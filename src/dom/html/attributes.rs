@@ -337,7 +337,8 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
 
     pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: crate::dom::ListElementCreation)
     where
-        I: crate::dom::ListItem<C>,
+        I: Copy,
+        I: crate::dom::ListItem2<C>,
     {
         self.0
             .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
@@ -350,7 +351,8 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         tag: &str,
         render: R,
     ) where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, crate::Element<'u, C>),
     {
         self.0.list_with_render(items, mode, tag, render)
     }
@@ -361,7 +363,8 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         items: impl IntoIterator<Item = I>,
         mode: crate::dom::ListElementCreation,
     ) where
-        for<'k> I: crate::dom::Keyed<'k> + crate::dom::ListItem<C>,
+        I: Copy,
+        for<'k> I: crate::dom::Keyed2<'k> + crate::dom::ListItem2<C>,
     {
         self.0.keyed_list(items, mode)
     }

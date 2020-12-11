@@ -165,33 +165,6 @@ impl NodeList {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_context<'a>(
-        &'a mut self,
-        root_item_tag: &str,
-        parent: &'a web_sys::Node,
-        exact_count_of_new_items: usize,
-        use_template: bool,
-    ) -> super::KeyedListContext<'a> {
-        if self.0.is_empty() {
-            self.0.push(Node::KeyedList(super::KeyedList::default()));
-        }
-
-        match self
-            .0
-            .first_mut()
-            .expect_throw("Expect a keyed list as the first item of the node list")
-        {
-            Node::KeyedList(list) => list.create_context(
-                root_item_tag,
-                exact_count_of_new_items,
-                parent,
-                use_template,
-            ),
-            _ => panic!("Why not a keyed list?"),
-        }
-    }
-
-    #[cfg(feature = "keyed-list")]
     pub fn keyed_list_context2<'a>(
         &'a mut self,
         root_item_tag: &'a str,
@@ -234,8 +207,6 @@ pub enum Node {
     Text(super::Text),
     FragmentedNodeList(FragmentedNodeList),
     #[cfg(feature = "keyed-list")]
-    KeyedList(super::KeyedList),
-    #[cfg(feature = "keyed-list")]
     KeyedList2(super::KeyedList2),
     ComponentHandle(AnyComponentHandle),
 }
@@ -246,8 +217,6 @@ impl Node {
             Self::Element(element) => element.remove_from(parent),
             Self::Text(text) => text.remove_from(parent),
             Self::FragmentedNodeList(mi) => mi.clear(parent),
-            #[cfg(feature = "keyed-list")]
-            Self::KeyedList(list) => list.clear(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList2(list) => list.clear(parent),
             Self::ComponentHandle(_) => {
@@ -263,8 +232,6 @@ impl Node {
             Self::Element(element) => element.append_to(parent),
             Self::Text(text) => text.append_to(parent),
             Self::FragmentedNodeList(mi) => mi.append_to(parent),
-            #[cfg(feature = "keyed-list")]
-            Self::KeyedList(list) => list.append_to(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList2(list) => list.append_to(parent),
             Self::ComponentHandle(_) => {
@@ -484,7 +451,8 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
         tag: &str,
         render: R,
     ) where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, crate::Element<'u, C>),
     {
         let use_template = mode.use_template();
         let fragmented_node_list =

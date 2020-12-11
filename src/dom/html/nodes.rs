@@ -294,7 +294,8 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         render: R,
     ) -> Self
     where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, crate::Element<'u, C>),
     {
         self.0.u.list_with_render(items, mode, tag, render);
         self
@@ -400,7 +401,8 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
         render: R,
     ) -> Self
     where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, crate::Element<'u, C>),
     {
         self.0.u.list_with_render(items, mode, tag, render);
         self

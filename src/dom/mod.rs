@@ -5,8 +5,6 @@ pub mod attribute_types;
 mod attributes;
 mod element;
 #[cfg(feature = "keyed-list")]
-mod keyed_list;
-#[cfg(feature = "keyed-list")]
 mod keyed_list_with_render;
 
 mod nodes;
@@ -24,8 +22,6 @@ use attribute_types::AsStr;
 pub use attributes::EventSetter;
 pub use element::*;
 pub use html::{attributes::*, nodes::*, renderable::*, HtmlUpdater};
-#[cfg(feature = "keyed-list")]
-pub use keyed_list::*;
 #[cfg(feature = "keyed-list")]
 pub use keyed_list_with_render::*;
 pub use non_keyed_list::*;

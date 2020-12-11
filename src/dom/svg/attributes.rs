@@ -364,7 +364,8 @@ impl<'a, C: crate::component::Component> SvgStaticAttributes<'a, C> {
         tag: &str,
         render: R,
     ) where
-        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, super::SvgUpdater<'u, C>),
     {
         self.0.svg_list_with_render(items, mode, tag, render)
     }

@@ -265,54 +265,11 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         render: R,
     ) -> super::RememberSettingSelectedOption
     where
-        for<'i, 'c> R: Fn(&'i I, crate::Element<'c, C>),
-    {
-        self.non_keyed_list_updater(mode, tag)
-            .html_update(items, render)
-    }
-
-    pub fn list_with_render2<I, R>(
-        &mut self,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-        tag: &'a str,
-        render: R,
-    ) -> super::RememberSettingSelectedOption
-    where
         I: Copy,
         for<'u> R: Fn(I, crate::Element<'u, C>),
     {
         self.non_keyed_list_updater(mode, tag)
-            .html_update2(items, render)
-    }
-
-    #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(
-        &mut self,
-        items: impl IntoIterator<Item = I>,
-        mode: super::ListElementCreation,
-    ) -> super::RememberSettingSelectedOption
-    where
-        for<'k> I: super::Keyed<'k> + super::ListItem<C>,
-    {
-        // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
-        // we need to collect items into a vec to know exact size
-        let items: Vec<_> = items.into_iter().collect();
-
-        let parent = self.element.ws_element.as_ref();
-        let use_template = mode.use_template();
-
-        let mut keyed_list_updater = super::KeyedListUpdater {
-            comp: self.comp,
-            state: self.state,
-            list_context: self.element.nodes.keyed_list_context(
-                I::ROOT_ELEMENT_TAG,
-                parent,
-                items.len(),
-                use_template,
-            ),
-        };
-        keyed_list_updater.update(items.into_iter())
+            .html_update(items, render)
     }
 
     #[cfg(feature = "keyed-list")]

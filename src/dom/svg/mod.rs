@@ -97,7 +97,8 @@ impl<'a, C: crate::component::Component> super::ElementUpdater<'a, C> {
         tag: &'a str,
         render: R,
     ) where
-        for<'i, 'c> R: Fn(&'i I, super::SvgUpdater<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, super::SvgUpdater<'u, C>),
     {
         self.non_keyed_list_updater(mode, tag)
             .svg_update(items, render);
@@ -173,7 +174,8 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         tag: &str,
         render: R,
     ) where
-        for<'i, 'c> R: Fn(&'i I, SvgUpdater<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, super::SvgUpdater<'u, C>),
     {
         self.0.svg_list_with_render(items, mode, tag, render)
     }
