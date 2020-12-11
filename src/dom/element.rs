@@ -322,7 +322,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         //let parent = self.element.ws_element.as_ref();
         let use_template = mode.use_template();
 
-        let keyed_list_updater = super::KeyedListUpdater2 {
+        let mut keyed_list_updater = super::KeyedListUpdater2 {
             list_context: self.element.nodes.keyed_list_context2(
                 tag,
                 self.element.ws_element.as_ref(),
@@ -336,8 +336,7 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
                 render,
             },
         };
-        keyed_list_updater.update_with_render(items.into_iter())
-        //crate::dom::RememberSettingSelectedOption
+        keyed_list_updater.update(items.into_iter())
     }
 
     pub fn component<CC: crate::component::Component>(

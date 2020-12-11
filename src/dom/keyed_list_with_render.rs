@@ -1,6 +1,11 @@
 use crate::utils::PeekableDoubleEnded;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
+pub trait Keyed2<'a> {
+    type Key: 'a + Into<Key2> + PartialEq<Key2>;
+    fn key(self) -> Self::Key;
+}
+
 #[derive(Default)]
 pub struct KeyedList2 {
     active: Vec<Option<(Key2, super::Element)>>,
@@ -195,48 +200,6 @@ impl<'a, C, G, R> KeyedListUpdater2<'a, C, G, R>
 where
     C: crate::component::Component,
 {
-    pub fn update_with_render<I, K>(
-        mut self,
-        items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
-    ) -> crate::dom::RememberSettingSelectedOption
-    where
-        I: Copy,
-        G: Fn(I) -> K,
-        K: Into<Key2> + PartialEq<Key2>,
-        for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
-    {
-        // No items? Just clear the current list.
-        if self.list_context.new_item_count == 0 {
-            self.remove_all_old_items();
-            return crate::dom::RememberSettingSelectedOption;
-        }
-
-        let mut items_state_iter = items_state_iter.peekable_double_ended();
-        if self.list_context.require_init_template {
-            let u = crate::dom::ElementUpdater::new(
-                self.state_and_fns.comp,
-                self.state_and_fns.state,
-                self.list_context.template.as_mut().unwrap(),
-                crate::dom::ElementStatus::JustCreated,
-            );
-            (self.state_and_fns.render)(*items_state_iter.peek().unwrap_throw(), u);
-        }
-
-        //loop {
-        //let mut count = self.update_same_key_items_from_start2(&mut items_state_iter);
-        //     count += self.update_same_key_items_from_end(&mut items_state_iter);
-        //     count += self.update_moved_forward_item(&mut items_state_iter);
-        //     count += self.update_moved_backward_item(&mut items_state_iter);
-        //     if count == 0 {
-        //         break;
-        //     }
-        //}
-
-        // self.update_other_items_in_middle(&mut items_state_iter);
-
-        crate::dom::RememberSettingSelectedOption
-    }
-
     fn create_element_for_new_item(&self) -> (super::Element, super::ElementStatus) {
         match &self.list_context.template {
             Some(template) => (Clone::clone(*template), super::ElementStatus::JustCloned),
@@ -272,6 +235,7 @@ where
                 super::ElementStatus::JustCreated,
             );
 
+            // Render the template with the first item's state
             (self.state_and_fns.render)(*items_state_iter.peek().unwrap_throw(), u);
         }
         loop {
@@ -313,22 +277,10 @@ where
                 _ => return count,
             }
             count += 1;
-            /*
-            items_state_iter.next().unwrap_throw().update_existing_item(
-                self.state_and_fns.comp,
-                self.state_and_fns.state,
-                self.list_context.old.next(),
-                self.list_context.new.next(),
-                None,
-                |_, _| {},
-            );
-            */
-            let old = self.list_context.old.next();
-            let new = self.list_context.new.next();
             self.state_and_fns.update_existing_item(
                 items_state_iter.next().unwrap_throw(),
-                old,
-                new,
+                self.list_context.old.next(),
+                self.list_context.new.next(),
                 None,
                 |_, _| {},
             );
@@ -367,23 +319,10 @@ where
                 _ => return count,
             };
             count += 1;
-            // items_state_iter
-            //     .next_back()
-            //     .unwrap_throw()
-            //     .update_existing_item(
-            //         self.state_and_fns.comp,
-            //         self.state_and_fns.state,
-            //         self.list_context.old.next_back(),
-            //         self.list_context.new.next_back(),
-            //         None,
-            //         |_, _| {},
-            //     );
-            let old = self.list_context.old.next_back();
-            let new = self.list_context.new.next_back();
             self.state_and_fns.update_existing_item(
                 items_state_iter.next_back().unwrap_throw(),
-                old,
-                new,
+                self.list_context.old.next_back(),
+                self.list_context.new.next_back(),
                 None,
                 |_, _| {},
             );
@@ -421,16 +360,6 @@ where
             .peek()
             .and_then(|item| item.1.as_ref().map(|item| item.1.ws_element()));
         let parent = self.list_context.parent;
-        // items_state_iter.next().unwrap_throw().update_existing_item(
-        //     self.state_and_fns.comp,
-        //     self.state_and_fns.state,
-        //     moved,
-        //     self.list_context.new.next(),
-        //     next_sibling,
-        //     |element, next_sibling| {
-        //         element.insert_before(parent, next_sibling.map(|element| element.unchecked_ref()));
-        //     },
-        // );
         self.state_and_fns.update_existing_item(
             items_state_iter.next().unwrap_throw(),
             moved,
@@ -469,22 +398,6 @@ where
             }
             _ => return 0,
         };
-        // items_state_iter
-        //     .next_back()
-        //     .unwrap_throw()
-        //     .update_existing_item(
-        //         self.state_and_fns.comp,
-        //         self.state_and_fns.state,
-        //         self.list_context.old.next(),
-        //         self.list_context.new.next_back(),
-        //         self.list_context.next_sibling.as_ref(),
-        //         |element, next_sibling| {
-        //             element.insert_before(
-        //                 self.list_context.parent,
-        //                 next_sibling.map(|element| element.unchecked_ref()),
-        //             );
-        //         },
-        //     );
         self.state_and_fns.update_existing_item(
             items_state_iter.next_back().unwrap_throw(),
             self.list_context.old.next(),
@@ -529,7 +442,6 @@ where
                 let old_element = self
                     .list_context
                     .old_elements_map
-                    //.remove(&item.key().into());
                     .remove(&(self.state_and_fns.get_key)(item).into());
                 ItemWithLis2::new(item, old_element)
             })
@@ -556,7 +468,6 @@ where
                 status,
             );
 
-            //item_state.render(u.into());
             (self.state_and_fns.render)(item_state, u);
             if !lis {
                 let next_sibling = self
@@ -636,7 +547,6 @@ where
                 status,
             );
 
-            //item_state.render(u.into());
             (self.state_and_fns.render)(item_state, u);
             element.insert_before(
                 self.list_context.parent,
@@ -739,6 +649,86 @@ fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis2<I>]) {
 mod keyed_list_with_render_tests {
     use wasm_bindgen::UnwrapThrowExt;
     use wasm_bindgen_test::*;
+
+    impl super::ItemWithLis2<&()> {
+        fn index(index: usize) -> Self {
+            Self {
+                item_state: &(),
+                old_element: Some(super::OldElement2 {
+                    index,
+                    element: super::super::Element::new_ns(None, "div"),
+                }),
+                lis: false,
+            }
+        }
+        fn none() -> Self {
+            Self {
+                item_state: &(),
+                old_element: None,
+                lis: false,
+            }
+        }
+    }
+
+    fn collect_lis(mut items: Vec<super::ItemWithLis2<&()>>) -> Vec<usize> {
+        super::longest_increasing_subsequence(&mut items[..]);
+        items
+            .iter()
+            .flat_map(|item| {
+                if item.lis {
+                    item.old_element
+                        .as_ref()
+                        .map(|old_element| old_element.index)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn collect_lis_from_index(indices: &[usize]) -> Vec<usize> {
+        let items = indices
+            .iter()
+            .map(|i| super::ItemWithLis2::index(*i))
+            .collect();
+        collect_lis(items)
+    }
+
+    #[wasm_bindgen_test]
+    fn lis_with_none() {
+        let items = vec![
+            super::ItemWithLis2::index(5),
+            super::ItemWithLis2::index(1),
+            super::ItemWithLis2::index(3),
+            super::ItemWithLis2::none(),
+            super::ItemWithLis2::index(6),
+            super::ItemWithLis2::index(8),
+            super::ItemWithLis2::none(),
+            super::ItemWithLis2::index(9),
+            super::ItemWithLis2::index(0),
+            super::ItemWithLis2::index(7),
+        ];
+        let rs = collect_lis(items);
+        let expected = [1, 3, 6, 8, 9];
+        assert_eq!(&expected[..], &rs[..]);
+    }
+
+    #[wasm_bindgen_test]
+    fn lis() {
+        // Why this produces different result than https://github.com/axelf4/lis?
+        // But it produces the same result like https://en.wikipedia.org/wiki/Longest_increasing_subsequence?
+        let rs = collect_lis_from_index(&[0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15]);
+        assert_eq!(rs, [0, 2, 6, 9, 11, 15]);
+
+        assert!(collect_lis_from_index(&[]).is_empty());
+
+        let rs = collect_lis_from_index(&[5, 1, 3, 6, 8, 9, 0, 7, 10, 5, 2]);
+        assert_eq!(rs, [1, 3, 6, 8, 9, 10]);
+
+        let rs = collect_lis_from_index(&[5, 7, 2, 5, 0, 3, 8, 4, 1, 6, 5, 9]);
+        assert_eq!(rs, [0, 3, 4, 5, 9]);
+    }
+
     struct Unit;
     impl crate::component::Component for Unit {
         type Routes = ();
