@@ -233,6 +233,21 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
     }
 
     #[cfg(feature = "partial-non-keyed-list")]
+    pub fn list<I>(
+        mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: crate::dom::ListElementCreation,
+    ) -> Self
+    where
+        I: Copy,
+        I: crate::dom::SvgListItemRender<C>,
+    {
+        self.0
+            .svg_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+        self
+    }
+
+    #[cfg(feature = "partial-non-keyed-list")]
     pub fn list_with_render<I, R>(
         mut self,
         items: impl IntoIterator<Item = I>,
@@ -241,7 +256,8 @@ impl<'a, C: crate::component::Component> SvgNodesOwned<'a, C> {
         render: R,
     ) -> Self
     where
-        for<'i, 'c> R: Fn(&'i I, crate::dom::SvgUpdater<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, crate::dom::SvgUpdater<'u, C>),
     {
         self.0.svg_list_with_render(items, mode, tag, render);
         self
@@ -322,6 +338,21 @@ impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
     }
 
     #[cfg(feature = "partial-non-keyed-list")]
+    pub fn list<I>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: crate::dom::ListElementCreation,
+    ) -> Self
+    where
+        I: Copy,
+        I: crate::dom::SvgListItemRender<C>,
+    {
+        self.0
+            .svg_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+        self
+    }
+
+    #[cfg(feature = "partial-non-keyed-list")]
     pub fn list_with_render<I, R>(
         self,
         items: impl IntoIterator<Item = I>,
@@ -330,7 +361,8 @@ impl<'n, 'h, C: crate::component::Component> SvgNodes<'n, 'h, C> {
         render: R,
     ) -> Self
     where
-        for<'i, 'c> R: Fn(&'i I, crate::dom::SvgUpdater<'c, C>),
+        I: Copy,
+        for<'u> R: Fn(I, crate::dom::SvgUpdater<'u, C>),
     {
         self.0.svg_list_with_render(items, mode, tag, render);
         self

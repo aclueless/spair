@@ -472,6 +472,35 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
             non_keyed_list_updater.html_update(items, render);
     }
 
+    #[cfg(all(feature = "partial-non-keyed-list", feature = "svg"))]
+    pub fn svg_list_with_render<I, R>(
+        &mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+        tag: &str,
+        render: R,
+    ) where
+        I: Copy,
+        for<'u> R: Fn(I, crate::dom::SvgUpdater<'u, C>),
+    {
+        let use_template = mode.use_template();
+        let fragmented_node_list =
+            self.nodes
+                .fragmented_node_list(self.index, self.parent, self.next_sibling);
+        self.index += 1;
+        let mut non_keyed_list_updater = super::NonKeyedListUpdater::new(
+            self.comp,
+            self.state,
+            &mut fragmented_node_list.nodes,
+            tag,
+            self.parent,
+            Some(&fragmented_node_list.end_node),
+            use_template,
+        );
+        let _select_element_value_will_be_set_on_dropping =
+            non_keyed_list_updater.svg_update(items, render);
+    }
+
     pub fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         element.insert_before(self.parent, self.next_sibling);
         self.nodes.0.push(crate::dom::nodes::Node::Element(element));

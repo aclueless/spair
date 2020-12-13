@@ -21,7 +21,7 @@ pub use dom::{
     RenderRef, StaticNodes, StaticRender,
 };
 #[cfg(feature = "svg")]
-pub use dom::{SvgNodes, SvgRender, SvgStaticNodes};
+pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater as Svg};
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};

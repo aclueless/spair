@@ -366,7 +366,26 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         I: Copy,
         for<'k> I: crate::dom::Keyed<'k> + crate::dom::ListItemRender<C>,
     {
-        self.0.keyed_list(items, mode)
+        self.0
+            .keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render);
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list_with_render<I, G, K, R>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: crate::dom::ListElementCreation,
+        tag: &'a str,
+        get_key: G,
+        render: R,
+    ) where
+        I: Copy,
+        G: Fn(I) -> K,
+        K: Into<crate::dom::Key> + PartialEq<crate::dom::Key>,
+        for<'u> R: Fn(I, super::HtmlUpdater<'u, C>),
+    {
+        self.0
+            .keyed_list_with_render(items, mode, tag, get_key, render);
     }
 
     pub fn component<CC: crate::component::Component>(

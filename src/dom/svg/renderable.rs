@@ -39,3 +39,8 @@ impl<C: crate::component::Component> SvgStaticRender<C> for &str {
         nodes.static_text(self);
     }
 }
+
+pub trait SvgListItemRender<C: crate::component::Component> {
+    const ROOT_ELEMENT_TAG: &'static str;
+    fn render(self, item: crate::dom::SvgUpdater<C>);
+}

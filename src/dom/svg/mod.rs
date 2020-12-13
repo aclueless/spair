@@ -159,13 +159,13 @@ impl<'a, C: crate::component::Component> SvgUpdater<'a, C> {
         self.0.svg_static(value)
     }
 
-    // pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
-    // where
-    //     I: crate::renderable::ListItem<C>,
-    // {
-    //     self.0
-    //         .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
-    // }
+    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    where
+        I: Copy + crate::dom::SvgListItemRender<C>,
+    {
+        self.0
+            .svg_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
+    }
 
     pub fn list_with_render<I, R>(
         self,

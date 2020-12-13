@@ -285,6 +285,26 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         self
     }
 
+    /// Render a list of items to elements. Use this when you want to add other elements to
+    /// the parent beside the elements in the list.
+    #[cfg(feature = "partial-non-keyed-list")]
+    pub fn list<I>(
+        mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: crate::dom::ListElementCreation,
+    ) -> Self
+    where
+        I: Copy,
+        I: crate::dom::ListItemRender<C>,
+    {
+        self.0
+            .u
+            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+        self
+    }
+
+    /// Render a list of items to elements with the given tag and render. Use this when you want
+    /// to add other elements to the parent beside the elements in the list.
     #[cfg(feature = "partial-non-keyed-list")]
     pub fn list_with_render<I, R>(
         mut self,
@@ -392,6 +412,26 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
         self
     }
 
+    /// Render a list of items to elements. Use this when you want to add other elements to
+    /// the parent beside the elements in the list.
+    #[cfg(feature = "partial-non-keyed-list")]
+    pub fn list<I>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: crate::dom::ListElementCreation,
+    ) -> Self
+    where
+        I: Copy,
+        I: crate::dom::ListItemRender<C>,
+    {
+        self.0
+            .u
+            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+        self
+    }
+
+    /// Render a list of items to elements with the given tag and render. Use this when you want
+    /// to add other elements to the parent beside the elements in the list.
     #[cfg(feature = "partial-non-keyed-list")]
     pub fn list_with_render<I, R>(
         self,
