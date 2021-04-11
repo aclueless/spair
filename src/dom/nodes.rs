@@ -310,6 +310,14 @@ pub struct MatchIfUpdater<'a, C> {
 }
 
 impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
+    pub fn state(&self) -> &'a C {
+        self.state
+    }
+
+    pub fn comp(&self) -> crate::component::Comp<C> {
+        self.comp.clone()
+    }
+
     pub fn render_on_arm_index(mut self, index: usize) -> super::NodesOwned<'a, C> {
         let status = if Some(index) != self.match_if.active_index {
             self.match_if.nodes.clear(self.parent.as_ref());
