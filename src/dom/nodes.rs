@@ -324,6 +324,12 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
             state: self.state,
 
             index: 0,
+            // This fied is currently only use to find if the parent element is an <select>,
+            // If it is true, then run the set_selected_element_on_dropping. MatchIfUpdater
+            // is a sub-list, so it is not resposibility for doing the setting. So, just assign
+            // `Other` to it, this may cause some issues in the future as someone may be tripped
+            // by this.
+            parent_element_type: super::ElementType::Other,
             parent_status: status,
             nodes: &mut self.match_if.nodes,
             parent: self.parent,
@@ -338,6 +344,7 @@ pub struct NodeListUpdater<'a, C> {
     state: &'a C,
 
     index: usize,
+    pub(crate) parent_element_type: super::ElementType,
     parent_status: super::ElementStatus,
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
@@ -351,6 +358,7 @@ impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
             comp,
             state,
             index: 0,
+            parent_element_type: element.element_type,
             parent_status: status,
             parent: element.ws_element.as_ref(),
             next_sibling: None,

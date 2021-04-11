@@ -109,9 +109,12 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         let _must_set_select_element_value_after_this =
             self.u.list_with_render(items, mode, tag, render);
 
-        //The hack start in AttributeSetter::value
-        self.select_element_value
-            .set_select_element_value(self.u.ws_element().as_ref());
+        if matches!(self.u.element_type(), crate::dom::ElementType::Select) {
+            log::debug!("Set selected element after render non keyed list");
+            //The hack start in AttributeSetter::value
+            self.select_element_value
+                .set_select_element_value(self.u.ws_element().as_ref());
+        }
     }
 
     #[cfg(feature = "keyed-list")]
@@ -143,9 +146,12 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
             .u
             .keyed_list_with_render(items, mode, tag, get_key, render);
 
-        // The hack start in AttributeSetter::value
-        self.select_element_value
-            .set_select_element_value(self.u.ws_element().as_ref());
+        if matches!(self.u.element_type(), crate::dom::ElementType::Select) {
+            log::debug!("Set selected element after render keyed list");
+            // The hack start in AttributeSetter::value
+            self.select_element_value
+                .set_select_element_value(self.u.ws_element().as_ref());
+        }
     }
 
     pub fn component<CC: crate::component::Component>(

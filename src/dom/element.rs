@@ -85,6 +85,7 @@ impl Element {
     }
 }
 
+#[derive(Debug)]
 enum SelectedOption {
     None,
     Value(String),
@@ -114,6 +115,7 @@ impl SelectElementValue {
     }
 
     pub fn set_select_element_value(&self, element: &web_sys::Node) {
+        log::debug!("Set selected element to {:?}", self.0);
         if let Some(selected_option) = self.0.as_ref() {
             let select = element.unchecked_ref::<web_sys::HtmlSelectElement>();
             match selected_option {
