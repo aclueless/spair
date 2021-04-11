@@ -81,6 +81,7 @@ where
         //str     class
         u32     cols
         u32     col_span "colspan"
+        bool    content_editable "contenteditable"
         bool    controls
         str     coords
         AsStr   cross_origin "crossorigin"
