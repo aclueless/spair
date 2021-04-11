@@ -70,6 +70,47 @@ pub struct FetchOptions {
     pub integrity: Option<String>,
 }
 
+impl From<FetchOptions> for web_sys::RequestInit {
+    fn from(fo: FetchOptions) -> Self {
+        let mut init = web_sys::RequestInit::new();
+
+        if let Some(cache) = fo.cache {
+            init.cache(cache);
+        }
+
+        if let Some(credentials) = fo.credentials {
+            init.credentials(credentials);
+        }
+
+        if let Some(redirect) = fo.redirect {
+            init.redirect(redirect);
+        }
+
+        if let Some(mode) = fo.mode {
+            init.mode(mode);
+        }
+
+        if let Some(referrer) = fo.referrer {
+            match referrer {
+                Referrer::SameOriginUrl(referrer) => init.referrer(&referrer),
+                Referrer::AboutClient => init.referrer("about:client"),
+                Referrer::Empty => init.referrer(""),
+            };
+        }
+
+        if let Some(referrer_policy) = fo.referrer_policy {
+            init.referrer_policy(referrer_policy);
+        }
+
+        if let Some(integrity) = fo.integrity {
+            init.integrity(&integrity);
+        }
+
+        init
+    }
+}
+
+/*
 impl Into<web_sys::RequestInit> for FetchOptions {
     fn into(self) -> web_sys::RequestInit {
         let mut init = web_sys::RequestInit::new();
@@ -109,6 +150,7 @@ impl Into<web_sys::RequestInit> for FetchOptions {
         init
     }
 }
+*/
 
 pub trait IntoFetchArgs {
     #[deprecated(

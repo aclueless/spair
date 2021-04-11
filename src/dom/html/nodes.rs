@@ -104,7 +104,7 @@ impl<'a, C> Drop for HtmlNodeListUpdater<'a, C> {
             log::debug!("Set selected element on dropping the select element");
             self.select_element_value
                 .set_select_element_value(self.u.parent());
-}
+        }
     }
 }
 

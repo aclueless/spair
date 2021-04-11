@@ -259,6 +259,7 @@ macro_rules! create_methods_for_attributes {
         }
     };
     (@create $method_name:ident $attribute_name:expr => $attribute_type:ty => $shared_method_name:ident) => {
+        #[allow(clippy::wrong_self_convention)]
         fn $method_name(mut self, value: $attribute_type) -> Self {
             self.$shared_method_name($attribute_name, value);
             self
