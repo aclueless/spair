@@ -1,12 +1,25 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 enum Attribute {
-    EventListener(Box<dyn crate::events::Listener>),
+    EventListener(Option<Box<dyn crate::events::Listener>>),
     String(String),
     Bool(bool),
     I32(i32),
     U32(u32),
     F64(f64),
+}
+
+impl Clone for Attribute {
+    fn clone(&self) -> Self {
+        match self {
+            Self::EventListener(_) => Self::EventListener(None),
+            Self::String(v) => Self::String(v.clone()),
+            Self::Bool(v) => Self::Bool(*v),
+            Self::I32(v) => Self::I32(*v),
+            Self::U32(v) => Self::U32(*v),
+            Self::F64(v) => Self::F64(*v),
+        }
+    }
 }
 
 impl std::fmt::Debug for Attribute {
@@ -22,7 +35,7 @@ impl std::fmt::Debug for Attribute {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct AttributeList(Vec<Attribute>);
 
 impl AttributeList {
@@ -32,9 +45,9 @@ impl AttributeList {
         listener: Box<dyn crate::events::Listener>,
     ) {
         if index < self.0.len() {
-            self.0[index] = Attribute::EventListener(listener);
+            self.0[index] = Attribute::EventListener(Some(listener));
         } else {
-            self.0.push(Attribute::EventListener(listener));
+            self.0.push(Attribute::EventListener(Some(listener)));
         }
     }
 

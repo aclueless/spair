@@ -21,8 +21,7 @@ impl Clone for Element {
             element_type: self.element_type,
             ws_element: ws_element.unchecked_into(),
             nodes,
-            // TODO: Should this be cloned?
-            attributes: Default::default(),
+            attributes: self.attributes.clone(),
         }
     }
 }
