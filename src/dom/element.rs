@@ -115,7 +115,6 @@ impl SelectElementValue {
     }
 
     pub fn set_select_element_value(&self, element: &web_sys::Node) {
-        log::debug!("Set selected element to {:?}", self.0);
         if let Some(selected_option) = self.0.as_ref() {
             let select = element.unchecked_ref::<web_sys::HtmlSelectElement>();
             match selected_option {
@@ -239,6 +238,18 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
             .element
             .attributes
             .check_f64_attribute(self.index, value);
+        self.index += 1;
+        rs
+    }
+
+    pub fn check_str_attribute_and_return_old_value(
+        &mut self,
+        value: &str,
+    ) -> (bool, Option<String>) {
+        let rs = self
+            .element
+            .attributes
+            .check_str_attribute_and_return_old_value(self.index, value);
         self.index += 1;
         rs
     }

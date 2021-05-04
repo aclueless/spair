@@ -124,6 +124,28 @@ impl AttributeList {
             },
         }
     }
+
+    pub(super) fn check_str_attribute_and_return_old_value(
+        &mut self,
+        index: usize,
+        value: &str,
+    ) -> (bool, Option<String>) {
+        match self.0.get_mut(index) {
+            None => {
+                self.0.push(Attribute::String(value.to_string()));
+                (true, None)
+            }
+            Some(a) => match a {
+                Attribute::String(old_value) if value == *old_value => (false, None),
+                Attribute::String(old_value) => {
+                    let mut value = value.to_string();
+                    std::mem::swap(&mut value, old_value);
+                    (true, Some(value))
+                }
+                _ => panic!("Why not an Attribute::String?"),
+            },
+        }
+    }
 }
 
 pub trait AttributeSetter {
@@ -139,6 +161,7 @@ pub trait AttributeSetter {
     fn check_i32_attribute(&mut self, value: i32) -> bool;
     fn check_u32_attribute(&mut self, value: u32) -> bool;
     fn check_f64_attribute(&mut self, value: f64) -> bool;
+    fn check_str_attribute_and_return_old_value(&mut self, value: &str) -> (bool, Option<String>);
 
     fn set_bool_attribute(&mut self, name: &str, value: bool) {
         if self.check_bool_attribute(value) {

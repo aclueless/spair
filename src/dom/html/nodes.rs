@@ -101,7 +101,6 @@ pub struct HtmlNodeListUpdater<'a, C> {
 impl<'a, C> Drop for HtmlNodeListUpdater<'a, C> {
     fn drop(&mut self) {
         if matches!(self.u.parent_element_type, crate::dom::ElementType::Select) {
-            log::debug!("Set selected element on dropping the select element");
             self.select_element_value
                 .set_select_element_value(self.u.parent());
         }

@@ -49,7 +49,7 @@ pub trait SvgAttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter
         str          by
         str          calc_mode "calcMode"
         str          cap_height "cap-height"
-        str          class
+        //str          class
         str          clip
         str          clip_path "clip-path"
         str          clip_path_units "clipPathUnits"
@@ -285,6 +285,25 @@ pub trait SvgAttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter
 
     // Copied from crate::dom::html::attributes
     // TODO: Simimilar code should be reuse
+    fn class(mut self, class_name: &str) -> Self {
+        let (changed, old_value) = self.check_str_attribute_and_return_old_value(class_name);
+        if let Some(old_value) = old_value {
+            self.ws_element()
+                .class_list()
+                .remove_1(&old_value)
+                .expect_throw("Unable to remove old class");
+        }
+        if changed {
+            self.ws_element()
+                .class_list()
+                .add_1(class_name)
+                .expect_throw("Unable to add new class");
+        }
+        self
+    }
+
+    // Copied from crate::dom::html::attributes
+    // TODO: Simimilar code should be reuse
     fn class_if(mut self, class_name: &str, class_on: bool) -> Self {
         if self.check_bool_attribute(class_on) {
             if class_on {
@@ -456,5 +475,12 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     fn check_f64_attribute(&mut self, _value: f64) -> bool {
         self.0.status() == crate::dom::ElementStatus::JustCreated
         // no need to store the value for static attributes
+    }
+
+    fn check_str_attribute_and_return_old_value(&mut self, _value: &str) -> (bool, Option<String>) {
+        (
+            self.0.status() == crate::dom::ElementStatus::JustCreated,
+            None,
+        )
     }
 }

@@ -204,6 +204,10 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
     fn check_f64_attribute(&mut self, value: f64) -> bool {
         self.u.check_f64_attribute(value)
     }
+
+    fn check_str_attribute_and_return_old_value(&mut self, value: &str) -> (bool, Option<String>) {
+        self.u.check_str_attribute_and_return_old_value(value)
+    }
 }
 
 impl<'a, C: crate::component::Component> attributes::AttributeValueSetter for HtmlUpdater<'a, C> {
