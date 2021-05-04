@@ -199,6 +199,16 @@ impl NodeList {
             self.0.push(any);
         }
     }
+
+    fn get_last_element(&self) -> Option<&web_sys::Element> {
+        self.0.last().and_then(|n| n.get_last_element())
+    }
+
+    pub fn scroll_to_last_item(&self, options: &web_sys::ScrollIntoViewOptions) {
+        if let Some(e) = self.get_last_element() {
+            e.scroll_into_view_with_scroll_into_view_options(options);
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -238,6 +248,17 @@ impl Node {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");
             }
+        }
+    }
+
+    fn get_last_element(&self) -> Option<&web_sys::Element> {
+        match self {
+            Self::Element(element) => Some(element.ws_element()),
+            Self::Text(_) => None,
+            Self::FragmentedNodeList(fnl) => fnl.nodes.get_last_element(),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList(list) => list.get_last_element(),
+            Self::ComponentHandle(_) => None,
         }
     }
 }
@@ -521,6 +542,10 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
         element.insert_before(self.parent, self.next_sibling);
         self.nodes.0.push(crate::dom::nodes::Node::Element(element));
     }
+
+    pub fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
+        self.nodes.scroll_to_last_item(options)
+    }
 }
 
 pub trait DomBuilder<C> {
@@ -530,4 +555,5 @@ pub trait DomBuilder<C> {
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C>;
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C>;
     fn store_raw_wrapper(&mut self, element: crate::dom::Element);
+    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions);
 }

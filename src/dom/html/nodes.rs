@@ -91,6 +91,13 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 
         this
     }
+
+    fn scroll_to_last_element(self, options: &web_sys::ScrollIntoViewOptions) -> Self::Output {
+        use crate::dom::nodes::DomBuilder;
+        let this: Self::Output = self.into();
+        this.scroll_to_last_element(options);
+        this
+    }
 }
 
 pub struct HtmlNodeListUpdater<'a, C> {
@@ -473,6 +480,10 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.u.store_raw_wrapper(element);
     }
+
+    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
+        self.0.u.scroll_to_last_element(options);
+    }
 }
 
 impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for NodesOwned<'a, C> {
@@ -498,6 +509,10 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for No
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.u.store_raw_wrapper(element);
+    }
+
+    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
+        self.0.u.scroll_to_last_element(options);
     }
 }
 
@@ -527,6 +542,10 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.u.store_raw_wrapper(element);
     }
+
+    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
+        self.0.u.scroll_to_last_element(options);
+    }
 }
 
 impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for Nodes<'n, 'h, C> {
@@ -552,6 +571,10 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.u.store_raw_wrapper(element);
+    }
+
+    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
+        self.0.u.scroll_to_last_element(options);
     }
 }
 

@@ -84,5 +84,8 @@ features = [
     "RequestRedirect",
     "RequestMode",
     "ReferrerPolicy",
-    # "",
+    # Scroll into view
+    "ScrollBehavior",
+    "ScrollLogicalPosition",
+    "ScrollIntoViewOptions",
 ]
