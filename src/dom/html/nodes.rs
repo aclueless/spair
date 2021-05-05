@@ -98,6 +98,19 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
         this.scroll_to_last_element(options);
         this
     }
+
+    fn scroll_to_last_element_if(
+        self,
+        need_to_scroll: bool,
+        options: &web_sys::ScrollIntoViewOptions,
+    ) -> Self::Output {
+        use crate::dom::nodes::DomBuilder;
+        let this: Self::Output = self.into();
+        if need_to_scroll {
+            this.scroll_to_last_element(options);
+        }
+        this
+    }
 }
 
 pub struct HtmlNodeListUpdater<'a, C> {

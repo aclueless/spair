@@ -556,4 +556,13 @@ pub trait DomBuilder<C> {
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C>;
     fn store_raw_wrapper(&mut self, element: crate::dom::Element);
     fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions);
+    // fn scroll_to_last_element_if(
+    //     &self,
+    //     need_to_scroll: bool,
+    //     options: &web_sys::ScrollIntoViewOptions,
+    // ) {
+    //     if need_to_scroll {
+    //         self.scroll_to_last_element(options);
+    //     }
+    // }
 }
