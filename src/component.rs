@@ -81,6 +81,9 @@ pub trait Component: 'static + Sized {
         ShouldRender::Yes
     }
 
+    /// This method will be called before executing an update method
+    fn reset(&mut self) {}
+
     fn render(&self, element: crate::Element<Self>);
 }
 
@@ -295,11 +298,11 @@ impl<C: Component> Comp<C> {
                 }
             };
 
+            let state = this.state.as_mut().unwrap_throw();
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands) = fn_update(this.state.as_mut().unwrap_throw())
-                .into()
-                .into_parts();
+            C::reset(state);
+            let (skip_fn_render, commands) = fn_update(state).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
         }
         self::execute_update_queue(promise);
@@ -325,11 +328,11 @@ impl<C: Component> Comp<C> {
                 }
             };
 
+            let state = this.state.as_mut().unwrap_throw();
             // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
             // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
-            let (skip_fn_render, commands) = fn_update(this.state.as_mut().unwrap_throw(), arg)
-                .into()
-                .into_parts();
+            C::reset(state);
+            let (skip_fn_render, commands) = fn_update(state, arg).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
         }
         self::execute_update_queue(promise);
