@@ -353,7 +353,6 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
             state: self.state,
 
             index: 0,
-            selected_value_manager: None,
             parent_status: status,
             nodes: &mut self.match_if.nodes,
             parent: self.parent,
@@ -368,7 +367,6 @@ pub struct NodeListUpdater<'a, C> {
     state: &'a C,
 
     index: usize,
-    pub(crate) selected_value_manager: Option<crate::dom::SelectElementValueManager>,
     parent_status: super::ElementStatus,
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
@@ -377,13 +375,11 @@ pub struct NodeListUpdater<'a, C> {
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
     fn from(u: super::ElementUpdater<'a, C>) -> Self {
-        let selected_value_manager = u.create_selected_element_manager_for_select_element();
         let (comp, state, status, element) = u.into_parts();
         Self {
             comp,
             state,
             index: 0,
-            selected_value_manager,
             parent_status: status,
             parent: element.ws_element.as_ref(),
             next_sibling: None,

@@ -262,6 +262,7 @@ where
         value.update(self)
     }
 
+    // selected_value and value should be integrated in to one method?
     fn selected_value(mut self, value: Option<&str>) -> Self {
         if self.element_type() == crate::dom::ElementType::Select {
             // TODO: check to find change of value?

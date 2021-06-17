@@ -156,7 +156,8 @@ impl<'a, C> ElementUpdater<'a, C> {
         (self.comp, self.state, self.status, self.element)
     }
 
-    pub fn create_selected_element_manager_for_select_element(
+    // Must be called only by crate::dom::html::HtmlUpdate
+    pub fn create_select_element_manager_for_select_element(
         &self,
     ) -> Option<SelectElementValueManager> {
         let element = match self.element.element_type {

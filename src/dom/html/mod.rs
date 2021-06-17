@@ -12,7 +12,7 @@ pub struct HtmlUpdater<'a, C> {
 impl<'a, C> From<super::ElementUpdater<'a, C>> for HtmlUpdater<'a, C> {
     fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self {
-            select_element_value_manager: u.create_selected_element_manager_for_select_element(),
+            select_element_value_manager: u.create_select_element_manager_for_select_element(),
             u,
         }
     }
@@ -26,12 +26,6 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     pub(super) fn status(&self) -> super::ElementStatus {
         self.u.status()
     }
-
-    // pub(super) fn select_element_value_manager_mut(
-    //     &mut self,
-    // ) -> Option<&mut crate::dom::SelectElementValueManager> {
-    //     self.select_element_value_manager.as_mut()
-    // }
 
     fn set_selected_value(&mut self, value: Option<&str>) {
         if let Some(manager) = self.select_element_value_manager.as_mut() {

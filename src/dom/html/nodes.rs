@@ -115,24 +115,28 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 
 pub struct HtmlNodeListUpdater<'a, C> {
     u: crate::dom::nodes::NodeListUpdater<'a, C>,
-    select_element_value_manager: Option<crate::dom::SelectElementValueManager>,
+    // Just keep this value until the completion of the build of the whole node list
+    // After done building the node list, this value will be dropped. The Drop::drop method
+    // will execute setting value for the <select> element
+    _select_element_value_manager: Option<crate::dom::SelectElementValueManager>,
 }
 
 impl<'a, C> From<super::HtmlUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
     fn from(u: super::HtmlUpdater<'a, C>) -> Self {
         Self {
             u: From::from(u.u),
-            select_element_value_manager: u.select_element_value_manager,
+            _select_element_value_manager: u.select_element_value_manager,
         }
     }
 }
 
 impl<'a, C> From<crate::dom::nodes::NodeListUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
-    fn from(mut u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
-        let select_element_value_manager = u.selected_value_manager.take();
+    fn from(u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
         Self {
             u,
-            select_element_value_manager,
+            // We dont have to worry about the select.value here(?)
+            // Because this is for the sublist(?)
+            _select_element_value_manager: None,
         }
     }
 }
