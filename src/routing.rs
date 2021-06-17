@@ -44,8 +44,8 @@ impl Router {
         let _pop_state_closure = register_pop_state_event(_current_url.clone(), comp.clone());
 
         Self {
-            _pop_state_closure,
             _current_url,
+            _pop_state_closure,
         }
     }
 }

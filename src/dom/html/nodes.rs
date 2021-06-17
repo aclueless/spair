@@ -115,32 +115,24 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 
 pub struct HtmlNodeListUpdater<'a, C> {
     u: crate::dom::nodes::NodeListUpdater<'a, C>,
-    select_element_value: crate::dom::SelectElementValue,
-}
-
-impl<'a, C> Drop for HtmlNodeListUpdater<'a, C> {
-    fn drop(&mut self) {
-        if matches!(self.u.parent_element_type, crate::dom::ElementType::Select) {
-            self.select_element_value
-                .set_select_element_value(self.u.parent());
-        }
-    }
+    select_element_value_manager: Option<crate::dom::SelectElementValueManager>,
 }
 
 impl<'a, C> From<super::HtmlUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
     fn from(u: super::HtmlUpdater<'a, C>) -> Self {
         Self {
             u: From::from(u.u),
-            select_element_value: u.select_element_value,
+            select_element_value_manager: u.select_element_value_manager,
         }
     }
 }
 
 impl<'a, C> From<crate::dom::nodes::NodeListUpdater<'a, C>> for HtmlNodeListUpdater<'a, C> {
-    fn from(u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
+    fn from(mut u: crate::dom::nodes::NodeListUpdater<'a, C>) -> Self {
+        let select_element_value_manager = u.selected_value_manager.take();
         Self {
             u,
-            select_element_value: crate::dom::SelectElementValue::none(),
+            select_element_value_manager,
         }
     }
 }

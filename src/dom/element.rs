@@ -91,14 +91,22 @@ enum SelectedOption {
     Index(usize),
 }
 
-pub struct SelectElementValue(Option<SelectedOption>);
+// This struct is used for <select> element to set the selected value
+// It will do the setting on drop
+pub struct SelectElementValueManager {
+    element: web_sys::Node,
+    value: Option<SelectedOption>,
+}
 
-impl SelectElementValue {
-    pub fn none() -> Self {
-        Self(None)
+impl SelectElementValueManager {
+    pub fn new(select_element: &web_sys::Node) -> Self {
+        Self {
+            element: select_element.clone(),
+            value: None,
+        }
     }
     pub fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0 = Some(
+        self.value = Some(
             value
                 .map(|value| SelectedOption::Value(value.to_string()))
                 .unwrap_or(SelectedOption::None),
@@ -106,16 +114,18 @@ impl SelectElementValue {
     }
 
     pub fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0 = Some(
+        self.value = Some(
             index
                 .map(SelectedOption::Index)
                 .unwrap_or(SelectedOption::None),
         );
     }
+}
 
-    pub fn set_select_element_value(&self, element: &web_sys::Node) {
-        if let Some(selected_option) = self.0.as_ref() {
-            let select = element.unchecked_ref::<web_sys::HtmlSelectElement>();
+impl Drop for SelectElementValueManager {
+    fn drop(&mut self) {
+        if let Some(selected_option) = self.value.as_ref() {
+            let select = self.element.unchecked_ref::<web_sys::HtmlSelectElement>();
             match selected_option {
                 SelectedOption::None => select.set_selected_index(-1),
                 SelectedOption::Value(value) => select.set_value(&value),
@@ -144,6 +154,16 @@ impl<'a, C> ElementUpdater<'a, C> {
         &'a mut Element,
     ) {
         (self.comp, self.state, self.status, self.element)
+    }
+
+    pub fn create_selected_element_manager_for_select_element(
+        &self,
+    ) -> Option<SelectElementValueManager> {
+        let element = match self.element.element_type {
+            crate::dom::ElementType::Select => self.element.ws_element().unchecked_ref(),
+            _ => return None,
+        };
+        Some(SelectElementValueManager::new(element))
     }
 }
 

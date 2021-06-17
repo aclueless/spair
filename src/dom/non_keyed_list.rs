@@ -24,11 +24,11 @@ impl<'a, C: crate::component::Component> NonKeyedListUpdater<'a, C> {
         Self {
             comp,
             state,
-            list,
             tag,
             use_template,
             parent,
             next_sibling,
+            list,
         }
     }
 

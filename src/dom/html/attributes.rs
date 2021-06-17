@@ -407,11 +407,11 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
 
 impl<'a, C: crate::component::Component> AttributeValueSetter for StaticAttributes<'a, C> {
     fn set_selected_value(&mut self, value: Option<&str>) {
-        self.0.select_element_value_mut().set_selected_value(value);
+        self.0.set_selected_value(value);
     }
 
     fn set_selected_index(&mut self, index: Option<usize>) {
-        self.0.select_element_value_mut().set_selected_index(index);
+        self.0.set_selected_index(index);
     }
 }
 impl<'a, C: crate::component::Component> AttributeSetter<C> for StaticAttributes<'a, C> where

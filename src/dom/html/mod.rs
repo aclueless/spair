@@ -6,14 +6,14 @@ pub mod renderable;
 /// HTML elements.
 pub struct HtmlUpdater<'a, C> {
     pub(super) u: crate::dom::element::ElementUpdater<'a, C>,
-    select_element_value: crate::dom::SelectElementValue,
+    select_element_value_manager: Option<crate::dom::SelectElementValueManager>,
 }
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for HtmlUpdater<'a, C> {
     fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self {
+            select_element_value_manager: u.create_selected_element_manager_for_select_element(),
             u,
-            select_element_value: crate::dom::SelectElementValue::none(),
         }
     }
 }
@@ -27,8 +27,22 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         self.u.status()
     }
 
-    pub(super) fn select_element_value_mut(&mut self) -> &mut crate::dom::SelectElementValue {
-        &mut self.select_element_value
+    // pub(super) fn select_element_value_manager_mut(
+    //     &mut self,
+    // ) -> Option<&mut crate::dom::SelectElementValueManager> {
+    //     self.select_element_value_manager.as_mut()
+    // }
+
+    fn set_selected_value(&mut self, value: Option<&str>) {
+        if let Some(manager) = self.select_element_value_manager.as_mut() {
+            manager.set_selected_value(value);
+        }
+    }
+
+    fn set_selected_index(&mut self, index: Option<usize>) {
+        if let Some(manager) = self.select_element_value_manager.as_mut() {
+            manager.set_selected_index(index);
+        }
     }
 
     /// Use this method when you are done with your object. It is useful in single-line closures
@@ -106,15 +120,8 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         I: Copy,
         for<'u> R: Fn(I, HtmlUpdater<'u, C>),
     {
-        let _must_set_select_element_value_after_this =
+        let _select_element_value_will_be_set_on_dropping_of_the_manager =
             self.u.list_with_render(items, mode, tag, render);
-
-        if matches!(self.u.element_type(), crate::dom::ElementType::Select) {
-            log::debug!("Set selected element after render non keyed list");
-            //The hack start in AttributeSetter::value
-            self.select_element_value
-                .set_select_element_value(self.u.ws_element().as_ref());
-        }
     }
 
     #[cfg(feature = "keyed-list")]
@@ -142,16 +149,9 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         let render = |item: I, element: super::ElementUpdater<C>| {
             render(item, element.into());
         };
-        let _must_set_select_element_value_after_this = self
+        let _select_element_value_will_be_set_on_dropping_of_the_manager = self
             .u
             .keyed_list_with_render(items, mode, tag, get_key, render);
-
-        if matches!(self.u.element_type(), crate::dom::ElementType::Select) {
-            log::debug!("Set selected element after render keyed list");
-            // The hack start in AttributeSetter::value
-            self.select_element_value
-                .set_select_element_value(self.u.ws_element().as_ref());
-        }
     }
 
     pub fn component<CC: crate::component::Component>(
@@ -212,13 +212,11 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
 
 impl<'a, C: crate::component::Component> attributes::AttributeValueSetter for HtmlUpdater<'a, C> {
     fn set_selected_value(&mut self, value: Option<&str>) {
-        //self.u.set_selected_value(value)
-        self.select_element_value.set_selected_value(value);
+        self.set_selected_value(value);
     }
 
     fn set_selected_index(&mut self, index: Option<usize>) {
-        //self.u.set_selected_index(index)
-        self.select_element_value.set_selected_index(index);
+        self.set_selected_index(index);
     }
 }
 impl<'a, C: crate::component::Component> attributes::AttributeSetter<C> for HtmlUpdater<'a, C> where
