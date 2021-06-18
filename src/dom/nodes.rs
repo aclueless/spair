@@ -364,7 +364,7 @@ pub struct NodeListUpdater<'a, C> {
     parent_status: super::ElementStatus,
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
-    pub(super) nodes: &'a mut NodeList,
+    nodes: &'a mut NodeList,
 }
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
@@ -527,6 +527,10 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     pub fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         element.insert_before(self.parent, self.next_sibling);
         self.nodes.0.push(crate::dom::nodes::Node::Element(element));
+    }
+
+    pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'a> {
+        crate::dom::node_list_extensions::NodeListExtensions(self.nodes)
     }
 }
 

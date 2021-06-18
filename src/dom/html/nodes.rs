@@ -212,7 +212,7 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     // }
 
     pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'a> {
-        crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
+        self.0.u.node_list_extensions()
     }
 }
 
@@ -320,7 +320,7 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     }
 
     pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'a> {
-        crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
+        self.0.u.node_list_extensions()
     }
 }
 
@@ -371,9 +371,9 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
         self
     }
 
-    pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'n> {
-        crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
-    }
+    // pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'n> {
+    //     self.0.u.node_list_extensions()
+    // }
 }
 
 impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
@@ -454,9 +454,10 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
         self
     }
 
-    pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'n> {
-        crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
-    }
+    // pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'n> {
+    //crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
+    //     self.0.u.node_list_extensions()
+    // }
 }
 
 impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
