@@ -1,6 +1,8 @@
 pub struct NodeListExtensions<'a>(pub(super) &'a crate::dom::nodes::NodeList);
 
 impl<'a> NodeListExtensions<'a> {
+    pub fn done(self) {}
+
     pub fn scroll_to_last_item_with_if(
         self,
         need_to_scroll: bool,
