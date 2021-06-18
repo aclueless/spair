@@ -96,12 +96,16 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         nodes.svg(f)
     }
 
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    pub fn list<I>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+    ) -> crate::dom::node_list_extensions::NodeListExtensions<'a>
     where
         I: Copy,
         I: renderable::ListItemRender<C>,
     {
-        self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+        self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
     }
 
     pub fn list_with_render<I, R>(
@@ -110,20 +114,27 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         mode: super::ListElementCreation,
         tag: &'a str,
         render: R,
-    ) where
+    ) -> crate::dom::node_list_extensions::NodeListExtensions<'a>
+    where
         I: Copy,
         for<'u> R: Fn(I, HtmlUpdater<'u, C>),
     {
         let _select_element_value_will_be_set_on_dropping_of_the_manager =
             self.u.list_with_render(items, mode, tag, render);
+        let (_, _, _, element) = self.u.into_parts();
+        crate::dom::node_list_extensions::NodeListExtensions(&element.nodes)
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<I>(self, items: impl IntoIterator<Item = I>, mode: super::ListElementCreation)
+    pub fn keyed_list<I>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: super::ListElementCreation,
+    ) -> crate::dom::node_list_extensions::NodeListExtensions<'a>
     where
         for<'k> I: Copy + super::Keyed<'k> + super::ListItemRender<C>,
     {
-        self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render);
+        self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render)
     }
 
     #[cfg(feature = "keyed-list")]
@@ -134,7 +145,8 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         tag: &'a str,
         get_key: G,
         render: R,
-    ) where
+    ) -> crate::dom::node_list_extensions::NodeListExtensions<'a>
+    where
         I: Copy,
         G: Fn(I) -> K,
         K: Into<super::Key> + PartialEq<super::Key>,
@@ -146,6 +158,8 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         let _select_element_value_will_be_set_on_dropping_of_the_manager = self
             .u
             .keyed_list_with_render(items, mode, tag, get_key, render);
+        let (_, _, _, element) = self.u.into_parts();
+        crate::dom::node_list_extensions::NodeListExtensions(&element.nodes)
     }
 
     pub fn component<CC: crate::component::Component>(

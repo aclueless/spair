@@ -345,22 +345,27 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         self.0.r#static(value)
     }
 
-    pub fn list<I>(self, items: impl IntoIterator<Item = I>, mode: crate::dom::ListElementCreation)
+    pub fn list<I>(
+        self,
+        items: impl IntoIterator<Item = I>,
+        mode: crate::dom::ListElementCreation,
+    ) -> crate::dom::node_list_extensions::NodeListExtensions<'a>
     where
         I: Copy,
         I: crate::dom::ListItemRender<C>,
     {
         self.0
-            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render);
+            .list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
     }
 
     pub fn list_with_render<I, R>(
         self,
         items: impl IntoIterator<Item = I>,
         mode: crate::dom::ListElementCreation,
-        tag: &str,
+        tag: &'a str,
         render: R,
-    ) where
+    ) -> crate::dom::node_list_extensions::NodeListExtensions<'a>
+    where
         I: Copy,
         for<'u> R: Fn(I, crate::Element<'u, C>),
     {

@@ -28,10 +28,8 @@ impl Clone for KeyedList {
 }
 
 impl KeyedList {
-    pub fn get_last_element(&self) -> Option<&web_sys::Element> {
-        self.active
-            .last()
-            .and_then(|i| i.as_ref().map(|(_, e)| e.ws_element()))
+    pub fn get_last_element(&self) -> Option<&super::Element> {
+        self.active.last().and_then(|i| i.as_ref().map(|(_, e)| e))
     }
 
     pub fn create_context<'a>(

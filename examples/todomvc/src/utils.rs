@@ -1,6 +1,6 @@
 use spair::prelude::*;
 
-const TODO_DATA_KEY: &'static str = "todos-data-for-spair";
+const TODO_DATA_KEY: &str = "todos-data-for-spair";
 
 fn get_local_storage() -> web_sys::Storage {
     spair::window()
@@ -23,5 +23,5 @@ pub(crate) fn read_data_from_storage() -> super::TodoData {
 
     todo_items
         .map(|s| serde_json::from_str(&s).expect_throw("Unable to deserialize todo items"))
-        .unwrap_or(super::TodoData::default())
+        .unwrap_or_default()
 }

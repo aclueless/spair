@@ -82,6 +82,15 @@ impl Element {
             .remove_child(self.ws_element.as_ref())
             .expect_throw("Unable to remove a child Element from its parent");
     }
+
+    pub fn scroll_to_view_with_bool(&self, align_to_top: bool) {
+        self.ws_element.scroll_into_view_with_bool(align_to_top);
+    }
+
+    pub fn scroll_to_view_with_options(&self, options: &web_sys::ScrollIntoViewOptions) {
+        self.ws_element
+            .scroll_into_view_with_scroll_into_view_options(options);
+    }
 }
 
 #[derive(Debug)]

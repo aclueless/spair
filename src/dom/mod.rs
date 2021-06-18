@@ -7,10 +7,10 @@ mod element;
 #[cfg(feature = "keyed-list")]
 mod keyed_list;
 
+mod html;
+mod node_list_extensions;
 mod nodes;
 mod non_keyed_list;
-
-mod html;
 
 #[cfg(feature = "svg")]
 mod svg;

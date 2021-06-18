@@ -91,26 +91,6 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 
         this
     }
-
-    fn scroll_to_last_element(self, options: &web_sys::ScrollIntoViewOptions) -> Self::Output {
-        use crate::dom::nodes::DomBuilder;
-        let this: Self::Output = self.into();
-        this.scroll_to_last_element(options);
-        this
-    }
-
-    fn scroll_to_last_element_if(
-        self,
-        need_to_scroll: bool,
-        options: &web_sys::ScrollIntoViewOptions,
-    ) -> Self::Output {
-        use crate::dom::nodes::DomBuilder;
-        let this: Self::Output = self.into();
-        if need_to_scroll {
-            this.scroll_to_last_element(options);
-        }
-        this
-    }
 }
 
 pub struct HtmlNodeListUpdater<'a, C> {
@@ -230,6 +210,10 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
     //         self
     //     }
     // }
+
+    pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'a> {
+        crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
+    }
 }
 
 impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
@@ -334,6 +318,10 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
         self.0.u.list_with_render(items, mode, tag, render);
         self
     }
+
+    pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'a> {
+        crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
+    }
 }
 
 impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
@@ -381,6 +369,10 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
     pub(crate) fn static_text(self, text: &str) -> Self {
         self.0.u.static_text(text);
         self
+    }
+
+    pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'n> {
+        crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
     }
 }
 
@@ -461,6 +453,10 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
         self.0.u.list_with_render(items, mode, tag, render);
         self
     }
+
+    pub fn node_list_extensions(self) -> crate::dom::node_list_extensions::NodeListExtensions<'n> {
+        crate::dom::node_list_extensions::NodeListExtensions(self.0.u.nodes)
+    }
 }
 
 impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
@@ -489,10 +485,6 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.u.store_raw_wrapper(element);
     }
-
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.u.scroll_to_last_element(options);
-    }
 }
 
 impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for NodesOwned<'a, C> {
@@ -518,10 +510,6 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for No
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.u.store_raw_wrapper(element);
-    }
-
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.u.scroll_to_last_element(options);
     }
 }
 
@@ -551,10 +539,6 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.u.store_raw_wrapper(element);
     }
-
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.u.scroll_to_last_element(options);
-    }
 }
 
 impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for Nodes<'n, 'h, C> {
@@ -580,10 +564,6 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> fo
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.u.store_raw_wrapper(element);
-    }
-
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.u.scroll_to_last_element(options);
     }
 }
 

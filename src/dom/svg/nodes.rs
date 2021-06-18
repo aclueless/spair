@@ -395,10 +395,6 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.store_raw_wrapper(element);
     }
-
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.scroll_to_last_element(options);
-    }
 }
 
 impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for SvgNodesOwned<'a, C> {
@@ -424,10 +420,6 @@ impl<'a, C: crate::component::Component> crate::dom::nodes::DomBuilder<C> for Sv
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.store_raw_wrapper(element);
-    }
-
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.scroll_to_last_element(options);
     }
 }
 
@@ -457,10 +449,6 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.store_raw_wrapper(element);
     }
-
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.scroll_to_last_element(options);
-    }
 }
 
 impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
@@ -488,10 +476,6 @@ impl<'n, 'h, C: crate::component::Component> crate::dom::nodes::DomBuilder<C>
 
     fn store_raw_wrapper(&mut self, element: crate::dom::Element) {
         self.0.store_raw_wrapper(element);
-    }
-
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.scroll_to_last_element(options);
     }
 }
 

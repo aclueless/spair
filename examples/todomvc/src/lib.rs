@@ -55,12 +55,10 @@ struct TodoItem {
 
 impl TodoItem {
     fn visible(&self, filter: &Filter) -> bool {
-        match (filter, self.completed) {
-            (Filter::All, _) => true,
-            (Filter::Active, false) => true,
-            (Filter::Completed, true) => true,
-            _ => false,
-        }
+        matches!(
+            (filter, self.completed),
+            (Filter::All, _) | (Filter::Active, false) | (Filter::Completed, true)
+        )
     }
 }
 
@@ -195,9 +193,8 @@ impl spair::Render<App> for Header {
                         .on_key_press(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
                             // `.key_code()` is deprecated, so we use code instead
                             // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                            match arg.code().as_str() {
-                                "Enter" => state.create_new_todo(),
-                                _ => {}
+                            if arg.code().as_str() == "Enter" {
+                                state.create_new_todo();
                             }
                         }));
                 });
@@ -240,7 +237,7 @@ impl spair::Render<App> for Main {
                             .iter()
                             .filter(|item| item.visible(&state.filter)),
                         spair::ListElementCreation::Clone,
-                    )
+                    );
                 });
         });
     }
@@ -251,7 +248,7 @@ impl spair::Render<App> for Footer {
     fn render(self, nodes: spair::Nodes<App>) {
         let comp = nodes.comp();
         let state = nodes.state();
-        let list_empty = state.data.items.len() == 0;
+        let list_empty = state.data.items.is_empty();
         let item_left = state
             .data
             .items

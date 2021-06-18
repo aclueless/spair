@@ -200,14 +200,8 @@ impl NodeList {
         }
     }
 
-    fn get_last_element(&self) -> Option<&web_sys::Element> {
+    pub fn get_last_element(&self) -> Option<&super::Element> {
         self.0.last().and_then(|n| n.get_last_element())
-    }
-
-    pub fn scroll_to_last_item(&self, options: &web_sys::ScrollIntoViewOptions) {
-        if let Some(e) = self.get_last_element() {
-            e.scroll_into_view_with_scroll_into_view_options(options);
-        }
     }
 }
 
@@ -251,9 +245,9 @@ impl Node {
         }
     }
 
-    fn get_last_element(&self) -> Option<&web_sys::Element> {
+    fn get_last_element(&self) -> Option<&super::Element> {
         match self {
-            Self::Element(element) => Some(element.ws_element()),
+            Self::Element(element) => Some(element),
             Self::Text(_) => None,
             Self::FragmentedNodeList(fnl) => fnl.nodes.get_last_element(),
             #[cfg(feature = "keyed-list")]
@@ -370,7 +364,7 @@ pub struct NodeListUpdater<'a, C> {
     parent_status: super::ElementStatus,
     parent: &'a web_sys::Node,
     next_sibling: Option<&'a web_sys::Node>,
-    nodes: &'a mut NodeList,
+    pub(super) nodes: &'a mut NodeList,
 }
 
 impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
@@ -534,10 +528,6 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
         element.insert_before(self.parent, self.next_sibling);
         self.nodes.0.push(crate::dom::nodes::Node::Element(element));
     }
-
-    pub fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.nodes.scroll_to_last_item(options)
-    }
 }
 
 pub trait DomBuilder<C> {
@@ -547,7 +537,7 @@ pub trait DomBuilder<C> {
     fn get_element_and_increase_index(&mut self, tag: &str) -> super::ElementUpdater<C>;
     fn get_match_if_and_increase_index(&mut self) -> MatchIfUpdater<C>;
     fn store_raw_wrapper(&mut self, element: crate::dom::Element);
-    fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions);
+    //fn scroll_to_last_element(&self, options: &web_sys::ScrollIntoViewOptions);
     // fn scroll_to_last_element_if(
     //     &self,
     //     need_to_scroll: bool,
