@@ -510,24 +510,14 @@ impl<C: Component> From<C> for ChildComp<C> {
 
 pub trait WithParentComp: Sized {
     type Parent;
-    fn with_parent_and_comp(parent: &Comp<Self::Parent>, comp: Comp<Self>) -> Self;
+    type Properties;
+    fn init(parent: &Comp<Self::Parent>, comp: Comp<Self>, props: Self::Properties) -> Self;
 }
 
 impl<C: WithParentComp + Component> ChildComp<C> {
-    pub fn with_parent(parent: &Comp<C::Parent>) -> Self {
+    pub fn init(parent: &Comp<C::Parent>, props: C::Properties) -> Self {
         let rc_comp = ChildComp::new(None);
-        rc_comp.set_state(C::with_parent_and_comp(parent, rc_comp.comp()));
-        rc_comp
-    }
-
-    pub fn with_parent_and_state_editor(
-        parent: &Comp<C::Parent>,
-        edit: impl FnOnce(&mut C),
-    ) -> Self {
-        let rc_comp = ChildComp::new(None);
-        let mut state = C::with_parent_and_comp(parent, rc_comp.comp());
-        edit(&mut state);
-        rc_comp.set_state(state);
+        rc_comp.set_state(C::init(parent, rc_comp.comp(), props));
         rc_comp
     }
 }
