@@ -185,15 +185,15 @@ impl spair::Render<App> for Header {
                         .class("new-todo")
                         .focus(true)
                         .placeholder("What needs to be done?")
-                        .on_input(comp.handler_arg(|state, arg: web_sys::InputEvent| {
-                            let input =
-                                spair::into_input(arg.target().expect_throw("No event target"));
-                            state.set_new_todo_title(input.value());
+                        .on_input(comp.handler_arg(|state, arg: spair::InputEvent| {
+                            if let Some(input) = arg.target_as_input_element() {
+                                state.set_new_todo_title(input.value());
+                            }
                         }))
-                        .on_key_press(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
+                        .on_key_press(comp.handler_arg(|state, arg: spair::KeyboardEvent| {
                             // `.key_code()` is deprecated, so we use code instead
                             // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                            if arg.code().as_str() == "Enter" {
+                            if arg.ws().code().as_str() == "Enter" {
                                 state.create_new_todo();
                             }
                         }));
@@ -384,19 +384,15 @@ impl<'a> spair::Render<App> for EditingInput<'a> {
                 .value(self.0)
                 .static_attributes()
                 .class("edit")
-                .on_blur(comp.handler_arg(|state, arg: web_sys::FocusEvent| {
-                    state.end_editing(get_value(spair::into_input(
-                        arg.target().expect_throw("No event target"),
-                    )))
+                .on_blur(comp.handler_arg(|state, arg: spair::FocusEvent| {
+                    state.end_editing(get_value(arg.target_as()))
                 }))
-                .on_key_down(comp.handler_arg(|state, arg: web_sys::KeyboardEvent| {
+                .on_key_down(comp.handler_arg(|state, arg: spair::KeyboardEvent| {
                     // `.key_code()` is deprecated, so we use code instead
                     // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                    match arg.code().as_str() {
+                    match arg.ws().code().as_str() {
                         "Escape" => state.cancel_editing(),
-                        "Enter" => state.end_editing(get_value(spair::into_input(
-                            arg.target().expect_throw("No event target"),
-                        ))),
+                        "Enter" => state.end_editing(get_value(arg.target_as())),
                         _ => {}
                     }
                 }));
@@ -404,13 +400,15 @@ impl<'a> spair::Render<App> for EditingInput<'a> {
     }
 }
 
-fn get_value(i: web_sys::HtmlInputElement) -> Option<String> {
-    let s = i.value();
-    if s.is_empty() {
-        None
-    } else {
-        Some(s)
-    }
+fn get_value(i: Option<web_sys::HtmlInputElement>) -> Option<String> {
+    i.and_then(|i| {
+        let text = i.value();
+        let text = text.trim();
+        match text.is_empty() {
+            true => None,
+            false => Some(text.to_string()),
+        }
+    })
 }
 
 impl spair::Application for App {

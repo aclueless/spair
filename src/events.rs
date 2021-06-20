@@ -3,6 +3,43 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 pub trait Listener {}
 
+macro_rules! create_event_wrappers {
+    ($($EventType:ident)+) => {
+        $(
+            pub struct $EventType(web_sys::$EventType);
+            impl $EventType {
+                pub fn ws(&self) -> &web_sys::$EventType {
+                    &self.0
+                }
+
+                pub fn target(&self) -> Option<web_sys::EventTarget> {
+                    self.0.target()
+                }
+
+                pub fn target_as<T: JsCast>(&self) -> Option<T> {
+                    self.0.target().and_then(|et| et.dyn_into().ok())
+                }
+            }
+        )+
+    }
+}
+
+create_event_wrappers! {
+    FocusEvent
+    MouseEvent
+    WheelEvent
+    UiEvent
+    InputEvent
+    KeyboardEvent
+    Event
+}
+
+impl InputEvent {
+    pub fn target_as_input_element(&self) -> Option<web_sys::HtmlInputElement> {
+        self.0.target().and_then(|et| et.dyn_into().ok())
+    }
+}
+
 macro_rules! create_events {
     ($($EventType:ident $EventListener:ident { $($EventName:ident => $event_name:literal,)+ })+) => {
         $(
@@ -49,10 +86,11 @@ macro_rules! create_events {
 
                 impl<T> $EventName for T
                 where
-                    T: 'static + Fn(web_sys::$EventType),
+                    T: 'static + Fn($EventType),
                 {
                     fn on(self, target: &web_sys::EventTarget) -> Box<dyn Listener> {
-                        let closure = Closure::wrap(Box::new(self) as Box<dyn Fn(web_sys::$EventType)>);
+                        let closure = move |event: web_sys::$EventType| self($EventType(event));
+                        let closure = Closure::wrap(Box::new(closure) as Box<dyn Fn(web_sys::$EventType)>);
                         Box::new($EventListener::new($event_name, target, closure))
                     }
 

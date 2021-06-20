@@ -224,13 +224,13 @@ pub trait AttributeSetter {
 }
 
 macro_rules! create_methods_for_events {
-    ($($method_name:ident $EventType:ident,)+) => {
+    ($($method_name:ident $EventName:ident,)+) => {
         $(
             fn $method_name<F>(mut self, f: F) -> Self
-            where F: crate::events::$EventType
+            where F: crate::events::$EventName
             {
                 if self.require_set_listener() {
-                    let listener = crate::events::$EventType::on(f, self.ws_element().as_ref());
+                    let listener = crate::events::$EventName::on(f, self.ws_element().as_ref());
                     self.store_listener(listener);
                 }
                 self
