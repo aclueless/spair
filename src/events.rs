@@ -8,7 +8,7 @@ macro_rules! create_event_wrappers {
         $(
             pub struct $EventType(web_sys::$EventType);
             impl $EventType {
-                pub fn ws(&self) -> &web_sys::$EventType {
+                pub fn raw(&self) -> &web_sys::$EventType {
                     &self.0
                 }
 
@@ -36,7 +36,13 @@ create_event_wrappers! {
 
 impl InputEvent {
     pub fn target_as_input_element(&self) -> Option<web_sys::HtmlInputElement> {
-        self.0.target().and_then(|et| et.dyn_into().ok())
+        self.target_as()
+    }
+}
+
+impl Event {
+    pub fn target_as_select_element(&self) -> Option<web_sys::HtmlSelectElement> {
+        self.target_as()
     }
 }
 

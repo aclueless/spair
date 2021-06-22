@@ -193,7 +193,7 @@ impl spair::Render<App> for Header {
                         .on_key_press(comp.handler_arg(|state, arg: spair::KeyboardEvent| {
                             // `.key_code()` is deprecated, so we use code instead
                             // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                            if arg.ws().code().as_str() == "Enter" {
+                            if arg.raw().code().as_str() == "Enter" {
                                 state.create_new_todo();
                             }
                         }));
@@ -390,7 +390,7 @@ impl<'a> spair::Render<App> for EditingInput<'a> {
                 .on_key_down(comp.handler_arg(|state, arg: spair::KeyboardEvent| {
                     // `.key_code()` is deprecated, so we use code instead
                     // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                    match arg.ws().code().as_str() {
+                    match arg.raw().code().as_str() {
                         "Escape" => state.cancel_editing(),
                         "Enter" => state.end_editing(get_value(arg.target_as())),
                         _ => {}
