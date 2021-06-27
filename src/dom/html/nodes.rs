@@ -187,6 +187,12 @@ impl<'a, C: crate::component::Component> StaticNodesOwned<'a, C> {
         self
     }
 
+    pub fn render_fn(mut self, func: impl FnOnce(Nodes<C>)) -> Self {
+        let nodes = Nodes(&mut self.0);
+        func(nodes);
+        self
+    }
+
     pub fn render_ref(mut self, value: &impl crate::dom::RenderRef<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
@@ -251,6 +257,12 @@ impl<'a, C: crate::component::Component> NodesOwned<'a, C> {
     pub fn render(mut self, value: impl crate::dom::Render<C>) -> Self {
         let nodes = Nodes(&mut self.0);
         value.render(nodes);
+        self
+    }
+
+    pub fn render_fn(mut self, func: impl FnOnce(Nodes<C>)) -> Self {
+        let nodes = Nodes(&mut self.0);
+        func(nodes);
         self
     }
 
@@ -354,6 +366,12 @@ impl<'n, 'h, C: crate::component::Component> StaticNodes<'n, 'h, C> {
         self
     }
 
+    pub fn render_fn(self, func: impl FnOnce(Nodes<C>)) -> Self {
+        let nodes = Nodes(self.0);
+        func(nodes);
+        self
+    }
+
     pub fn render_ref(self, value: &impl crate::dom::RenderRef<C>) -> Self {
         let nodes = Nodes(self.0);
         value.render(nodes);
@@ -398,6 +416,12 @@ impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     pub fn render(self, value: impl crate::dom::Render<C>) -> Self {
         let nodes = Nodes(self.0);
         value.render(nodes);
+        self
+    }
+
+    pub fn render_fn(self, func: impl FnOnce(Nodes<C>)) -> Self {
+        let nodes = Nodes(self.0);
+        func(nodes);
         self
     }
 

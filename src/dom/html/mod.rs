@@ -71,6 +71,13 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         nodes_owned
     }
 
+    pub fn render_fn(self, func: impl FnOnce(super::Nodes<C>)) -> super::NodesOwned<'a, C> {
+        let mut nodes_owned = self.nodes();
+        let nodes = nodes_owned.nodes_ref();
+        func(nodes);
+        nodes_owned
+    }
+
     pub fn render_ref(self, value: &impl super::RenderRef<C>) -> super::NodesOwned<'a, C> {
         let mut nodes_owned = self.nodes();
         let nodes = nodes_owned.nodes_ref();
