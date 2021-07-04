@@ -28,6 +28,10 @@ impl Clone for KeyedList {
 }
 
 impl KeyedList {
+    pub fn get_first_element(&self) -> Option<&super::Element> {
+        self.active.first().and_then(|i| i.as_ref().map(|(_, e)| e))
+    }
+
     pub fn get_last_element(&self) -> Option<&super::Element> {
         self.active.last().and_then(|i| i.as_ref().map(|(_, e)| e))
     }

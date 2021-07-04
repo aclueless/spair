@@ -200,6 +200,10 @@ impl NodeList {
         }
     }
 
+    pub fn get_first_element(&self) -> Option<&super::Element> {
+        self.0.first().and_then(|n| n.get_first_element())
+    }
+
     pub fn get_last_element(&self) -> Option<&super::Element> {
         self.0.last().and_then(|n| n.get_last_element())
     }
@@ -242,6 +246,17 @@ impl Node {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");
             }
+        }
+    }
+
+    fn get_first_element(&self) -> Option<&super::Element> {
+        match self {
+            Self::Element(element) => Some(element),
+            Self::Text(_) => None,
+            Self::FragmentedNodeList(fnl) => fnl.nodes.get_first_element(),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList(list) => list.get_first_element(),
+            Self::ComponentHandle(_) => None,
         }
     }
 
