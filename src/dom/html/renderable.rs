@@ -9,20 +9,6 @@ pub trait StaticRender<C: crate::component::Component> {
     fn render(self, nodes: crate::dom::StaticNodes<C>);
 }
 
-pub trait RenderRef<C: crate::component::Component> {
-    fn render(&self, nodes: crate::dom::Nodes<C>);
-}
-
-impl<C, T> RenderRef<C> for T
-where
-    C: crate::component::Component,
-    for<'t> &'t T: Render<C>,
-{
-    fn render(&self, nodes: crate::dom::Nodes<C>) {
-        Render::render(self, nodes);
-    }
-}
-
 // mod sealed {
 //     pub trait ListItemStaticText {}
 // }

@@ -18,7 +18,7 @@ pub use dom::attribute_types::*;
 pub use dom::Keyed;
 pub use dom::{
     HtmlUpdater as Element, ListElementCreation, ListItemRender, Nodes, RawWrapper, Render,
-    RenderRef, StaticNodes, StaticRender,
+    StaticNodes, StaticRender,
 };
 #[cfg(feature = "svg")]
 pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater as Svg};

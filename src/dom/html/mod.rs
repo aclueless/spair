@@ -78,13 +78,6 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
         nodes_owned
     }
 
-    pub fn render_ref(self, value: &impl super::RenderRef<C>) -> super::NodesOwned<'a, C> {
-        let mut nodes_owned = self.nodes();
-        let nodes = nodes_owned.nodes_ref();
-        value.render(nodes);
-        nodes_owned
-    }
-
     pub fn r#static(self, value: impl super::StaticRender<C>) -> super::NodesOwned<'a, C> {
         let mut nodes_owned = self.nodes();
         let static_nodes = nodes_owned.static_nodes_ref();
