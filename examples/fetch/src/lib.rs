@@ -72,7 +72,7 @@ impl spair::Component for State {
         element
             .match_if(|arm| match self.branch.as_ref() {
                 Some(branch) => arm
-                    .render_on_arm_index(0)
+                    .render_on_arm_index(line!())
                     .render(branch)
                     .button(|b| {
                         b.static_attributes()
@@ -82,7 +82,7 @@ impl spair::Component for State {
                     })
                     .done(),
                 None => arm
-                    .render_on_arm_index(1)
+                    .render_on_arm_index(line!())
                     .button(|b| {
                         b.static_attributes()
                             .on_click(comp.handler(State::start_fetching))

@@ -289,7 +289,7 @@ impl<C: crate::component::Component> From<crate::component::Comp<C>> for AnyComp
 
 // Manage a match-if arm or a partial-non-keyed-list
 pub struct FragmentedNodeList {
-    active_index: Option<usize>,
+    active_index: Option<u32>,
     // `end_node` marks the boundary of this fragment
     end_node: web_sys::Node,
     nodes: NodeList,
@@ -348,7 +348,7 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
         self.comp.clone()
     }
 
-    pub fn render_on_arm_index(mut self, index: usize) -> super::NodesOwned<'a, C> {
+    pub fn render_on_arm_index(mut self, index: u32) -> super::NodesOwned<'a, C> {
         let status = if Some(index) != self.match_if.active_index {
             self.match_if.nodes.clear(self.parent.as_ref());
             self.match_if.active_index = Some(index);

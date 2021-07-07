@@ -367,10 +367,10 @@ impl spair::ListItemRender<App> for &TodoItem {
             })
             .match_if(|arm| match is_editing_me {
                 true => arm
-                    .render_on_arm_index(0)
+                    .render_on_arm_index(line!())
                     .render(EditingInput(&self.title))
                     .done(),
-                false => arm.render_on_arm_index(1).done(),
+                false => arm.render_on_arm_index(line!()).done(),
             });
     }
 }
