@@ -296,6 +296,20 @@ where
     fn value(self, value: impl AttributeValue<Self>) -> Self {
         value.update(self)
     }
+
+    fn scroll_to_top_if(self, need_to_scroll: bool) -> Self {
+        if need_to_scroll {
+            self.get_element().scroll_to_view_with_bool(true);
+        }
+        self
+    }
+
+    fn scroll_to_bottom_if(self, need_to_scroll: bool) -> Self {
+        if need_to_scroll {
+            self.get_element().scroll_to_view_with_bool(false);
+        }
+        self
+    }
 }
 
 pub struct StaticAttributes<'a, C>(crate::dom::HtmlUpdater<'a, C>);
@@ -455,6 +469,10 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
 
     fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>) {
         self.0.store_listener(listener)
+    }
+
+    fn get_element(&self) -> &crate::dom::Element {
+        self.0.u.get_element()
     }
 
     fn check_bool_attribute(&mut self, _value: bool) -> bool {

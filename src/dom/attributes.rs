@@ -167,6 +167,7 @@ pub trait AttributeSetter {
     fn element_type(&self) -> crate::dom::ElementType;
     fn require_set_listener(&mut self) -> bool;
     fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>);
+    fn get_element(&self) -> &crate::dom::Element;
 
     // Check if the attribute need to be set (and store the new value for the next check)
     fn check_bool_attribute(&mut self, value: bool) -> bool;

@@ -213,6 +213,10 @@ impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
         self.element.element_type
     }
 
+    pub fn get_element(&self) -> &Element {
+        self.element
+    }
+
     pub fn status(&self) -> super::ElementStatus {
         self.status
     }

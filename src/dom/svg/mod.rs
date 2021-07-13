@@ -219,6 +219,10 @@ impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
         self.0.store_listener(listener);
     }
 
+    fn get_element(&self) -> &crate::dom::Element {
+        self.0.get_element()
+    }
+
     fn check_bool_attribute(&mut self, value: bool) -> bool {
         self.0.check_bool_attribute(value)
     }
