@@ -35,7 +35,7 @@ impl ChildState {
         if self.value % 5 == 0 {
             spair::update_component(
                 self.parent_comp
-                    .callback(super::State::child_value_is_divisible_by_five),
+                    .callback_mut(super::State::child_value_is_divisible_by_five),
             );
         }
     }
@@ -55,8 +55,8 @@ impl spair::Component for ChildState {
                     time the value is divisible by five.",
                 );
             })
-            .r#static(super::Button("-", comp.handler(ChildState::decrement)))
+            .r#static(super::Button("-", comp.handler_mut(ChildState::decrement)))
             .render(self.value)
-            .r#static(super::Button("+", comp.handler(ChildState::increment)));
+            .r#static(super::Button("+", comp.handler_mut(ChildState::increment)));
     }
 }

@@ -492,8 +492,8 @@ where
             }
         };
 
-        let error_handler = comp.callback_arg(error_handler);
-        let ok_handler = comp.callback_arg(ok_handler);
+        let error_handler = comp.callback_arg_mut(error_handler);
+        let ok_handler = comp.callback_arg_mut(ok_handler);
         let f = async move {
             match get_raw_data::<R>(promise).await.and_then(T::parse_from) {
                 Ok(data) => ok_handler(data),

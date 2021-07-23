@@ -42,7 +42,7 @@ impl spair::Routes<App> for Filter {
             "#active" => Self::Active,
             _ => Self::All,
         };
-        comp.callback_arg(App::set_filter)(filter);
+        comp.callback_arg_mut(App::set_filter)(filter);
     }
 }
 
@@ -185,12 +185,12 @@ impl spair::Render<App> for Header {
                         .class("new-todo")
                         .focus(true)
                         .placeholder("What needs to be done?")
-                        .on_input(comp.handler_arg(|state, arg: spair::InputEvent| {
+                        .on_input(comp.handler_arg_mut(|state, arg: spair::InputEvent| {
                             if let Some(input) = arg.target_as_input_element() {
                                 state.set_new_todo_title(input.value());
                             }
                         }))
-                        .on_key_press(comp.handler_arg(|state, arg: spair::KeyboardEvent| {
+                        .on_key_press(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
                             // `.key_code()` is deprecated, so we use code instead
                             // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
                             if arg.raw().code().as_str() == "Enter" {
@@ -215,7 +215,7 @@ impl spair::Render<App> for Main {
                 .class("main")
                 .input(move |i| {
                     i.checked(all_completed)
-                        .on_change(comp.handler(move |state| state.toggle_all(!all_completed)))
+                        .on_change(comp.handler_mut(move |state| state.toggle_all(!all_completed)))
                         .static_attributes()
                         .id("toggle-all")
                         .class("toggle-all")
@@ -290,7 +290,7 @@ impl spair::Render<App> for Footer {
                     b.class_if("hidden", !some_completed)
                         .static_attributes()
                         .class("clear-completed")
-                        .on_click(comp.handler(App::clear_completed))
+                        .on_click(comp.handler_mut(App::clear_completed))
                         .r#static("Clear completed");
                 });
         });
@@ -349,18 +349,18 @@ impl spair::ListItemRender<App> for &TodoItem {
                 d.static_attributes()
                     .class("view")
                     .input(|i| {
-                        i.on_change(comp.handler(move |state| state.toggle(id)))
+                        i.on_change(comp.handler_mut(move |state| state.toggle(id)))
                             .checked(self.completed)
                             .static_attributes()
                             .class("toggle")
                             .r#type(spair::InputType::CheckBox);
                     })
                     .label(|l| {
-                        l.on_double_click(comp.handler(move |state| state.start_editing(id)))
+                        l.on_double_click(comp.handler_mut(move |state| state.start_editing(id)))
                             .render(&self.title);
                     })
                     .button(|b| {
-                        b.on_click(comp.handler(move |state| state.remove(id)))
+                        b.on_click(comp.handler_mut(move |state| state.remove(id)))
                             .static_attributes()
                             .class("destroy");
                     });
@@ -384,10 +384,10 @@ impl<'a> spair::Render<App> for EditingInput<'a> {
                 .value(self.0)
                 .static_attributes()
                 .class("edit")
-                .on_blur(comp.handler_arg(|state, arg: spair::FocusEvent| {
+                .on_blur(comp.handler_arg_mut(|state, arg: spair::FocusEvent| {
                     state.end_editing(get_value(arg.target_as()))
                 }))
-                .on_key_down(comp.handler_arg(|state, arg: spair::KeyboardEvent| {
+                .on_key_down(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
                     // `.key_code()` is deprecated, so we use code instead
                     // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
                     match arg.raw().code().as_str() {

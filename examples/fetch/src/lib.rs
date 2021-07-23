@@ -76,7 +76,7 @@ impl spair::Component for State {
                     .render(branch)
                     .button(|b| {
                         b.static_attributes()
-                            .on_click(comp.handler(State::reset))
+                            .on_click(comp.handler_mut(State::reset))
                             .static_nodes()
                             .r#static("Reset");
                     })
@@ -85,7 +85,7 @@ impl spair::Component for State {
                     .render_on_arm_index(line!())
                     .button(|b| {
                         b.static_attributes()
-                            .on_click(comp.handler(State::start_fetching))
+                            .on_click(comp.handler_mut(State::start_fetching))
                             .static_nodes()
                             .r#static("Click to fetch wasm-bindgen latest commit info");
                     })

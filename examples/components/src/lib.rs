@@ -27,7 +27,7 @@ impl State {
         spair::update_component(
             self.child_comp
                 .comp()
-                .callback(move |state| state.set_value(value)),
+                .callback_mut(move |state| state.set_value(value)),
         );
     }
 }
@@ -55,12 +55,12 @@ impl spair::Component for State {
                             .done(),
                     });
             })
-            .r#static(Button("-", comp.handler(State::decrement)))
+            .r#static(Button("-", comp.handler_mut(State::decrement)))
             .render(self.value)
-            .r#static(Button("+", comp.handler(State::increment)))
+            .r#static(Button("+", comp.handler_mut(State::increment)))
             .r#static(Button(
                 "Send value to the child-component",
-                comp.handler(State::send_value_to_child),
+                comp.handler_mut(State::send_value_to_child),
             ));
     }
 }

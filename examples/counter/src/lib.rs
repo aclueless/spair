@@ -25,9 +25,9 @@ impl spair::Component for State {
                     .r#static("The initial value is ")
                     .r#static(self.value);
             })
-            .r#static(Button("-", comp.handler(State::decrement)))
+            .r#static(Button("-", comp.handler_mut(State::decrement)))
             .render(self.value)
-            .r#static(Button("+", comp.handler(State::increment)));
+            .r#static(Button("+", comp.handler_mut(State::increment)));
     }
 }
 

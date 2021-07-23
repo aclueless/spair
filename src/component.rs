@@ -278,6 +278,36 @@ impl<C: Component> Comp<C> {
         }
     }
 
+    fn not_update<Cl>(&self, fn_not_update: &Rc<impl Fn(&C) -> Cl + 'static>)
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        let promise = self::i_have_to_execute_update_queue();
+        {
+            let this = self
+                .0
+                .upgrade()
+                .expect_throw("Expect the component instance alive when updating - update()");
+            let mut this = match this.try_borrow_mut() {
+                Ok(this) => this,
+                Err(_) => {
+                    let comp = self.clone();
+                    let fn_not_update = Rc::clone(fn_not_update);
+                    self::update_component(move || comp.not_update(&fn_not_update));
+                    return;
+                }
+            };
+
+            let state = this.state.as_mut().unwrap_throw();
+            // Call `fn_not_update` here to reduce monomorphization on `CompInstance::extra_update()`
+            // Otherwise, `extra_update` need another type parameter `fn_not_update: &impl Fn(&C) -> Cl`.
+            C::reset(state);
+            let (skip_fn_render, commands) = fn_not_update(state).into().into_parts();
+            this.extra_update(skip_fn_render, commands, &self);
+        }
+        self::execute_update_queue(promise);
+    }
+
     fn update<Cl>(&self, fn_update: &Rc<impl Fn(&mut C) -> Cl + 'static>)
     where
         Cl: Into<Checklist<C>>,
@@ -338,7 +368,16 @@ impl<C: Component> Comp<C> {
         self::execute_update_queue(promise);
     }
 
-    pub fn callback<Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn()
+    pub fn callback<Cl>(&self, fn_not_update: impl Fn(&C) -> Cl + 'static) -> impl Fn()
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        let comp = self.clone();
+        let fn_not_update = Rc::new(fn_not_update);
+        move || comp.not_update(&fn_not_update)
+    }
+
+    pub fn callback_mut<Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn()
     where
         Cl: Into<Checklist<C>>,
     {
@@ -347,7 +386,7 @@ impl<C: Component> Comp<C> {
         move || comp.update(&fn_update)
     }
 
-    pub fn callback_arg<T: 'static, Cl>(
+    pub fn callback_arg_mut<T: 'static, Cl>(
         &self,
         fn_update: impl Fn(&mut C, T) -> Cl + 'static,
     ) -> impl Fn(T)
@@ -359,7 +398,7 @@ impl<C: Component> Comp<C> {
         move |t: T| comp.update_arg(t, &fn_update)
     }
 
-    pub fn async_callback<Cl, F>(
+    pub fn async_callback_mut<Cl, F>(
         &self,
         fn_update: impl Fn(&mut C) -> Cl + 'static,
         future_creator: impl Fn() -> F + 'static,
@@ -384,7 +423,19 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    pub fn handler<T: 'static, Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn(T)
+    pub fn handler<T: 'static, Cl>(&self, fn_not_update: impl Fn(&C) -> Cl + 'static) -> impl Fn(T)
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        let comp = self.clone();
+        let fn_not_update = Rc::new(fn_not_update);
+        move |_: T| comp.not_update(&fn_not_update)
+    }
+
+    pub fn handler_mut<T: 'static, Cl>(
+        &self,
+        fn_update: impl Fn(&mut C) -> Cl + 'static,
+    ) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
     {
@@ -393,17 +444,17 @@ impl<C: Component> Comp<C> {
         move |_: T| comp.update(&fn_update)
     }
 
-    pub fn handler_arg<T: 'static, Cl>(
+    pub fn handler_arg_mut<T: 'static, Cl>(
         &self,
         fn_update: impl Fn(&mut C, T) -> Cl + 'static,
     ) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
     {
-        self.callback_arg(fn_update)
+        self.callback_arg_mut(fn_update)
     }
 
-    pub fn async_handler<T: 'static, R: 'static, Cl, F>(
+    pub fn async_handler_mut<T: 'static, R: 'static, Cl, F>(
         &self,
         fn_update: impl Fn(&mut C, Result<R, wasm_bindgen::JsValue>) -> Cl + 'static,
         future_creator: impl Fn() -> F + 'static,
