@@ -6,6 +6,7 @@ mod component;
 mod dom;
 mod events;
 mod fetch;
+mod macros;
 mod routing;
 mod utils;
 

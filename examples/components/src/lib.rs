@@ -47,12 +47,9 @@ impl spair::Component for State {
             .nodes()
             .p(|p| {
                 p.r#static("The value that read from the child-component: ")
-                    .match_if(|arm| match self.value_read_from_child {
-                        Some(value) => arm.render_on_arm_index(line!()).render(value).done(),
-                        None => arm
-                            .render_on_arm_index(line!())
-                            .render("[Not read yet]")
-                            .done(),
+                    .match_if(|mi| match self.value_read_from_child {
+                        Some(value) => spair::set_arm!(mi).render(value).done(),
+                        None => spair::set_arm!(mi).render("[Not read yet]").done(),
                     });
             })
             .r#static(Button("-", comp.handler_mut(State::decrement)))

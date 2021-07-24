@@ -365,12 +365,9 @@ impl spair::ListItemRender<App> for &TodoItem {
                             .class("destroy");
                     });
             })
-            .match_if(|arm| match is_editing_me {
-                true => arm
-                    .render_on_arm_index(line!())
-                    .render(EditingInput(&self.title))
-                    .done(),
-                false => arm.render_on_arm_index(line!()).done(),
+            .match_if(|mi| match is_editing_me {
+                true => spair::set_arm!(mi).render(EditingInput(&self.title)).done(),
+                false => spair::set_arm!(mi).done(),
             });
     }
 }

@@ -70,9 +70,8 @@ impl spair::Component for State {
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
-            .match_if(|arm| match self.branch.as_ref() {
-                Some(branch) => arm
-                    .render_on_arm_index(line!())
+            .match_if(|mi| match self.branch.as_ref() {
+                Some(branch) => spair::set_arm!(mi)
                     .render(branch)
                     .button(|b| {
                         b.static_attributes()
@@ -81,8 +80,7 @@ impl spair::Component for State {
                             .r#static("Reset");
                     })
                     .done(),
-                None => arm
-                    .render_on_arm_index(line!())
+                None => spair::set_arm!(mi)
                     .button(|b| {
                         b.static_attributes()
                             .on_click(comp.handler_mut(State::start_fetching))
