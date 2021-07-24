@@ -192,36 +192,18 @@ where
     }
 
     fn class(mut self, class_name: &str) -> Self {
-        let (changed, old_value) = self.check_str_attribute_and_return_old_value(class_name);
-        if let Some(old_value) = old_value {
-            self.ws_element()
-                .class_list()
-                .remove_1(&old_value)
-                .expect_throw("Unable to remove old class");
-        }
-        if changed {
-            self.ws_element()
-                .class_list()
-                .add_1(class_name)
-                .expect_throw("Unable to add new class");
-        }
+        self._class(class_name);
         self
     }
 
     fn class_if(mut self, class_name: &str, class_on: bool) -> Self {
-        if self.check_bool_attribute(class_on) {
-            if class_on {
-                self.ws_element()
-                    .class_list()
-                    .add_1(class_name)
-                    .expect_throw("Unable to add class");
-            } else {
-                self.ws_element()
-                    .class_list()
-                    .remove_1(class_name)
-                    .expect_throw("Unable to remove class");
-            }
-        }
+        self._class_if(class_name, class_on);
+        self
+    }
+
+    /// Set the `first_class` if `first` is true, otherwise, set the `second_class`
+    fn class_or(mut self, first: bool, first_class: &str, second_class: &str) -> Self {
+        self._class_or(first, first_class, second_class);
         self
     }
 

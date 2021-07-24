@@ -222,6 +222,52 @@ pub trait AttributeSetter {
                 .expect_throw("Unable to set string attribute");
         }
     }
+
+    fn add_class(&mut self, class_name: &str) {
+        self.ws_element()
+            .class_list()
+            .add_1(class_name)
+            .expect_throw("Unable to add new class");
+    }
+
+    fn remove_class(&mut self, class_name: &str) {
+        self.ws_element()
+            .class_list()
+            .remove_1(class_name)
+            .expect_throw("Unable to remove old class");
+    }
+
+    fn _class(&mut self, class_name: &str) {
+        let (changed, old_value) = self.check_str_attribute_and_return_old_value(class_name);
+        if let Some(old_value) = old_value {
+            self.remove_class(&old_value);
+        }
+        if changed {
+            self.add_class(class_name);
+        }
+    }
+
+    fn _class_if(&mut self, class_name: &str, class_on: bool) {
+        if self.check_bool_attribute(class_on) {
+            if class_on {
+                self.add_class(class_name);
+            } else {
+                self.remove_class(class_name);
+            }
+        }
+    }
+
+    fn _class_or(&mut self, first: bool, first_class: &str, second_class: &str) {
+        if self.check_bool_attribute(first) {
+            if first {
+                self.add_class(first_class);
+                self.remove_class(second_class);
+            } else {
+                self.remove_class(first_class);
+                self.add_class(second_class);
+            }
+        }
+    }
 }
 
 macro_rules! create_methods_for_events {
