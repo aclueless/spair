@@ -34,6 +34,7 @@ impl State {
 
 impl spair::Component for State {
     type Routes = ();
+    type Routes2 = ();
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
@@ -75,7 +76,7 @@ impl<C: spair::Component, H: spair::Click> spair::StaticRender<C> for Button<H> 
 }
 
 impl spair::Application for State {
-    fn with_comp(comp: spair::Comp<Self>) -> Self {
+    fn init(comp: spair::Comp<Self>) -> Self {
         Self {
             value: 42,
             value_read_from_child: None,

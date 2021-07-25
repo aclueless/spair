@@ -68,10 +68,14 @@ impl UpdateQueue {
 
 pub trait Component: 'static + Sized {
     type Routes: crate::routing::Routes<Self>;
+    type Routes2: crate::routing2::Routes;
 
     // Better name?
     // This method will be ran once when the component is created.
     fn initialize(_: &Comp<Self>) {}
+
+    fn register_routing_callback(_router: &mut <Self::Routes2 as crate::routing2::Routes>::Router) {
+    }
 
     fn default_checklist() -> Checklist<Self> {
         Self::default_should_render().into()

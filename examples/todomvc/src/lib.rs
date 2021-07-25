@@ -155,6 +155,7 @@ impl App {
 
 impl spair::Component for App {
     type Routes = Filter;
+    type Routes2 = ();
     fn render(&self, element: spair::Element<Self>) {
         element
             .section(|s| {
@@ -409,7 +410,7 @@ fn get_value(i: Option<web_sys::HtmlInputElement>) -> Option<String> {
 }
 
 impl spair::Application for App {
-    fn with_comp(_: spair::Comp<Self>) -> Self {
+    fn init(_: spair::Comp<Self>) -> Self {
         Self {
             data: utils::read_data_from_storage(),
             filter: Filter::default(),

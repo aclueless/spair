@@ -8,6 +8,7 @@ mod events;
 mod fetch;
 mod macros;
 mod routing;
+mod routing2;
 mod utils;
 
 pub use application::Application;

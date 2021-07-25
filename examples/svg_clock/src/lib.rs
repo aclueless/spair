@@ -22,6 +22,7 @@ impl Clock {
 
 impl spair::Component for Clock {
     type Routes = ();
+    type Routes2 = ();
     fn render(&self, element: spair::Element<Self>) {
         let seconds_angle = 360.0 * self.time.get_seconds() as f64 / 60.0;
         let minutes_angle = 360.0 * self.time.get_minutes() as f64 / 60.0 + seconds_angle / 60.0;
@@ -168,7 +169,7 @@ impl spair::SvgRender<Clock> for Hand {
 }
 
 impl spair::Application for Clock {
-    fn with_comp(comp: spair::Comp<Self>) -> Self {
+    fn init(comp: spair::Comp<Self>) -> Self {
         let mut s = Self {
             time: js_sys::Date::new_0(),
             comp,

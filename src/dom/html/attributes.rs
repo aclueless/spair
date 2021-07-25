@@ -220,9 +220,22 @@ where
         self
     }
 
-    fn href(mut self, value: &C::Routes) -> Self {
+    fn href(mut self, route: &C::Routes) -> Self {
+        // Should `route` be stored in attribute list as an PartialEq object?
+        // Is that possible? It may avoid calling `route.url()` if the route does not change.
         use crate::routing::Routes;
-        let url = value.url();
+        let url = route.url();
+        if self.check_str_attribute(&url) {
+            self.set_str_attribute("href", &url);
+        }
+        self
+    }
+
+    fn href2(mut self, route: &C::Routes2) -> Self {
+        // Should `route` be stored in attribute list as an PartialEq object?
+        // Is that possible? It may avoid calling `route.url()` if the route does not change.
+        use crate::routing2::Routes;
+        let url = route.url();
         if self.check_str_attribute(&url) {
             self.set_str_attribute("href", &url);
         }

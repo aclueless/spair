@@ -67,6 +67,7 @@ impl State {
 
 impl spair::Component for State {
     type Routes = ();
+    type Routes2 = ();
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
@@ -119,7 +120,7 @@ impl spair::Render<State> for &Commit {
 }
 
 impl spair::Application for State {
-    fn with_comp(_: spair::Comp<Self>) -> Self {
+    fn init(_: spair::Comp<Self>) -> Self {
         Self {
             branch: None,
             message: "Wait for your click".to_string(),
