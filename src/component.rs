@@ -74,7 +74,14 @@ pub trait Component: 'static + Sized {
     // This method will be ran once when the component is created.
     fn initialize(_: &Comp<Self>) {}
 
-    fn register_routing_callback(_router: &mut <Self::Routes2 as crate::routing2::Routes>::Router) {
+    /// This method allow child-components that wants to receive update when the location
+    /// changes to register its callback to the router. The root-component (the component that
+    /// implements `spair::Application`) does not have to implement this, but must implement
+    /// `spair::Application::init_router`. This method will never be called on the root-component.
+    fn register_routing_callback(
+        _router: &mut <Self::Routes2 as crate::routing2::Routes>::Router,
+        _comp: &Comp<Self>,
+    ) {
     }
 
     fn default_checklist() -> Checklist<Self> {
@@ -566,13 +573,16 @@ impl<C: Component> From<C> for ChildComp<C> {
 pub trait WithParentComp: Sized {
     type Parent;
     type Properties;
-    fn init(parent: &Comp<Self::Parent>, comp: Comp<Self>, props: Self::Properties) -> Self;
+    fn init(parent: &Comp<Self::Parent>, comp: &Comp<Self>, props: Self::Properties) -> Self;
 }
 
 impl<C: WithParentComp + Component> ChildComp<C> {
     pub fn init(parent: &Comp<C::Parent>, props: C::Properties) -> Self {
         let rc_comp = ChildComp::new(None);
-        rc_comp.set_state(C::init(parent, rc_comp.comp(), props));
+        let comp = rc_comp.comp();
+        let state = C::init(parent, &comp, props);
+        rc_comp.set_state(state);
+        crate::routing2::register_routing_callback(&comp);
         rc_comp
     }
 }

@@ -76,11 +76,11 @@ impl<C: spair::Component, H: spair::Click> spair::StaticRender<C> for Button<H> 
 }
 
 impl spair::Application for State {
-    fn init(comp: spair::Comp<Self>) -> Self {
+    fn init(comp: &spair::Comp<Self>) -> Self {
         Self {
             value: 42,
             value_read_from_child: None,
-            child_comp: ChildState::new(comp).into(),
+            child_comp: ChildState::new(comp.clone()).into(),
         }
     }
 }

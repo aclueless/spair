@@ -169,10 +169,10 @@ impl spair::SvgRender<Clock> for Hand {
 }
 
 impl spair::Application for Clock {
-    fn init(comp: spair::Comp<Self>) -> Self {
+    fn init(comp: &spair::Comp<Self>) -> Self {
         let mut s = Self {
             time: js_sys::Date::new_0(),
-            comp,
+            comp: comp.clone(),
             clock_closure: None,
         };
         s.start_clock();

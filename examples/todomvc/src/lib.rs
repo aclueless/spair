@@ -410,7 +410,7 @@ fn get_value(i: Option<web_sys::HtmlInputElement>) -> Option<String> {
 }
 
 impl spair::Application for App {
-    fn init(_: spair::Comp<Self>) -> Self {
+    fn init(_: &spair::Comp<Self>) -> Self {
         Self {
             data: utils::read_data_from_storage(),
             filter: Filter::default(),

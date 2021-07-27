@@ -120,7 +120,7 @@ impl spair::Render<State> for &Commit {
 }
 
 impl spair::Application for State {
-    fn init(_: spair::Comp<Self>) -> Self {
+    fn init(_: &spair::Comp<Self>) -> Self {
         Self {
             branch: None,
             message: "Wait for your click".to_string(),
