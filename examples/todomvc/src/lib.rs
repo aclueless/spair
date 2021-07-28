@@ -446,10 +446,8 @@ impl spair::Application for App {
         }
     }
 
-    fn init_router(comp: &spair::Comp<Self>) -> Router {
-        Router {
-            comp: comp.clone(),
-        }
+    fn init_router(comp: &spair::Comp<Self>) -> Option<Router> {
+        Some(Router { comp: comp.clone() })
     }
 }
 

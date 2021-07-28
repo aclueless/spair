@@ -6,9 +6,8 @@ pub trait Application: crate::component::Component {
     /// If your Component::Routes is not `()`, you must override this to provide the actual router instance
     fn init_router(
         _comp: &crate::component::Comp<Self>,
-    ) -> <<Self as crate::Component>::Routes2 as crate::routing2::Routes>::Router {
-        //use crate::routing2::Routes;
-        <<Self as crate::Component>::Routes2 as crate::routing2::Routes>::unit_router()
+    ) -> Option<<<Self as crate::Component>::Routes2 as crate::routing2::Routes>::Router> {
+        None
     }
 
     fn mount_to_element(root: web_sys::Element) {
@@ -18,7 +17,19 @@ pub trait Application: crate::component::Component {
         let state = Self::init(&comp);
         rc_comp.set_state(state);
 
-        crate::routing2::set_router(Self::init_router(&comp));
+        match Self::init_router(&comp) {
+            Some(router) => crate::routing2::set_router(router),
+            None if std::any::TypeId::of::<()>()
+                != std::any::TypeId::of::<
+                    <<Self as crate::Component>::Routes2 as crate::routing2::Routes>::Router,
+                >() =>
+            {
+                log::warn!(
+                    "You may want to implement `Application::init_router()` to return Some(router)"
+                );
+            }
+            _ => {}
+        }
 
         rc_comp.first_render();
         // It is the main component of the app, hence it is reasonable to just forget it.

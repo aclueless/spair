@@ -9,15 +9,18 @@ struct SpairRouter {
 }
 
 impl SpairRouter {
-    //fn execute_routing<C: crate::component::Component>(&self) {
     fn execute_routing(&self) {
+        log::debug!("execute_routing");
         let location = match get_new_location(&self.current_url) {
             Some(location) => location,
             None => return,
         };
+        log::debug!("execute_routing 1");
         if let Some(router) = self.router.downcast_ref::<Box<dyn Router>>() {
+            log::debug!("execute_routing 2");
             router.routing(location);
         }
+        log::debug!("execute_routing 3");
     }
 }
 
@@ -61,16 +64,6 @@ pub trait Router {
 
 pub trait Routes {
     type Router: Router;
-    /// Just help creating a `ghost router` for application that has `type Routes = ();`
-    /// You never need to override this method. But you should override `Application::init_router`
-    /// to provide your actual Router instance, if not your app will fail immediately.
-    /// This method was put here but not in `Router` to allow making `Router` a trait object.
-    fn unit_router() -> Self::Router {
-        unreachable!(
-            "You must implement method `Application::init_router` and provide the actual router instance"
-        )
-    }
-
     fn url(&self) -> String;
 }
 
@@ -80,16 +73,19 @@ impl Router for () {
 
 impl Routes for () {
     type Router = ();
-    fn unit_router() -> Self {}
     fn url(&self) -> String {
         String::new()
     }
 }
 
 pub fn set_router<R: 'static + Router>(r: R) {
+    log::debug!("set_router");
     ROUTER.with(|router| {
         if let Ok(mut router) = router.try_borrow_mut() {
-            router.router = Box::new(r);
+            // Use the trick from https://stackoverflow.com/questions/25246443/how-can-i-downcast-from-boxany-to-a-trait-object-type
+            let boxed_router: Box<dyn Router> = Box::new(r);
+            router.router = Box::new(boxed_router);
+            log::debug!("set_router: execute the routing for the first time");
             router.execute_routing();
         }
     });
