@@ -43,7 +43,7 @@ impl spair::Router for Router {
     }
 }
 
-impl spair::Routes2 for Filter {
+impl spair::Routes for Filter {
     type Router = Router;
     fn url(&self) -> String {
         match self {
@@ -162,7 +162,7 @@ impl App {
 }
 
 impl spair::Component for App {
-    type Routes2 = Filter;
+    type Routes = Filter;
 
     fn render(&self, element: spair::Element<Self>) {
         element
@@ -317,7 +317,7 @@ impl spair::Render<App> for FilterView {
             l.a(|a| {
                 a.class_if("selected", self.current_filter == self.view)
                     .static_attributes()
-                    .href2(&self.view)
+                    .href(&self.view)
                     .static_nodes()
                     .r#static(self.view.as_str());
             });

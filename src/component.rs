@@ -67,7 +67,7 @@ impl UpdateQueue {
 }
 
 pub trait Component: 'static + Sized {
-    type Routes2: crate::routing2::Routes;
+    type Routes: crate::routing::Routes;
 
     // Better name?
     // This method will be ran once when the component is created.
@@ -78,12 +78,12 @@ pub trait Component: 'static + Sized {
     /// implements `spair::Application`) does not have to implement this, but must implement
     /// `spair::Application::init_router`. This method will never be called on the root-component.
     fn register_routing_callback(
-        _router: &mut <Self::Routes2 as crate::routing2::Routes>::Router,
+        _router: &mut <Self::Routes as crate::routing::Routes>::Router,
         _comp: &Comp<Self>,
     ) {
     }
 
-    fn remove_routing_callback(_router: &mut <Self::Routes2 as crate::routing2::Routes>::Router) {}
+    fn remove_routing_callback(_router: &mut <Self::Routes as crate::routing::Routes>::Router) {}
 
     fn default_checklist() -> Checklist<Self> {
         Self::default_should_render().into()
@@ -572,7 +572,7 @@ impl<C: WithParentComp + Component> ChildComp<C> {
         let comp = rc_comp.comp();
         let state = C::init(parent, &comp, props);
         rc_comp.set_state(state);
-        crate::routing2::register_routing_callback(&comp);
+        crate::routing::register_routing_callback(&comp);
         rc_comp
     }
 }
@@ -596,7 +596,7 @@ impl<C: Component> From<Comp<C>> for ComponentHandle<C> {
 
 impl<C: Component> Drop for ChildComp<C> {
     fn drop(&mut self) {
-        crate::routing2::remove_routing_callback::<C>();
+        crate::routing::remove_routing_callback::<C>();
         self.0
             .try_borrow_mut()
             .expect_throw("Why unable to borrow a child component in dropping?")

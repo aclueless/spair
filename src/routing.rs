@@ -10,17 +10,13 @@ struct SpairRouter {
 
 impl SpairRouter {
     fn execute_routing(&self) {
-        log::debug!("execute_routing");
         let location = match get_new_location(&self.current_url) {
             Some(location) => location,
             None => return,
         };
-        log::debug!("execute_routing 1");
         if let Some(router) = self.router.downcast_ref::<Box<dyn Router>>() {
-            log::debug!("execute_routing 2");
             router.routing(location);
         }
-        log::debug!("execute_routing 3");
     }
 }
 
@@ -79,13 +75,11 @@ impl Routes for () {
 }
 
 pub fn set_router<R: 'static + Router>(r: R) {
-    log::debug!("set_router");
     ROUTER.with(|router| {
         if let Ok(mut router) = router.try_borrow_mut() {
             // Use the trick from https://stackoverflow.com/questions/25246443/how-can-i-downcast-from-boxany-to-a-trait-object-type
             let boxed_router: Box<dyn Router> = Box::new(r);
             router.router = Box::new(boxed_router);
-            log::debug!("set_router: execute the routing for the first time");
             router.execute_routing();
         }
     });
@@ -96,7 +90,7 @@ pub fn register_routing_callback<C: crate::component::Component>(comp: &crate::c
         if let Ok(mut router) = router.try_borrow_mut() {
             if let Some(router) = router
                 .router
-                .downcast_mut::<Box<<<C as crate::component::Component>::Routes2 as Routes>::Router>>(
+                .downcast_mut::<Box<<<C as crate::component::Component>::Routes as Routes>::Router>>(
             ) {
                 C::register_routing_callback(router, comp);
             }
@@ -109,7 +103,7 @@ pub fn remove_routing_callback<C: crate::component::Component>() {
         if let Ok(mut router) = router.try_borrow_mut() {
             if let Some(router) = router
                 .router
-                .downcast_mut::<Box<<<C as crate::component::Component>::Routes2 as Routes>::Router>>(
+                .downcast_mut::<Box<<<C as crate::component::Component>::Routes as Routes>::Router>>(
             ) {
                 C::remove_routing_callback(router);
             }

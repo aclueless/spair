@@ -6,7 +6,7 @@ pub trait Application: crate::component::Component {
     /// If your Component::Routes is not `()`, you must override this to provide the actual router instance
     fn init_router(
         _comp: &crate::component::Comp<Self>,
-    ) -> Option<<<Self as crate::Component>::Routes2 as crate::routing2::Routes>::Router> {
+    ) -> Option<<<Self as crate::Component>::Routes as crate::routing::Routes>::Router> {
         None
     }
 
@@ -18,10 +18,10 @@ pub trait Application: crate::component::Component {
         rc_comp.set_state(state);
 
         match Self::init_router(&comp) {
-            Some(router) => crate::routing2::set_router(router),
+            Some(router) => crate::routing::set_router(router),
             None if std::any::TypeId::of::<()>()
                 != std::any::TypeId::of::<
-                    <<Self as crate::Component>::Routes2 as crate::routing2::Routes>::Router,
+                    <<Self as crate::Component>::Routes as crate::routing::Routes>::Router,
                 >() =>
             {
                 log::warn!(

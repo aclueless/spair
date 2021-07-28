@@ -739,7 +739,7 @@ mod keyed_list_with_render_tests {
 
     struct Unit;
     impl crate::component::Component for Unit {
-        type Routes2 = ();
+        type Routes = ();
         fn render(&self, _: crate::Element<Self>) {}
     }
 

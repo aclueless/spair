@@ -15,7 +15,7 @@ impl State {
 }
 
 impl spair::Component for State {
-    type Routes2 = ();
+    type Routes = ();
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element

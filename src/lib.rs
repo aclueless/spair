@@ -7,7 +7,7 @@ mod dom;
 mod events;
 mod fetch;
 mod macros;
-mod routing2;
+mod routing;
 mod utils;
 
 pub use application::Application;
@@ -26,7 +26,7 @@ pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};
-pub use routing2::{Router, Routes as Routes2};
+pub use routing::{Router, Routes};
 pub use utils::*;
 
 pub use web_sys;
