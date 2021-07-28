@@ -1,7 +1,7 @@
 #[must_use = "Caller should set selected option for <select> element"]
 pub struct RememberSettingSelectedOption;
 
-pub struct NonKeyedListUpdater<'a, C> {
+pub struct NonKeyedListUpdater<'a, C: crate::component::Component> {
     comp: &'a crate::component::Comp<C>,
     state: &'a C,
     tag: &'a str,

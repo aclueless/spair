@@ -46,6 +46,32 @@ impl spair::Routes<App> for Filter {
     }
 }
 
+struct Router {
+    comp: spair::Comp<App>,
+}
+
+impl spair::Router for Router {
+    fn routing(&self, location: web_sys::Location) {
+        let filter = match location.hash().unwrap_or_else(|_| String::new()).as_str() {
+            "#completed" => Filter::Completed,
+            "#active" => Filter::Active,
+            _ => Filter::All,
+        };
+        self.comp.callback_arg_mut(App::set_filter)(filter);
+    }
+}
+
+impl spair::Routes2 for Filter {
+    type Router = Router;
+    fn url(&self) -> String {
+        match self {
+            Self::All => "#all".to_string(),
+            Self::Active => "#active".to_string(),
+            Self::Completed => "#completed".to_string(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 struct TodoItem {
     id: u32,
@@ -154,8 +180,9 @@ impl App {
 }
 
 impl spair::Component for App {
-    type Routes = Filter;
-    type Routes2 = ();
+    type Routes = ();
+    type Routes2 = Filter;
+
     fn render(&self, element: spair::Element<Self>) {
         element
             .section(|s| {
@@ -309,7 +336,7 @@ impl spair::Render<App> for FilterView {
             l.a(|a| {
                 a.class_if("selected", self.current_filter == self.view)
                     .static_attributes()
-                    .href(&self.view)
+                    .href2(&self.view)
                     .static_nodes()
                     .r#static(self.view.as_str());
             });
@@ -416,6 +443,12 @@ impl spair::Application for App {
             filter: Filter::default(),
             editing_id: None,
             new_todo_title: String::new(),
+        }
+    }
+
+    fn init_router(comp: &spair::Comp<Self>) -> Router {
+        Router {
+            comp: comp.clone(),
         }
     }
 }

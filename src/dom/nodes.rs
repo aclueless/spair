@@ -331,7 +331,7 @@ impl FragmentedNodeList {
     }
 }
 
-pub struct MatchIfUpdater<'a, C> {
+pub struct MatchIfUpdater<'a, C: crate::component::Component> {
     comp: &'a crate::component::Comp<C>,
     state: &'a C,
 
@@ -371,7 +371,7 @@ impl<'a, C: crate::component::Component> MatchIfUpdater<'a, C> {
     }
 }
 
-pub struct NodeListUpdater<'a, C> {
+pub struct NodeListUpdater<'a, C: crate::component::Component> {
     comp: &'a crate::component::Comp<C>,
     state: &'a C,
 
@@ -382,7 +382,9 @@ pub struct NodeListUpdater<'a, C> {
     nodes: &'a mut NodeList,
 }
 
-impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
+impl<'a, C: crate::component::Component> From<super::ElementUpdater<'a, C>>
+    for NodeListUpdater<'a, C>
+{
     fn from(u: super::ElementUpdater<'a, C>) -> Self {
         let (comp, state, status, element) = u.into_parts();
         Self {
@@ -397,7 +399,7 @@ impl<'a, C> From<super::ElementUpdater<'a, C>> for NodeListUpdater<'a, C> {
     }
 }
 
-impl<'a, C> NodeListUpdater<'a, C> {
+impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     pub fn parent(&self) -> &web_sys::Node {
         self.parent
     }
@@ -549,7 +551,7 @@ impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     }
 }
 
-pub trait DomBuilder<C> {
+pub trait DomBuilder<C: crate::component::Component> {
     fn require_render(&self) -> bool;
     fn just_created(&self) -> bool;
     fn next_index(&mut self);

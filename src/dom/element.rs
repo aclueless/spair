@@ -144,7 +144,7 @@ impl Drop for SelectElementValueManager {
     }
 }
 
-pub struct ElementUpdater<'a, C> {
+pub struct ElementUpdater<'a, C: crate::component::Component> {
     comp: &'a crate::component::Comp<C>,
     state: &'a C,
 
@@ -153,7 +153,7 @@ pub struct ElementUpdater<'a, C> {
     element: &'a mut Element,
 }
 
-impl<'a, C> ElementUpdater<'a, C> {
+impl<'a, C: crate::component::Component> ElementUpdater<'a, C> {
     pub fn into_parts(
         self,
     ) -> (

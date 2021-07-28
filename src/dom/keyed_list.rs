@@ -96,12 +96,12 @@ impl KeyedList {
     }
 }
 
-pub struct KeyedListUpdater<'a, C, G, R> {
+pub struct KeyedListUpdater<'a, C: crate::component::Component, G, R> {
     pub list_context: KeyedListContext<'a>,
     pub state_and_fns: StateAndFns<'a, C, G, R>,
 }
 
-pub struct StateAndFns<'a, C, G, R> {
+pub struct StateAndFns<'a, C: crate::component::Component, G, R> {
     pub comp: &'a crate::component::Comp<C>,
     pub state: &'a C,
     pub get_key: G,

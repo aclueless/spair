@@ -307,9 +307,11 @@ where
     }
 }
 
-pub struct StaticAttributes<'a, C>(crate::dom::HtmlUpdater<'a, C>);
+pub struct StaticAttributes<'a, C: crate::component::Component>(crate::dom::HtmlUpdater<'a, C>);
 
-impl<'a, C> From<crate::dom::HtmlUpdater<'a, C>> for StaticAttributes<'a, C> {
+impl<'a, C: crate::component::Component> From<crate::dom::HtmlUpdater<'a, C>>
+    for StaticAttributes<'a, C>
+{
     fn from(u: crate::dom::HtmlUpdater<'a, C>) -> Self {
         Self(u)
     }

@@ -300,15 +300,21 @@ pub trait SvgAttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter
     }
 }
 
-pub struct SvgStaticAttributes<'a, C>(crate::dom::ElementUpdater<'a, C>);
+pub struct SvgStaticAttributes<'a, C: crate::component::Component>(
+    crate::dom::ElementUpdater<'a, C>,
+);
 
-impl<'a, C> From<crate::dom::HtmlUpdater<'a, C>> for SvgStaticAttributes<'a, C> {
+impl<'a, C: crate::component::Component> From<crate::dom::HtmlUpdater<'a, C>>
+    for SvgStaticAttributes<'a, C>
+{
     fn from(u: crate::dom::HtmlUpdater<'a, C>) -> Self {
         Self(u.u)
     }
 }
 
-impl<'a, C> From<crate::dom::ElementUpdater<'a, C>> for SvgStaticAttributes<'a, C> {
+impl<'a, C: crate::component::Component> From<crate::dom::ElementUpdater<'a, C>>
+    for SvgStaticAttributes<'a, C>
+{
     fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self(u)
     }

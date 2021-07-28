@@ -28,6 +28,7 @@ pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};
 pub use routing::Routes;
+pub use routing2::{Router, Routes as Routes2};
 pub use utils::*;
 
 pub use web_sys;

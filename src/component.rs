@@ -84,6 +84,8 @@ pub trait Component: 'static + Sized {
     ) {
     }
 
+    fn remove_routing_callback(_router: &mut <Self::Routes2 as crate::routing2::Routes>::Router) {}
+
     fn default_checklist() -> Checklist<Self> {
         Self::default_should_render().into()
     }
@@ -113,8 +115,8 @@ impl<C: Component> From<ShouldRender> for Checklist<C> {
     }
 }
 
-pub struct RcComp<C>(Rc<RefCell<CompInstance<C>>>);
-pub struct Comp<C>(Weak<RefCell<CompInstance<C>>>);
+pub struct RcComp<C: Component>(Rc<RefCell<CompInstance<C>>>);
+pub struct Comp<C: Component>(Weak<RefCell<CompInstance<C>>>);
 
 pub struct CompInstance<C> {
     state: Option<C>,
@@ -198,7 +200,7 @@ impl<C: Component> Checklist<C> {
     }
 }
 
-impl<C> RcComp<C> {
+impl<C: Component> RcComp<C> {
     pub(crate) fn new(root: Option<web_sys::Element>) -> Self {
         let (root_element, mount_status) = root
             .map(|root| {
@@ -570,8 +572,8 @@ impl<C: Component> From<C> for ChildComp<C> {
     }
 }
 
-pub trait WithParentComp: Sized {
-    type Parent;
+pub trait WithParentComp: Sized + Component {
+    type Parent: Component;
     type Properties;
     fn init(parent: &Comp<Self::Parent>, comp: &Comp<Self>, props: Self::Properties) -> Self;
 }
@@ -604,8 +606,9 @@ impl<C: Component> From<Comp<C>> for ComponentHandle<C> {
     }
 }
 
-impl<C> Drop for ChildComp<C> {
+impl<C: Component> Drop for ChildComp<C> {
     fn drop(&mut self) {
+        crate::routing2::remove_routing_callback::<C>();
         self.0
             .try_borrow_mut()
             .expect_throw("Why unable to borrow a child component in dropping?")

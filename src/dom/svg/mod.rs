@@ -4,7 +4,7 @@ pub mod attributes;
 pub mod nodes;
 pub mod renderable;
 
-pub static SVG_NAMESPACE: &'static str = "http://www.w3.org/2000/svg";
+pub static SVG_NAMESPACE: &str = "http://www.w3.org/2000/svg";
 
 impl crate::dom::nodes::NodeList {
     pub fn check_or_create_svg_element(
@@ -107,9 +107,11 @@ impl<'a, C: crate::component::Component> super::ElementUpdater<'a, C> {
 
 /// This struct provide methods for setting properties/attributes and adding child nodes for
 /// HTML elements.
-pub struct SvgUpdater<'a, C>(crate::dom::element::ElementUpdater<'a, C>);
+pub struct SvgUpdater<'a, C: crate::component::Component>(
+    crate::dom::element::ElementUpdater<'a, C>,
+);
 
-impl<'a, C> From<super::ElementUpdater<'a, C>> for SvgUpdater<'a, C> {
+impl<'a, C: crate::component::Component> From<super::ElementUpdater<'a, C>> for SvgUpdater<'a, C> {
     fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self(u)
     }

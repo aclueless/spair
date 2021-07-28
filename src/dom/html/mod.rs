@@ -4,12 +4,12 @@ pub mod renderable;
 
 /// This struct provide methods for setting properties/attributes and adding child nodes for
 /// HTML elements.
-pub struct HtmlUpdater<'a, C> {
+pub struct HtmlUpdater<'a, C: crate::component::Component> {
     pub(super) u: crate::dom::element::ElementUpdater<'a, C>,
     select_element_value_manager: Option<crate::dom::SelectElementValueManager>,
 }
 
-impl<'a, C> From<super::ElementUpdater<'a, C>> for HtmlUpdater<'a, C> {
+impl<'a, C: crate::component::Component> From<super::ElementUpdater<'a, C>> for HtmlUpdater<'a, C> {
     fn from(u: crate::dom::ElementUpdater<'a, C>) -> Self {
         Self {
             select_element_value_manager: u.create_select_element_manager_for_select_element(),
