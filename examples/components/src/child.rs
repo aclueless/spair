@@ -42,7 +42,6 @@ impl ChildState {
 }
 
 impl spair::Component for ChildState {
-    type Routes = ();
     type Routes2 = ();
 
     fn render(&self, element: spair::Element<Self>) {

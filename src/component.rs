@@ -67,7 +67,6 @@ impl UpdateQueue {
 }
 
 pub trait Component: 'static + Sized {
-    type Routes: crate::routing::Routes<Self>;
     type Routes2: crate::routing2::Routes;
 
     // Better name?
@@ -121,7 +120,6 @@ pub struct Comp<C: Component>(Weak<RefCell<CompInstance<C>>>);
 pub struct CompInstance<C> {
     state: Option<C>,
     root_element: crate::dom::Element,
-    router: Option<crate::routing::Router>,
     mount_status: MountStatus,
     events: Vec<Box<dyn crate::events::Listener>>,
 }
@@ -216,7 +214,6 @@ impl<C: Component> RcComp<C> {
         Self(Rc::new(RefCell::new(CompInstance {
             state: None,
             root_element,
-            router: None,
             mount_status,
             events: Vec::new(),
         })))
@@ -232,29 +229,20 @@ impl<C: Component> RcComp<C> {
     }
 
     pub(crate) fn first_render(&self) {
-        use crate::routing::Routes;
         let comp = self.comp();
 
         C::initialize(&comp);
 
         let promise = self::i_have_to_execute_update_queue();
 
-        // The router may cause an update that mutably borrows the CompInstance
-        // Therefor this should be done before borrowing the instance.
-        let router = C::Routes::router(&comp);
+        let mut instance = self
+            .0
+            .try_borrow_mut()
+            .expect_throw("Expect no borrowing at the first render");
 
-        {
-            let mut instance = self
-                .0
-                .try_borrow_mut()
-                .expect_throw("Expect no borrowing at the first render");
-
-            if instance.root_element.is_empty() {
-                // In cases that the router not cause any render yet, such as Routes = ()
-                instance.render(&comp);
-            }
-
-            instance.router = router;
+        if instance.root_element.is_empty() {
+            // In cases that the router not cause any render yet, such as Routes = ()
+            instance.render(&comp);
         }
 
         self::execute_update_queue(promise);

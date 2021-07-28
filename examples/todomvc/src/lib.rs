@@ -28,24 +28,6 @@ impl Filter {
     }
 }
 
-impl spair::Routes<App> for Filter {
-    fn url(&self) -> String {
-        match self {
-            Self::All => "#all".to_string(),
-            Self::Active => "#active".to_string(),
-            Self::Completed => "#completed".to_string(),
-        }
-    }
-    fn routing(location: spair::web_sys::Location, comp: &spair::Comp<App>) {
-        let filter = match location.hash().unwrap_or_else(|_| String::new()).as_str() {
-            "#completed" => Self::Completed,
-            "#active" => Self::Active,
-            _ => Self::All,
-        };
-        comp.callback_arg_mut(App::set_filter)(filter);
-    }
-}
-
 struct Router {
     comp: spair::Comp<App>,
 }
@@ -180,7 +162,6 @@ impl App {
 }
 
 impl spair::Component for App {
-    type Routes = ();
     type Routes2 = Filter;
 
     fn render(&self, element: spair::Element<Self>) {

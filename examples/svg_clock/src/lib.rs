@@ -21,7 +21,6 @@ impl Clock {
 }
 
 impl spair::Component for Clock {
-    type Routes = ();
     type Routes2 = ();
     fn render(&self, element: spair::Element<Self>) {
         let seconds_angle = 360.0 * self.time.get_seconds() as f64 / 60.0;

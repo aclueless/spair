@@ -7,7 +7,6 @@ mod dom;
 mod events;
 mod fetch;
 mod macros;
-mod routing;
 mod routing2;
 mod utils;
 
@@ -27,7 +26,6 @@ pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, FetchStatus, Request};
-pub use routing::Routes;
 pub use routing2::{Router, Routes as Routes2};
 pub use utils::*;
 
@@ -43,7 +41,6 @@ pub mod prelude {
     #[cfg(feature = "svg")]
     pub use crate::dom::{SvgAttributeSetter, SvgBuilder};
     pub use crate::fetch::{FetchOptionsSetter, IntoFetchArgs, RawDataMode};
-    pub use crate::routing::Routes;
     pub use wasm_bindgen;
     pub use wasm_bindgen::prelude::*;
     pub use wasm_bindgen::{JsCast, UnwrapThrowExt};
