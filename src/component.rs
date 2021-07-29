@@ -300,8 +300,6 @@ impl<C: Component> Comp<C> {
             };
 
             let state = this.state.as_mut().unwrap_throw();
-            // Call `fn_not_update` here to reduce monomorphization on `CompInstance::extra_update()`
-            // Otherwise, `extra_update` need another type parameter `fn_not_update: &impl Fn(&C) -> Cl`.
             C::reset(state);
             let (skip_fn_render, commands) = fn_not_update(state).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
@@ -330,8 +328,6 @@ impl<C: Component> Comp<C> {
             };
 
             let state = this.state.as_mut().unwrap_throw();
-            // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
-            // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
             C::reset(state);
             let (skip_fn_render, commands) = fn_update(state).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);
@@ -360,8 +356,6 @@ impl<C: Component> Comp<C> {
             };
 
             let state = this.state.as_mut().unwrap_throw();
-            // Call `fn_update` here to reduce monomorphization on `CompInstance::extra_update()`
-            // Otherwise, `extra_update` need another type parameter `fn_update: &impl Fn(&mut C) -> Cl`.
             C::reset(state);
             let (skip_fn_render, commands) = fn_update(state, arg).into().into_parts();
             this.extra_update(skip_fn_render, commands, &self);

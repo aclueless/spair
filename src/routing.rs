@@ -77,7 +77,7 @@ impl Routes for () {
 pub fn set_router<R: 'static + Router>(r: R) {
     ROUTER.with(|router| {
         if let Ok(mut router) = router.try_borrow_mut() {
-            // Use the trick from https://stackoverflow.com/questions/25246443/how-can-i-downcast-from-boxany-to-a-trait-object-type
+            // Use the trick `double-box` from https://stackoverflow.com/questions/25246443/how-can-i-downcast-from-boxany-to-a-trait-object-type
             let boxed_router: Box<dyn Router> = Box::new(r);
             router.router = Box::new(boxed_router);
             router.execute_routing();
@@ -86,26 +86,26 @@ pub fn set_router<R: 'static + Router>(r: R) {
 }
 
 pub fn register_routing_callback<C: crate::component::Component>(comp: &crate::component::Comp<C>) {
-    ROUTER.with(|router| {
-        if let Ok(mut router) = router.try_borrow_mut() {
-            if let Some(router) = router
-                .router
-                .downcast_mut::<Box<<<C as crate::component::Component>::Routes as Routes>::Router>>(
-            ) {
-                C::register_routing_callback(router, comp);
-            }
-        }
-    })
+    modify_router::<C, _>(|router| C::register_routing_callback(router, comp))
 }
 
 pub fn remove_routing_callback<C: crate::component::Component>() {
+    modify_router::<C, _>(C::remove_routing_callback)
+}
+
+pub fn modify_router<
+    C: crate::component::Component,
+    F: FnOnce(&mut <<C as crate::component::Component>::Routes as Routes>::Router),
+>(
+    f: F,
+) {
     ROUTER.with(|router| {
         if let Ok(mut router) = router.try_borrow_mut() {
             if let Some(router) = router
                 .router
                 .downcast_mut::<Box<<<C as crate::component::Component>::Routes as Routes>::Router>>(
             ) {
-                C::remove_routing_callback(router);
+                f(router);
             }
         }
     })
