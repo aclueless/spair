@@ -122,19 +122,13 @@ Spair does not do reconciliation, users must do it by themselves. When an expect
 The following code is extracted from `examples/fetch/src/lib.rs`:
 ```rust
 element
-    .match_if(|arm| match self.branch.as_ref() {
-        Some(branch) => arm
-            // Tell Spair which arm we are on.
-            // If in the previous render we were on index=1, but in this
-            // render we are on index=0, then Spair clear all nodes before
-            // rendering the content
-            .render_on_arm_index(0)
+    .match_if(|mi| match self.branch.as_ref() {
+        Some(branch) => spair::set_arm!(mi) // `spair::set_arm!()` use `line!()` internally to set `render_on_arm_index()`
             // Render the content of `Some(branch)`
             .render(branch)
             // some code removed
             .done(),
-        None => arm
-            .render_on_arm_index(1)
+        None => spair::set_arm!(mi)
             // There is no value: `None`? Then just render a button
             .button(|b| {/* some code removed */})
             .done(),
@@ -149,7 +143,6 @@ if some_condition {
     element.p(|p| {})
 }
 ```
-
 ## Child components
 
 Spair supports child components, but you do not have to use them if you can avoid them.
@@ -166,8 +159,6 @@ There is an element named `<span>`, there is also an attribute named `span`. Spa
 Using Spair, you may encounter common mistakes listed in this section. They are really annoying. How these problems can be avoided?
 ### `static_attributes()`
 If you set an attribute in static-mode it will never be updated. It is easy to misplace an update-mode attribute under static-mode.
-### arm index in `match_if()`
-`match_if()` requires you to specify which arm-index you are on to correctly render/update the content. The number must be unique, otherwise it does not work correctly. And the problem become worse when you refactor your code, it easy forgetting update the indices.
 
 ## What's done?
 
