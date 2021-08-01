@@ -35,3 +35,11 @@ pub fn prompt(message: &str, default_value: Option<&str>) -> Option<String> {
             .expect_throw("Error on getting user input from the prompt dialog"),
     }
 }
+
+pub(crate) fn register_event_listener_on_window(event: &str, listener: &js_sys::Function) {
+    let window = crate::utils::window();
+    let window: &web_sys::EventTarget = window.as_ref();
+    window
+        .add_event_listener_with_callback(event, listener)
+        .expect_throw("Unable to register event listener on window");
+}

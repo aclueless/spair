@@ -5,16 +5,16 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 struct SpairRouter {
     router: Box<dyn std::any::Any>,
     current_url: Rc<RefCell<Option<String>>>,
-    _pop_state_closure: wasm_bindgen::closure::Closure<dyn Fn(web_sys::PopStateEvent)>,
+    _pop_state_closure: Option<wasm_bindgen::closure::Closure<dyn Fn(web_sys::PopStateEvent)>>,
 }
 
 impl SpairRouter {
-    fn execute_routing(&self) {
+    fn execute_routing<R: Router>(&self) {
         let location = match get_new_location(&self.current_url) {
             Some(location) => location,
             None => return,
         };
-        if let Some(router) = self.router.downcast_ref::<Box<dyn Router>>() {
+        if let Some(router) = self.router.downcast_ref::<R>() {
             router.routing(location);
         }
     }
@@ -24,37 +24,11 @@ thread_local! {
     static ROUTER: Rc<RefCell<SpairRouter>> = Rc::new(RefCell::new(SpairRouter{
         router: Box::new(()),
         current_url: Rc::new(RefCell::new(None)),
-        _pop_state_closure: register_pop_state_event(),
+        _pop_state_closure: None,
     }));
 }
 
-fn register_pop_state_event() -> wasm_bindgen::closure::Closure<dyn Fn(web_sys::PopStateEvent)> {
-    let closure = move |_: web_sys::PopStateEvent| {
-        ROUTER.with(|router| {
-            if let Ok(router) = router.try_borrow() {
-                router.execute_routing();
-            }
-        })
-    };
-
-    let closure = wasm_bindgen::closure::Closure::wrap(
-        Box::new(closure) as Box<dyn Fn(web_sys::PopStateEvent)>
-    );
-
-    register_event_listener_on_window("popstate", closure.as_ref().unchecked_ref());
-
-    closure
-}
-
-fn register_event_listener_on_window(event: &str, listener: &js_sys::Function) {
-    let window = crate::utils::window();
-    let window: &web_sys::EventTarget = window.as_ref();
-    window
-        .add_event_listener_with_callback(event, listener)
-        .expect_throw("Unable to register event listener on window");
-}
-
-pub trait Router {
+pub trait Router: std::any::Any {
     fn routing(&self, location: web_sys::Location);
 }
 
@@ -74,13 +48,19 @@ impl Routes for () {
     }
 }
 
-pub fn set_router<R: 'static + Router>(r: R) {
+pub fn set_router<R: Router>(r: R) {
     ROUTER.with(|router| {
         if let Ok(mut router) = router.try_borrow_mut() {
-            // Use the trick `double-box` from https://stackoverflow.com/questions/25246443/how-can-i-downcast-from-boxany-to-a-trait-object-type
-            let boxed_router: Box<dyn Router> = Box::new(r);
-            router.router = Box::new(boxed_router);
-            router.execute_routing();
+            router.router = Box::new(r);
+            router._pop_state_closure = Some(register_pop_state_event::<R>());
+        }
+    });
+}
+
+pub fn first_routing<R: Router>() {
+    ROUTER.with(|router| {
+        if let Ok(router) = router.try_borrow() {
+            router.execute_routing::<R>();
         }
     });
 }
@@ -103,12 +83,31 @@ pub fn modify_router<
         if let Ok(mut router) = router.try_borrow_mut() {
             if let Some(router) = router
                 .router
-                .downcast_mut::<Box<<<C as crate::component::Component>::Routes as Routes>::Router>>(
+                .downcast_mut::<<<C as crate::component::Component>::Routes as Routes>::Router>(
             ) {
                 f(router);
             }
         }
     })
+}
+
+fn register_pop_state_event<R: Router>(
+) -> wasm_bindgen::closure::Closure<dyn Fn(web_sys::PopStateEvent)> {
+    let closure = move |_: web_sys::PopStateEvent| {
+        ROUTER.with(|router| {
+            if let Ok(router) = router.try_borrow() {
+                router.execute_routing::<R>();
+            }
+        })
+    };
+
+    let closure = wasm_bindgen::closure::Closure::wrap(
+        Box::new(closure) as Box<dyn Fn(web_sys::PopStateEvent)>
+    );
+
+    crate::utils::register_event_listener_on_window("popstate", closure.as_ref().unchecked_ref());
+
+    closure
 }
 
 fn get_new_location(current_url: &Rc<RefCell<Option<String>>>) -> Option<web_sys::Location> {
