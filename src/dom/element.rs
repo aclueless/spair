@@ -137,7 +137,7 @@ impl Drop for SelectElementValueManager {
             let select = self.element.unchecked_ref::<web_sys::HtmlSelectElement>();
             match selected_option {
                 SelectedOption::None => select.set_selected_index(-1),
-                SelectedOption::Value(value) => select.set_value(&value),
+                SelectedOption::Value(value) => select.set_value(value),
                 SelectedOption::Index(index) => select.set_selected_index(*index as i32),
             }
         }
