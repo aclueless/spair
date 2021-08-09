@@ -235,14 +235,17 @@ impl<C: Component> RcComp<C> {
 
         let promise = self::i_have_to_execute_update_queue();
 
-        let mut instance = self
-            .0
-            .try_borrow_mut()
-            .expect_throw("Expect no borrowing at the first render");
+        {
+            // This borrow_mut must end before executing self::execute_update_queue()
+            let mut instance = self
+                .0
+                .try_borrow_mut()
+                .expect_throw("Expect no borrowing at the first render");
 
-        if instance.root_element.is_empty() {
-            // In cases that the router not cause any render yet, such as Routes = ()
-            instance.render(&comp);
+            if instance.root_element.is_empty() {
+                // In cases that the router not cause any render yet, such as Routes = ()
+                instance.render(&comp);
+            }
         }
 
         self::execute_update_queue(promise);
