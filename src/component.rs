@@ -304,8 +304,9 @@ impl<C: Component> Comp<C> {
 
             let state = this.state.as_mut().unwrap_throw();
             C::reset(state);
-            let (skip_fn_render, commands) = fn_not_update(state).into().into_parts();
-            this.extra_update(skip_fn_render, commands, self);
+            let (mut should_render, commands) = fn_not_update(state).into().into_parts();
+            should_render = ShouldRender::No; // Always skip fn render in a no update call
+            this.extra_update(should_render, commands, self);
         }
         self::execute_update_queue(promise);
     }
@@ -332,8 +333,8 @@ impl<C: Component> Comp<C> {
 
             let state = this.state.as_mut().unwrap_throw();
             C::reset(state);
-            let (skip_fn_render, commands) = fn_update(state).into().into_parts();
-            this.extra_update(skip_fn_render, commands, self);
+            let (should_render, commands) = fn_update(state).into().into_parts();
+            this.extra_update(should_render, commands, self);
         }
         self::execute_update_queue(promise);
     }
@@ -360,8 +361,8 @@ impl<C: Component> Comp<C> {
 
             let state = this.state.as_mut().unwrap_throw();
             C::reset(state);
-            let (skip_fn_render, commands) = fn_update(state, arg).into().into_parts();
-            this.extra_update(skip_fn_render, commands, self);
+            let (should_render, commands) = fn_update(state, arg).into().into_parts();
+            this.extra_update(should_render, commands, self);
         }
         self::execute_update_queue(promise);
     }
