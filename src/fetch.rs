@@ -14,8 +14,12 @@ pub enum FetchError {
     FetchFailed,
     #[error("Invalid status code: {0}")]
     InvalidStatusCode(#[from] http::status::InvalidStatusCode),
-    #[error("Response status: {}", .0)]
-    ResponseWithError(http::StatusCode),
+    #[error("Response status: {}", .status)]
+    ResponseWithError {
+        status: http::StatusCode,
+        response: web_sys::Response,
+        data: String,
+    },
     #[error("Invalid response")]
     InvalidResponse,
     #[error("Response is not a string")]
@@ -425,15 +429,19 @@ impl TextResponseSetter {
 }
 
 pub trait RawData: Sized {
-    fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError>;
+    fn get_raw_js(response: &web_sys::Response) -> Result<js_sys::Promise, FetchError>;
     fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError>;
+
+    fn to_string(self) -> String {
+        "[Error: not supported][This method is for an experiment only]".to_string()
+    }
 
     // Not supported yet, so implement as a generic function in next lines
     // async fn get_raw_data(response: web_sys::Response) -> Result<Self, FetchError> { }
 }
 
-async fn get_raw_data_from_successful_response<R: RawData>(
-    response: web_sys::Response,
+async fn get_raw_data_from_response<R: RawData>(
+    response: &web_sys::Response,
 ) -> Result<R, FetchError> {
     let promise = R::get_raw_js(response)?;
     wasm_bindgen_futures::JsFuture::from(promise)
@@ -443,8 +451,17 @@ async fn get_raw_data_from_successful_response<R: RawData>(
 }
 
 async fn get_raw_data<R: RawData>(promise: js_sys::Promise) -> Result<R, FetchError> {
-    let sr = get_successful_response(promise).await?;
-    get_raw_data_from_successful_response(sr).await
+    let response = get_response(promise).await?;
+    let raw_data = get_raw_data_from_response::<R>(&response).await?;
+    let status = http::StatusCode::from_u16(response.status())?;
+    if !status.is_success() {
+        return Err(FetchError::ResponseWithError {
+            status,
+            response,
+            data: raw_data.to_string(),
+        });
+    }
+    Ok(raw_data)
 }
 
 struct FetchCmdArgs<C, R, T, Cl> {
@@ -504,34 +521,31 @@ where
     }
 }
 
-async fn get_successful_response(
-    promise: js_sys::Promise,
-) -> Result<web_sys::Response, FetchError> {
+async fn get_response(promise: js_sys::Promise) -> Result<web_sys::Response, FetchError> {
     let response = wasm_bindgen_futures::JsFuture::from(promise)
         .await
         .map_err(|_| FetchError::FetchFailed)?;
 
     let response = web_sys::Response::from(response);
-    let status = http::StatusCode::from_u16(response.status())?;
-    if !status.is_success() {
-        return Err(FetchError::ResponseWithError(status));
-    }
-
     Ok(response)
 }
 
 impl RawData for String {
-    fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
+    fn get_raw_js(response: &web_sys::Response) -> Result<js_sys::Promise, FetchError> {
         response.text().map_err(|_| FetchError::InvalidResponse)
     }
 
     fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
         js_value.as_string().ok_or(FetchError::NotAString)
     }
+
+    fn to_string(self) -> String {
+        self
+    }
 }
 
 impl RawData for Vec<u8> {
-    fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
+    fn get_raw_js(response: &web_sys::Response) -> Result<js_sys::Promise, FetchError> {
         response
             .array_buffer()
             .map_err(|_| FetchError::InvalidResponse)
@@ -558,7 +572,7 @@ macro_rules! impl_fetch {
     ($method_name:ident, $ResponseSetter:ident, $RawDataType:ident, $RawBaseType:ty, $deserializer:path, $DeserializeError:expr) => {
         struct $RawDataType($RawBaseType);
         impl RawData for $RawDataType {
-            fn get_raw_js(response: web_sys::Response) -> Result<js_sys::Promise, FetchError> {
+            fn get_raw_js(response: &web_sys::Response) -> Result<js_sys::Promise, FetchError> {
                 <$RawBaseType>::get_raw_js(response)
             }
 
