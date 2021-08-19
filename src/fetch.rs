@@ -209,24 +209,6 @@ impl Into<web_sys::RequestInit> for FetchOptions {
 }
 */
 
-pub trait IntoFetchArgs {
-    #[deprecated(
-        since = "0.0.5",
-        note = "Replaced by .text_mode().body() or .text_mode().response()"
-    )]
-    fn into_fetch_args(self) -> FetchArgs;
-}
-
-impl IntoFetchArgs for http::request::Builder {
-    fn into_fetch_args(self) -> FetchArgs {
-        FetchArgs {
-            request_builder: self,
-            options: None,
-            body: None,
-        }
-    }
-}
-
 #[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
 pub struct FetchArgs {
     request_builder: http::request::Builder,
@@ -357,24 +339,6 @@ impl TextBody {
     pub fn response(self) -> TextResponseSetter {
         TextResponseSetter(self.0.build_ws_request())
     }
-
-    #[cfg(feature = "fetch-json")]
-    #[deprecated(
-        since = "0.0.5",
-        note = "Replaced by request.text_mode().response().json() or request.text_mode().body().json().response().json()"
-    )]
-    pub fn json_response<C, T, Cl>(
-        self,
-        ok_handler: fn(&mut C, T) -> Cl,
-        error_handler: fn(&mut C, crate::FetchError),
-    ) -> crate::Command<C>
-    where
-        C: crate::component::Component,
-        T: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<crate::component::Checklist<C>>,
-    {
-        self.response().json(ok_handler, error_handler)
-    }
 }
 
 #[must_use = "This value must be returned to the framework. Otherwise, the fetch command will be lost"]
@@ -426,33 +390,6 @@ impl FetchArgs {
         init.method(method).body(body.as_ref()).headers(&header_map);
         web_sys::Request::new_with_str_and_init(&uri, &init)
             .map_err(|_| FetchError::BuildRequestFailed)
-    }
-
-    #[cfg(feature = "fetch-json")]
-    #[deprecated(
-        since = "0.0.5",
-        note = "Replaced by request.text_mode().body().json()"
-    )]
-    pub fn json_body<B: serde::Serialize>(self, data: &B) -> TextBody {
-        TextBodySetter(self).json(data)
-    }
-
-    #[cfg(feature = "fetch-json")]
-    #[deprecated(
-        since = "0.0.5",
-        note = "Replaced by request.text_mode().response().json() or request.text_mode().body().json().response().json()"
-    )]
-    pub fn json_response<C, T, Cl>(
-        self,
-        ok_handler: fn(&mut C, T) -> Cl,
-        error_handler: fn(&mut C, crate::FetchError),
-    ) -> crate::Command<C>
-    where
-        C: crate::component::Component,
-        T: 'static + serde::de::DeserializeOwned,
-        Cl: 'static + Into<crate::component::Checklist<C>>,
-    {
-        TextResponseSetter(self.build_ws_request()).json(ok_handler, error_handler)
     }
 }
 
@@ -696,7 +633,7 @@ macro_rules! impl_fetch {
     };
 }
 
-// Using binary as raw data
+// Using string as raw data
 #[cfg(feature = "fetch-json")]
 impl_fetch!(
     json,
@@ -706,6 +643,7 @@ impl_fetch!(
     serde_json::from_str,
     FetchError::DeserializeJsonError
 );
+
 #[cfg(feature = "fetch-ron")]
 impl_fetch!(
     ron,

@@ -40,7 +40,7 @@ pub mod prelude {
     pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
     #[cfg(feature = "svg")]
     pub use crate::dom::{SvgAttributeSetter, SvgBuilder};
-    pub use crate::fetch::{FetchOptionsSetter, IntoFetchArgs, RawDataMode};
+    pub use crate::fetch::{FetchOptionsSetter, RawDataMode};
     pub use crate::routing::Routes;
     pub use wasm_bindgen;
     pub use wasm_bindgen::prelude::*;
