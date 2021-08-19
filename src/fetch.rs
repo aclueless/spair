@@ -15,10 +15,16 @@ pub enum FetchError {
     #[error("Invalid status code: {0}")]
     InvalidStatusCode(#[from] http::status::InvalidStatusCode),
     #[error("Response status: {}", .status)]
-    ResponseWithError {
+    ResponsedStringWithError {
         status: http::StatusCode,
         response: web_sys::Response,
         data: String,
+    },
+    #[error("Response status: {}", .status)]
+    ResponsedBytesWithError {
+        status: http::StatusCode,
+        response: web_sys::Response,
+        data: Vec<u8>,
     },
     #[error("Invalid response")]
     InvalidResponse,
@@ -42,6 +48,53 @@ pub enum FetchError {
     /// Error return by http crate
     #[error("Http error: {0}")]
     HttpError(#[from] http::Error),
+}
+
+pub struct ApiError<E> {
+    pub status: http::StatusCode,
+    pub response: web_sys::Response,
+    pub data: E,
+}
+
+pub enum ResponsedError<E> {
+    FetchError(FetchError),
+    ApiError(ApiError<E>),
+}
+
+impl<E> From<FetchError> for ResponsedError<E> {
+    fn from(fetch_error: FetchError) -> Self {
+        ResponsedError::FetchError(fetch_error)
+    }
+}
+
+trait BuildFrom<R> {
+    fn build(status: http::StatusCode, response: web_sys::Response, raw_data: R) -> Self;
+}
+
+impl<R, E> BuildFrom<R> for ResponsedError<E>
+where
+    R: 'static + RawData,
+    E: 'static + ParseFrom<R>,
+{
+    fn build(status: http::StatusCode, response: web_sys::Response, raw_data: R) -> Self {
+        match E::parse_from(raw_data) {
+            Ok(data) => ResponsedError::ApiError(ApiError {
+                status,
+                response,
+                data,
+            }),
+            Err(e) => ResponsedError::FetchError(e),
+        }
+    }
+}
+
+impl<R> BuildFrom<R> for FetchError
+where
+    R: 'static + RawData,
+{
+    fn build(status: http::StatusCode, response: web_sys::Response, raw_data: R) -> Self {
+        raw_data.to_fetch_error(status, response)
+    }
 }
 
 #[derive(Debug)]
@@ -432,9 +485,7 @@ pub trait RawData: Sized {
     fn get_raw_js(response: &web_sys::Response) -> Result<js_sys::Promise, FetchError>;
     fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError>;
 
-    fn to_string(self) -> String {
-        "[Error: not supported][This method is for an experiment only]".to_string()
-    }
+    fn to_fetch_error(self, status: http::StatusCode, response: web_sys::Response) -> FetchError;
 
     // Not supported yet, so implement as a generic function in next lines
     // async fn get_raw_data(response: web_sys::Response) -> Result<Self, FetchError> { }
@@ -450,45 +501,57 @@ async fn get_raw_data_from_response<R: RawData>(
         .and_then(R::map_js_to_raw_data)
 }
 
-async fn get_raw_data<R: RawData>(promise: js_sys::Promise) -> Result<R, FetchError> {
+async fn get_raw_data<R: RawData>(
+    promise: js_sys::Promise,
+) -> Result<(web_sys::Response, R), FetchError> {
     let response = get_response(promise).await?;
     let raw_data = get_raw_data_from_response::<R>(&response).await?;
-    let status = http::StatusCode::from_u16(response.status())?;
-    if !status.is_success() {
-        return Err(FetchError::ResponseWithError {
-            status,
-            response,
-            data: raw_data.to_string(),
-        });
-    }
-    Ok(raw_data)
+    Ok((response, raw_data))
 }
 
-struct FetchCmdArgs<C, R, T, Cl> {
+async fn get_result<R, T, E>(promise: js_sys::Promise) -> Result<T, E>
+where
+    R: RawData,
+    T: ParseFrom<R>,
+    E: BuildFrom<R> + From<FetchError>,
+{
+    let (response, raw_data) = get_raw_data::<R>(promise).await?;
+    let status = http::StatusCode::from_u16(response.status()).map_err(FetchError::from)?;
+    if !status.is_success() {
+        //return Err(raw_data.to_fetch_error(status, response));
+        return Err(E::build(status, response, raw_data));
+    }
+    Ok(T::parse_from(raw_data)?)
+}
+
+struct FetchCmdArgs<C, R, T, E, Cl> {
     phantom: std::marker::PhantomData<R>,
     ws_request: Result<web_sys::Request, FetchError>,
     ok_handler: fn(&mut C, T) -> Cl,
-    error_handler: fn(&mut C, FetchError),
+    error_handler: fn(&mut C, E),
 }
 
-impl<C, R, T, Cl> From<FetchCmdArgs<C, R, T, Cl>> for crate::Command<C>
+impl<C, R, T, E, Cl> From<FetchCmdArgs<C, R, T, E, Cl>> for crate::Command<C>
 where
     C: crate::component::Component,
     R: 'static + RawData,
     T: 'static + ParseFrom<R>,
+    E: 'static + BuildFrom<R> + From<FetchError>,
     Cl: 'static + Into<crate::component::Checklist<C>>,
 {
-    fn from(fca: FetchCmdArgs<C, R, T, Cl>) -> Self {
+    fn from(fca: FetchCmdArgs<C, R, T, E, Cl>) -> Self {
         crate::Command(Box::new(FetchCmd(Some(fca))))
     }
 }
 
-struct FetchCmd<C, R, T, Cl>(Option<FetchCmdArgs<C, R, T, Cl>>);
-impl<C, R, T, Cl> crate::component::Command<C> for FetchCmd<C, R, T, Cl>
+struct FetchCmd<C, R, T, E, Cl>(Option<FetchCmdArgs<C, R, T, E, Cl>>);
+
+impl<C, R, T, E, Cl> crate::component::Command<C> for FetchCmd<C, R, T, E, Cl>
 where
     C: 'static + crate::component::Component,
     R: 'static + RawData,
     T: 'static + ParseFrom<R>,
+    E: 'static + BuildFrom<R> + From<FetchError>,
     Cl: 'static + Into<crate::component::Checklist<C>>,
 {
     fn execute(&mut self, comp: &crate::component::Comp<C>, state: &mut C) {
@@ -504,7 +567,7 @@ where
         let promise = match ws_request {
             Ok(ws_request) => crate::utils::window().fetch_with_request(&ws_request),
             Err(e) => {
-                error_handler(state, e);
+                error_handler(state, From::from(e));
                 return;
             }
         };
@@ -512,7 +575,7 @@ where
         let error_handler = comp.callback_arg_mut(error_handler);
         let ok_handler = comp.callback_arg_mut(ok_handler);
         let f = async move {
-            match get_raw_data::<R>(promise).await.and_then(T::parse_from) {
+            match get_result::<R, T, E>(promise).await {
                 Ok(data) => ok_handler(data),
                 Err(e) => error_handler(e),
             }
@@ -539,8 +602,12 @@ impl RawData for String {
         js_value.as_string().ok_or(FetchError::NotAString)
     }
 
-    fn to_string(self) -> String {
-        self
+    fn to_fetch_error(self, status: http::StatusCode, response: web_sys::Response) -> FetchError {
+        FetchError::ResponsedStringWithError {
+            status,
+            response,
+            data: self,
+        }
     }
 }
 
@@ -553,6 +620,14 @@ impl RawData for Vec<u8> {
 
     fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
         Ok(js_sys::Uint8Array::new(&js_value).to_vec())
+    }
+
+    fn to_fetch_error(self, status: http::StatusCode, response: web_sys::Response) -> FetchError {
+        FetchError::ResponsedBytesWithError {
+            status,
+            response,
+            data: self,
+        }
     }
 }
 
@@ -578,6 +653,14 @@ macro_rules! impl_fetch {
 
             fn map_js_to_raw_data(js_value: wasm_bindgen::JsValue) -> Result<Self, FetchError> {
                 <$RawBaseType>::map_js_to_raw_data(js_value).map(Self)
+            }
+
+            fn to_fetch_error(
+                self,
+                status: http::StatusCode,
+                response: web_sys::Response,
+            ) -> FetchError {
+                self.0.to_fetch_error(status, response)
             }
         }
 
