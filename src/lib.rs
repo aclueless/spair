@@ -25,7 +25,7 @@ pub use dom::{
 pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater as Svg};
 // TODO selectively export event traits only?
 pub use events::*;
-pub use fetch::{FetchError, Request, ResponsedError, StatusCode};
+pub use fetch::{FetchError, HttpError, Request, ResponsedError, StatusCode};
 pub use routing::{Router, Routes};
 pub use utils::*;
 
