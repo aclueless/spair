@@ -608,24 +608,6 @@ macro_rules! impl_fetch {
         }
 
         impl $ResponseSetter {
-            // pub fn $method_name<C, T, Cl>(
-            //     self,
-            //     ok_handler: fn(&mut C, T) -> Cl,
-            //     error_handler: fn(&mut C, FetchError),
-            // ) -> crate::Command<C>
-            // where
-            //     C: crate::component::Component,
-            //     T: 'static + serde::de::DeserializeOwned,
-            //     Cl: 'static + Into<crate::component::Checklist<C>>,
-            // {
-            //     FetchCmdArgs {
-            //         phantom: std::marker::PhantomData as std::marker::PhantomData<$RawDataType>,
-            //         ws_request: self.0,
-            //         ok_handler,
-            //         error_handler,
-            //     }
-            //     .into()
-            // }
             pub fn $method_name<C, T, E, Cl>(
                 self,
                 ok_handler: fn(&mut C, T) -> Cl,
