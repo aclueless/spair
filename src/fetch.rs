@@ -1,5 +1,5 @@
 // Most of code in this module is based on Yew's fetch service
-pub use http::{Request, StatusCode as FetchStatus};
+pub use http::{Request, StatusCode};
 use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(thiserror::Error, Debug)]
@@ -53,7 +53,7 @@ pub enum FetchError {
 pub struct ApiError<E> {
     pub status: http::StatusCode,
     pub response: web_sys::Response,
-    pub data: E,
+    pub data: Result<E, FetchError>,
 }
 
 pub enum ResponsedError<E> {
@@ -67,7 +67,7 @@ impl<E> From<FetchError> for ResponsedError<E> {
     }
 }
 
-trait BuildFrom<R> {
+pub trait BuildFrom<R> {
     fn build(status: http::StatusCode, response: web_sys::Response, raw_data: R) -> Self;
 }
 
@@ -77,14 +77,11 @@ where
     E: 'static + ParseFrom<R>,
 {
     fn build(status: http::StatusCode, response: web_sys::Response, raw_data: R) -> Self {
-        match E::parse_from(raw_data) {
-            Ok(data) => ResponsedError::ApiError(ApiError {
-                status,
-                response,
-                data,
-            }),
-            Err(e) => ResponsedError::FetchError(e),
-        }
+        ResponsedError::ApiError(ApiError {
+            status,
+            response,
+            data: E::parse_from(raw_data),
+        })
     }
 }
 
@@ -582,7 +579,7 @@ impl ParseFrom<String> for String {
 #[allow(unused_macros)]
 macro_rules! impl_fetch {
     ($method_name:ident, $ResponseSetter:ident, $RawDataType:ident, $RawBaseType:ty, $deserializer:path, $DeserializeError:expr) => {
-        struct $RawDataType($RawBaseType);
+        pub struct $RawDataType($RawBaseType);
         impl RawData for $RawDataType {
             fn get_raw_js(response: &web_sys::Response) -> Result<js_sys::Promise, FetchError> {
                 <$RawBaseType>::get_raw_js(response)
@@ -611,14 +608,33 @@ macro_rules! impl_fetch {
         }
 
         impl $ResponseSetter {
-            pub fn $method_name<C, T, Cl>(
+            // pub fn $method_name<C, T, Cl>(
+            //     self,
+            //     ok_handler: fn(&mut C, T) -> Cl,
+            //     error_handler: fn(&mut C, FetchError),
+            // ) -> crate::Command<C>
+            // where
+            //     C: crate::component::Component,
+            //     T: 'static + serde::de::DeserializeOwned,
+            //     Cl: 'static + Into<crate::component::Checklist<C>>,
+            // {
+            //     FetchCmdArgs {
+            //         phantom: std::marker::PhantomData as std::marker::PhantomData<$RawDataType>,
+            //         ws_request: self.0,
+            //         ok_handler,
+            //         error_handler,
+            //     }
+            //     .into()
+            // }
+            pub fn $method_name<C, T, E, Cl>(
                 self,
                 ok_handler: fn(&mut C, T) -> Cl,
-                error_handler: fn(&mut C, FetchError),
+                error_handler: fn(&mut C, E),
             ) -> crate::Command<C>
             where
                 C: crate::component::Component,
                 T: 'static + serde::de::DeserializeOwned,
+                E: 'static + BuildFrom<$RawDataType> + From<FetchError>,
                 Cl: 'static + Into<crate::component::Checklist<C>>,
             {
                 FetchCmdArgs {
