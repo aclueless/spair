@@ -71,7 +71,7 @@ pub trait Component: 'static + Sized {
 
     // Better name?
     // This method will be ran once when the component is created.
-    fn initialize(_: &Comp<Self>) {}
+    fn init(_: &Comp<Self>) {}
 
     /// This method allow child-components that wants to receive update when the location
     /// changes to register its callback to the router. The root-component (the component that
@@ -231,7 +231,7 @@ impl<C: Component> RcComp<C> {
     pub(crate) fn first_render(&self) {
         let comp = self.comp();
 
-        C::initialize(&comp);
+        C::init(&comp);
 
         let promise = self::i_have_to_execute_update_queue();
 
@@ -559,7 +559,7 @@ impl<C: Component> ChildComp<C> {
     pub(crate) fn mount_to(&self, ws_element: &web_sys::Element) {
         let comp = self.comp();
 
-        C::initialize(&comp);
+        C::init(&comp);
 
         let promise = self::i_have_to_execute_update_queue();
 
@@ -608,7 +608,7 @@ impl<C: WithParentComp + Component> ChildComp<C> {
     pub fn init(parent: &Comp<C::Parent>, props: C::Properties) -> Self {
         let rc_comp = ChildComp::new(None);
         let comp = rc_comp.comp();
-        let state = C::init(parent, &comp, props);
+        let state = WithParentComp::init(parent, &comp, props);
         rc_comp.set_state(state);
         crate::routing::register_routing_callback(&comp);
         rc_comp

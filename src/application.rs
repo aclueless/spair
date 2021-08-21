@@ -33,7 +33,7 @@ pub trait Application: crate::component::Component {
         // In case that the root-component (A) have a child-component (C) that being construct by A
         // in A's Application::init(). Currently, C, will immediately register its callback to the
         // router, hence, the router must be already set before initing A's state.
-        let state = Self::init(&comp);
+        let state = Application::init(&comp);
         rc_comp.set_state(state);
 
         crate::routing::first_routing::<
