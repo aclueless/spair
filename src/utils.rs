@@ -1,8 +1,3 @@
-#[cfg(feature = "keyed-list")]
-mod peekable_double_ended_iterator;
-#[cfg(feature = "keyed-list")]
-pub(crate) use peekable_double_ended_iterator::*;
-
 use wasm_bindgen::UnwrapThrowExt;
 
 pub fn window() -> web_sys::Window {
@@ -11,6 +6,13 @@ pub fn window() -> web_sys::Window {
 
 pub fn document() -> web_sys::Document {
     window().document().expect_throw("Unable to get document")
+}
+
+pub fn local_storage() -> web_sys::Storage {
+    window()
+        .local_storage()
+        .expect_throw("Unable to access local storage")
+        .expect_throw("No local storage found")
 }
 
 pub fn alert(message: &str) {

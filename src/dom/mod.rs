@@ -1,5 +1,8 @@
 use wasm_bindgen::UnwrapThrowExt;
 
+#[cfg(feature = "keyed-list")]
+mod peekable_double_ended_iterator;
+
 pub mod attribute_types;
 #[macro_use]
 mod attributes;

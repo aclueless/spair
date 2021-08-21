@@ -1,4 +1,6 @@
-use crate::utils::PeekableDoubleEnded;
+use super::peekable_double_ended_iterator::PeekableDoubleEnded;
+use super::peekable_double_ended_iterator::PeekableDoubleEndedIterator;
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 pub trait Keyed<'a> {
@@ -139,12 +141,10 @@ where
 pub struct KeyedListContext<'a> {
     parent: &'a web_sys::Node,
     root_item_tag: &'a str,
-    old: crate::utils::PeekableDoubleEndedIterator<
+    old: PeekableDoubleEndedIterator<
         std::iter::Enumerate<std::slice::IterMut<'a, Option<(Key, super::Element)>>>,
     >,
-    new: crate::utils::PeekableDoubleEndedIterator<
-        std::slice::IterMut<'a, Option<(Key, super::Element)>>,
-    >,
+    new: PeekableDoubleEndedIterator<std::slice::IterMut<'a, Option<(Key, super::Element)>>>,
     old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
     new_item_count: usize,
     next_sibling: Option<web_sys::Element>,
@@ -262,7 +262,7 @@ where
 
     fn update_same_key_items_from_start<I, K>(
         &mut self,
-        items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
         I: Copy,
@@ -297,7 +297,7 @@ where
 
     fn update_same_key_items_from_end<I, K>(
         &mut self,
-        items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<
+        items_state_iter: &mut PeekableDoubleEndedIterator<
             impl Iterator<Item = I> + DoubleEndedIterator,
         >,
     ) -> usize
@@ -340,7 +340,7 @@ where
 
     fn update_moved_forward_item<I, K>(
         &mut self,
-        items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
         I: Copy,
@@ -382,7 +382,7 @@ where
 
     fn update_moved_backward_item<I, K>(
         &mut self,
-        items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<
+        items_state_iter: &mut PeekableDoubleEndedIterator<
             impl Iterator<Item = I> + DoubleEndedIterator,
         >,
     ) -> usize
@@ -424,7 +424,7 @@ where
 
     fn update_other_items_in_middle<I, K>(
         &mut self,
-        items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
         I: Copy,
         G: Fn(I) -> K,
@@ -538,7 +538,7 @@ where
 
     fn insert_remain_items<I, K>(
         &mut self,
-        items_state_iter: &mut crate::utils::PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
         I: Copy,
         G: Fn(I) -> K,
