@@ -25,10 +25,11 @@ pub use dom::{
 pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater as Svg};
 // TODO selectively export event traits only?
 pub use events::*;
-pub use fetch::{FetchError, HttpError, Request, ResponsedError, StatusCode};
+pub use fetch::{FetchError, ResponsedError};
 pub use routing::{Router, Routes};
 pub use utils::*;
 
+pub use http;
 pub use web_sys;
 
 pub use wasm_bindgen::JsValue;

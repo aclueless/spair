@@ -1,5 +1,4 @@
 // Most of code in this module is based on Yew's fetch service
-pub use http::{Error as HttpError, Request, StatusCode};
 use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(thiserror::Error, Debug)]
@@ -47,7 +46,7 @@ pub enum FetchError {
 
     /// Error return by http crate
     #[error("Http error: {0}")]
-    HttpError(#[from] HttpError),
+    HttpError(#[from] http::Error),
 }
 
 pub struct ApiError<E> {

@@ -51,13 +51,15 @@ impl State {
     fn start_fetching(&mut self) -> spair::Command<Self> {
         self.message = "Clicked! Please wait for a moment".to_string();
 
-        spair::Request::get("https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master")
-            .header("Accept", "application/vnd.github.v3+json")
-            .text_mode()
-            // .body().json(data) <== if you are `spair::Request::post`ing something
-            .response()
-            // Please note that you must enable `features = ["fetch-json"]`
-            .json(State::set_data, State::fetch_error)
+        spair::http::Request::get(
+            "https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master",
+        )
+        .header("Accept", "application/vnd.github.v3+json")
+        .text_mode()
+        // .body().json(data) <== if you are `spair::Request::post`ing something
+        .response()
+        // Please note that you must enable `features = ["fetch-json"]`
+        .json(State::set_data, State::fetch_error)
     }
 
     fn fetch_error(&mut self, e: spair::FetchError) {
