@@ -35,6 +35,18 @@ pub trait Router: std::any::Any {
 pub trait Routes {
     type Router: Router;
     fn url(&self) -> String;
+    fn update_address_bar(&self) {
+        crate::utils::window()
+            .history()
+            .expect_throw("Unable to get history")
+            .push_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&self.url()))
+            .expect_throw("Error on push_state_with_url");
+    }
+
+    fn execute_routing(&self) {
+        self.update_address_bar();
+        crate::update_component(self::execute_routing::<Self::Router>);
+    }
 }
 
 impl Router for () {
@@ -57,7 +69,7 @@ pub fn set_router<R: Router>(r: R) {
     });
 }
 
-pub fn first_routing<R: Router>() {
+pub fn execute_routing<R: Router>() {
     ROUTER.with(|router| {
         if let Ok(router) = router.try_borrow() {
             router.execute_routing::<R>();

@@ -36,7 +36,7 @@ pub trait Application: crate::component::Component {
         let state = Application::init(&comp);
         rc_comp.set_state(state);
 
-        crate::routing::first_routing::<
+        crate::routing::execute_routing::<
             <<Self as crate::Component>::Routes as crate::routing::Routes>::Router,
         >();
 
