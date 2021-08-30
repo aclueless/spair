@@ -395,20 +395,23 @@ pub struct TextResponseSetter(Result<web_sys::Request, FetchError>);
 pub struct BinaryResponseSetter(Result<web_sys::Request, FetchError>);
 
 impl TextResponseSetter {
-    pub fn text<C, Cl>(
-        self,
-        ok_handler: fn(&mut C, String) -> Cl,
-        error_handler: fn(&mut C, FetchError),
-    ) -> crate::Command<C>
+    pub fn text<C, E, Cl, Oh, Eh>(self, ok_callback: Oh, error_callback: Eh) -> crate::Command<C>
     where
         C: crate::component::Component,
+        E: 'static + BuildFrom<String> + From<FetchError>,
         Cl: 'static + Into<crate::component::Checklist<C>>,
+        Oh: 'static + FnOnce(&mut C, String) -> Cl,
+        Eh: 'static + FnOnce(&mut C, E),
     {
         FetchCmdArgs {
-            phantom: std::marker::PhantomData as std::marker::PhantomData<String>,
+            phantom_r: std::marker::PhantomData as std::marker::PhantomData<String>,
+            phantom_t: std::marker::PhantomData as std::marker::PhantomData<String>,
+            phantom_e: std::marker::PhantomData as std::marker::PhantomData<E>,
+            phantom_c: std::marker::PhantomData as std::marker::PhantomData<C>,
+            phantom_cl: std::marker::PhantomData as std::marker::PhantomData<Cl>,
             ws_request: self.0,
-            ok_handler,
-            error_handler,
+            ok_callback,
+            error_callback,
         }
         .into()
     }
@@ -457,42 +460,61 @@ where
     Ok(T::parse_from(raw_data)?)
 }
 
-struct FetchCmdArgs<C, R, T, E, Cl> {
+/*struct FetchCmdArgs<C, R, T, E, Cl> {
     phantom: std::marker::PhantomData<R>,
     ws_request: Result<web_sys::Request, FetchError>,
     ok_handler: fn(&mut C, T) -> Cl,
     error_handler: fn(&mut C, E),
+}*/
+
+struct FetchCmdArgs<C, R, T, E, Cl, Oh, Eh> {
+    phantom_r: std::marker::PhantomData<R>,
+    phantom_t: std::marker::PhantomData<T>,
+    phantom_e: std::marker::PhantomData<E>,
+    phantom_c: std::marker::PhantomData<C>,
+    phantom_cl: std::marker::PhantomData<Cl>,
+    ws_request: Result<web_sys::Request, FetchError>,
+    ok_callback: Oh,
+    error_callback: Eh,
 }
 
-impl<C, R, T, E, Cl> From<FetchCmdArgs<C, R, T, E, Cl>> for crate::Command<C>
+impl<C, R, T, E, Cl, Oh, Eh> From<FetchCmdArgs<C, R, T, E, Cl, Oh, Eh>> for crate::Command<C>
 where
     C: crate::component::Component,
     R: 'static + RawData,
     T: 'static + ParseFrom<R>,
     E: 'static + BuildFrom<R> + From<FetchError>,
     Cl: 'static + Into<crate::component::Checklist<C>>,
+    Oh: 'static + FnOnce(&mut C, T) -> Cl,
+    Eh: 'static + FnOnce(&mut C, E),
 {
-    fn from(fca: FetchCmdArgs<C, R, T, E, Cl>) -> Self {
+    fn from(fca: FetchCmdArgs<C, R, T, E, Cl, Oh, Eh>) -> Self {
         crate::Command(Box::new(FetchCmd(Some(fca))))
     }
 }
 
-struct FetchCmd<C, R, T, E, Cl>(Option<FetchCmdArgs<C, R, T, E, Cl>>);
+struct FetchCmd<C, R, T, E, Cl, Oh, Eh>(Option<FetchCmdArgs<C, R, T, E, Cl, Oh, Eh>>);
 
-impl<C, R, T, E, Cl> crate::component::Command<C> for FetchCmd<C, R, T, E, Cl>
+impl<C, R, T, E, Cl, Oh, Eh> crate::component::Command<C> for FetchCmd<C, R, T, E, Cl, Oh, Eh>
 where
     C: 'static + crate::component::Component,
     R: 'static + RawData,
     T: 'static + ParseFrom<R>,
     E: 'static + BuildFrom<R> + From<FetchError>,
     Cl: 'static + Into<crate::component::Checklist<C>>,
+    Oh: 'static + FnOnce(&mut C, T) -> Cl,
+    Eh: 'static + FnOnce(&mut C, E),
 {
     fn execute(&mut self, comp: &crate::component::Comp<C>, state: &mut C) {
         let FetchCmdArgs {
-            phantom: _,
+            phantom_r: _,
+            phantom_t: _,
+            phantom_e: _,
+            phantom_c: _,
+            phantom_cl: _,
             ws_request,
-            ok_handler,
-            error_handler,
+            ok_callback,
+            error_callback,
         } = self
             .0
             .take()
@@ -500,17 +522,17 @@ where
         let promise = match ws_request {
             Ok(ws_request) => crate::utils::window().fetch_with_request(&ws_request),
             Err(e) => {
-                error_handler(state, From::from(e));
+                error_callback(state, From::from(e));
                 return;
             }
         };
 
-        let error_handler = comp.callback_arg_mut(error_handler);
-        let ok_handler = comp.callback_arg_mut(ok_handler);
+        let error_callback = comp.callback_arg_once_mut(error_callback);
+        let ok_callback = comp.callback_arg_once_mut(ok_callback);
         let f = async move {
             match get_result::<R, T, E>(promise).await {
-                Ok(data) => ok_handler(data),
-                Err(e) => error_handler(e),
+                Ok(data) => ok_callback(data),
+                Err(e) => error_callback(e),
             }
         };
         wasm_bindgen_futures::spawn_local(f);
@@ -606,7 +628,7 @@ macro_rules! impl_fetch {
             }
         }
 
-        impl $ResponseSetter {
+        /*impl $ResponseSetter {
             pub fn $method_name<C, T, E, Cl>(
                 self,
                 ok_handler: fn(&mut C, T) -> Cl,
@@ -623,6 +645,33 @@ macro_rules! impl_fetch {
                     ws_request: self.0,
                     ok_handler,
                     error_handler,
+                }
+                .into()
+            }
+        }*/
+        impl $ResponseSetter {
+            pub fn $method_name<C, T, E, Cl, Oh, Eh>(
+                self,
+                ok_callback: Oh,
+                error_callback: Eh,
+            ) -> crate::Command<C>
+            where
+                C: crate::component::Component,
+                T: 'static + serde::de::DeserializeOwned,
+                E: 'static + BuildFrom<$RawDataType> + From<FetchError>,
+                Cl: 'static + Into<crate::component::Checklist<C>>,
+                Oh: 'static + FnOnce(&mut C, T) -> Cl,
+                Eh: 'static + FnOnce(&mut C, E),
+            {
+                FetchCmdArgs {
+                    phantom_r: std::marker::PhantomData as std::marker::PhantomData<$RawDataType>,
+                    phantom_t: std::marker::PhantomData as std::marker::PhantomData<T>,
+                    phantom_e: std::marker::PhantomData as std::marker::PhantomData<E>,
+                    phantom_c: std::marker::PhantomData as std::marker::PhantomData<C>,
+                    phantom_cl: std::marker::PhantomData as std::marker::PhantomData<Cl>,
+                    ws_request: self.0,
+                    ok_callback,
+                    error_callback,
                 }
                 .into()
             }
