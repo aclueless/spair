@@ -367,6 +367,37 @@ impl<C: Component> Comp<C> {
         self::execute_update_queue(promise);
     }
 
+    fn update_arg_once<T: 'static, Cl>(
+        &self,
+        arg: T,
+        fn_update: impl FnOnce(&mut C, T) -> Cl + 'static,
+    ) where
+        Cl: Into<Checklist<C>>,
+    {
+        let promise = self::i_have_to_execute_update_queue();
+        {
+            let this = self
+                .0
+                .upgrade()
+                .expect_throw("Expect the component instance alive when updating - update()");
+            let mut this = match this.try_borrow_mut() {
+                Ok(this) => this,
+                Err(_) => {
+                    let comp = self.clone();
+                    //let fn_update = Rc::clone(fn_update);
+                    self::update_component(move || comp.update_arg_once(arg, fn_update));
+                    return;
+                }
+            };
+
+            let state = this.state.as_mut().unwrap_throw();
+            C::reset(state);
+            let (should_render, commands) = fn_update(state, arg).into().into_parts();
+            this.extra_update(should_render, commands, self);
+        }
+        self::execute_update_queue(promise);
+    }
+
     fn update_arg<T: 'static, Cl>(&self, arg: T, fn_update: &Rc<impl Fn(&mut C, T) -> Cl + 'static>)
     where
         Cl: Into<Checklist<C>>,
@@ -423,6 +454,18 @@ impl<C: Component> Comp<C> {
         let comp = self.clone();
         //let fn_update = Rc::new(fn_update);
         move || comp.update_once(fn_update)
+    }
+
+    pub fn callback_arg_once_mut<T: 'static, Cl>(
+        &self,
+        fn_update: impl FnOnce(&mut C, T) -> Cl + 'static,
+    ) -> impl FnOnce(T)
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        let comp = self.clone();
+        //let fn_update = Rc::new(fn_update);
+        move |arg: T| comp.update_arg_once(arg, fn_update)
     }
 
     pub fn callback_arg_mut<T: 'static, Cl>(
