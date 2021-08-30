@@ -168,6 +168,10 @@ impl<'a, C: crate::component::Component> HtmlUpdater<'a, C> {
     ) {
         self.u.component(child)
     }
+
+    pub fn set_inner_html_raw(self, html: &str) {
+        self.u.ws_element().set_inner_html(html);
+    }
 }
 
 impl<'a, C: crate::component::Component> crate::dom::attributes::AttributeSetter
