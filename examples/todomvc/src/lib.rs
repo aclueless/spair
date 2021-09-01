@@ -219,7 +219,7 @@ impl spair::Render<App> for Main {
         let todo_count = state.data.items.len();
         let all_completed = state.data.items.iter().all(|item| item.completed);
         nodes.section(|s| {
-            s.class_if("hidden", todo_count == 0)
+            s.class_if(todo_count == 0, "hidden")
                 .static_attributes()
                 .class("main")
                 .input(move |i| {
@@ -266,7 +266,7 @@ impl spair::Render<App> for Footer {
             .count();
         let some_completed = state.data.items.iter().any(|item| item.completed);
         nodes.footer(|f| {
-            f.class_if("hidden", list_empty)
+            f.class_if(list_empty, "hidden")
                 .static_attributes()
                 .class("footer")
                 .span(|s| {
@@ -296,7 +296,7 @@ impl spair::Render<App> for Footer {
                         });
                 })
                 .button(|b| {
-                    b.class_if("hidden", !some_completed)
+                    b.class_if(!some_completed, "hidden")
                         .static_attributes()
                         .class("clear-completed")
                         .on_click(comp.handler_mut(App::clear_completed))
@@ -315,7 +315,7 @@ impl spair::Render<App> for FilterView {
     fn render(self, nodes: spair::Nodes<App>) {
         nodes.li(|l| {
             l.a(|a| {
-                a.class_if("selected", self.current_filter == self.view)
+                a.class_if(self.current_filter == self.view, "selected")
                     .static_attributes()
                     .href(&self.view)
                     .static_nodes()
@@ -352,8 +352,8 @@ impl spair::ListItemRender<App> for &TodoItem {
         let state = li.state();
         let id = self.id;
         let is_editing_me = state.editing_id == Some(self.id);
-        li.class_if("completed", self.completed)
-            .class_if("editing", is_editing_me)
+        li.class_if(self.completed, "completed")
+            .class_if(is_editing_me, "editing")
             .div(move |d| {
                 d.static_attributes()
                     .class("view")

@@ -247,7 +247,7 @@ pub trait AttributeSetter {
         }
     }
 
-    fn _class_if(&mut self, class_name: &str, class_on: bool) {
+    fn _class_if(&mut self, class_on: bool, class_name: &str) {
         if self.check_bool_attribute(class_on) {
             if class_on {
                 self.add_class(class_name);

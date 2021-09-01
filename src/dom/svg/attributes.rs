@@ -288,8 +288,8 @@ pub trait SvgAttributeSetter<C>: Sized + crate::dom::attributes::AttributeSetter
         self
     }
 
-    fn class_if(mut self, class_name: &str, class_on: bool) -> Self {
-        self._class_if(class_name, class_on);
+    fn class_if(mut self, class_on: bool, class_name: &str) -> Self {
+        self._class_if(class_on, class_name);
         self
     }
 
