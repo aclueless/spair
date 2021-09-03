@@ -331,6 +331,13 @@ impl<'a, C: crate::component::Component> StaticAttributes<'a, C> {
         self.0.render(value)
     }
 
+    pub fn render_fn(
+        self,
+        func: impl FnOnce(crate::dom::Nodes<C>),
+    ) -> crate::dom::NodesOwned<'a, C> {
+        self.0.render_fn(func)
+    }
+
     pub fn r#static(
         self,
         value: impl crate::dom::StaticRender<C>,
