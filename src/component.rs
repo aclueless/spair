@@ -505,6 +505,53 @@ impl<C: Component> Comp<C> {
         }
     }
 
+    pub fn async_callback_arg_mut<T, Cl, F>(
+        &self,
+        fn_update: impl Fn(&mut C, T) -> Cl + 'static,
+        future_creator: impl Fn() -> F + 'static,
+    ) -> impl Fn()
+    where
+        T: 'static,
+        Cl: Into<Checklist<C>>,
+        F: 'static + Future<Output = T>,
+    {
+        let comp = self.clone();
+        let fn_update = Rc::new(fn_update);
+        let future_creator = Rc::new(future_creator);
+
+        move || {
+            let comp = comp.clone();
+            let fn_update = fn_update.clone();
+            let future_creator = future_creator.clone();
+            let f = async move {
+                let arg = future_creator().await;
+                comp.update_arg(arg, &fn_update);
+            };
+            wasm_bindgen_futures::spawn_local(f);
+        }
+    }
+
+    pub fn async_callback_arg_once_mut<T, Cl, F>(
+        &self,
+        fn_update: impl Fn(&mut C, T) -> Cl + 'static,
+        future_creator: impl FnOnce() -> F + 'static,
+    ) -> impl FnOnce()
+    where
+        T: 'static,
+        Cl: Into<Checklist<C>>,
+        F: 'static + Future<Output = T>,
+    {
+        let comp = self.clone();
+
+        move || {
+            let f = async move {
+                let arg = future_creator().await;
+                comp.update_arg_once(arg, fn_update);
+            };
+            wasm_bindgen_futures::spawn_local(f);
+        }
+    }
+
     pub fn handler<T: 'static, Cl>(&self, fn_not_update: impl Fn(&C) -> Cl + 'static) -> impl Fn(T)
     where
         Cl: Into<Checklist<C>>,
