@@ -382,7 +382,7 @@ impl FetchArgs {
         let method = parts.method.as_str();
 
         // Do http::Request cover `self.options`?
-        let mut init: web_sys::RequestInit = self.options.unwrap_or_else(Default::default).into();
+        let mut init: web_sys::RequestInit = self.options.unwrap_or_default().into();
         init.method(method).body(body.as_ref()).headers(&header_map);
         web_sys::Request::new_with_str_and_init(&uri, &init)
             .map_err(|_| FetchError::BuildRequestFailed)
