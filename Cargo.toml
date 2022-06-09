@@ -23,6 +23,7 @@ svg = []
 members = [
     "examples/counter",
     "examples/fetch",
+    "examples/future",
     "examples/todomvc",
     "examples/components",
     "examples/svg_clock",

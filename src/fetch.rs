@@ -527,12 +527,12 @@ where
             }
         };
 
-        let error_callback = comp.callback_arg_once_mut(error_callback);
-        let ok_callback = comp.callback_arg_once_mut(ok_callback);
+        let error_callback = comp.callback_once_arg_mut(error_callback);
+        let ok_callback = comp.callback_once_arg_mut(ok_callback);
         let f = async move {
             match get_result::<R, T, E>(promise).await {
-                Ok(data) => ok_callback(data),
-                Err(e) => error_callback(e),
+                Ok(data) => ok_callback.call(data),
+                Err(e) => error_callback.call(e),
             }
         };
         wasm_bindgen_futures::spawn_local(f);
@@ -628,27 +628,6 @@ macro_rules! impl_fetch {
             }
         }
 
-        /*impl $ResponseSetter {
-            pub fn $method_name<C, T, E, Cl>(
-                self,
-                ok_handler: fn(&mut C, T) -> Cl,
-                error_handler: fn(&mut C, E),
-            ) -> crate::Command<C>
-            where
-                C: crate::component::Component,
-                T: 'static + serde::de::DeserializeOwned,
-                E: 'static + BuildFrom<$RawDataType> + From<FetchError>,
-                Cl: 'static + Into<crate::component::Checklist<C>>,
-            {
-                FetchCmdArgs {
-                    phantom: std::marker::PhantomData as std::marker::PhantomData<$RawDataType>,
-                    ws_request: self.0,
-                    ok_handler,
-                    error_handler,
-                }
-                .into()
-            }
-        }*/
         impl $ResponseSetter {
             pub fn $method_name<C, T, E, Cl, Oh, Eh>(
                 self,

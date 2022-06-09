@@ -1,14 +1,18 @@
 use spair::prelude::*;
 
 pub struct ChildState {
-    parent_comp: spair::Comp<super::State>,
+    callback: spair::Callback,
+    _callback_arg: spair::CallbackArg<i32>,
     value: i32,
 }
 
 impl ChildState {
     pub fn new(parent_comp: spair::Comp<super::State>) -> Self {
+        let callback = parent_comp.callback_mut(super::State::child_value_is_divisible_by_five);
+        let callback_arg = parent_comp.callback_arg_mut(super::State::child_value);
         Self {
-            parent_comp,
+            callback: Box::new(callback),
+            _callback_arg: Box::new(callback_arg),
             value: 42,
         }
     }
@@ -33,10 +37,9 @@ impl ChildState {
 
     fn update_related_component(&self) {
         if self.value % 5 == 0 {
-            spair::update_component(
-                self.parent_comp
-                    .callback_mut(super::State::child_value_is_divisible_by_five),
-            );
+            self.callback.call();
+            // or
+            // self._callback_arg.call(self.value);
         }
     }
 }

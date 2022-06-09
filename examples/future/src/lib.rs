@@ -3,6 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use spair::prelude::*;
+use spair::web_sys::*;
 
 /// A struct to hold some data from the github Branch API.
 ///
@@ -51,19 +52,34 @@ impl State {
     fn start_fetching(&mut self) -> spair::Command<Self> {
         self.message = "Clicked! Please wait for a moment".to_string();
 
-        spair::http::Request::get(
-            "https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master",
+        spair::Future::new(async {
+            let mut opts = RequestInit::new();
+            opts.method("GET");
+
+            let url = "https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master";
+            let request = Request::new_with_str_and_init(url, &opts)?;
+
+            request
+                .headers()
+                .set("Accept", "application/vnd.github.v3+json")?;
+            let window = spair::window();
+            let resp_value = spair::JsFuture::from(window.fetch_with_request(&request)).await?;
+            let resp: Response = resp_value.dyn_into().unwrap_throw();
+            let json = spair::JsFuture::from(resp.json()?).await?;
+            let branch_info: Branch = json.into_serde().unwrap_throw();
+
+            Ok(branch_info)
+        })
+        .callback(
+            |state: &mut Self, r: Result<Branch, spair::JsValue>| match r {
+                Ok(rok) => state.set_data(rok),
+                Err(rerr) => state.fetch_error(rerr),
+            },
         )
-        .header("Accept", "application/vnd.github.v3+json")
-        .text_mode()
-        // .body().json(data) <== if you are `spair::Request::post`ing something
-        .response()
-        // Please note that you must enable `features = ["fetch-json"]`
-        .json(State::set_data, State::fetch_error)
     }
 
-    fn fetch_error(&mut self, e: spair::FetchError) {
-        self.message = e.to_string();
+    fn fetch_error(&mut self, e: spair::JsValue) {
+        self.message = e.as_string().unwrap_or_else(|| format!("{:?}", e));
     }
 }
 
@@ -72,7 +88,7 @@ impl spair::Component for State {
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
-            .r#static("You are running `examples\\fetch`")
+            .r#static("You are running `examples\\future`")
             .line_break()
             .match_if(|mi| match self.branch.as_ref() {
                 Some(branch) => spair::set_arm!(mi)

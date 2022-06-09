@@ -1,6 +1,6 @@
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
-use std::future::Future;
+//use std::future::Future;
 use std::rc::{Rc, Weak};
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -142,7 +142,7 @@ pub struct Checklist<C: Component> {
     commands: Commands<C>,
 }
 
-struct Commands<C>(Vec<Box<dyn Command<C>>>);
+pub(crate) struct Commands<C>(Vec<Box<dyn Command<C>>>);
 
 impl<C: Component> Commands<C> {
     fn execute(&mut self, comp: &Comp<C>, state: &mut C) {
@@ -161,7 +161,7 @@ impl<C: Component> From<()> for Checklist<C> {
 }
 
 impl<C: Component> Checklist<C> {
-    fn into_parts(self) -> (ShouldRender, Commands<C>) {
+    pub(crate) fn into_parts(self) -> (ShouldRender, Commands<C>) {
         (self.should_render, self.commands)
     }
 
@@ -282,9 +282,9 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    fn not_update<Cl>(&self, fn_not_update: &Rc<impl Fn(&C) -> Cl + 'static>)
+    pub(crate) fn execute_callback<A, Cb>(&self, arg: A, callback: Cb)
     where
-        Cl: Into<Checklist<C>>,
+        Cb: crate::callback::ExecuteCallback<C, A>,
     {
         let promise = self::i_have_to_execute_update_queue();
         {
@@ -295,317 +295,166 @@ impl<C: Component> Comp<C> {
             let mut this = match this.try_borrow_mut() {
                 Ok(this) => this,
                 Err(_) => {
-                    let comp = self.clone();
-                    let fn_not_update = Rc::clone(fn_not_update);
-                    self::update_component(move || comp.not_update(&fn_not_update));
+                    callback.queue(arg);
                     return;
                 }
             };
 
             let state = this.state.as_mut().unwrap_throw();
             C::reset(state);
-            let (_should_render, commands) = fn_not_update(state).into().into_parts();
-            let should_render = ShouldRender::No; // Always skip fn render in a no update call
+            let (should_render, commands) = callback.execute(state, arg).into_parts();
             this.extra_update(should_render, commands, self);
         }
         self::execute_update_queue(promise);
     }
 
-    fn update<Cl>(&self, fn_update: &Rc<impl Fn(&mut C) -> Cl + 'static>)
+    pub fn callback_once_mut<Cl, F>(&self, f: F) -> crate::callback::CallbackFnOnce<C, Cl, F>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
+        F: 'static + FnOnce(&mut C) -> Cl,
     {
-        let promise = self::i_have_to_execute_update_queue();
-        {
-            let this = self
-                .0
-                .upgrade()
-                .expect_throw("Expect the component instance alive when updating - update()");
-            let mut this = match this.try_borrow_mut() {
-                Ok(this) => this,
-                Err(_) => {
-                    let comp = self.clone();
-                    let fn_update = Rc::clone(fn_update);
-                    self::update_component(move || comp.update(&fn_update));
-                    return;
-                }
-            };
-
-            let state = this.state.as_mut().unwrap_throw();
-            C::reset(state);
-            let (should_render, commands) = fn_update(state).into().into_parts();
-            this.extra_update(should_render, commands, self);
-        }
-        self::execute_update_queue(promise);
-    }
-
-    fn update_once<Cl>(&self, fn_update: impl FnOnce(&mut C) -> Cl + 'static)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let promise = self::i_have_to_execute_update_queue();
-        {
-            let this = self
-                .0
-                .upgrade()
-                .expect_throw("Expect the component instance alive when updating - update()");
-            let mut this = match this.try_borrow_mut() {
-                Ok(this) => this,
-                Err(_) => {
-                    let comp = self.clone();
-                    //let fn_update = Rc::clone(fn_update);
-                    self::update_component(move || comp.update_once(fn_update));
-                    return;
-                }
-            };
-
-            let state = this.state.as_mut().unwrap_throw();
-            C::reset(state);
-            let (should_render, commands) = fn_update(state).into().into_parts();
-            this.extra_update(should_render, commands, self);
-        }
-        self::execute_update_queue(promise);
-    }
-
-    fn update_arg_once<T: 'static, Cl>(
-        &self,
-        arg: T,
-        fn_update: impl FnOnce(&mut C, T) -> Cl + 'static,
-    ) where
-        Cl: Into<Checklist<C>>,
-    {
-        let promise = self::i_have_to_execute_update_queue();
-        {
-            let this = self
-                .0
-                .upgrade()
-                .expect_throw("Expect the component instance alive when updating - update()");
-            let mut this = match this.try_borrow_mut() {
-                Ok(this) => this,
-                Err(_) => {
-                    let comp = self.clone();
-                    //let fn_update = Rc::clone(fn_update);
-                    self::update_component(move || comp.update_arg_once(arg, fn_update));
-                    return;
-                }
-            };
-
-            let state = this.state.as_mut().unwrap_throw();
-            C::reset(state);
-            let (should_render, commands) = fn_update(state, arg).into().into_parts();
-            this.extra_update(should_render, commands, self);
-        }
-        self::execute_update_queue(promise);
-    }
-
-    fn update_arg<T: 'static, Cl>(&self, arg: T, fn_update: &Rc<impl Fn(&mut C, T) -> Cl + 'static>)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let promise = self::i_have_to_execute_update_queue();
-        {
-            let this = self
-                .0
-                .upgrade()
-                .expect_throw("Expect the component instance alive when updating - update_arg()");
-            let mut this = match this.try_borrow_mut() {
-                Ok(this) => this,
-                Err(_) => {
-                    let comp = self.clone();
-                    let fn_update = Rc::clone(fn_update);
-                    self::update_component(move || comp.update_arg(arg, &fn_update));
-                    return;
-                }
-            };
-
-            let state = this.state.as_mut().unwrap_throw();
-            C::reset(state);
-            let (should_render, commands) = fn_update(state, arg).into().into_parts();
-            this.extra_update(should_render, commands, self);
-        }
-        self::execute_update_queue(promise);
-    }
-
-    pub fn callback<Cl>(&self, fn_not_update: impl Fn(&C) -> Cl + 'static) -> impl Fn()
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        let fn_not_update = Rc::new(fn_not_update);
-        move || comp.not_update(&fn_not_update)
-    }
-
-    pub fn callback_mut<Cl>(&self, fn_update: impl Fn(&mut C) -> Cl + 'static) -> impl Fn()
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        move || comp.update(&fn_update)
-    }
-
-    pub fn callback_once_mut<Cl>(
-        &self,
-        fn_update: impl FnOnce(&mut C) -> Cl + 'static,
-    ) -> impl FnOnce()
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        //let fn_update = Rc::new(fn_update);
-        move || comp.update_once(fn_update)
-    }
-
-    pub fn callback_arg_once_mut<T: 'static, Cl>(
-        &self,
-        fn_update: impl FnOnce(&mut C, T) -> Cl + 'static,
-    ) -> impl FnOnce(T)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        //let fn_update = Rc::new(fn_update);
-        move |arg: T| comp.update_arg_once(arg, fn_update)
-    }
-
-    pub fn callback_arg_mut<T: 'static, Cl>(
-        &self,
-        fn_update: impl Fn(&mut C, T) -> Cl + 'static,
-    ) -> impl Fn(T)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        move |t: T| comp.update_arg(t, &fn_update)
-    }
-
-    pub fn async_callback_mut<Cl, F>(
-        &self,
-        fn_update: impl Fn(&mut C) -> Cl + 'static,
-        future_creator: impl Fn() -> F + 'static,
-    ) -> impl Fn()
-    where
-        Cl: Into<Checklist<C>>,
-        F: 'static + Future<Output = ()>,
-    {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        let future_creator = Rc::new(future_creator);
-
-        move || {
-            let comp = comp.clone();
-            let fn_update = fn_update.clone();
-            let future_creator = future_creator.clone();
-            let f = async move {
-                future_creator().await;
-                comp.update(&fn_update);
-            };
-            wasm_bindgen_futures::spawn_local(f);
+        crate::callback::CallbackFnOnce {
+            comp: self.clone(),
+            callback: f,
+            phantom: std::marker::PhantomData,
         }
     }
 
-    pub fn async_callback_arg_mut<T, Cl, F>(
+    pub fn callback_once_arg_mut<Cl, A, F>(
         &self,
-        fn_update: impl Fn(&mut C, T) -> Cl + 'static,
-        future_creator: impl Fn() -> F + 'static,
-    ) -> impl Fn()
+        f: F,
+    ) -> crate::callback::CallbackFnOnceArg<C, A, Cl, F>
     where
-        T: 'static,
-        Cl: Into<Checklist<C>>,
-        F: 'static + Future<Output = T>,
+        Cl: 'static + Into<Checklist<C>>,
+        F: 'static + FnOnce(&mut C, A) -> Cl,
     {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        let future_creator = Rc::new(future_creator);
-
-        move || {
-            let comp = comp.clone();
-            let fn_update = fn_update.clone();
-            let future_creator = future_creator.clone();
-            let f = async move {
-                let arg = future_creator().await;
-                comp.update_arg(arg, &fn_update);
-            };
-            wasm_bindgen_futures::spawn_local(f);
+        crate::callback::CallbackFnOnceArg {
+            comp: self.clone(),
+            callback: f,
+            _phantom: std::marker::PhantomData,
         }
     }
 
-    pub fn async_callback_arg_once_mut<T, Cl, F>(
-        &self,
-        fn_update: impl Fn(&mut C, T) -> Cl + 'static,
-        future_creator: impl FnOnce() -> F + 'static,
-    ) -> impl FnOnce()
+    fn cb<Cl: 'static>(&self, f: impl Fn(&C) -> Cl + 'static) -> crate::callback::CallbackFn<C, ()>
     where
-        T: 'static,
         Cl: Into<Checklist<C>>,
-        F: 'static + Future<Output = T>,
     {
-        let comp = self.clone();
-
-        move || {
-            let f = async move {
-                let arg = future_creator().await;
-                comp.update_arg_once(arg, fn_update);
-            };
-            wasm_bindgen_futures::spawn_local(f);
+        crate::callback::CallbackFn {
+            comp: self.clone(),
+            callback: Rc::new(crate::callback::Cb(f)),
         }
     }
 
-    pub fn handler<T: 'static, Cl>(&self, fn_not_update: impl Fn(&C) -> Cl + 'static) -> impl Fn(T)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        let comp = self.clone();
-        let fn_not_update = Rc::new(fn_not_update);
-        move |_: T| comp.not_update(&fn_not_update)
-    }
-
-    pub fn handler_mut<T: 'static, Cl>(
+    fn cb_mut<Cl: 'static>(
         &self,
-        fn_update: impl Fn(&mut C) -> Cl + 'static,
-    ) -> impl Fn(T)
+        f: impl Fn(&mut C) -> Cl + 'static,
+    ) -> crate::callback::CallbackFn<C, ()>
     where
         Cl: Into<Checklist<C>>,
     {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        move |_: T| comp.update(&fn_update)
-    }
-
-    pub fn handler_arg_mut<T: 'static, Cl>(
-        &self,
-        fn_update: impl Fn(&mut C, T) -> Cl + 'static,
-    ) -> impl Fn(T)
-    where
-        Cl: Into<Checklist<C>>,
-    {
-        self.callback_arg_mut(fn_update)
-    }
-
-    pub fn async_handler_mut<T: 'static, R: 'static, Cl, F>(
-        &self,
-        fn_update: impl Fn(&mut C, Result<R, wasm_bindgen::JsValue>) -> Cl + 'static,
-        future_creator: impl Fn() -> F + 'static,
-    ) -> impl Fn(T)
-    where
-        Cl: Into<Checklist<C>>,
-        F: 'static + Future<Output = Result<R, wasm_bindgen::JsValue>>,
-    {
-        let comp = self.clone();
-        let fn_update = Rc::new(fn_update);
-        let future_creator = Rc::new(future_creator);
-
-        move |_: T| {
-            let comp = comp.clone();
-            let fn_update = fn_update.clone();
-            let future_creator = future_creator.clone();
-            let f = async move {
-                let output = future_creator().await;
-                comp.update_arg(output, &fn_update);
-            };
-            wasm_bindgen_futures::spawn_local(f);
+        crate::callback::CallbackFn {
+            comp: self.clone(),
+            callback: Rc::new(crate::callback::CbMut(f)),
         }
+    }
+
+    fn cb_dropped_arg<Cl: 'static, A>(
+        &self,
+        f: impl Fn(&C) -> Cl + 'static,
+    ) -> crate::callback::CallbackFn<C, A>
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        crate::callback::CallbackFn {
+            comp: self.clone(),
+            callback: Rc::new(crate::callback::CbDroppedArg(f)),
+        }
+    }
+
+    fn cb_dropped_arg_mut<Cl: 'static, A>(
+        &self,
+        f: impl Fn(&mut C) -> Cl + 'static,
+    ) -> crate::callback::CallbackFn<C, A>
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        crate::callback::CallbackFn {
+            comp: self.clone(),
+            callback: Rc::new(crate::callback::CbDroppedArgMut(f)),
+        }
+    }
+
+    fn cb_arg_mut<Cl: 'static, A>(
+        &self,
+        f: impl Fn(&mut C, A) -> Cl + 'static,
+    ) -> crate::callback::CallbackFn<C, A>
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        crate::callback::CallbackFn {
+            comp: self.clone(),
+            callback: Rc::new(crate::callback::CbArgMut(f)),
+        }
+    }
+
+    pub fn callback<Cl: 'static>(
+        &self,
+        f: impl Fn(&C) -> Cl + 'static,
+    ) -> impl crate::callback::Callback
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        self.cb(f)
+    }
+
+    pub fn callback_mut<Cl: 'static>(
+        &self,
+        f: impl Fn(&mut C) -> Cl + 'static,
+    ) -> impl crate::callback::Callback
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        self.cb_mut(f)
+    }
+
+    pub fn callback_arg_mut<Cl: 'static, A: 'static>(
+        &self,
+        f: impl Fn(&mut C, A) -> Cl + 'static,
+    ) -> impl crate::callback::CallbackArg<A>
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        self.cb_arg_mut(f)
+    }
+
+    pub fn handler<Cl: 'static, A: 'static>(
+        &self,
+        f: impl Fn(&C) -> Cl + 'static,
+    ) -> impl crate::callback::CallbackArg<A>
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        self.cb_dropped_arg(f)
+    }
+
+    pub fn handler_mut<Cl: 'static, A: 'static>(
+        &self,
+        f: impl Fn(&mut C) -> Cl + 'static,
+    ) -> impl crate::callback::CallbackArg<A>
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        self.cb_dropped_arg_mut(f)
+    }
+
+    pub fn handler_arg_mut<Cl: 'static, A: 'static>(
+        &self,
+        f: impl Fn(&mut C, A) -> Cl + 'static,
+    ) -> impl crate::callback::CallbackArg<A>
+    where
+        Cl: Into<Checklist<C>>,
+    {
+        self.cb_arg_mut(f)
     }
 }
 

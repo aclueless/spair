@@ -1,5 +1,5 @@
 [package]
-name = "fetch"
+name = "future"
 version = "0.1.0"
 authors = ["aclueless <61309385+aclueless@users.noreply.github.com>"]
 edition = "2018"
@@ -10,6 +10,6 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wasm-bindgen = "0.2"
-spair = { path = "../../", features = ["fetch-json"] }
+wasm-bindgen = { version = "0.2.80", features = ["serde-serialize"]  }
+spair = { path = "../../" }
 serde = { version = "1.0", features = ["derive"] }

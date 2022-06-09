@@ -22,13 +22,16 @@ impl State {
         self.value_read_from_child = Some(self.child_comp.comp_instance().state().value());
     }
 
+    pub fn child_value(&mut self, value: i32) {
+        self.value_read_from_child = Some(value);
+    }
+
     fn send_value_to_child(&mut self) {
         let value = self.value;
-        spair::update_component(
-            self.child_comp
-                .comp()
-                .callback_mut(move |state| state.set_value(value)),
-        );
+        self.child_comp
+            .comp()
+            .callback_once_arg_mut(ChildState::set_value)
+            .call(value);
     }
 }
 

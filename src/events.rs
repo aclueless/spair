@@ -92,10 +92,10 @@ macro_rules! create_events {
 
                 impl<T> $EventName for T
                 where
-                    T: 'static + Fn($EventType),
+                    T: 'static + crate::callback::CallbackArg<$EventType>,
                 {
                     fn on(self, target: &web_sys::EventTarget) -> Box<dyn Listener> {
-                        let closure = move |event: web_sys::$EventType| self($EventType(event));
+                        let closure = move |event: web_sys::$EventType| self.call($EventType(event));
                         let closure = Closure::wrap(Box::new(closure) as Box<dyn Fn(web_sys::$EventType)>);
                         Box::new($EventListener::new($event_name, target, closure))
                     }

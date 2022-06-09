@@ -2,10 +2,12 @@
 wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
 mod application;
+mod callback;
 mod component;
 mod dom;
 mod events;
 mod fetch;
+mod future;
 mod macros;
 mod routing;
 mod utils;
@@ -26,6 +28,7 @@ pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, ResponsedError};
+pub use future::Future;
 pub use routing::{Router, Routes};
 pub use utils::*;
 
@@ -37,6 +40,7 @@ pub use wasm_bindgen_futures::JsFuture;
 
 pub mod prelude {
     pub use crate::application::Application;
+    pub use crate::callback::{Callback, CallbackArg, CallbackOnce, CallbackOnceArg};
     pub use crate::component::Component;
     pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
     #[cfg(feature = "svg")]
@@ -47,6 +51,10 @@ pub mod prelude {
     pub use wasm_bindgen::prelude::*;
     pub use wasm_bindgen::{JsCast, UnwrapThrowExt};
 }
+
+//pub type Callback = Box<dyn callback::Callback>;
+pub type Callback = Box<dyn callback::Callback>;
+pub type CallbackArg<A> = Box<dyn callback::CallbackArg<A>>;
 
 #[must_use = "This value must be returned to the framework. Otherwise, the command will be lost"]
 pub struct Command<C>(Box<dyn component::Command<C>>);

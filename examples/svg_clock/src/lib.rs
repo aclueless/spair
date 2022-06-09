@@ -9,10 +9,10 @@ struct Clock {
 
 impl Clock {
     fn start_clock(&mut self) {
-        self.clock_closure = Some(gloo_timers::callback::Interval::new(
-            1000,
-            self.comp.callback_mut(Self::update_clock),
-        ));
+        let cb = self.comp.callback_mut(Self::update_clock);
+        self.clock_closure = Some(gloo_timers::callback::Interval::new(1000, move || {
+            cb.call()
+        }));
     }
 
     fn update_clock(&mut self) {
