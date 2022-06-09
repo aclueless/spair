@@ -90,8 +90,21 @@ where
     C: Component,
     A: 'static,
 {
+    /// If you are sure that the callback will not cause cyclic-read
+    /// (when the callback may cause the parent component to read data from current child)
+    /// then you can use this method to activate the callback. Otherwise, using `queue` is
+    /// should be prefered.
     pub fn call(&self, a: A) {
         self.comp.execute_callback(a, self);
+    }
+
+    /// It is safer to queue the callback using this method rather than calling it directly
+    pub fn queue(&self, a: A) {
+        let clone = CallbackFn {
+            comp: self.comp.clone(),
+            callback: self.callback.clone(),
+        };
+        crate::component::update_component(move || clone.call(a));
     }
 }
 
@@ -106,11 +119,7 @@ where
     A: 'static,
 {
     fn queue(self, a: A) {
-        let clone = CallbackFn {
-            comp: self.comp.clone(),
-            callback: self.callback.clone(),
-        };
-        crate::component::update_component(move || clone.call(a));
+        self.queue(a);
     }
 
     fn execute(self, state: &mut C, a: A) -> Checklist<C> {
@@ -134,8 +143,17 @@ where
     F: 'static + FnOnce(&mut C) -> Cl,
     Cl: 'static + Into<Checklist<C>>,
 {
+    /// If you are sure that the callback will not cause cyclic-read
+    /// (when the callback may cause the parent component to read data from current child)
+    /// then you can use this method to activate the callback. Otherwise, using `queue` is
+    /// should be prefered.
     pub fn call(self) {
         self.comp.clone().execute_callback((), self);
+    }
+
+    /// It is safer to queue the callback using this method rather than calling it directly
+    pub fn queue(self) {
+        crate::component::update_component(move || self.call());
     }
 }
 
@@ -172,8 +190,17 @@ where
     F: 'static + FnOnce(&mut C, A) -> Cl,
     Cl: 'static + Into<Checklist<C>>,
 {
+    /// If you are sure that the callback will not cause cyclic-read
+    /// (when the callback may cause the parent component to read data from current child)
+    /// then you can use this method to activate the callback. Otherwise, using `queue` is
+    /// should be prefered.
     pub fn call(self, a: A) {
         self.comp.clone().execute_callback(a, self);
+    }
+
+    /// It is safer to queue the callback using this method rather than calling it directly
+    pub fn queue(self, a: A) {
+        crate::component::update_component(move || self.call(a));
     }
 }
 
@@ -194,9 +221,15 @@ where
 }
 
 pub trait Callback {
+    /// If you are sure that the callback will not cause cyclic-read
+    /// (when the callback may cause the parent component to read data from current child)
+    /// then you can use this method to activate the callback. Otherwise, using `queue` is
+    /// should be prefered.
     fn call(&self);
-}
 
+    /// It is safer to queue the callback using this method rather than calling it directly
+    fn queue(&self);
+}
 impl<C> Callback for CallbackFn<C, ()>
 where
     C: Component,
@@ -204,10 +237,14 @@ where
     fn call(&self) {
         self.call(());
     }
-}
 
+    fn queue(&self) {
+        self.queue(());
+    }
+}
 pub trait CallbackArg<A> {
     fn call(&self, a: A);
+    fn queue(&self, a: A);
 }
 
 impl<C, A> CallbackArg<A> for CallbackFn<C, A>
@@ -215,17 +252,40 @@ where
     C: Component,
     A: 'static,
 {
+    /// If you are sure that the callback will not cause cyclic-read
+    /// (when the callback may cause the parent component to read data from current child)
+    /// then you can use this method to activate the callback. Otherwise, using `queue` is
+    /// should be prefered.
     fn call(&self, a: A) {
         self.call(a);
+    }
+
+    /// It is safer to queue the callback using this method rather than calling it directly
+    fn queue(&self, a: A) {
+        self.queue(a);
     }
 }
 
 pub trait CallbackOnce {
+    /// If you are sure that the callback will not cause cyclic-read
+    /// (when the callback may cause the parent component to read data from current child)
+    /// then you can use this method to activate the callback. Otherwise, using `queue` is
+    /// should be prefered.
     fn call(self);
+
+    /// It is safer to queue the callback using this method rather than calling it directly
+    fn queue(self);
 }
 
 pub trait CallbackOnceArg<A> {
+    /// If you are sure that the callback will not cause cyclic-read
+    /// (when the callback may cause the parent component to read data from current child)
+    /// then you can use this method to activate the callback. Otherwise, using `queue` is
+    /// should be prefered.
     fn call(self, a: A);
+
+    /// It is safer to queue the callback using this method rather than calling it directly
+    fn queue(self, a: A);
 }
 
 impl<C, Cl, F> CallbackOnce for CallbackFnOnce<C, Cl, F>
@@ -236,6 +296,10 @@ where
 {
     fn call(self) {
         self.call();
+    }
+
+    fn queue(self) {
+        self.queue();
     }
 }
 
@@ -248,5 +312,9 @@ where
 {
     fn call(self, a: A) {
         self.call(a);
+    }
+
+    fn queue(self, a: A) {
+        self.queue(a);
     }
 }

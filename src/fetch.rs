@@ -531,8 +531,8 @@ where
         let ok_callback = comp.callback_once_arg_mut(ok_callback);
         let f = async move {
             match get_result::<R, T, E>(promise).await {
-                Ok(data) => ok_callback.call(data),
-                Err(e) => error_callback.call(e),
+                Ok(data) => ok_callback.queue(data),
+                Err(e) => error_callback.queue(e),
             }
         };
         wasm_bindgen_futures::spawn_local(f);

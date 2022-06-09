@@ -37,9 +37,9 @@ impl ChildState {
 
     fn update_related_component(&self) {
         if self.value % 5 == 0 {
-            self.callback.call();
+            self.callback.queue();
             // or
-            // self._callback_arg.call(self.value);
+            // self._callback_arg.queue(self.value);
         }
     }
 }
