@@ -7,12 +7,10 @@ pub struct ChildState {
 }
 
 impl ChildState {
-    pub fn new(parent_comp: spair::Comp<super::State>) -> Self {
-        let callback = parent_comp.callback_mut(super::State::child_value_is_divisible_by_five);
-        let callback_arg = parent_comp.callback_arg_mut(super::State::child_value);
+    pub fn new(callback: spair::Callback, _callback_arg: spair::CallbackArg<i32>) -> Self {
         Self {
-            callback: Box::new(callback),
-            _callback_arg: Box::new(callback_arg),
+            callback,
+            _callback_arg,
             value: 42,
         }
     }
@@ -61,5 +59,12 @@ impl spair::Component for ChildState {
             .r#static(super::Button("-", comp.handler_mut(ChildState::decrement)))
             .render(self.value)
             .r#static(super::Button("+", comp.handler_mut(ChildState::increment)));
+    }
+}
+
+impl spair::AsChildComp for ChildState {
+    type Properties = (spair::Callback, spair::CallbackArg<i32>);
+    fn init(_comp: &spair::Comp<Self>, props: Self::Properties) -> Self {
+        Self::new(props.0, props.1)
     }
 }

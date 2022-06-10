@@ -14,7 +14,7 @@ mod utils;
 
 pub use application::Application;
 pub use component::{
-    update_component, Checklist, ChildComp, Comp, Component, ShouldRender, WithParentComp,
+    update_component, AsChildComp, Checklist, ChildComp, Comp, Component, ShouldRender,
 };
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
@@ -40,7 +40,10 @@ pub use wasm_bindgen_futures::JsFuture;
 
 pub mod prelude {
     pub use crate::application::Application;
-    pub use crate::callback::{Callback, CallbackArg, CallbackOnce, CallbackOnceArg};
+    pub use crate::callback::{
+        Callback as TraitCallback, CallbackArg as TraitCallbackArg,
+        CallbackOnce as TraitCallbackOne, CallbackOnceArg as TraitCallbackOnceArg,
+    };
     pub use crate::component::Component;
     pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
     #[cfg(feature = "svg")]

@@ -82,11 +82,13 @@ impl spair::Application for State {
         Self {
             value: 42,
             value_read_from_child: None,
-            child_comp: ChildState::new(comp.clone()).into(),
+            child_comp: spair::ChildComp::with_props((
+                comp.callback_mut(State::child_value_is_divisible_by_five),
+                comp.callback_arg_mut(State::child_value),
+            )),
         }
     }
 }
-
 #[wasm_bindgen(start)]
 pub fn start_counter() {
     State::mount_to("root");

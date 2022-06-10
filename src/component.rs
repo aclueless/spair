@@ -69,7 +69,6 @@ impl UpdateQueue {
 pub trait Component: 'static + Sized {
     type Routes: crate::routing::Routes;
 
-    // Better name?
     // This method will be ran once when the component is created.
     fn init(_: &Comp<Self>) {}
 
@@ -199,7 +198,7 @@ impl<C: Component> Checklist<C> {
 }
 
 impl<C: Component> RcComp<C> {
-    pub(crate) fn new(root: Option<web_sys::Element>) -> Self {
+    pub(crate) fn with_root(root: Option<web_sys::Element>) -> Self {
         let (root_element, mount_status) = root
             .map(|root| {
                 let root = crate::dom::Element::from_ws_element(root);
@@ -397,34 +396,28 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    pub fn callback<Cl: 'static>(
-        &self,
-        f: impl Fn(&C) -> Cl + 'static,
-    ) -> impl crate::callback::Callback
+    pub fn callback<Cl: 'static>(&self, f: impl Fn(&C) -> Cl + 'static) -> crate::Callback
     where
         Cl: Into<Checklist<C>>,
     {
-        self.cb(f)
+        Box::new(self.cb(f))
     }
 
-    pub fn callback_mut<Cl: 'static>(
-        &self,
-        f: impl Fn(&mut C) -> Cl + 'static,
-    ) -> impl crate::callback::Callback
+    pub fn callback_mut<Cl: 'static>(&self, f: impl Fn(&mut C) -> Cl + 'static) -> crate::Callback
     where
         Cl: Into<Checklist<C>>,
     {
-        self.cb_mut(f)
+        Box::new(self.cb_mut(f))
     }
 
     pub fn callback_arg_mut<Cl: 'static, A: 'static>(
         &self,
         f: impl Fn(&mut C, A) -> Cl + 'static,
-    ) -> impl crate::callback::CallbackArg<A>
+    ) -> crate::CallbackArg<A>
     where
         Cl: Into<Checklist<C>>,
     {
-        self.cb_arg_mut(f)
+        Box::new(self.cb_arg_mut(f))
     }
 
     pub fn handler<Cl: 'static, A: 'static>(
@@ -531,27 +524,30 @@ impl<C: Component> ChildComp<C> {
 
 impl<C: Component> From<C> for ChildComp<C> {
     fn from(state: C) -> Self {
-        let rc_comp = ChildComp::new(None);
+        let rc_comp = ChildComp::with_root(None);
         rc_comp.set_state(state);
         rc_comp
     }
 }
 
-pub trait WithParentComp: Sized + Component {
-    type Parent: Component;
+pub trait AsChildComp: Sized + Component {
     type Properties;
-    fn init(parent: &Comp<Self::Parent>, comp: &Comp<Self>, props: Self::Properties) -> Self;
+    fn init(comp: &Comp<Self>, props: Self::Properties) -> Self;
 }
 
-impl<C: WithParentComp + Component> ChildComp<C> {
-    pub fn init(parent: &Comp<C::Parent>, props: C::Properties) -> Self {
-        let rc_comp = ChildComp::new(None);
+impl<C: AsChildComp + Component> ChildComp<C> {
+    pub fn with_props(props: C::Properties) -> Self {
+        let rc_comp = ChildComp::with_root(None);
         let comp = rc_comp.comp();
-        let state = WithParentComp::init(parent, &comp, props);
+        let state = AsChildComp::init(&comp, props);
         rc_comp.set_state(state);
         crate::routing::register_routing_callback(&comp);
         rc_comp
     }
+
+    // pub fn init<P: Component>() -> NewChildComp<P, C> {
+    //     NewChildComp(std::marker::PhantomData)
+    // }
 }
 
 // A new struct and impl Drop on it, instead of impl Drop on Comp,
@@ -582,3 +578,19 @@ impl<C: Component> Drop for ChildComp<C> {
             .set_text_content(None);
     }
 }
+
+// pub struct NewChildComp<P, C>(std::marker::PhantomData<fn(P) -> C>);
+
+/*
+            .div(|d| {
+                d.component(
+                    spair::ChildComp::init::<Self>()
+                        .set_props(|state, comp| {})
+                        .set_updaters(|updaters| {
+                            updaters
+                                .add(State::get_value, ChildState::set_value)
+                                .add(|_| (), ChildState.tick);
+                        }),
+                )
+            })
+*/

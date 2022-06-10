@@ -752,7 +752,7 @@ mod keyed_list_with_render_tests {
     impl PhantomApp {
         fn new() -> Self {
             let root = crate::dom::Element::new_ns(None, "div");
-            let _rc = crate::component::RcComp::new(Some(root.ws_element().clone()));
+            let _rc = crate::component::RcComp::with_root(Some(root.ws_element().clone()));
             _rc.set_state(Unit);
 
             let comp = _rc.comp();

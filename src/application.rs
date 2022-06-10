@@ -12,7 +12,7 @@ pub trait Application: crate::component::Component {
 
     fn mount_to_element(root: web_sys::Element) {
         root.set_text_content(None);
-        let rc_comp = crate::component::RcComp::new(Some(root));
+        let rc_comp = crate::component::RcComp::with_root(Some(root));
         let comp = rc_comp.comp();
 
         // Must set the router before initing the state.
