@@ -531,7 +531,7 @@ where
         let ok_callback = comp.callback_once_arg_mut(ok_callback);
         let f = async move {
             match get_result::<R, T, E>(promise).await {
-                Ok(data) => ok_callback.call(data),
+                Ok(data) => ok_callback.call(data), // .queue(data) does not work in future, there is no way to execute the update queue now.
                 Err(e) => error_callback.call(e),
             }
         };

@@ -58,7 +58,7 @@ where
         let callback = comp.callback_once_arg_mut(callback);
         let f = async move {
             let rs = future.await;
-            callback.queue(rs);
+            callback.call(rs); // .queue(rs) does not work in future, there is no way to execute the update queue now.
         };
         wasm_bindgen_futures::spawn_local(f);
     }
