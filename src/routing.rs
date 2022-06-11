@@ -45,7 +45,7 @@ pub trait Routes {
 
     fn execute_routing(&self) {
         self.update_address_bar();
-        crate::update_component(self::execute_routing::<Self::Router>);
+        crate::component::update_component(self::execute_routing::<Self::Router>);
     }
 }
 

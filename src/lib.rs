@@ -13,9 +13,7 @@ mod routing;
 mod utils;
 
 pub use application::Application;
-pub use component::{
-    update_component, AsChildComp, Checklist, ChildComp, Comp, Component, ShouldRender,
-};
+pub use component::{AsChildComp, Checklist, ChildComp, Comp, Component, ShouldRender};
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;
