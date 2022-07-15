@@ -155,8 +155,10 @@ pub struct KeyedListContext<'a> {
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub enum Key {
     String(String),
-    Signed(i64),
-    Unsigned(u64),
+    I64(i64),
+    U64(u64),
+    I32(i32),
+    U32(u32),
 }
 
 impl From<&str> for Key {
@@ -167,13 +169,25 @@ impl From<&str> for Key {
 
 impl From<i64> for Key {
     fn from(value: i64) -> Self {
-        Key::Signed(value)
+        Key::I64(value)
     }
 }
 
 impl From<u64> for Key {
     fn from(value: u64) -> Self {
-        Key::Unsigned(value)
+        Key::U64(value)
+    }
+}
+
+impl From<i32> for Key {
+    fn from(value: i32) -> Self {
+        Key::I32(value)
+    }
+}
+
+impl From<u32> for Key {
+    fn from(value: u32) -> Self {
+        Key::U32(value)
     }
 }
 
@@ -189,7 +203,7 @@ impl PartialEq<Key> for &str {
 impl PartialEq<Key> for i64 {
     fn eq(&self, other: &Key) -> bool {
         match other {
-            Key::Signed(value) => value == self,
+            Key::I64(value) => value == self,
             _ => false,
         }
     }
@@ -198,7 +212,25 @@ impl PartialEq<Key> for i64 {
 impl PartialEq<Key> for u64 {
     fn eq(&self, other: &Key) -> bool {
         match other {
-            Key::Unsigned(value) => value == self,
+            Key::U64(value) => value == self,
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<Key> for i32 {
+    fn eq(&self, other: &Key) -> bool {
+        match other {
+            Key::I32(value) => value == self,
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<Key> for u32 {
+    fn eq(&self, other: &Key) -> bool {
+        match other {
+            Key::U32(value) => value == self,
             _ => false,
         }
     }
