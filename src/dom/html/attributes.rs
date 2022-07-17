@@ -67,6 +67,8 @@ where
     }
 
     create_methods_for_attributes! {
+        i32     tab_index "tabindex"
+
         str     abbr
         str     accept
         str     accept_charset "accept-charset"
