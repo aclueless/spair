@@ -13,6 +13,8 @@ mod routing;
 mod utils;
 
 pub use application::Application;
+#[cfg(feature = "queue-render")]
+pub use component::queue_render::Value;
 pub use component::{AsChildComp, Checklist, ChildComp, Comp, Component, ShouldRender};
 pub use dom::attribute_types::*;
 #[cfg(feature = "keyed-list")]

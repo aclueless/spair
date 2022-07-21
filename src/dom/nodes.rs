@@ -1,3 +1,5 @@
+#[cfg(feature = "queue-render")]
+use super::queue_render::QueueRendering;
 use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(Default, Clone)]
@@ -217,6 +219,8 @@ pub enum Node {
     #[cfg(feature = "keyed-list")]
     KeyedList(super::KeyedList),
     ComponentHandle(AnyComponentHandle),
+    #[cfg(feature = "queue-render")]
+    QueueRendering(QueueRendering),
 }
 
 impl Node {
@@ -232,6 +236,8 @@ impl Node {
                 parent.set_text_content(None);
                 // And the NodeList drop the ComponentHandle in its.clear()
             }
+            #[cfg(feature = "queue-render")]
+            Self::QueueRendering(qr) => qr.remove_from(parent),
         }
     }
 
@@ -246,6 +252,8 @@ impl Node {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");
             }
+            #[cfg(feature = "queue-render")]
+            Self::QueueRendering(qr) => qr.append_to(parent),
         }
     }
 
@@ -257,6 +265,8 @@ impl Node {
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.get_first_element(),
             Self::ComponentHandle(_) => None,
+            #[cfg(feature = "queue-render")]
+            Self::QueueRendering(qr) => qr.get_first_element(),
         }
     }
 
@@ -268,6 +278,8 @@ impl Node {
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.get_last_element(),
             Self::ComponentHandle(_) => None,
+            #[cfg(feature = "queue-render")]
+            Self::QueueRendering(qr) => qr.get_last_element(),
         }
     }
 }
@@ -375,11 +387,11 @@ pub struct NodeListUpdater<'a, C: crate::component::Component> {
     comp: &'a crate::component::Comp<C>,
     state: &'a C,
 
-    index: usize,
+    pub index: usize,
     parent_status: super::ElementStatus,
-    parent: &'a web_sys::Node,
-    next_sibling: Option<&'a web_sys::Node>,
-    nodes: &'a mut NodeList,
+    pub parent: &'a web_sys::Node,
+    pub next_sibling: Option<&'a web_sys::Node>,
+    pub nodes: &'a mut NodeList,
 }
 
 impl<'a, C: crate::component::Component> From<super::ElementUpdater<'a, C>>

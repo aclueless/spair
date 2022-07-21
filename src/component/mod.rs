@@ -4,6 +4,9 @@ use std::collections::VecDeque;
 use std::rc::{Rc, Weak};
 use wasm_bindgen::UnwrapThrowExt;
 
+#[cfg(feature = "queue-render")]
+pub mod queue_render;
+
 struct UpdateQueue {
     // A hack to avoid circular borrowing and mutable borrowing between
     // child and parent component. The first component that run when
@@ -299,7 +302,7 @@ impl<C: Component> Comp<C> {
                 }
             };
 
-            let state = this.state.as_mut().unwrap_throw();
+            let state = this.state.as_mut().expect_throw("Mutable reference to state for updating");
             C::reset(state);
             let (should_render, commands) = callback.execute(state, arg).into_parts();
             this.extra_update(should_render, commands, self);
@@ -453,7 +456,7 @@ impl<C: Component> Comp<C> {
 
 impl<C: Component> CompInstance<C> {
     pub(crate) fn render(&mut self, comp: &Comp<C>) {
-        let state = self.state.as_ref().unwrap_throw();
+        let state = self.state.as_ref().expect_throw("A immutable reference for rendering component");
         let status = if self.root_element.is_empty() {
             crate::dom::ElementStatus::JustCreated
         } else {
@@ -472,11 +475,13 @@ impl<C: Component> CompInstance<C> {
         if let ShouldRender::Yes = should_render {
             self.render(comp);
         }
-        commands.execute(comp, self.state.as_mut().unwrap_throw());
+        #[cfg(feature = "queue-render")]
+        queue_render::execute_render_queue();
+        commands.execute(comp, self.state.as_mut().expect_throw("A mutable reference for executing commands"));
     }
 
     pub fn state(&self) -> &C {
-        self.state.as_ref().unwrap_throw()
+        self.state.as_ref().expect_throw("Immutably borrow the state from CompInstance::state()")
     }
 
     pub(crate) fn is_mounted(&self) -> bool {

@@ -18,15 +18,11 @@ partial-non-keyed-list = []
 fetch-json = [ "serde_json" ]
 fetch-ron = [ "ron" ]
 svg = []
+queue-render = []
 
 [workspace]
 members = [
-    "examples/counter",
-    "examples/fetch",
-    "examples/future",
-    "examples/todomvc",
-    "examples/components",
-    "examples/svg_clock",
+    "examples/*",
 ]
 
 [dev-dependencies]

@@ -14,6 +14,7 @@ cargo clippy -- -D warnings
 # wasm-pack test --headless --chrome -- --features="fetch-ron" # just build, no actual tests yet
 # wasm-pack test --headless --chrome -- --features="svg" # just build, no actual tests yet
 # wasm-pack test --headless --chrome -- --features="svg partial-non-keyed-list" # just build, no actual tests yet
+# wasm-pack test --headless --chrome -- --features="svg render-queue" # just build, no actual tests yet
 
 wasm-pack test --headless --firefox -- --features="keyed-list"
 wasm-pack test --headless --firefox -- --features="partial-non-keyed-list" # just build, no actual tests yet
@@ -21,6 +22,7 @@ wasm-pack test --headless --firefox -- --features="fetch-json" # just build, no 
 wasm-pack test --headless --firefox -- --features="fetch-ron" # just build, no actual tests yet
 wasm-pack test --headless --firefox -- --features="svg" # just build, no actual tests yet
 wasm-pack test --headless --firefox -- --features="svg partial-non-keyed-list" # just build, no actual tests yet
+wasm-pack test --headless --firefox -- --features="svg render-queue" # just build, no actual tests yet
 
 for x in ./examples/*; do
     if [ -f $x/Cargo.toml ]; then

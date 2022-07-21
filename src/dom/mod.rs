@@ -18,6 +18,9 @@ mod non_keyed_list;
 #[cfg(feature = "svg")]
 mod svg;
 
+#[cfg(feature = "queue-render")]
+pub mod queue_render;
+
 use attribute_types::AsStr;
 
 // All items are `pub use` here but `dom` is private, the `lib.rs` must selectively export items

@@ -94,7 +94,7 @@ pub trait DomBuilder<C: crate::component::Component>: Sized {
 }
 
 pub struct HtmlNodeListUpdater<'a, C: crate::component::Component> {
-    u: crate::dom::nodes::NodeListUpdater<'a, C>,
+    pub(crate) u: crate::dom::nodes::NodeListUpdater<'a, C>,
     // Just keep this value until the completion of the build of the whole node list
     // After done building the node list, this value will be dropped. The Drop::drop method
     // will execute setting value for the <select> element
@@ -130,7 +130,9 @@ pub struct NodesOwned<'a, C: crate::component::Component>(HtmlNodeListUpdater<'a
 pub struct StaticNodes<'n, 'h: 'n, C: crate::component::Component>(
     &'n mut HtmlNodeListUpdater<'h, C>,
 );
-pub struct Nodes<'n, 'h: 'n, C: crate::component::Component>(&'n mut HtmlNodeListUpdater<'h, C>);
+pub struct Nodes<'n, 'h: 'n, C: crate::component::Component>(
+    pub(crate) &'n mut HtmlNodeListUpdater<'h, C>,
+);
 
 impl<'a, C: crate::component::Component> From<super::HtmlUpdater<'a, C>>
     for StaticNodesOwned<'a, C>

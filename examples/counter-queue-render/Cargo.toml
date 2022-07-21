@@ -1,0 +1,14 @@
+[package]
+name = "counter-queue-render"
+version = "0.1.0"
+authors = ["aclueless <61309385+aclueless@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+spair = { path = "../../", features = ["queue-render"] }
