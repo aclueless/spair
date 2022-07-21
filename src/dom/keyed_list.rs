@@ -124,13 +124,13 @@ where
     ) where
         for<'u> R: Fn(I, crate::dom::ElementUpdater<'u, C>),
     {
-        let mut old_item = old_item.unwrap_throw().1.take();
-        fn_insert(&old_item.as_ref().unwrap_throw().1, next_sibling);
+        let mut old_item = old_item.expect_throw("old keyed list's item").1.take();
+        fn_insert(&old_item.as_ref().expect_throw("old keyed list's item for fn_insert").1, next_sibling);
 
         let u = super::ElementUpdater::new(
             self.comp,
             self.state,
-            &mut old_item.as_mut().unwrap_throw().1,
+            &mut old_item.as_mut().expect_throw("old keyed list's item for ElementUpdater").1,
             super::ElementStatus::Existing,
         );
         (self.render)(item_state, u);
@@ -271,12 +271,12 @@ where
             let u = super::ElementUpdater::new(
                 self.state_and_fns.comp,
                 self.state_and_fns.state,
-                self.list_context.template.as_mut().unwrap(),
+                self.list_context.template.as_mut().expect_throw("list_context.template"),
                 super::ElementStatus::JustCreated,
             );
 
             // Render the template with the first item's state
-            (self.state_and_fns.render)(*items_state_iter.peek().unwrap_throw(), u);
+            (self.state_and_fns.render)(*items_state_iter.peek().expect_throw("items_state_iter.peek() for rendering"), u);
         }
         loop {
             let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
@@ -318,7 +318,7 @@ where
             }
             count += 1;
             self.state_and_fns.update_existing_item(
-                items_state_iter.next().unwrap_throw(),
+                items_state_iter.next().expect_throw("items_state_iter.next() for update_existing_item"),
                 self.list_context.old.next(),
                 self.list_context.new.next(),
                 None,
