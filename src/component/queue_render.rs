@@ -4,6 +4,15 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct Value<T>(Rc<RefCell<ValueContent<T>>>);
+pub struct MapValue<C, T, U, F>
+where
+    F: Fn(&C, &T) -> U,
+{
+    value: Value<T>,
+    map: F,
+    phantom: std::marker::PhantomData<dyn Fn(C, T) -> U>,
+}
+
 struct ValueContent<T> {
     value: T,
     renders: Vec<Box<dyn QueueRendering<T>>>,
@@ -20,7 +29,10 @@ impl<T> From<T> for Value<T> {
 
 impl<T: 'static + PartialEq + Copy> Value<T> {
     pub fn get(&self) -> T {
-        self.0.try_borrow().expect_throw("Borrow for getting T").value
+        self.0
+            .try_borrow()
+            .expect_throw("Borrow for getting T")
+            .value
     }
 }
 impl<T: 'static + PartialEq> Value<T> {
@@ -79,6 +91,17 @@ impl<T: 'static + PartialEq> Value<T> {
             Err(e) => log::error!("{}", e),
         }
     }
+
+    pub fn map<C, U, F>(&self, map: F) -> MapValue<C, T, U, F>
+    where
+        F: Fn(&C, &T) -> U,
+    {
+        MapValue {
+            value: self.clone(),
+            map,
+            phantom: std::marker::PhantomData,
+        }
+    }
 }
 
 pub trait QueueRendering<T> {
@@ -91,11 +114,34 @@ where
     T: ToString,
 {
     fn render(self, nodes: crate::Nodes<C>) {
-        if let Some(tn) = nodes.create_queue_rendering_text() {
+        if let Some(text_node) = nodes.create_queue_rendering_text() {
             match self.0.try_borrow_mut() {
                 Ok(mut this) => {
-                    tn.update_text(&this.value.to_string());
-                    this.renders.push(Box::new(tn));
+                    text_node.update_text(&this.value.to_string());
+                    this.renders.push(Box::new(text_node));
+                }
+                Err(e) => log::error!("{}", e),
+            }
+        }
+    }
+}
+
+impl<C, T, U, F> crate::Render<C> for MapValue<C, T, U, F>
+where
+    C: super::Component,
+    T: 'static + ToString,
+    U: 'static + ToString,
+    F: 'static + Fn(&C, &T) -> U,
+{
+    fn render(self, nodes: crate::Nodes<C>) {
+        let state = nodes.state();
+        if let Some(text_node) = nodes.create_queue_rendering_text() {
+            let map_node = crate::dom::queue_render::MapTextNode::new(text_node, self.map);
+            match self.value.0.try_borrow_mut() {
+                Ok(mut this) => {
+                    let u = map_node.map_with_state(state, &this.value);
+                    map_node.update_text(&u.to_string());
+                    this.renders.push(Box::new(map_node));
                 }
                 Err(e) => log::error!("{}", e),
             }

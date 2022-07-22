@@ -72,6 +72,10 @@ impl UpdateQueue {
 pub trait Component: 'static + Sized {
     type Routes: crate::routing::Routes;
 
+    fn test_state() -> Option<Self> {
+        None
+    }
+
     // This method will be ran once when the component is created.
     fn init(_: &Comp<Self>) {}
 
@@ -276,6 +280,14 @@ impl<C: Component> Comp<C> {
         self
     }
 
+    #[cfg(feature = "queue-render")]
+    pub(crate) fn upgrade(&self) -> Rc<RefCell<CompInstance<C>>> {
+        // Why wrapping this around an RcComp cause a bug the clear the root element empty?
+        self.0
+            .upgrade()
+            .expect_throw("Comp::upgrade: why the component dropped?")
+    }
+
     fn set_mount_status_to_unmounted(&self) {
         if let Some(instance) = self.0.upgrade() {
             if let Ok(mut instance) = instance.try_borrow_mut() {
@@ -302,12 +314,17 @@ impl<C: Component> Comp<C> {
                 }
             };
 
-            let state = this.state.as_mut().expect_throw("Mutable reference to state for updating");
+            let state = this
+                .state
+                .as_mut()
+                .expect_throw("Mutable reference to state for updating");
             C::reset(state);
             let (should_render, commands) = callback.execute(state, arg).into_parts();
             this.extra_update(should_render, commands, self);
         }
         self::execute_update_queue(promise);
+        #[cfg(feature = "queue-render")]
+        queue_render::execute_render_queue();
     }
 
     pub fn callback_once_mut<Cl, F>(&self, f: F) -> crate::callback::CallbackFnOnce<C, Cl, F>
@@ -456,7 +473,10 @@ impl<C: Component> Comp<C> {
 
 impl<C: Component> CompInstance<C> {
     pub(crate) fn render(&mut self, comp: &Comp<C>) {
-        let state = self.state.as_ref().expect_throw("A immutable reference for rendering component");
+        let state = self
+            .state
+            .as_ref()
+            .expect_throw("A immutable reference for rendering component");
         let status = if self.root_element.is_empty() {
             crate::dom::ElementStatus::JustCreated
         } else {
@@ -475,13 +495,18 @@ impl<C: Component> CompInstance<C> {
         if let ShouldRender::Yes = should_render {
             self.render(comp);
         }
-        #[cfg(feature = "queue-render")]
-        queue_render::execute_render_queue();
-        commands.execute(comp, self.state.as_mut().expect_throw("A mutable reference for executing commands"));
+        commands.execute(
+            comp,
+            self.state
+                .as_mut()
+                .expect_throw("A mutable reference for executing commands"),
+        );
     }
 
     pub fn state(&self) -> &C {
-        self.state.as_ref().expect_throw("Immutably borrow the state from CompInstance::state()")
+        self.state
+            .as_ref()
+            .expect_throw("Immutably borrow the state from CompInstance::state()")
     }
 
     pub(crate) fn is_mounted(&self) -> bool {

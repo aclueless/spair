@@ -70,7 +70,6 @@ impl<C: Component> Clone for TextNode<C> {
 }
 
 pub struct TextNodeInner<C: Component> {
-    #[allow(dead_code)]
     comp: crate::Comp<C>,
     dropped: Cell<bool>,
     ws_node: web_sys::Node,
@@ -170,5 +169,60 @@ impl<'a, C: crate::component::Component> super::nodes::NodeListUpdater<'a, C> {
 impl<'n, 'h, C: crate::component::Component> super::Nodes<'n, 'h, C> {
     pub fn create_queue_rendering_text(self) -> Option<TextNode<C>> {
         self.0.u.create_queue_rendering_text()
+    }
+}
+
+pub struct MapTextNode<C, T, U, F>
+where
+    C: Component,
+    F: Fn(&C, &T) -> U,
+{
+    text_node: TextNode<C>,
+    map: F,
+    phantom: std::marker::PhantomData<dyn Fn(C, T) -> U>,
+}
+
+impl<C, T, U, F> MapTextNode<C, T, U, F>
+where
+    C: Component,
+    T: ToString,
+    F: Fn(&C, &T) -> U,
+{
+    pub fn new(text_node: TextNode<C>, map: F) -> Self {
+        Self {
+            text_node,
+            map,
+            phantom: std::marker::PhantomData,
+        }
+    }
+
+    fn map(&self, value: &T) -> U {
+        let rc_comp = self.text_node.0.comp.upgrade();
+        let comp = rc_comp
+            .try_borrow_mut()
+            .expect_throw("MapTextNode::map::rc_comp.try_borrow_mut().");
+        let state = comp.state();
+        (self.map)(state, value)
+    }
+
+    pub fn map_with_state(&self, state: &C, value: &T) -> U {
+        (self.map)(state, value)
+    }
+
+    pub fn update_text(&self, text: &str) {
+        self.text_node.update_text(text);
+    }
+}
+
+impl<C, T, U, F> crate::component::queue_render::QueueRendering<T> for MapTextNode<C, T, U, F>
+where
+    C: Component,
+    T: 'static + ToString,
+    U: 'static + ToString,
+    F: 'static + Fn(&C, &T) -> U,
+{
+    fn render(&self, t: &T) {
+        let u = self.map(t);
+        self.update_text(&u.to_string());
     }
 }
