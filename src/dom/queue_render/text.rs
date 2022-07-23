@@ -132,6 +132,9 @@ impl<C: Component, T: ToString> crate::component::queue_render::QueueRendering<T
     fn render(&self, t: &T) {
         self.update_text(&t.to_string());
     }
+    fn dropped(&self) -> bool {
+        self.0.dropped.get()
+    }
 }
 
 impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {

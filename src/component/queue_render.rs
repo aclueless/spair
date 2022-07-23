@@ -17,6 +17,7 @@ where
 
 struct ValueContent<T> {
     value: T,
+    // TODO: Removed dropped renders
     renders: Vec<Box<dyn QueueRendering<T>>>,
 }
 
@@ -108,6 +109,7 @@ impl<T: 'static + PartialEq> Value<T> {
 
 pub trait QueueRendering<T> {
     fn render(&self, t: &T);
+    fn dropped(&self) -> bool;
 }
 
 impl<C, T> crate::Render<C> for &Value<T>
@@ -184,3 +186,4 @@ impl RenderQueue {
 pub fn execute_render_queue() {
     RENDER_QUEUE.with(|uq| uq.execute());
 }
+
