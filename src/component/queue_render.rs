@@ -3,6 +3,8 @@ use wasm_bindgen::UnwrapThrowExt;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::dom::queue_render::text::MapTextNode;
+
 pub struct Value<T>(Rc<RefCell<ValueContent<T>>>);
 pub struct MapValue<C, T, U, F>
 where
@@ -136,7 +138,7 @@ where
     fn render(self, nodes: crate::Nodes<C>) {
         let state = nodes.state();
         if let Some(text_node) = nodes.create_queue_rendering_text() {
-            let map_node = crate::dom::queue_render::MapTextNode::new(text_node, self.map);
+            let map_node = MapTextNode::new(text_node, self.map);
             match self.value.0.try_borrow_mut() {
                 Ok(mut this) => {
                     let u = map_node.map_with_state(state, &this.value);

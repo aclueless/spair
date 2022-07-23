@@ -1,6 +1,7 @@
-#[cfg(feature = "queue-render")]
-use super::queue_render::QueueRendering;
 use wasm_bindgen::UnwrapThrowExt;
+
+#[cfg(feature = "queue-render")]
+use super::queue_render::text::QueueRendering;
 
 #[derive(Default, Clone)]
 pub struct NodeList(pub Vec<Node>);

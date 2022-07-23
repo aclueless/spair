@@ -3,6 +3,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::UnwrapThrowExt;
 
+use crate::dom::{Nodes, Element, nodes::{Node, NodeListUpdater}};
+
 pub trait QueueRenderingText {
     fn remove_from(&self, parent: &web_sys::Node);
     fn append_to(&self, parent: &web_sys::Node);
@@ -35,14 +37,14 @@ impl QueueRendering {
         }
     }
 
-    pub fn get_first_element(&self) -> Option<&super::Element> {
+    pub fn get_first_element(&self) -> Option<&Element> {
         match self {
             Self::ActiveTextNode(_) => None,
             Self::ClonedWsNode(_) => None,
         }
     }
 
-    pub fn get_last_element(&self) -> Option<&super::Element> {
+    pub fn get_last_element(&self) -> Option<&Element> {
         match self {
             Self::ActiveTextNode(_) => None,
             Self::ClonedWsNode(_) => None,
@@ -132,21 +134,21 @@ impl<C: Component, T: ToString> crate::component::queue_render::QueueRendering<T
     }
 }
 
-impl<'a, C: crate::component::Component> super::nodes::NodeListUpdater<'a, C> {
+impl<'a, C: crate::component::Component> NodeListUpdater<'a, C> {
     fn create_queue_rendering_text(&mut self) -> Option<TextNode<C>> {
         let tn = if self.index == self.nodes.count() {
-            let tn = super::queue_render::TextNode::new(self.comp());
+            let tn = TextNode::new(self.comp());
             self.parent
                 .insert_before(&tn.0.ws_node, self.next_sibling)
                 .expect_throw("Unable to insert queue rendering text node to parent");
-            self.nodes.0.push(super::nodes::Node::QueueRendering(
+            self.nodes.0.push(Node::QueueRendering(
                 QueueRendering::ActiveTextNode(Box::new(tn.clone())),
             ));
             Some(tn)
         } else {
             let comp = self.comp();
             let rs = match self.nodes.0.get_mut(self.index) {
-                Some(super::nodes::Node::QueueRendering(qr)) => match qr {
+                Some(Node::QueueRendering(qr)) => match qr {
                     QueueRendering::ActiveTextNode(_) => None,
                     QueueRendering::ClonedWsNode(wsn) => match wsn.take() {
                         Some(wsn) => {
@@ -166,7 +168,7 @@ impl<'a, C: crate::component::Component> super::nodes::NodeListUpdater<'a, C> {
     }
 }
 
-impl<'n, 'h, C: crate::component::Component> super::Nodes<'n, 'h, C> {
+impl<'n, 'h, C: crate::component::Component> Nodes<'n, 'h, C> {
     pub fn create_queue_rendering_text(self) -> Option<TextNode<C>> {
         self.0.u.create_queue_rendering_text()
     }
