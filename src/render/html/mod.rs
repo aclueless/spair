@@ -23,7 +23,6 @@ pub use nodes::*;
 pub use render::*;
 
 struct HtmlNameSpace;
-
 impl NameSpace for HtmlNameSpace {
     const NAMESPACE: Option<&'static str> = None;
 }

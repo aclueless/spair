@@ -149,22 +149,52 @@ macro_rules! make_trait_for_element_methods {
         TraitName: $TraitName:ident
         RenderElementTraitName: $RenderElementTraitName:ident
         ElementRenderType: $ElementRenderType:ident
-        elements: $($tag:ident)+
+        elements: $(
+            $method_name:ident $($element_name:literal)?
+        )+
     ) => {
          make_test_methods!{
             TestStructs: ($($TestStructName)*)
-            names: $($tag)+
+            names: $($method_name)+
         }
 
         pub trait $TraitName<C: Component>: Sized + $RenderElementTraitName<C, Self::Output> {
             type Output: From<Self> + NodeListRenderMut<C>;
             $(
-            fn $tag(self, element_render: impl FnOnce($ElementRenderType<C>)) -> Self::Output {
-                self.render_element(stringify!($tag), element_render)
-            }
+            // fn $tag(self, element_render: impl FnOnce($ElementRenderType<C>)) -> Self::Output {
+            //     self.render_element(stringify!($tag), element_render)
+            // }
+                make_trait_for_element_methods!(
+                    @each_element
+                    $ElementRenderType
+                    $method_name
+                    $($element_name)?
+                );
             )+
         }
-    }
+    };
+    (
+        @each_element
+        $ElementRenderType:ident
+        $method_name:ident
+    ) => {
+        make_trait_for_element_methods!(
+            @each_element
+            $ElementRenderType
+            $method_name
+            stringify!($method_name)
+        );
+    };
+    (
+        @each_element
+        $ElementRenderType:ident
+        $method_name:ident
+        $element_name:expr
+    ) => {
+        fn $method_name(self, element_render: impl FnOnce($ElementRenderType<C>)) -> Self::Output {
+            self.render_element($element_name, element_render)
+        }
+    };
 }
 
 macro_rules! make_trait_for_same_name_attribute_and_element_methods {
