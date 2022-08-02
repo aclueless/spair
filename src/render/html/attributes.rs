@@ -281,7 +281,8 @@ impl<'er, C: Component> AttributesOnly<'er, C> {
 }
 
 impl<'er, C: Component> StaticAttributesOnly<'er, C> {
-    pub(super) fn new(er: HtmlElementRender<'er, C>) -> Self {
+    pub(super) fn new(mut er: HtmlElementRender<'er, C>) -> Self {
+        er.element_render_mut().set_static_mode();
         Self(er)
     }
     pub(super) fn into_inner(self) -> HtmlElementRender<'er, C> {
@@ -290,7 +291,8 @@ impl<'er, C: Component> StaticAttributesOnly<'er, C> {
 }
 
 impl<'er, C: Component> StaticAttributes<'er, C> {
-    pub(super) fn new(er: HtmlElementRender<'er, C>) -> Self {
+    pub(super) fn new(mut er: HtmlElementRender<'er, C>) -> Self {
+        er.element_render_mut().set_static_mode();
         Self(er)
     }
     pub(super) fn into_inner(self) -> HtmlElementRender<'er, C> {

@@ -3,6 +3,7 @@ mod macros;
 
 pub mod base;
 pub mod html;
+#[cfg(feature = "svg")]
 pub mod svg;
 
 pub struct AmbiguousName;

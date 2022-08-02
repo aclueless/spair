@@ -69,6 +69,14 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.element
     }
 
+    pub fn set_static_mode(&mut self) {
+        self.static_mode = true;
+    }
+
+    pub fn set_update_mode(&mut self) {
+        self.static_mode = false;
+    }
+
     pub fn require_set_listener(&mut self) -> bool {
         if self.static_mode {
             if self.status == ElementStatus::Existing {

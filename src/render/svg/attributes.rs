@@ -2,6 +2,8 @@ use crate::component::Component;
 use crate::render::base::{
     ElementRender, ElementRenderMut, F64AttributeValue, StringAttributeValue,
 };
+use super::{SemsForDistinctNames, SvgNodesOwned};
+
 use wasm_bindgen::JsCast;
 
 pub trait SamsHandMade<C: Component>:
@@ -322,3 +324,84 @@ make_trait_for_attribute_methods! {
         str          z
         str          zoom_and_pan "zoomAndPan"
 }
+
+pub struct SvgAttributesOnly<'er, C: Component>(ElementRender<'er, C>);
+pub struct SvgStaticAttributesOnly<'er, C: Component>(ElementRender<'er, C>);
+pub struct SvgStaticAttributes<'er, C: Component>(ElementRender<'er, C>);
+
+impl<'er, C: Component> SvgAttributesOnly<'er, C> {
+    pub(super) fn new(er: ElementRender<'er, C>) -> Self {
+        Self(er)
+    }
+    pub(super) fn into_inner(self) -> ElementRender<'er, C> {
+        self.0
+    }
+
+    pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'er, C> {
+        SvgStaticAttributesOnly::new(self.0)
+    }
+}
+
+impl<'er, C: Component> SvgStaticAttributesOnly<'er, C> {
+    pub(super) fn new(mut er: ElementRender<'er, C>) -> Self {
+        er.set_static_mode();
+        Self(er)
+    }
+    pub(super) fn into_inner(self) -> ElementRender<'er, C> {
+        self.0
+    }
+}
+
+impl<'er, C: Component> SvgStaticAttributes<'er, C> {
+    pub(super) fn new(mut er: ElementRender<'er, C>) -> Self {
+        er.set_static_mode();
+        Self(er)
+    }
+    pub(super) fn into_inner(self) -> ElementRender<'er, C> {
+        self.0
+    }
+    pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'er, C> {
+        SvgStaticAttributesOnly::new(self.0)
+    }
+}
+
+impl<'er, C: Component> ElementRenderMut<C> for SvgAttributesOnly<'er, C> {
+    fn element_render(&self) -> &ElementRender<C> {
+        self.element_render()
+    }
+    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
+        self.element_render_mut()
+    }
+}
+
+impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributesOnly<'er, C> {
+    fn element_render(&self) -> &ElementRender<C> {
+        self.element_render()
+    }
+    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
+        self.element_render_mut()
+    }
+}
+
+impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributes<'er, C> {
+    fn element_render(&self) -> &ElementRender<C> {
+        self.element_render()
+    }
+    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
+        self.element_render_mut()
+    }
+}
+
+impl<'er, C: Component> SamsForDistinctNames<C> for SvgStaticAttributes<'er, C> {}
+impl<'er, C: Component> SamsHandMade<C> for SvgStaticAttributes<'er, C> {}
+
+impl<'er, C: Component> SamsForDistinctNames<C> for SvgStaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> SamsHandMade<C> for SvgStaticAttributesOnly<'er, C> {}
+
+impl<'er, C: Component> SamsForDistinctNames<C> for SvgAttributesOnly<'er, C> {}
+impl<'er, C: Component> SamsHandMade<C> for SvgAttributesOnly<'er, C> {}
+
+impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticAttributes<'n, C> {
+    type Output = SvgNodesOwned<'n, C>;
+}
+

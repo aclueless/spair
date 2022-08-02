@@ -32,8 +32,8 @@ pub use render::{
 //     HtmlUpdater as Element, ListElementCreation, ListItemRender, Nodes, RawWrapper, Render,
 //     StaticNodes, StaticRender,
 // };
-// #[cfg(feature = "svg")]
-// pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater as Svg};
+#[cfg(feature = "svg")]
+pub use render::svg::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgElementRender as Svg};
 
 // TODO selectively export event traits only?
 pub use events::*;
@@ -62,8 +62,8 @@ pub mod prelude {
         HemsForList, HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
     };
     //pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
-    //#[cfg(feature = "svg")]
-    //pub use crate::dom::{SvgAttributeSetter, SvgBuilder};
+    #[cfg(feature = "svg")]
+    pub use crate::render::svg::{SemsForDistinctNames, SamsHandMade, SamsForDistinctNames};
     pub use crate::fetch::{FetchOptionsSetter, RawDataMode};
     pub use crate::routing::Routes;
     pub use wasm_bindgen;
