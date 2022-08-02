@@ -186,4 +186,3 @@ impl RenderQueue {
 pub fn execute_render_queue() {
     RENDER_QUEUE.with(|uq| uq.execute());
 }
-

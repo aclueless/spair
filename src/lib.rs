@@ -1,3 +1,5 @@
+#![allow(clippy::bool_comparison)]
+
 #[cfg(test)]
 wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
@@ -9,6 +11,7 @@ mod events;
 mod fetch;
 mod future;
 mod macros;
+mod render;
 mod routing;
 mod utils;
 
@@ -16,15 +19,22 @@ pub use application::Application;
 #[cfg(feature = "queue-render")]
 pub use component::queue_render::Value;
 pub use component::{AsChildComp, Checklist, ChildComp, Comp, Component, ShouldRender};
-pub use dom::attribute_types::*;
-#[cfg(feature = "keyed-list")]
-pub use dom::Keyed;
-pub use dom::{
-    HtmlUpdater as Element, ListElementCreation, ListItemRender, Nodes, RawWrapper, Render,
-    StaticNodes, StaticRender,
+//pub use dom::attribute_types::*;
+pub use render::{
+    html::predefined_attribute_types::*,
+    html::HtmlElementRender as Element,
+    html::{ListItemRender, Nodes, Render, StaticNodes, StaticRender},
+    ListElementCreation,
 };
-#[cfg(feature = "svg")]
-pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater as Svg};
+// #[cfg(feature = "keyed-list")]
+// pub use dom::Keyed;
+// pub use dom::{
+//     HtmlUpdater as Element, ListElementCreation, ListItemRender, Nodes, RawWrapper, Render,
+//     StaticNodes, StaticRender,
+// };
+// #[cfg(feature = "svg")]
+// pub use dom::{SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgUpdater as Svg};
+
 // TODO selectively export event traits only?
 pub use events::*;
 pub use fetch::{FetchError, ResponsedError};
@@ -45,9 +55,18 @@ pub mod prelude {
         CallbackOnce as TraitCallbackOne, CallbackOnceArg as TraitCallbackOnceArg,
     };
     pub use crate::component::Component;
-    pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
-    #[cfg(feature = "svg")]
-    pub use crate::dom::{SvgAttributeSetter, SvgBuilder};
+    pub use crate::render::base::MethodsForEvents;
+    pub use crate::render::html::{
+        AmbiguousHtmlElementMethods, HtmlElementMethods, HtmlListMethods,
+        MethodsForDeprecatingAttributesAndElementsWithAmbiguousNames,
+        MethodsForHtmlAttributeValueAndIndexOnHtmlSelectElement, MethodsForHtmlAttributes,
+        MethodsForHtmlAttributesWithAmbiguousNames, MethodsForHtmlAttributesWithPredifinedValues,
+        MethodsForSpecialHtmlAttributes, NodeAndTextMethodsOnAttributeX,
+        SpecializedHtmlElementMethods,
+    };
+    //pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
+    //#[cfg(feature = "svg")]
+    //pub use crate::dom::{SvgAttributeSetter, SvgBuilder};
     pub use crate::fetch::{FetchOptionsSetter, RawDataMode};
     pub use crate::routing::Routes;
     pub use wasm_bindgen;
@@ -115,9 +134,12 @@ impl<T: wasm_bindgen::JsCast> WsRef<T> {
         self.0.borrow()
     }
 
-    pub fn set<C: component::Component>(&self, element: &crate::dom::HtmlUpdater<C>) {
+    pub fn set<C: component::Component>(
+        &self,
+        element: &crate::render::html::HtmlElementRender<C>,
+    ) {
         use wasm_bindgen::JsCast;
-        *self.0.borrow_mut() = Some(element.ws_element_clone().unchecked_into());
+        *self.0.borrow_mut() = Some(element.ws_element().clone().unchecked_into());
     }
 
     pub fn execute(&self, f: impl FnOnce(&T)) {

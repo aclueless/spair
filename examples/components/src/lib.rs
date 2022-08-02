@@ -45,20 +45,20 @@ impl spair::Component for State {
             .horizontal_line()
             .p(|p| {
                 p.static_nodes()
-                    .r#static("This line and everything below is in the main-component");
+                    .static_render("This line and everything below is in the main-component");
             })
-            .nodes()
+            .update_nodes()
             .p(|p| {
-                p.r#static("The value that read from the child-component: ")
+                p.static_render("The value that read from the child-component: ")
                     .match_if(|mi| match self.value_read_from_child {
-                        Some(value) => spair::set_arm!(mi).render(value).done(),
-                        None => spair::set_arm!(mi).render("[Not read yet]").done(),
+                        Some(value) => spair::set_arm!(mi).update_render(value).done(),
+                        None => spair::set_arm!(mi).update_render("[Not read yet]").done(),
                     });
             })
-            .r#static(Button("-", comp.handler_mut(State::decrement)))
-            .render(self.value)
-            .r#static(Button("+", comp.handler_mut(State::increment)))
-            .r#static(Button(
+            .static_render(Button("-", comp.handler_mut(State::decrement)))
+            .update_render(self.value)
+            .static_render(Button("+", comp.handler_mut(State::increment)))
+            .static_render(Button(
                 "Send value to the child-component",
                 comp.handler_mut(State::send_value_to_child),
             ));
@@ -72,7 +72,7 @@ impl<C: spair::Component, H: spair::Click> spair::StaticRender<C> for Button<H> 
             b.static_attributes()
                 .on_click(self.1)
                 .static_nodes()
-                .r#static(self.0);
+                .static_render(self.0);
         });
     }
 }

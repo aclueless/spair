@@ -50,15 +50,15 @@ impl spair::Component for ChildState {
         element
             .static_nodes()
             .p(|p| {
-                p.r#static(
+                p.static_render(
                     "This counter is in a child-component,\
                     the parent component will be notified every \
                     time the value is divisible by five.",
                 );
             })
-            .r#static(super::Button("-", comp.handler_mut(ChildState::decrement)))
-            .render(self.value)
-            .r#static(super::Button("+", comp.handler_mut(ChildState::increment)));
+            .static_render(super::Button("-", comp.handler_mut(ChildState::decrement)))
+            .update_render(self.value)
+            .static_render(super::Button("+", comp.handler_mut(ChildState::increment)));
     }
 }
 

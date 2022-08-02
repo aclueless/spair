@@ -2,7 +2,7 @@
 name = "spair"
 version = "0.0.6"
 authors = ["aclueless <61309385+aclueless@users.noreply.github.com>"]
-edition = "2018"
+edition = "2021"
 description = "A framework for single-page application in Rust"
 categories = ["wasm", "web-programming"]
 keywords = ["SPA", "wasm", "framework"]

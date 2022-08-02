@@ -1,6 +1,16 @@
-pub struct NodeListExtensions<'a>(pub(super) &'a crate::dom::nodes::NodeList);
+use crate::dom::Nodes;
 
-impl<'a> NodeListExtensions<'a> {
+pub trait MakeNodesExtensions<'a> {
+    fn make_nodes_extensions(self) -> NodesExtensions<'a>;
+}
+
+pub struct NodesExtensions<'a>(&'a Nodes);
+
+impl<'a> NodesExtensions<'a> {
+    pub(crate) fn new(nodes: &'a Nodes) -> Self {
+        Self(nodes)
+    }
+
     pub fn done(self) {}
 
     pub fn scroll_to_last_item_with_if(

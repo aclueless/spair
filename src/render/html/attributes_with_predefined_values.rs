@@ -1,45 +1,9 @@
-mod sealed {
-    pub trait AsStr {}
-}
-
-pub trait AsStr: sealed::AsStr {
-    fn as_str(&self) -> &str;
-}
-
-macro_rules! create_as_str_enums {
-    ($(
-        $(#[$enum_meta_content:meta])*
-        $EnumTypeName:ident { $(
-            $(#[$variant_meta_content:meta])*
-            $VariantName:ident => $str_value:literal,
-        )+}
-    )+) => {
-        $(
-            $(#[$enum_meta_content])*
-            pub enum $EnumTypeName {
-                $(
-                    $(#[$variant_meta_content])*
-                    $VariantName,
-                )+
-            }
-
-            impl sealed::AsStr for $EnumTypeName {}
-
-            impl AsStr for $EnumTypeName {
-                fn as_str(&self) -> &str {
-                    match self {
-                        $(
-                            #[allow(deprecated)]
-                            $EnumTypeName::$VariantName => $str_value,
-                        )+
-                    }
-                }
-            }
-        )+
-    };
-}
-
-create_as_str_enums! {
+use crate::component::Component;
+use crate::render::base::{ElementRender, ElementRenderMut};
+make_trait_for_attributes_with_predefined_values! {
+TraitName: MethodsForHtmlAttributesWithPredifinedValues
+{
+    AutoCapitalizeAttributeValue
     AutoCapitalize {
         Off => "off",
         On => "on",
@@ -47,38 +11,76 @@ create_as_str_enums! {
         Words => "words",
         Characters => "characters",
     }
+    {}
+}
+{
+    AutoCompleteAttributeValue
     AutoComplete {
         On => "on",
         Off => "off",
     }
+    { auto_complete "autocomplete" }
+}
+{
+    ButtonTypeAttributeValue
     ButtonType {
         Button => "button",
         Submit => "submit",
         Reset => "reset",
     }
+    {}
+}
+{
+    CrossOriginAttributeValue
     CrossOrigin {
         Anonymous => "anonymous",
         UseCredentials => "use-credentials",
     }
+    { cross_origin "crossorigin" }
+}
+{
+    DecodingAttributeValue
     Decoding {
         Sync => "sync",
         Async => "async",
         Auto => "auto",
     }
+    { decoding }
+}
+{
+    DirAttributeValue
     Dir {
         LeftToRight => "ltr",
         RightToLeft => "rtl",
         Auto => "auto",
     }
+    {}
+}
+{
+    EncTypeAttributeValue
     EncType {
         ComponentXWwwFormUrlEncoded => "Component/x-www-form-urlencoded",
         MultiPartFormData => "multipart/form-data",
         TextPlain => "text/plain",
     }
+    {
+        enc_type "enctype"
+        form_enc_type "formenctype"
+    }
+}
+{
+    FormMethodAttributeValue
     FormMethod {
         Post => "post",
         Get => "get",
     }
+    {
+        form_method "formmethod"
+        method
+    }
+}
+{
+    InputModeAttributeValue
     InputMode {
         None => "none",
         Text => "text",
@@ -89,6 +91,10 @@ create_as_str_enums! {
         Email => "email",
         Url => "url",
     }
+    {}
+}
+{
+    InputTypeAttributeValue
     InputType {
         Button => "button",
         CheckBox => "checkbox",
@@ -113,6 +119,10 @@ create_as_str_enums! {
         Url => "url",
         Week => "week",
     }
+    { r#type "type" }
+}
+{
+    OlTypeAttributeValue
     OlType {
         Number => "1",
         LowerCase => "a",
@@ -120,11 +130,19 @@ create_as_str_enums! {
         LowerCaseRoman => "i",
         UpperCaseRoman => "I",
     }
+    {}
+}
+{
+    PreLoadAttributeValue
     PreLoad {
         None => "none",
         MetaData => "metadata",
         Auto => "auto",
     }
+    { pre_load "preload" }
+}
+{
+    ReferrerPolicyAttributeValue
     ReferrerPolicy {
         NoReferrer => "no-referrer",
         NoReferrerWhenDowngrade => "no-referrer-when-downgrade",
@@ -135,6 +153,10 @@ create_as_str_enums! {
         StrictOriginWhenCrossOrigin => "strict-origin-when-cross-origin",
         UnsafeUrl => "unsafe-url",
     }
+    { referrer_policy "referrerpolicy" }
+}
+{
+    SandboxAttributeValue
     Sandbox {
         AllowForms => "allow-forms",
         AllowModals => "allow-modals",
@@ -151,11 +173,19 @@ create_as_str_enums! {
         AllowTopNavigationByUserActivation => "allow-top-navigation-by-user-activation",
         //AllowDownloadsWithoutUserActivation => "allow-downloads-without-user-activation",
     }
+    {}
+}
+{
+    SpellCheckAttributeValue
     SpellCheck {
         True => "true",
         False => "false",
         Default => "default",
     }
+    {}
+}
+{
+    ThScopeAttributeValue
     ThScope {
         Row => "row",
         Col => "col",
@@ -163,6 +193,10 @@ create_as_str_enums! {
         ColGroup => "colgroup",
         Auto => "auto",
     }
+    { scope }
+}
+{
+    TargetAttributeValue
     Target {
         _Self => "_self",
         #[deprecated(note = "There is a Security_and_privacy_concerns when `target='_blank'`, please use `.target_blank_with_rel()`. See more at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#Security_and_privacy_concerns")]
@@ -170,6 +204,13 @@ create_as_str_enums! {
         _Parent => "_parent",
         _Top => "_top",
     }
+    {
+        form_target "formtarget"
+        target
+    }
+}
+{
+    TrackKindAttributeValue
     TrackKind {
         Subtitles => "subtitles",
         Captions => "captions",
@@ -177,8 +218,14 @@ create_as_str_enums! {
         Chapters => "chapters",
         Metadata => "metadata",
     }
+    { kind }
+}
+{
+    WrapAttributeValue
     Wrap {
         Hard => "hard",
         Soft => "soft",
     }
+    { wrap }
+}
 }

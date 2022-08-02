@@ -1,19 +1,19 @@
-use wasm_bindgen::UnwrapThrowExt;
-
-enum Attribute {
+enum AttributeValue {
     EventListener(Option<Box<dyn crate::events::Listener>>),
     String(String),
+    SelectedValue(Option<String>),
     Bool(bool),
     I32(i32),
     U32(u32),
     F64(f64),
 }
 
-impl Clone for Attribute {
+impl Clone for AttributeValue {
     fn clone(&self) -> Self {
         match self {
             Self::EventListener(_) => Self::EventListener(None),
             Self::String(v) => Self::String(v.clone()),
+            Self::SelectedValue(v) => Self::SelectedValue(v.clone()),
             Self::Bool(v) => Self::Bool(*v),
             Self::I32(v) => Self::I32(*v),
             Self::U32(v) => Self::U32(*v),
@@ -22,12 +22,13 @@ impl Clone for Attribute {
     }
 }
 
-impl std::fmt::Debug for Attribute {
+impl std::fmt::Debug for AttributeValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         match self {
             Self::EventListener(_) => f.write_str("EventListener(...)"),
-            Self::Bool(value) => value.fmt(f),
             Self::String(value) => value.fmt(f),
+            Self::SelectedValue(value) => value.fmt(f),
+            Self::Bool(value) => value.fmt(f),
             Self::I32(value) => value.fmt(f),
             Self::U32(value) => value.fmt(f),
             Self::F64(value) => value.fmt(f),
@@ -36,352 +37,144 @@ impl std::fmt::Debug for Attribute {
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct AttributeList(Vec<Attribute>);
+pub struct AttributeValueList(Vec<AttributeValue>);
 
-impl AttributeList {
-    pub(super) fn store_listener(
-        &mut self,
-        index: usize,
-        listener: Box<dyn crate::events::Listener>,
-    ) {
+impl AttributeValueList {
+    pub fn store_listener(&mut self, index: usize, listener: Box<dyn crate::events::Listener>) {
         if index < self.0.len() {
-            self.0[index] = Attribute::EventListener(Some(listener));
+            self.0[index] = AttributeValue::EventListener(Some(listener));
         } else {
-            self.0.push(Attribute::EventListener(Some(listener)));
+            self.0.push(AttributeValue::EventListener(Some(listener)));
         }
     }
 
-    pub(super) fn check_bool_attribute(&mut self, index: usize, value: bool) -> bool {
+    pub fn check_bool_attribute(&mut self, index: usize, value: bool) -> bool {
         match self.0.get_mut(index) {
             None => {
-                self.0.push(Attribute::Bool(value));
+                self.0.push(AttributeValue::Bool(value));
                 true
             }
             Some(a) => match a {
-                Attribute::Bool(old_value) if value == *old_value => false,
-                Attribute::Bool(old_value) => {
+                AttributeValue::Bool(old_value) if value == *old_value => false,
+                AttributeValue::Bool(old_value) => {
                     *old_value = value;
                     true
                 }
-                _ => panic!("Why not an Attribute::Bool?"),
+                _ => panic!("Spair's internal error, expected an AttributeValue::Bool?"),
             },
         }
     }
 
-    pub(super) fn check_i32_attribute(&mut self, index: usize, value: i32) -> bool {
+    pub fn check_i32_attribute(&mut self, index: usize, value: i32) -> bool {
         match self.0.get_mut(index) {
             None => {
-                self.0.push(Attribute::I32(value));
+                self.0.push(AttributeValue::I32(value));
                 true
             }
             Some(a) => match a {
-                Attribute::I32(old_value) if value == *old_value => false,
-                Attribute::I32(old_value) => {
+                AttributeValue::I32(old_value) if value == *old_value => false,
+                AttributeValue::I32(old_value) => {
                     *old_value = value;
                     true
                 }
-                _ => panic!("Why not an Attribute::I32?"),
+                _ => panic!("Spair's internal error, expected an AttributeValue::I32?"),
             },
         }
     }
 
-    pub(super) fn check_u32_attribute(&mut self, index: usize, value: u32) -> bool {
+    pub fn check_u32_attribute(&mut self, index: usize, value: u32) -> bool {
         match self.0.get_mut(index) {
             None => {
-                self.0.push(Attribute::U32(value));
+                self.0.push(AttributeValue::U32(value));
                 true
             }
             Some(a) => match a {
-                Attribute::U32(old_value) if value == *old_value => false,
-                Attribute::U32(old_value) => {
+                AttributeValue::U32(old_value) if value == *old_value => false,
+                AttributeValue::U32(old_value) => {
                     *old_value = value;
                     true
                 }
-                _ => panic!("Why not an Attribute::U32?"),
+                _ => panic!("Spair's internal error, expected an AttributeValue::U32?"),
             },
         }
     }
 
-    pub(super) fn check_f64_attribute(&mut self, index: usize, value: f64) -> bool {
+    pub fn check_f64_attribute(&mut self, index: usize, value: f64) -> bool {
         match self.0.get_mut(index) {
             None => {
-                self.0.push(Attribute::F64(value));
+                self.0.push(AttributeValue::F64(value));
                 true
             }
             Some(a) => match a {
-                Attribute::F64(old_value) if (value - *old_value).abs() < std::f64::EPSILON => {
+                AttributeValue::F64(old_value)
+                    if (value - *old_value).abs() < std::f64::EPSILON =>
+                {
                     false
                 }
-                Attribute::F64(old_value) => {
+                AttributeValue::F64(old_value) => {
                     *old_value = value;
                     true
                 }
-                _ => panic!("Why not an Attribute::F64?"),
+                _ => panic!("Spair's internal error, expected an AttributeValue::F64?"),
             },
         }
     }
 
-    pub(super) fn check_str_attribute(&mut self, index: usize, value: &str) -> bool {
+    pub fn check_str_attribute(&mut self, index: usize, value: &str) -> bool {
         match self.0.get_mut(index) {
             None => {
-                self.0.push(Attribute::String(value.to_string()));
+                self.0.push(AttributeValue::String(value.to_string()));
                 true
             }
             Some(a) => match a {
-                Attribute::String(old_value) if value == *old_value => false,
-                Attribute::String(old_value) => {
+                AttributeValue::String(old_value) if value == *old_value => false,
+                AttributeValue::String(old_value) => {
                     *old_value = value.to_string();
                     true
                 }
-                _ => panic!("Why not an Attribute::String?"),
+                _ => panic!("Spair's internal error, expected an AttributeValue::String?"),
             },
         }
     }
 
-    pub(super) fn check_str_attribute_and_return_old_value(
+    pub fn check_optional_str_attribute(&mut self, index: usize, value: Option<&str>) -> bool {
+        match self.0.get_mut(index) {
+            None => {
+                self.0.push(AttributeValue::SelectedValue(
+                    value.map(ToString::to_string),
+                ));
+                true
+            }
+            Some(a) => match a {
+                AttributeValue::SelectedValue(old_value) if value == old_value.as_deref() => false,
+                AttributeValue::SelectedValue(old_value) => {
+                    *old_value = value.map(ToString::to_string);
+                    true
+                }
+                _ => panic!("Spair's internal error, expected an AttributeValue::SelectedValue?"),
+            },
+        }
+    }
+
+    pub fn check_str_attribute_and_return_old_value(
         &mut self,
         index: usize,
         value: &str,
     ) -> (bool, Option<String>) {
         match self.0.get_mut(index) {
             None => {
-                self.0.push(Attribute::String(value.to_string()));
+                self.0.push(AttributeValue::String(value.to_string()));
                 (true, None)
             }
             Some(a) => match a {
-                Attribute::String(old_value) if value == *old_value => (false, None),
-                Attribute::String(old_value) => {
+                AttributeValue::String(old_value) if value == *old_value => (false, None),
+                AttributeValue::String(old_value) => {
                     let mut value = value.to_string();
                     std::mem::swap(&mut value, old_value);
                     (true, Some(value))
                 }
-                _ => panic!("Why not an Attribute::String?"),
+                _ => panic!("Spair's internal error, expected an AttributeValue::String?"),
             },
         }
-    }
-}
-
-pub trait AttributeSetter {
-    fn ws_html_element(&self) -> &web_sys::HtmlElement;
-    fn ws_element(&self) -> &web_sys::Element;
-    fn element_type(&self) -> crate::dom::ElementType;
-    fn require_set_listener(&mut self) -> bool;
-    fn store_listener(&mut self, listener: Box<dyn crate::events::Listener>);
-    fn get_element(&self) -> &crate::dom::Element;
-
-    // Check if the attribute need to be set (and store the new value for the next check)
-    fn check_bool_attribute(&mut self, value: bool) -> bool;
-    fn check_str_attribute(&mut self, value: &str) -> bool;
-    fn check_i32_attribute(&mut self, value: i32) -> bool;
-    fn check_u32_attribute(&mut self, value: u32) -> bool;
-    fn check_f64_attribute(&mut self, value: f64) -> bool;
-    fn check_str_attribute_and_return_old_value(&mut self, value: &str) -> (bool, Option<String>);
-
-    fn set_bool_attribute(&mut self, name: &str, value: bool) {
-        if self.check_bool_attribute(value) {
-            if value {
-                self.ws_element()
-                    .set_attribute(name, "")
-                    .expect_throw("Unable to set bool attribute");
-            } else {
-                self.ws_element()
-                    .remove_attribute(name)
-                    .expect_throw("Unable to remove bool attribute");
-            }
-        }
-    }
-
-    fn set_str_attribute(&mut self, name: &str, value: &str) {
-        if self.check_str_attribute(value) {
-            self.ws_element()
-                .set_attribute(name, value)
-                .expect_throw("Unable to set string attribute");
-        }
-    }
-
-    fn set_i32_attribute(&mut self, name: &str, value: i32) {
-        if self.check_i32_attribute(value) {
-            self.ws_element()
-                .set_attribute(name, &value.to_string())
-                .expect_throw("Unable to set string attribute");
-        }
-    }
-
-    fn set_u32_attribute(&mut self, name: &str, value: u32) {
-        if self.check_u32_attribute(value) {
-            self.ws_element()
-                .set_attribute(name, &value.to_string())
-                .expect_throw("Unable to set string attribute");
-        }
-    }
-
-    fn set_f64_attribute(&mut self, name: &str, value: f64) {
-        if self.check_f64_attribute(value) {
-            self.ws_element()
-                .set_attribute(name, &value.to_string())
-                .expect_throw("Unable to set string attribute");
-        }
-    }
-
-    fn add_class(&mut self, class_name: &str) {
-        self.ws_element()
-            .class_list()
-            .add_1(class_name)
-            .expect_throw("Unable to add new class");
-    }
-
-    fn remove_class(&mut self, class_name: &str) {
-        self.ws_element()
-            .class_list()
-            .remove_1(class_name)
-            .expect_throw("Unable to remove old class");
-    }
-
-    fn _class(&mut self, class_name: &str) {
-        let (changed, old_value) = self.check_str_attribute_and_return_old_value(class_name);
-        if let Some(old_value) = old_value {
-            self.remove_class(&old_value);
-        }
-        if changed {
-            self.add_class(class_name);
-        }
-    }
-
-    fn _class_if(&mut self, class_on: bool, class_name: &str) {
-        if self.check_bool_attribute(class_on) {
-            if class_on {
-                self.add_class(class_name);
-            } else {
-                self.remove_class(class_name);
-            }
-        }
-    }
-
-    fn _class_or(&mut self, first: bool, first_class: &str, second_class: &str) {
-        if self.check_bool_attribute(first) {
-            if first {
-                self.add_class(first_class);
-                self.remove_class(second_class);
-            } else {
-                self.remove_class(first_class);
-                self.add_class(second_class);
-            }
-        }
-    }
-}
-
-macro_rules! create_methods_for_events {
-    ($($method_name:ident $EventName:ident,)+) => {
-        $(
-            fn $method_name<F>(mut self, f: F) -> Self
-            where F: crate::events::$EventName
-            {
-                if self.require_set_listener() {
-                    let listener = crate::events::$EventName::on(f, self.ws_element().as_ref());
-                    self.store_listener(listener);
-                }
-                self
-            }
-        )+
-    }
-}
-
-macro_rules! create_methods_for_attributes {
-    (
-        $(
-            $attribute_type:ident $method_name:ident $($attribute_name:literal)?
-        )+
-    ) => {
-        $(
-            create_methods_for_attributes! {
-                @each
-                $method_name $($attribute_name)? => $attribute_type
-            }
-        )+
-    };
-    (@each $method_name:ident => $attribute_type:ident) => {
-        create_methods_for_attributes! {
-            @each
-            $method_name stringify!($method_name) => $attribute_type
-        }
-    };
-    (@each $method_name:ident $attribute_name:expr => bool) => {
-        create_methods_for_attributes! {
-            @create
-            $method_name $attribute_name => bool => set_bool_attribute
-        }
-    };
-    (@each $method_name:ident $attribute_name:expr => u32) => {
-        create_methods_for_attributes! {
-            @create
-            $method_name $attribute_name => u32 => set_u32_attribute
-        }
-    };
-    (@each $method_name:ident $attribute_name:expr => i32) => {
-        create_methods_for_attributes! {
-            @create
-            $method_name $attribute_name => i32 => set_i32_attribute
-        }
-    };
-    (@each $method_name:ident $attribute_name:expr => f64) => {
-        create_methods_for_attributes! {
-            @create
-            $method_name $attribute_name => f64 => set_f64_attribute
-        }
-    };
-    (@each $method_name:ident $attribute_name:expr => str) => {
-        create_methods_for_attributes! {
-            @create
-            $method_name $attribute_name => &str => set_str_attribute
-        }
-    };
-    (@each $method_name:ident $attribute_name:expr => AsStr) => {
-        fn $method_name(mut self, value: impl crate::dom::AsStr) -> Self {
-            self.set_str_attribute($attribute_name, value.as_str());
-            self
-        }
-    };
-    (@create $method_name:ident $attribute_name:expr => $attribute_type:ty => $shared_method_name:ident) => {
-        #[allow(clippy::wrong_self_convention)]
-        fn $method_name(mut self, value: $attribute_type) -> Self {
-            self.$shared_method_name($attribute_name, value);
-            self
-        }
-    };
-}
-
-pub trait EventSetter: Sized + AttributeSetter {
-    create_methods_for_events! {
-        on_focus Focus,
-        on_blur Blur,
-
-        on_aux_click AuxClick,
-        on_click Click,
-        on_double_click DoubleClick,
-        on_mouse_enter MouseEnter,
-        on_mouse_over MouseOver,
-        on_mouse_move MouseMove,
-        on_mouse_down MouseDown,
-        on_mouse_up MouseUp,
-        on_mouse_leave MouseLeave,
-        on_mouse_out MouseOut,
-        on_context_menu ContextMenu,
-
-        on_wheel Wheel,
-        on_select UiSelect,
-
-        on_input Input,
-
-        on_key_down KeyDown,
-        on_key_press KeyPress,
-        on_key_up KeyUp,
-
-        on_change Change,
-        on_reset Reset,
-        on_submit Submit,
-        on_pointer_lock_change PointerLockChange,
-        on_pointer_lock_error PointerLockError,
-
-        on_ended Ended,
     }
 }

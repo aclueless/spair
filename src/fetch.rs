@@ -358,8 +358,6 @@ impl FetchArgs {
     }
 
     fn build_ws_request(self) -> Result<web_sys::Request, FetchError> {
-        use std::iter::FromIterator;
-
         let body = self.body.transpose()?;
         let parts = self.request_builder.body(())?.into_parts().0;
         let header_list = parts
