@@ -269,6 +269,7 @@ impl spair::Render<App> for Footer {
             f.class_if(list_empty, "hidden")
                 .static_attributes()
                 .class("footer")
+                .update_nodes()
                 .span(|s| {
                     s.static_attributes()
                         .class("todo-count")

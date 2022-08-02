@@ -5,6 +5,8 @@ pub mod base;
 pub mod html;
 pub mod svg;
 
+pub struct AmbiguousName;
+
 #[derive(Copy, Clone)]
 pub enum ListElementCreation {
     Clone,
