@@ -1,7 +1,12 @@
 use crate::component::Component;
 use crate::render::base::{ElementRender, ElementRenderMut};
+
+#[cfg(test)]
+use crate::render::html::TestHtmlMethods;
+
 make_trait_for_attributes_with_predefined_values! {
-TraitName: MethodsForHtmlAttributesWithPredifinedValues
+TestStructs: (TestHtmlMethods)
+TraitName: HamsWithPredefinedValues
 {
     AutoCapitalizeAttributeValue
     AutoCapitalize {

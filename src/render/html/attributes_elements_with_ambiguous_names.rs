@@ -1,23 +1,30 @@
 use super::{HtmlElementRender, RenderHtmlElement};
 use crate::component::Component;
-use crate::render::base::{ElementRenderMut, NodeListRenderMut, U32AttributeValue};
+use crate::render::base::{
+    ElementRenderMut, NodeListRenderMut, StringAttributeValue, U32AttributeValue,
+};
 
 #[cfg(test)]
-use super::AllAttributes;
-#[cfg(test)]
-use super::AllElements;
+use crate::render::html::TestHtmlMethods;
 
 make_trait_for_same_name_attribute_and_element_methods! {
-    TestStructs: (AllElements AllAttributes)
-    DeprecatedTraitName: MethodsForDeprecatingAttributesAndElementsWithAmbiguousNames
+    TestStructs: (TestHtmlMethods)
+    DeprecatedTraitName: HemsHamsAmbiguous
     for_elements {
-        TraitName: AmbiguousHtmlElementMethods
+        TraitName: HemsForAmbiguousNames
         RenderElementTraitName: RenderHtmlElement
         ElementRenderType: HtmlElementRender
     }
     for_attributes {
-        TraitName: MethodsForHtmlAttributesWithAmbiguousNames
+        TraitName: HamsForAmbiguousNames
     }
     ambiguous_attributes:
-        u32 span
+    // The names are also used to make methods for HTML elements
+    //  type    name
+        str     abbr
+        str     cite
+        str     data
+        str     form
+        str     label
+        u32     span
 }

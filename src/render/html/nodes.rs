@@ -1,5 +1,5 @@
 use super::{
-    AmbiguousHtmlElementMethods, AttributesOnly, HtmlElementRender, HtmlNameSpace, Render,
+    AttributesOnly, HemsForAmbiguousNames, HtmlElementRender, HtmlNameSpace, Render,
     SelectElementValueManager, StaticAttributes, StaticAttributesOnly, StaticRender,
 };
 use crate::component::{ChildComp, Comp, Component};
@@ -19,7 +19,7 @@ impl<'n, C: Component> NodeListRenderMut<C> for HtmlNodeListRender<'n, C> {
     }
 }
 
-pub trait SpecializedHtmlElementMethods<C: Component>: Sized {
+pub trait HemsHandMade<C: Component>: Sized {
     type Output: From<Self> + NodeListRenderMut<C>;
 
     fn line_break(self) -> Self::Output {
@@ -70,31 +70,58 @@ where
 }
 
 #[cfg(test)]
-use crate::render::html::{AllAttributes, AllElements};
+use crate::render::html::TestHtmlMethods;
 
 make_trait_for_element_methods! {
-    TestStructs: (AllElements AllAttributes)
-    TraitName: HtmlElementMethods
+    TestStructs: (TestHtmlMethods)
+    TraitName: HemsForDistinctNames
     RenderElementTraitName: RenderHtmlElement
     ElementRenderType: HtmlElementRender
     elements:
-        a abbr address area article aside audio
+        a
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // abbr
+
+        address area article aside audio
         b bdi bdo blockquote button br
-        canvas caption cite code col colgroup
-        data datalist dd del details dfn dialog div dl dt
+        canvas caption
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // cite
+
+        code col colgroup
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // data
+
+        datalist dd del details dfn dialog div dl dt
         em embed
-        fieldset figcaption figure footer form
+        fieldset figcaption figure footer
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // form
+
         h1 h2 h3 h4 h5 h6 header hgroup hr
         i iframe img input ins
         kbd
-        label legend li
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // label
+
+        legend li
         main map mark menu meter
         nav
         object ol optgroup option output
         p param picture pre progress
         q
         rp rt ruby
-        s samp section select slot small source span strong sub summary sup
+        s samp section select slot small source
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // span
+
+        strong sub summary sup
         table tbody td template textarea tfoot th thead time tr track
         u ul
         var video
@@ -240,7 +267,7 @@ impl<'n, C: Component> From<StaticAttributes<'n, C>> for StaticNodesOwned<'n, C>
     }
 }
 
-pub trait NodeAndTextMethodsOnAttributeX<'n, C: Component>:
+pub trait MethodsForHtmlElementContent<'n, C: Component>:
     ElementRenderMut<C> + Into<NodesOwned<'n, C>> + Into<StaticNodesOwned<'n, C>>
 {
     fn update_nodes(self) -> NodesOwned<'n, C> {
@@ -266,10 +293,10 @@ pub trait NodeAndTextMethodsOnAttributeX<'n, C: Component>:
     }
 }
 
-impl<'n, C: Component> NodeAndTextMethodsOnAttributeX<'n, C> for HtmlElementRender<'n, C> {}
-impl<'n, C: Component> NodeAndTextMethodsOnAttributeX<'n, C> for AttributesOnly<'n, C> {}
-impl<'n, C: Component> NodeAndTextMethodsOnAttributeX<'n, C> for StaticAttributesOnly<'n, C> {}
-impl<'n, C: Component> NodeAndTextMethodsOnAttributeX<'n, C> for StaticAttributes<'n, C> {}
+impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for HtmlElementRender<'n, C> {}
+impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for AttributesOnly<'n, C> {}
+impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for StaticAttributesOnly<'n, C> {}
+impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for StaticAttributes<'n, C> {}
 
 impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
     pub(super) fn update_text(self, text: &str) {
@@ -387,58 +414,58 @@ impl<'h, 'n: 'h, C: Component> RenderHtmlElement<C, StaticNodes<'h, 'n, C>>
 impl<'n, C: Component> RenderHtmlElement<C, NodesOwned<'n, C>> for NodesOwned<'n, C> {}
 impl<'n, C: Component> RenderHtmlElement<C, StaticNodesOwned<'n, C>> for StaticNodesOwned<'n, C> {}
 
-impl<'h, 'n: 'h, C: Component> AmbiguousHtmlElementMethods<C> for Nodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<C> for Nodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> AmbiguousHtmlElementMethods<C> for StaticNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<C> for StaticNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> AmbiguousHtmlElementMethods<C> for NodesOwned<'n, C> {
+impl<'n, C: Component> HemsForAmbiguousNames<C> for NodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> AmbiguousHtmlElementMethods<C> for StaticNodesOwned<'n, C> {
-    type Output = Self;
-}
-
-impl<'h, 'n: 'h, C: Component> SpecializedHtmlElementMethods<C> for Nodes<'h, 'n, C> {
-    type Output = Self;
-}
-impl<'h, 'n: 'h, C: Component> SpecializedHtmlElementMethods<C> for StaticNodes<'h, 'n, C> {
-    type Output = Self;
-}
-impl<'n, C: Component> SpecializedHtmlElementMethods<C> for NodesOwned<'n, C> {
-    type Output = Self;
-}
-impl<'n, C: Component> SpecializedHtmlElementMethods<C> for StaticNodesOwned<'n, C> {
+impl<'n, C: Component> HemsForAmbiguousNames<C> for StaticNodesOwned<'n, C> {
     type Output = Self;
 }
 
-impl<'h, 'n: 'h, C: Component> HtmlElementMethods<C> for Nodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> HemsHandMade<C> for Nodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> HtmlElementMethods<C> for StaticNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> HemsHandMade<C> for StaticNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> HtmlElementMethods<C> for NodesOwned<'n, C> {
+impl<'n, C: Component> HemsHandMade<C> for NodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> HtmlElementMethods<C> for StaticNodesOwned<'n, C> {
+impl<'n, C: Component> HemsHandMade<C> for StaticNodesOwned<'n, C> {
+    type Output = Self;
+}
+
+impl<'h, 'n: 'h, C: Component> HemsForDistinctNames<C> for Nodes<'h, 'n, C> {
+    type Output = Self;
+}
+impl<'h, 'n: 'h, C: Component> HemsForDistinctNames<C> for StaticNodes<'h, 'n, C> {
+    type Output = Self;
+}
+impl<'n, C: Component> HemsForDistinctNames<C> for NodesOwned<'n, C> {
+    type Output = Self;
+}
+impl<'n, C: Component> HemsForDistinctNames<C> for StaticNodesOwned<'n, C> {
     type Output = Self;
 }
 
 impl<'er, C: Component> RenderHtmlElement<C, NodesOwned<'er, C>> for HtmlElementRender<'er, C> {}
-impl<'er, C: Component> SpecializedHtmlElementMethods<C> for HtmlElementRender<'er, C> {
+impl<'er, C: Component> HemsHandMade<C> for HtmlElementRender<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
-impl<'er, C: Component> HtmlElementMethods<C> for HtmlElementRender<'er, C> {
+impl<'er, C: Component> HemsForDistinctNames<C> for HtmlElementRender<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
 
 impl<'er, C: Component> RenderHtmlElement<C, NodesOwned<'er, C>> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> SpecializedHtmlElementMethods<C> for StaticAttributes<'er, C> {
+impl<'er, C: Component> HemsHandMade<C> for StaticAttributes<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
-impl<'er, C: Component> HtmlElementMethods<C> for StaticAttributes<'er, C> {
+impl<'er, C: Component> HemsForDistinctNames<C> for StaticAttributes<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
 

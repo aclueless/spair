@@ -7,36 +7,37 @@
 macro_rules! make_test_methods {
     (
         TestStructs: ($($TestStructName:ident)*)
-        names: $($name:ident)+
+        names: $($name:ident)*
     ) => {
         make_test_methods!(
             @impl_for_first_struct
             ($($TestStructName)*)
-            $($name)+
+            $($name)*
         );
     };
     (
         @impl_for_first_struct
         ()
-        $($name:ident)+
+        $($name:ident)*
     ) => {
         // No more struct, make_test_methods! done
     };
     (
         @impl_for_first_struct
         ($TestStructName:ident $($MoreTestStructName:ident)*)
-        $($name:ident)+
+        $($name:ident)*
     ) => {
         #[cfg(test)]
         impl $TestStructName {
             $(
+                #[allow(dead_code)]
                 fn $name() {}
-            )+
+            )*
         }
         make_test_methods!(
             @impl_for_first_struct
             ($($MoreTestStructName)*)
-            $($name)+
+            $($name)*
         );
     }
 }
@@ -212,6 +213,7 @@ macro_rules! make_trait_for_same_name_attribute_and_element_methods {
 
 macro_rules! make_trait_for_attributes_with_predefined_values {
     (
+        TestStructs: ($($TestStructName:ident)*)
         TraitName: $TraitName:ident
         $({
             $AttributeValueTrait:ident
@@ -228,6 +230,13 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
             }
         })+
     ) => {
+        make_trait_for_attributes_with_predefined_values!(
+            @impl_test
+            TestStructs: ($($TestStructName)*)
+            $({
+                names: $($attribute_method_name)*
+            })+
+        );
         pub trait $TraitName<C: Component>: Sized + ElementRenderMut<C> {
             $(
             $(
@@ -257,6 +266,35 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
                 pub use super::$AttributeValueType;
             )+
         }
+    };
+    (
+        @impl_test
+        TestStructs: ()
+        $({
+            names: $($name:ident)*
+        })+
+    ) => {
+    };
+    (
+        @impl_test
+        TestStructs: ($TestStructName:ident $($MoreTestStructName:ident)*)
+        $({
+            names: $($name:ident)*
+        })+
+    ) => {
+        $(
+             make_test_methods!{
+                TestStructs: ($TestStructName)
+                names: $($name)*
+            }
+        )+
+        make_trait_for_attributes_with_predefined_values!(
+            @impl_test
+            TestStructs: ($($MoreTestStructName)*)
+            $({
+                names: $($name)*
+            })+
+        );
     };
     (
         @each_type

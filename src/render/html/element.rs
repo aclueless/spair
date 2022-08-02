@@ -1,8 +1,6 @@
 use super::{
-    AttributesOnly, MethodsForDeprecatingAttributesAndElementsWithAmbiguousNames,
-    MethodsForHtmlAttributeValueAndIndexOnHtmlSelectElement, MethodsForHtmlAttributes,
-    MethodsForHtmlAttributesWithPredifinedValues, MethodsForSpecialHtmlAttributes,
-    StaticAttributes, StaticAttributesOnly,
+    AttributesOnly, HamsForDistinctNames, HamsForSelectElementValueAndIndex, HamsHandMade,
+    HamsWithPredefinedValues, HemsHamsAmbiguous, StaticAttributes, StaticAttributesOnly,
 };
 use crate::component::{Comp, Component};
 use crate::dom::ElementType;
@@ -68,7 +66,7 @@ pub trait HtmlElementRenderMut<C: Component> {
 /// This struct helps rendering the element's attributes and its child nodes.
 /// This will be exported as spair::Element to use as the root element of components.
 /// Most of HTML attributes and HTML elements can be rendered using methods attached to this
-/// struct (respectively via MethodsForHtmlAttributes and HtmlElementMethods). Some HTML attributes
+/// struct (respectively via HamsForDistinctNames and HemsForDistinctNames). Some HTML attributes
 /// and HTML elements that their names appear in both will not be call directly on this struct.
 pub struct HtmlElementRender<'er, C: Component> {
     element_render: ElementRender<'er, C>,
@@ -247,19 +245,10 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     }
 }
 
-impl<'er, C: Component> MethodsForDeprecatingAttributesAndElementsWithAmbiguousNames
-    for HtmlElementRender<'er, C>
-{
-}
-impl<'er, C: Component> MethodsForHtmlAttributes<C> for HtmlElementRender<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributeValueAndIndexOnHtmlSelectElement<C>
-    for HtmlElementRender<'er, C>
-{
-}
-impl<'er, C: Component> MethodsForSpecialHtmlAttributes<C> for HtmlElementRender<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributesWithPredifinedValues<C>
-    for HtmlElementRender<'er, C>
-{
-}
+impl<'er, C: Component> HemsHamsAmbiguous for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HamsHandMade<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HamsWithPredefinedValues<C> for HtmlElementRender<'er, C> {}
 
 impl<'er, C: Component> MethodsForEvents<C> for HtmlElementRender<'er, C> {}

@@ -1,3 +1,9 @@
+// This module has traits that provide methods for HTML elements and HTML
+// attributes. But the trait's names are too long, so their names are
+// shorten with prefixes as `Hems` and `Hams`.
+// `Hems` is short for `HTML element methods`
+// `Hams` is short for `HTML attribute methods`
+
 use crate::dom::NameSpace;
 
 mod attributes;
@@ -22,14 +28,8 @@ impl NameSpace for HtmlNameSpace {
     const NAMESPACE: Option<&'static str> = None;
 }
 
-// All elements must have a method on this struct.
-// Attribute-only must have a method on this struct.
-// If there is a conflict, consider move the element/attribute to ?
+// This is a struct to make sure that a name that appears in both
+// HTML element names and HTML attribute names causes a conflict
+// and fail to compile (during test).
 #[cfg(test)]
-pub struct AllElements;
-
-// All attributes must have a method on this struct.
-// Element-only must have a method on this struct.
-// If there is a conflict, consider move the element/attribute to ?
-#[cfg(test)]
-pub struct AllAttributes;
+pub struct TestHtmlMethods;

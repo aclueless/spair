@@ -1,7 +1,6 @@
 use super::{
-    HtmlElementRender, HtmlElementRenderMut,
-    MethodsForDeprecatingAttributesAndElementsWithAmbiguousNames,
-    MethodsForHtmlAttributesWithAmbiguousNames, MethodsForHtmlAttributesWithPredifinedValues,
+    HamsForAmbiguousNames, HamsWithPredefinedValues, HemsHamsAmbiguous, HtmlElementRender,
+    HtmlElementRenderMut,
 };
 use crate::component::Component;
 use crate::dom::ElementType;
@@ -18,9 +17,7 @@ use wasm_bindgen::JsCast;
 /// adding the children (`option` elements) of the select will not work. This trait
 /// provide methods to work with attribute value to help handle the issue. But this
 /// trait alone can not sovle the issue. We also need HtmlElementRender and HtmlNodeListRender.
-pub trait MethodsForHtmlAttributeValueAndIndexOnHtmlSelectElement<C: Component>:
-    Sized + HtmlElementRenderMut<C>
-{
+pub trait HamsForSelectElementValueAndIndex<C: Component>: Sized + HtmlElementRenderMut<C> {
     fn value(mut self, value: impl AttributeValue<C>) -> Self {
         value.render(self.html_element_render_mut());
         self
@@ -65,8 +62,8 @@ impl_attribute_value_index_trait_for_types! {
     AttributeIndex, Option<usize>,  attribute_selected_index_optional_usize
 }
 
-pub trait MethodsForSpecialHtmlAttributes<C: Component>:
-    Sized + ElementRenderMut<C> + MethodsForHtmlAttributes<C>
+pub trait HamsHandMade<C: Component>:
+    Sized + ElementRenderMut<C> + HamsForDistinctNames<C>
 {
     /// Only execute `input.set_checked` if the value changed.
     fn checked_if_changed(mut self, value: bool) -> Self {
@@ -165,17 +162,17 @@ pub trait MethodsForSpecialHtmlAttributes<C: Component>:
 }
 
 #[cfg(test)]
-use crate::render::html::AllAttributes;
-#[cfg(test)]
-use crate::render::html::AllElements;
+use crate::render::html::TestHtmlMethods;
 
 make_trait_for_attribute_methods! {
-    TestStructs: (AllElements AllAttributes)
-    TraitName: MethodsForHtmlAttributes
+    TestStructs: (TestHtmlMethods)
+    TraitName: HamsForDistinctNames
     attributes:
         i32     tab_index "tabindex"
 
-        str     abbr
+        // moved to ../attributes_elements_with_ambiguous_names
+        // str     abbr
+
         str     accept
         str     accept_charset "accept-charset"
         str     action
@@ -184,21 +181,30 @@ make_trait_for_attribute_methods! {
         bool    allow_payment_request "allowpaymentrequest"
         str     alt
         bool    auto_play "autoplay"
-        str     cite
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // str     cite
+
         //str     class
         u32     cols
         u32     col_span "colspan"
         bool    content_editable "contenteditable"
         bool    controls
         str     coords
-        str     data
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // str     data
+
         str     date_time "datetime"
         bool    default
         str     dir_name "dirname"
         bool    disabled
         str     download
         str     r#for "for"
-        str     form
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // str     form
+
         str     form_action "formaction"
         bool    form_no_validate "formnovalidate"
         str     headers
@@ -208,7 +214,10 @@ make_trait_for_attribute_methods! {
         str     href_str "href" // method named `href` is used for routing
         str     href_lang "hreflang"
         bool    is_map "ismap"
-        str     label
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // str     label
+
         bool    r#loop "loop"
         f64     low
         // ??   max: what type? split into multiple methods?
@@ -238,7 +247,10 @@ make_trait_for_attribute_methods! {
         bool    selected
         u32     size
         str     sizes
-        u32     span
+
+        // moved to ../attributes_elements_with_ambiguous_names
+        // u32     span
+
         str     src
         str     src_doc "srcdoc"
         str     src_lang "srclang"
@@ -331,44 +343,23 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for StaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> MethodsForDeprecatingAttributesAndElementsWithAmbiguousNames
-    for StaticAttributes<'er, C>
-{
-}
-impl<'er, C: Component> MethodsForHtmlAttributes<C> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributeValueAndIndexOnHtmlSelectElement<C>
-    for StaticAttributes<'er, C>
-{
-}
-impl<'er, C: Component> MethodsForSpecialHtmlAttributes<C> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributesWithPredifinedValues<C>
-    for StaticAttributes<'er, C>
-{
-}
+impl<'er, C: Component> HemsHamsAmbiguous for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsHandMade<C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsWithPredefinedValues<C> for StaticAttributes<'er, C> {}
 
-impl<'er, C: Component> MethodsForHtmlAttributes<C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributeValueAndIndexOnHtmlSelectElement<C>
-    for AttributesOnly<'er, C>
-{
-}
-impl<'er, C: Component> MethodsForSpecialHtmlAttributes<C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributesWithAmbiguousNames<C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributesWithPredifinedValues<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsHandMade<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForAmbiguousNames<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsWithPredefinedValues<C> for AttributesOnly<'er, C> {}
 
-impl<'er, C: Component> MethodsForHtmlAttributes<C> for StaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributeValueAndIndexOnHtmlSelectElement<C>
-    for StaticAttributesOnly<'er, C>
-{
-}
-impl<'er, C: Component> MethodsForSpecialHtmlAttributes<C> for StaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> MethodsForHtmlAttributesWithAmbiguousNames<C>
-    for StaticAttributesOnly<'er, C>
-{
-}
-impl<'er, C: Component> MethodsForHtmlAttributesWithPredifinedValues<C>
-    for StaticAttributesOnly<'er, C>
-{
-}
+impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsHandMade<C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForAmbiguousNames<C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsWithPredefinedValues<C> for StaticAttributesOnly<'er, C> {}
 
 impl<'er, C: Component> MethodsForEvents<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> MethodsForEvents<C> for StaticAttributesOnly<'er, C> {}

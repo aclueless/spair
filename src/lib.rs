@@ -57,12 +57,9 @@ pub mod prelude {
     pub use crate::component::Component;
     pub use crate::render::base::MethodsForEvents;
     pub use crate::render::html::{
-        AmbiguousHtmlElementMethods, HtmlElementMethods, HtmlListMethods,
-        MethodsForDeprecatingAttributesAndElementsWithAmbiguousNames,
-        MethodsForHtmlAttributeValueAndIndexOnHtmlSelectElement, MethodsForHtmlAttributes,
-        MethodsForHtmlAttributesWithAmbiguousNames, MethodsForHtmlAttributesWithPredifinedValues,
-        MethodsForSpecialHtmlAttributes, NodeAndTextMethodsOnAttributeX,
-        SpecializedHtmlElementMethods,
+        HamsForAmbiguousNames, HamsForDistinctNames, HamsForSelectElementValueAndIndex,
+        HamsHandMade, HamsWithPredefinedValues, HemsForAmbiguousNames, HemsForDistinctNames,
+        HemsForList, HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
     };
     //pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
     //#[cfg(feature = "svg")]

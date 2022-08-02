@@ -45,7 +45,7 @@ impl<'a, C: Component> HtmlListRender<'a, C> {
     }
 }
 
-pub trait HtmlListMethods<'a, C: Component>:
+pub trait HemsForList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>
 {
     fn list_with_render<I, R>(
@@ -145,7 +145,7 @@ impl<'a, C: Component> MakeNodesExtensions<'a> for StaticAttributesOnly<'a, C> {
     }
 }
 
-impl<'a, C: Component> HtmlListMethods<'a, C> for HtmlElementRender<'a, C> {}
-impl<'a, C: Component> HtmlListMethods<'a, C> for AttributesOnly<'a, C> {}
-impl<'a, C: Component> HtmlListMethods<'a, C> for StaticAttributes<'a, C> {}
-impl<'a, C: Component> HtmlListMethods<'a, C> for StaticAttributesOnly<'a, C> {}
+impl<'a, C: Component> HemsForList<'a, C> for HtmlElementRender<'a, C> {}
+impl<'a, C: Component> HemsForList<'a, C> for AttributesOnly<'a, C> {}
+impl<'a, C: Component> HemsForList<'a, C> for StaticAttributes<'a, C> {}
+impl<'a, C: Component> HemsForList<'a, C> for StaticAttributesOnly<'a, C> {}
