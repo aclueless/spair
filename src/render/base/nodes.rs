@@ -21,7 +21,7 @@ pub struct NodesRender<'a, C: Component> {
 impl<'a, C: Component> From<ElementRender<'a, C>> for NodesRender<'a, C> {
     fn from(u: ElementRender<'a, C>) -> Self {
         let (comp, state, status, element) = u.into_parts();
-        let (parent, nodes) = element.ws_node_and_node_list_mut();
+        let (parent, nodes) = element.ws_node_and_nodes_mut();
         Self {
             comp,
             state,

@@ -252,7 +252,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn list_render(&mut self, mode: ListElementCreation, tag: &'a str) -> ListRender<C> {
-        let (parent, nodes) = self.element.ws_node_and_node_list_mut();
+        let (parent, nodes) = self.element.ws_node_and_nodes_mut();
         ListRender::new(
             self.comp,
             self.state,

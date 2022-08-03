@@ -74,7 +74,7 @@ impl Element {
         &self.ws_element
     }
 
-    pub fn ws_node_and_node_list_mut(&mut self) -> (&web_sys::Node, &mut Nodes) {
+    pub fn ws_node_and_nodes_mut(&mut self) -> (&web_sys::Node, &mut Nodes) {
         (self.ws_element.as_ref(), &mut self.nodes)
     }
 
