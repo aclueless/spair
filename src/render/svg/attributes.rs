@@ -4,7 +4,17 @@ use crate::render::base::{
 };
 use super::{SemsForDistinctNames, SvgNodesOwned};
 
-use wasm_bindgen::JsCast;
+#[cfg(feature = "queue-render")]
+use crate::component::queue_render::Value;
+
+make_traits_for_attribute_values! {
+    LengthPercentage {
+        i32, set_i32_attribute queue_i32_attribute
+        f64, set_f64_attribute queue_f64_attribute
+        &str, set_str_attribute queue_str_attribute
+        String, set_string_attribute queue_string_attribute
+    }
+}
 
 pub trait SamsHandMade<C: Component>:
     Sized + ElementRenderMut<C>
@@ -104,8 +114,8 @@ make_trait_for_attribute_methods! {
         str          content_script_type "contentScriptType"
         str          content_style_type "contentStyleType"
         str          cursor
-        f64          cx
-        f64          cy
+        LengthPercentage          cx
+        LengthPercentage          cy
         str          d
         str          decelerate
         str          descent
@@ -115,8 +125,8 @@ make_trait_for_attribute_methods! {
         str          divisor
         str          dominant_baseline "dominant-baseline"
         str          dur
-        f64          dx
-        f64          dy
+        LengthPercentage          dx
+        LengthPercentage          dy
         str          edge_mode "edgeMode"
         str          elevation
         str          enable_background "enable-background"
@@ -152,12 +162,12 @@ make_trait_for_attribute_methods! {
         str          gradient_transform "gradientTransform"
         str          gradient_units "gradientUnits"
         str          hanging
-        f64          height
+        LengthPercentage          height
         str          horiz_adv_x "horiz-adv-x"
         str          horiz_origin_x "horiz-origin-x"
         str          href
         str          hreflang
-        str          id
+        //str          id
         str          ideographic
         str          image_rendering "image-rendering"
         str          r#in "in"
@@ -303,13 +313,13 @@ make_trait_for_attribute_methods! {
         str          view_box "viewBox"
         str          view_target "viewTarget"
         str          visibility
-        f64          width
+        LengthPercentage          width
         str          widths
         str          word_spacing "word-spacing"
         str          writing_mode "writing-mode"
-        f64          x
-        f64          x1
-        f64          x2
+        LengthPercentage          x
+        LengthPercentage          x1
+        LengthPercentage          x2
         str          x_height "x-height"
         str          x_channel_selector "xChannelSelector"
         // str          xml_base "xml:base"
@@ -317,9 +327,9 @@ make_trait_for_attribute_methods! {
         // str          xml_space "xml:space"
         // str          xmlns
         // str          xmlns_xlink "xmlns:xlink"
-        f64          y
-        f64          y1
-        f64          y2
+        LengthPercentage          y
+        LengthPercentage          y1
+        LengthPercentage          y2
         str          y_channel_selector "yChannelSelector"
         str          z
         str          zoom_and_pan "zoomAndPan"
@@ -367,28 +377,28 @@ impl<'er, C: Component> SvgStaticAttributes<'er, C> {
 
 impl<'er, C: Component> ElementRenderMut<C> for SvgAttributesOnly<'er, C> {
     fn element_render(&self) -> &ElementRender<C> {
-        self.element_render()
+        &self.0
     }
-    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
-        self.element_render_mut()
+    fn element_render_mut(&mut self) -> &'er mut ElementRender<C> {
+        &mut self.0
     }
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributesOnly<'er, C> {
     fn element_render(&self) -> &ElementRender<C> {
-        self.element_render()
+        &self.0
     }
-    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
-        self.element_render_mut()
+    fn element_render_mut(&mut self) -> &'er mut ElementRender<C> {
+        &mut self.0
     }
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributes<'er, C> {
     fn element_render(&self) -> &ElementRender<C> {
-        self.element_render()
+        &self.0
     }
-    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
-        self.element_render_mut()
+    fn element_render_mut(&mut self) -> &'er mut ElementRender<C> {
+        &mut self.0
     }
 }
 
@@ -404,4 +414,5 @@ impl<'er, C: Component> SamsHandMade<C> for SvgAttributesOnly<'er, C> {}
 impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticAttributes<'n, C> {
     type Output = SvgNodesOwned<'n, C>;
 }
+
 

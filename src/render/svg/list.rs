@@ -1,19 +1,19 @@
-use super::ListItemRender;
+use super::SvgListItemRender;
 use crate::component::Component;
 use crate::render::base::{
     ElementRender, ElementRenderMut, ListRender, MakeNodesExtensions, NodesExtensions,
     RememberSettingSelectedOption,
 };
-use crate::render::html::{
-    AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes, StaticAttributesOnly,
+use crate::render::svg::{
+    SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgStaticAttributes, SvgStaticAttributesOnly,
 };
 use crate::render::ListElementCreation;
 
-pub struct HtmlListRender<'a, C: Component>(ListRender<'a, C>);
+pub struct SvgListRender<'a, C: Component>(ListRender<'a, C>);
 
-// TODO: Is it possible to merge this and SvgListRender into ListRender using generic?
+// TODO: Is it possible to merge this and HtmlListRender into ListRender using generic?
 
-impl<'a, C: Component> HtmlListRender<'a, C> {
+impl<'a, C: Component> SvgListRender<'a, C> {
     pub fn render_list<I, R>(
         &mut self,
         items: impl IntoIterator<Item = I>,
@@ -21,14 +21,14 @@ impl<'a, C: Component> HtmlListRender<'a, C> {
     ) -> RememberSettingSelectedOption
     where
         I: Copy,
-        for<'u> R: Fn(I, HtmlElementRender<'u, C>),
+        for<'u> R: Fn(I, SvgElementRender<'u, C>),
     {
         let mut index = 0;
         for item in items {
             let status = self
                 .0
                 .list
-                .check_or_create_element_for_list::<HtmlNameSpace>(
+                .check_or_create_element_for_list::<SvgNameSpace>(
                     self.0.tag,
                     index,
                     self.0.parent,
@@ -45,7 +45,7 @@ impl<'a, C: Component> HtmlListRender<'a, C> {
     }
 }
 
-pub trait HemsForList<'a, C: Component>:
+pub trait SemsForList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>
 {
     fn list_with_render<I, R>(
@@ -57,10 +57,10 @@ pub trait HemsForList<'a, C: Component>:
     ) -> NodesExtensions<'a>
     where
         I: Copy,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
         let r = self.element_render_mut().non_keyed_list_updater(mode, tag);
-        let mut r = HtmlListRender(r);
+        let mut r = SvgListRender(r);
         let _do_we_have_to_care_about_this_returned_value_ = r.render_list(items, render);
         self.make_nodes_extensions()
     }
@@ -73,7 +73,7 @@ pub trait HemsForList<'a, C: Component>:
     ) -> NodesExtensions<'a>
     where
         I: Copy,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
@@ -86,7 +86,7 @@ pub trait HemsForList<'a, C: Component>:
     ) -> NodesExtensions<'a>
     where
         I: Copy,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
         self.list_with_render(items, ListElementCreation::New, tag, render)
     }
@@ -98,7 +98,7 @@ pub trait HemsForList<'a, C: Component>:
     ) -> NodesExtensions<'a>
     where
         I: Copy,
-        I: ListItemRender<C>,
+        I: SvgListItemRender<C>,
     {
         self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
     }
@@ -106,7 +106,7 @@ pub trait HemsForList<'a, C: Component>:
     fn list_clone<I>(self, items: impl IntoIterator<Item = I>) -> NodesExtensions<'a>
     where
         I: Copy,
-        I: ListItemRender<C>,
+        I: SvgListItemRender<C>,
     {
         self.list_with_render(
             items,
@@ -117,35 +117,35 @@ pub trait HemsForList<'a, C: Component>:
     }
 }
 
-impl<'a, C: Component> MakeNodesExtensions<'a> for HtmlElementRender<'a, C> {
+impl<'a, C: Component> MakeNodesExtensions<'a> for SvgElementRender<'a, C> {
     fn make_nodes_extensions(self) -> NodesExtensions<'a> {
-        let e = self.into_parts().0.into_parts().3;
+        let e = self.into_inner().into_parts().3;
         NodesExtensions::new(e.nodes_mut())
     }
 }
 
-impl<'a, C: Component> MakeNodesExtensions<'a> for AttributesOnly<'a, C> {
+impl<'a, C: Component> MakeNodesExtensions<'a> for SvgAttributesOnly<'a, C> {
     fn make_nodes_extensions(self) -> NodesExtensions<'a> {
-        let e = self.into_inner().into_parts().0.into_parts().3;
+        let e = self.into_inner().into_parts().3;
         NodesExtensions::new(e.nodes_mut())
     }
 }
 
-impl<'a, C: Component> MakeNodesExtensions<'a> for StaticAttributes<'a, C> {
+impl<'a, C: Component> MakeNodesExtensions<'a> for SvgStaticAttributes<'a, C> {
     fn make_nodes_extensions(self) -> NodesExtensions<'a> {
-        let e = self.into_inner().into_parts().0.into_parts().3;
+        let e = self.into_inner().into_parts().3;
         NodesExtensions::new(e.nodes_mut())
     }
 }
 
-impl<'a, C: Component> MakeNodesExtensions<'a> for StaticAttributesOnly<'a, C> {
+impl<'a, C: Component> MakeNodesExtensions<'a> for SvgStaticAttributesOnly<'a, C> {
     fn make_nodes_extensions(self) -> NodesExtensions<'a> {
-        let e = self.into_inner().into_parts().0.into_parts().3;
+        let e = self.into_inner().into_parts().3;
         NodesExtensions::new(e.nodes_mut())
     }
 }
 
-impl<'a, C: Component> HemsForList<'a, C> for HtmlElementRender<'a, C> {}
-impl<'a, C: Component> HemsForList<'a, C> for AttributesOnly<'a, C> {}
-impl<'a, C: Component> HemsForList<'a, C> for StaticAttributes<'a, C> {}
-impl<'a, C: Component> HemsForList<'a, C> for StaticAttributesOnly<'a, C> {}
+impl<'a, C: Component> SemsForList<'a, C> for SvgElementRender<'a, C> {}
+impl<'a, C: Component> SemsForList<'a, C> for SvgAttributesOnly<'a, C> {}
+impl<'a, C: Component> SemsForList<'a, C> for SvgStaticAttributes<'a, C> {}
+impl<'a, C: Component> SemsForList<'a, C> for SvgStaticAttributesOnly<'a, C> {}

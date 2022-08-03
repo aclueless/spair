@@ -34,10 +34,10 @@ impl spair::Component for Clock {
                 .static_nodes()
                 .filter(|f| {
                     f.id("innerShadow")
-                        .str_attr("x", "-20%")
-                        .str_attr("y", "-20%")
-                        .str_attr("width", "140%")
-                        .str_attr("height", "140%")
+                        .x("-20%")
+                        .y("-20%")
+                        .width("140%")
+                        .height("140%")
                         .fe_gaussian_blur(|b| {
                             b.r#in("SourceGraphic").std_deviation(3.0).result("blue");
                         })
@@ -70,7 +70,7 @@ impl spair::Component for Clock {
                             let dr = degree.to_radians();
                             let dx = dr.sin() * length;
                             let dy = -dr.cos() * length;
-                            g.render(Stick {
+                            g.update_render(Stick {
                                 width: 2,
                                 y1: 29,
                                 y2: 32,
@@ -81,33 +81,33 @@ impl spair::Component for Clock {
                                     .y(101.0)
                                     .text_anchor("middle")
                                     .dominant_baseline("middle")
-                                    .transform(&format!("translate({} {})", dx, dy))
-                                    .render(n / 5)
+                                    .transform(format!("translate({} {})", dx, dy))
+                                    .update_render(n / 5)
                                     .done()
                             });
                         } else {
-                            g.render(Stick {
+                            g.update_render(Stick {
                                 width: 1,
                                 y1: 30,
                                 y2: 32,
                                 angle: degree,
                             });
                         }
-                    })
+                    });
                 })
-                .nodes()
+                .update_nodes()
                 .g(|g| {
-                    g.render(Hand {
+                    g.update_render(Hand {
                         width: 4,
                         y2: 55,
                         angle: hours_angle,
                     })
-                    .render(Hand {
+                    .update_render(Hand {
                         width: 2,
                         y2: 40,
                         angle: minutes_angle,
                     })
-                    .render(Hand {
+                    .update_render(Hand {
                         width: 1,
                         y2: 30,
                         angle: seconds_angle,
@@ -135,7 +135,7 @@ struct Stick {
 impl spair::SvgRender<Clock> for Stick {
     fn render(self, nodes: spair::SvgNodes<Clock>) {
         nodes.line(|l| {
-            l.transform(&format!("rotate({} 100 100)", self.angle))
+            l.transform(format!("rotate({} 100 100)", self.angle))
                 .x1(100.0)
                 .y1(self.y1 as f64)
                 .x2(100.0)
@@ -155,7 +155,7 @@ struct Hand {
 impl spair::SvgRender<Clock> for Hand {
     fn render(self, nodes: spair::SvgNodes<Clock>) {
         nodes.line(|l| {
-            l.transform(&format!("rotate({} 100 100)", self.angle))
+            l.transform(format!("rotate({} 100 100)", self.angle))
                 .static_attributes()
                 .x1(100.0)
                 .y1(100.0)

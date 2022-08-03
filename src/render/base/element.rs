@@ -130,6 +130,14 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.element.set_str_attribute(name, value);
     }
 
+    pub fn set_string_attribute(&mut self, name: &str, value: String) {
+        if self.need_to_render_attribute(|al, index| al.check_str_attribute(index, &value)) == false
+        {
+            return;
+        }
+        self.element.set_str_attribute(name, &value);
+    }
+
     pub fn set_i32_attribute(&mut self, name: &str, value: i32) {
         if self.need_to_render_attribute(|al, index| al.check_i32_attribute(index, value)) == false
         {
@@ -285,6 +293,10 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn queue_str_attribute(&mut self, name: &str, value: &Value<&str>) {
+        //self.element.set_str_attribute(name, value);
+    }
+
+    pub fn queue_string_attribute(&mut self, name: &str, value: &Value<String>) {
         //self.element.set_str_attribute(name, value);
     }
 

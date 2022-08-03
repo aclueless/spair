@@ -1,6 +1,6 @@
 use crate::component::{ChildComp, Comp, Component};
 use crate::render::base::{ElementRenderMut, MatchIfRender, NodeListRender, NodeListRenderMut};
-use super::{SvgElementRender, SvgNameSpace, SvgStaticAttributes, SvgStaticRender, SvgRender};
+use super::{SvgElementRender, SvgNameSpace, SvgStaticAttributes, SvgStaticRender, SvgRender, SvgAttributesOnly, SvgStaticAttributesOnly};
 
 
 pub trait RenderSvgElement<C, O>: Sized
@@ -16,6 +16,18 @@ where
             element_render(e);
         }
         render.next_index();
+        this
+    }
+}
+
+pub trait SemsHandMade<C: Component>: Sized {
+    type Output: From<Self> + NodeListRenderMut<C>;
+    fn match_if(self, f: impl FnOnce(SvgMatchIfRender<C>)) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.node_list_render_mut();
+        let mi = render.get_match_if_updater();
+        let mi = SvgMatchIfRender(mi);
+        f(mi);
         this
     }
 }
@@ -208,6 +220,19 @@ impl<'n, C: Component> RenderSvgElement<C, SvgNodesOwned<'n, C>> for SvgNodesOwn
 impl<'n, C: Component> RenderSvgElement<C, SvgStaticNodesOwned<'n, C>> for SvgStaticNodesOwned<'n, C> {}
 
 
+impl<'h, 'n: 'h, C: Component> SemsHandMade<C> for SvgNodes<'h, 'n, C> {
+    type Output = Self;
+}
+impl<'h, 'n: 'h, C: Component> SemsHandMade<C> for SvgStaticNodes<'h, 'n, C> {
+    type Output = Self;
+}
+impl<'n, C: Component> SemsHandMade<C> for SvgNodesOwned<'n, C> {
+    type Output = Self;
+}
+impl<'n, C: Component> SemsHandMade<C> for SvgStaticNodesOwned<'n, C> {
+    type Output = Self;
+}
+
 impl<'h, 'n: 'h, C: Component> SemsForDistinctNames<C> for SvgNodes<'h, 'n, C> {
     type Output = Self;
 }
@@ -326,5 +351,74 @@ impl<'n, C: Component> SvgStaticNodesOwned<'n, C> {
         render.render(n);
         //self.node_list_render_mut().set_update_mode();
         self
+    }
+}
+
+pub trait MethodsForSvgElementContent<'n, C: Component>:
+    ElementRenderMut<C> + Into<SvgNodesOwned<'n, C>> + Into<SvgStaticNodesOwned<'n, C>>
+{
+    fn update_nodes(self) -> SvgNodesOwned<'n, C> {
+        self.into()
+    }
+
+    fn static_nodes(self) -> SvgStaticNodesOwned<'n, C> {
+        self.into()
+    }
+
+    fn update_render(self, render: impl SvgRender<C>) -> SvgNodesOwned<'n, C> {
+        let n: SvgNodesOwned<C> = self.into();
+        n.update_render(render)
+    }
+
+    fn static_render(self, render: impl SvgStaticRender<C>) -> SvgNodesOwned<'n, C> {
+        let n: SvgNodesOwned<C> = self.into();
+        n.static_render(render)
+    }
+
+    fn component<CC: Component>(mut self, child: &ChildComp<CC>) {
+        self.element_render_mut().component(child)
+    }
+}
+
+impl<'n, C:Component> From<SvgElementRender<'n,C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgElementRender<'n,C>) -> Self {
+        SvgStaticNodesOwned::new(From::from(r.into_inner()))
+    }
+}
+impl<'n, C:Component> From<SvgAttributesOnly<'n,C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgAttributesOnly<'n,C>) -> Self {
+        SvgStaticNodesOwned::new(From::from(r.into_inner()))
+    }
+}
+impl<'n, C:Component> From<SvgAttributesOnly<'n,C>> for SvgNodesOwned<'n, C> {
+    fn from(r: SvgAttributesOnly<'n,C>) -> Self {
+        SvgNodesOwned::new(From::from(r.into_inner()))
+    }
+}
+impl<'n, C:Component> From<SvgStaticAttributesOnly<'n,C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgStaticAttributesOnly<'n,C>) -> Self {
+        SvgStaticNodesOwned::new(From::from(r.into_inner()))
+    }
+}
+impl<'n, C:Component> From<SvgStaticAttributesOnly<'n,C>> for SvgNodesOwned<'n, C> {
+    fn from(r: SvgStaticAttributesOnly<'n,C>) -> Self {
+        SvgNodesOwned::new(From::from(r.into_inner()))
+    }
+}
+impl<'n, C:Component> From<SvgStaticAttributes<'n,C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgStaticAttributes<'n,C>) -> Self {
+        SvgStaticNodesOwned::new(From::from(r.into_inner()))
+    }
+}
+impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgElementRender<'n, C> {}
+impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgAttributesOnly<'n, C> {}
+impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgStaticAttributesOnly<'n, C> {}
+impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgStaticAttributes<'n, C> {}
+
+pub struct SvgMatchIfRender<'a, C: Component>(MatchIfRender<'a, C>);
+
+impl<'a, C: Component> SvgMatchIfRender<'a, C> {
+    pub fn render_on_arm_index(self, index: u32) -> SvgNodesOwned<'a, C> {
+        SvgNodesOwned::new(self.0.render_on_arm_index(index))
     }
 }

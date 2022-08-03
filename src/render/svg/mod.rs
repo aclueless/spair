@@ -4,13 +4,15 @@ mod attributes;
 mod element;
 mod nodes;
 mod render;
+mod list;
 
 pub use attributes::*;
 pub use element::*;
 pub use nodes::*;
 pub use render::*;
+pub use list::*;
 
-struct SvgNameSpace;
+pub struct SvgNameSpace;
 impl NameSpace for SvgNameSpace {
     const NAMESPACE: Option<&'static str> = Some("http://www.w3.org/2000/svg");
 }

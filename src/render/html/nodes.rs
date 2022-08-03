@@ -4,6 +4,8 @@ use super::{
 };
 use crate::component::{ChildComp, Comp, Component};
 use crate::render::base::{ElementRenderMut, MatchIfRender, NodeListRender, NodeListRenderMut};
+#[cfg(feature = "svg")]
+use crate::render::svg::{SvgElementRender, SvgNameSpace};
 
 pub struct HtmlNodeListRender<'n, C: Component> {
     node_list_render: NodeListRender<'n, C>,
@@ -48,6 +50,18 @@ pub trait HemsHandMade<C: Component>: Sized {
         let mi = render.get_match_if_updater();
         let mi = HtmlMatchIfRender(mi);
         f(mi);
+        this
+    }
+
+    #[cfg(feature = "svg")]
+    fn svg(self, f: impl FnOnce(SvgElementRender<C>)) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.node_list_render_mut();
+        if render.require_render() {
+            let r = render.get_element_render::<SvgNameSpace>("svg");
+            f(r.into())
+        }
+        render.next_index();
         this
     }
 }
