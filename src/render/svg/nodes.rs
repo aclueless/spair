@@ -48,7 +48,8 @@ make_trait_for_element_methods! {
         animate_motion "animateMotion"
         animate_transform "animateTransform"
         circle
-        clip_path "clipPath"
+        // ambiguous
+        // clip_path "clipPath"
         defs
         desc
         discard
@@ -87,14 +88,16 @@ make_trait_for_element_methods! {
         line
         linear_gradient "linearGradient"
         marker
-        mask
+        // ambiguous
+        // mask
         mesh
         meshgradient
         meshpatch
         meshrow
         metadata
         mpath
-        path
+        // ambiguous
+        // path
         pattern
         polygon
         polyline

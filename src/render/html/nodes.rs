@@ -1,6 +1,6 @@
 use super::{
-    AttributesOnly, HemsForAmbiguousNames, HtmlElementRender, HtmlNameSpace, Render,
-    SelectElementValueManager, StaticAttributes, StaticAttributesOnly, StaticRender,
+    AttributesOnly, HtmlElementRender, HtmlNameSpace, Render, SelectElementValueManager,
+    StaticAttributes, StaticAttributesOnly, StaticRender,
 };
 use crate::component::{ChildComp, Comp, Component};
 use crate::render::base::{ElementRenderMut, MatchIfRender, NodeListRender, NodeListRenderMut};
@@ -427,19 +427,6 @@ impl<'h, 'n: 'h, C: Component> RenderHtmlElement<C, StaticNodes<'h, 'n, C>>
 }
 impl<'n, C: Component> RenderHtmlElement<C, NodesOwned<'n, C>> for NodesOwned<'n, C> {}
 impl<'n, C: Component> RenderHtmlElement<C, StaticNodesOwned<'n, C>> for StaticNodesOwned<'n, C> {}
-
-impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<C> for Nodes<'h, 'n, C> {
-    type Output = Self;
-}
-impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<C> for StaticNodes<'h, 'n, C> {
-    type Output = Self;
-}
-impl<'n, C: Component> HemsForAmbiguousNames<C> for NodesOwned<'n, C> {
-    type Output = Self;
-}
-impl<'n, C: Component> HemsForAmbiguousNames<C> for StaticNodesOwned<'n, C> {
-    type Output = Self;
-}
 
 impl<'h, 'n: 'h, C: Component> HemsHandMade<C> for Nodes<'h, 'n, C> {
     type Output = Self;

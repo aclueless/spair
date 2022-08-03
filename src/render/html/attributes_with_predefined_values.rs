@@ -1,3 +1,4 @@
+use super::{AttributesOnly, HtmlElementRender, StaticAttributes, StaticAttributesOnly};
 use crate::component::Component;
 use crate::render::base::{ElementRender, ElementRenderMut};
 
@@ -234,3 +235,8 @@ TraitName: HamsWithPredefinedValues
     { wrap }
 }
 }
+
+impl<'er, C: Component> HamsWithPredefinedValues<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HamsWithPredefinedValues<C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsWithPredefinedValues<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsWithPredefinedValues<C> for StaticAttributesOnly<'er, C> {}

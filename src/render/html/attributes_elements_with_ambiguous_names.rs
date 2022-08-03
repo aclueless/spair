@@ -1,4 +1,7 @@
-use super::{HtmlElementRender, RenderHtmlElement};
+use super::{
+    AttributesOnly, HtmlElementRender, Nodes, NodesOwned, RenderHtmlElement, StaticAttributes,
+    StaticAttributesOnly, StaticNodes, StaticNodesOwned,
+};
 use crate::component::Component;
 use crate::render::base::{
     ElementRenderMut, NodeListRenderMut, StringAttributeValue, U32AttributeValue,
@@ -27,4 +30,23 @@ make_trait_for_same_name_attribute_and_element_methods! {
         str     form
         str     label
         u32     span
+}
+
+impl<'er, C: Component> HemsHamsAmbiguous for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HemsHamsAmbiguous for StaticAttributes<'er, C> {}
+
+impl<'er, C: Component> HamsForAmbiguousNames<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForAmbiguousNames<C> for StaticAttributesOnly<'er, C> {}
+
+impl<'n, C: Component> HemsForAmbiguousNames<C> for StaticNodesOwned<'n, C> {
+    type Output = Self;
+}
+impl<'n, C: Component> HemsForAmbiguousNames<C> for NodesOwned<'n, C> {
+    type Output = Self;
+}
+impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<C> for StaticNodes<'h, 'n, C> {
+    type Output = Self;
+}
+impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<C> for Nodes<'h, 'n, C> {
+    type Output = Self;
 }

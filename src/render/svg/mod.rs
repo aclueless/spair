@@ -1,12 +1,14 @@
 use crate::dom::NameSpace;
 
 mod attributes;
+mod attributes_elements_with_ambiguous_names;
 mod element;
 mod list;
 mod nodes;
 mod render;
 
 pub use attributes::*;
+pub use attributes_elements_with_ambiguous_names::*;
 pub use element::*;
 pub use list::*;
 pub use nodes::*;

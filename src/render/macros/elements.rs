@@ -141,9 +141,8 @@ macro_rules! make_trait_for_same_name_attribute_and_element_methods {
             //TraitDefinitionTokens: ($($TraitDefinitionTokens:tt)+)
             TraitName: $AttributeTraitName:ident
         }
-        //method_names: $($name:ident)+
         ambiguous_attributes: $(
-            $attribute_type:ident $method_name:ident $($attribute_name:literal)?
+            $attribute_type:ident $method_name:ident $(:a:$attribute_name:literal)? $(:e:$element_name:literal)?
         )+
     ) => {
         make_test_methods!{
@@ -160,7 +159,7 @@ macro_rules! make_trait_for_same_name_attribute_and_element_methods {
             TraitName: $ElementTraitName
             RenderElementTraitName: $RenderElementTraitName
             ElementRenderType: $ElementRenderType
-            elements: $($method_name)+
+            elements: $($method_name $($element_name)?)+
         }
         make_trait_for_attribute_methods! {
             TestStructs: ()

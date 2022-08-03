@@ -101,7 +101,8 @@ make_trait_for_attribute_methods! {
         str          cap_height "cap-height"
         //str          class
         str          clip
-        str          clip_path "clip-path"
+        // ambiguous
+        // str          clip_path "clip-path"
         str          clip_path_units "clipPathUnits"
         str          clip_rule "clip-rule"
         str          color
@@ -194,7 +195,8 @@ make_trait_for_attribute_methods! {
         str          marker_height "markerHeight"
         str          marker_units "markerUnits"
         str          marker_width "markerWidth"
-        str          mask
+        // ambiguous
+        // str          mask
         str          mask_content_units "maskContentUnits"
         str          mask_units "maskUnits"
         str          mathematical
@@ -217,7 +219,8 @@ make_trait_for_attribute_methods! {
         str          overline_thickness "overline-thickness"
         str          paint_order "paint-order"
         str          panose_1 "panose-1"
-        str          path
+        // ambiguous
+        // str          path
         str          path_length "pathLength"
         str          pattern_content_units "patternContentUnits"
         str          pattern_transform "patternTransform"

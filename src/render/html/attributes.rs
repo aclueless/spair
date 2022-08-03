@@ -1,7 +1,4 @@
-use super::{
-    HamsForAmbiguousNames, HamsWithPredefinedValues, HemsHamsAmbiguous, HtmlElementRender,
-    HtmlElementRenderMut,
-};
+use super::{HtmlElementRender, HtmlElementRenderMut};
 use crate::component::Component;
 use crate::dom::ElementType;
 use crate::render::base::{
@@ -345,23 +342,17 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for StaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> HemsHamsAmbiguous for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> HamsWithPredefinedValues<C> for StaticAttributes<'er, C> {}
 
 impl<'er, C: Component> HamsForDistinctNames<C> for AttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for AttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsForAmbiguousNames<C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsWithPredefinedValues<C> for AttributesOnly<'er, C> {}
 
 impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for StaticAttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for StaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsForAmbiguousNames<C> for StaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsWithPredefinedValues<C> for StaticAttributesOnly<'er, C> {}
 
 impl<'er, C: Component> MethodsForEvents<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> MethodsForEvents<C> for StaticAttributesOnly<'er, C> {}
