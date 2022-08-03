@@ -1,6 +1,9 @@
+use super::{
+    SamsForDistinctNames, SamsHandMade, SemsForDistinctNames, SvgAttributesOnly, SvgNodesOwned,
+    SvgStaticAttributes, SvgStaticAttributesOnly,
+};
 use crate::component::{Comp, Component};
 use crate::render::base::{ElementRender, ElementRenderMut};
-use super::{SamsHandMade, SamsForDistinctNames, SemsForDistinctNames, SvgNodesOwned, SvgAttributesOnly, SvgStaticAttributes, SvgStaticAttributesOnly};
 
 pub struct SvgElementRender<'er, C: Component>(ElementRender<'er, C>);
 
@@ -54,4 +57,3 @@ impl<'er, C: Component> SamsHandMade<C> for SvgElementRender<'er, C> {}
 impl<'n, C: Component> SemsForDistinctNames<C> for SvgElementRender<'n, C> {
     type Output = SvgNodesOwned<'n, C>;
 }
-

@@ -172,5 +172,3 @@ macro_rules! make_trait_for_same_name_attribute_and_element_methods {
         }
     }
 }
-
-

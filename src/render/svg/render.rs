@@ -1,5 +1,5 @@
+use super::{SvgElementRender, SvgNodes, SvgStaticNodes};
 use crate::component::Component;
-use super::{SvgNodes, SvgStaticNodes, SvgElementRender};
 
 pub trait SvgRender<C: Component> {
     fn render(self, nodes: SvgNodes<C>);

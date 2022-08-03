@@ -2,15 +2,15 @@ use crate::dom::NameSpace;
 
 mod attributes;
 mod element;
+mod list;
 mod nodes;
 mod render;
-mod list;
 
 pub use attributes::*;
 pub use element::*;
+pub use list::*;
 pub use nodes::*;
 pub use render::*;
-pub use list::*;
 
 pub struct SvgNameSpace;
 impl NameSpace for SvgNameSpace {

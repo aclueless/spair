@@ -1,8 +1,8 @@
+use super::{SemsForDistinctNames, SvgNodesOwned};
 use crate::component::Component;
 use crate::render::base::{
     ElementRender, ElementRenderMut, F64AttributeValue, StringAttributeValue,
 };
-use super::{SemsForDistinctNames, SvgNodesOwned};
 
 #[cfg(feature = "queue-render")]
 use crate::component::queue_render::Value;
@@ -16,9 +16,7 @@ make_traits_for_attribute_values! {
     }
 }
 
-pub trait SamsHandMade<C: Component>:
-    Sized + ElementRenderMut<C>
-{
+pub trait SamsHandMade<C: Component>: Sized + ElementRenderMut<C> {
     fn class(mut self, class_name: &str) -> Self {
         self.element_render_mut().class(class_name);
         self
@@ -414,5 +412,3 @@ impl<'er, C: Component> SamsHandMade<C> for SvgAttributesOnly<'er, C> {}
 impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticAttributes<'n, C> {
     type Output = SvgNodesOwned<'n, C>;
 }
-
-

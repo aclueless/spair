@@ -1,7 +1,9 @@
+use super::{
+    SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgRender, SvgStaticAttributes,
+    SvgStaticAttributesOnly, SvgStaticRender,
+};
 use crate::component::{ChildComp, Comp, Component};
 use crate::render::base::{ElementRenderMut, MatchIfRender, NodeListRender, NodeListRenderMut};
-use super::{SvgElementRender, SvgNameSpace, SvgStaticAttributes, SvgStaticRender, SvgRender, SvgAttributesOnly, SvgStaticAttributesOnly};
-
 
 pub trait RenderSvgElement<C, O>: Sized
 where
@@ -217,8 +219,10 @@ impl<'h, 'n: 'h, C: Component> RenderSvgElement<C, SvgStaticNodes<'h, 'n, C>>
 {
 }
 impl<'n, C: Component> RenderSvgElement<C, SvgNodesOwned<'n, C>> for SvgNodesOwned<'n, C> {}
-impl<'n, C: Component> RenderSvgElement<C, SvgStaticNodesOwned<'n, C>> for SvgStaticNodesOwned<'n, C> {}
-
+impl<'n, C: Component> RenderSvgElement<C, SvgStaticNodesOwned<'n, C>>
+    for SvgStaticNodesOwned<'n, C>
+{
+}
 
 impl<'h, 'n: 'h, C: Component> SemsHandMade<C> for SvgNodes<'h, 'n, C> {
     type Output = Self;
@@ -380,33 +384,33 @@ pub trait MethodsForSvgElementContent<'n, C: Component>:
     }
 }
 
-impl<'n, C:Component> From<SvgElementRender<'n,C>> for SvgStaticNodesOwned<'n, C> {
-    fn from(r: SvgElementRender<'n,C>) -> Self {
+impl<'n, C: Component> From<SvgElementRender<'n, C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgElementRender<'n, C>) -> Self {
         SvgStaticNodesOwned::new(From::from(r.into_inner()))
     }
 }
-impl<'n, C:Component> From<SvgAttributesOnly<'n,C>> for SvgStaticNodesOwned<'n, C> {
-    fn from(r: SvgAttributesOnly<'n,C>) -> Self {
+impl<'n, C: Component> From<SvgAttributesOnly<'n, C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgAttributesOnly<'n, C>) -> Self {
         SvgStaticNodesOwned::new(From::from(r.into_inner()))
     }
 }
-impl<'n, C:Component> From<SvgAttributesOnly<'n,C>> for SvgNodesOwned<'n, C> {
-    fn from(r: SvgAttributesOnly<'n,C>) -> Self {
+impl<'n, C: Component> From<SvgAttributesOnly<'n, C>> for SvgNodesOwned<'n, C> {
+    fn from(r: SvgAttributesOnly<'n, C>) -> Self {
         SvgNodesOwned::new(From::from(r.into_inner()))
     }
 }
-impl<'n, C:Component> From<SvgStaticAttributesOnly<'n,C>> for SvgStaticNodesOwned<'n, C> {
-    fn from(r: SvgStaticAttributesOnly<'n,C>) -> Self {
+impl<'n, C: Component> From<SvgStaticAttributesOnly<'n, C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgStaticAttributesOnly<'n, C>) -> Self {
         SvgStaticNodesOwned::new(From::from(r.into_inner()))
     }
 }
-impl<'n, C:Component> From<SvgStaticAttributesOnly<'n,C>> for SvgNodesOwned<'n, C> {
-    fn from(r: SvgStaticAttributesOnly<'n,C>) -> Self {
+impl<'n, C: Component> From<SvgStaticAttributesOnly<'n, C>> for SvgNodesOwned<'n, C> {
+    fn from(r: SvgStaticAttributesOnly<'n, C>) -> Self {
         SvgNodesOwned::new(From::from(r.into_inner()))
     }
 }
-impl<'n, C:Component> From<SvgStaticAttributes<'n,C>> for SvgStaticNodesOwned<'n, C> {
-    fn from(r: SvgStaticAttributes<'n,C>) -> Self {
+impl<'n, C: Component> From<SvgStaticAttributes<'n, C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgStaticAttributes<'n, C>) -> Self {
         SvgStaticNodesOwned::new(From::from(r.into_inner()))
     }
 }
