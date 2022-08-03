@@ -342,17 +342,21 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for StaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HamsHandMade<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<C> for HtmlElementRender<'er, C> {}
+
 impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributes<'er, C> {}
 
-impl<'er, C: Component> HamsForDistinctNames<C> for AttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for AttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<C> for AttributesOnly<'er, C> {}
 
-impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for StaticAttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributesOnly<'er, C> {}
 
 impl<'er, C: Component> MethodsForEvents<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> MethodsForEvents<C> for StaticAttributesOnly<'er, C> {}

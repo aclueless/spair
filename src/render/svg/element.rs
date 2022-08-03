@@ -1,7 +1,4 @@
-use super::{
-    SamsForDistinctNames, SamsHandMade, SemsForDistinctNames, SvgAttributesOnly, SvgNodesOwned,
-    SvgStaticAttributes, SvgStaticAttributesOnly,
-};
+use super::{SvgAttributesOnly, SvgStaticAttributes, SvgStaticAttributesOnly};
 use crate::component::{Comp, Component};
 use crate::render::base::{ElementRender, ElementRenderMut};
 
@@ -50,10 +47,4 @@ impl<'er, C: Component> SvgElementRender<'er, C> {
     pub fn ws_element(&self) -> &web_sys::Element {
         self.0.element().ws_element()
     }
-}
-
-impl<'er, C: Component> SamsForDistinctNames<C> for SvgElementRender<'er, C> {}
-impl<'er, C: Component> SamsHandMade<C> for SvgElementRender<'er, C> {}
-impl<'n, C: Component> SemsForDistinctNames<C> for SvgElementRender<'n, C> {
-    type Output = SvgNodesOwned<'n, C>;
 }

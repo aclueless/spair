@@ -252,6 +252,12 @@ impl<'n, C: Component> SemsForDistinctNames<C> for SvgNodesOwned<'n, C> {
 impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticNodesOwned<'n, C> {
     type Output = Self;
 }
+impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticAttributes<'n, C> {
+    type Output = SvgNodesOwned<'n, C>;
+}
+impl<'n, C: Component> SemsForDistinctNames<C> for SvgElementRender<'n, C> {
+    type Output = SvgNodesOwned<'n, C>;
+}
 
 impl<'h, 'n: 'h, C: Component> SvgNodes<'h, 'n, C> {
     pub(super) fn update_text(self, text: &str) {

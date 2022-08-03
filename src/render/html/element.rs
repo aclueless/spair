@@ -1,7 +1,4 @@
-use super::{
-    AttributesOnly, HamsForDistinctNames, HamsForSelectElementValueAndIndex, HamsHandMade,
-    StaticAttributes, StaticAttributesOnly,
-};
+use super::{AttributesOnly, StaticAttributes, StaticAttributesOnly};
 use crate::component::{Comp, Component};
 use crate::dom::ElementType;
 use crate::render::base::{ElementRender, ElementRenderMut, MethodsForEvents};
@@ -245,7 +242,4 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     }
 }
 
-impl<'er, C: Component> HamsForDistinctNames<C> for HtmlElementRender<'er, C> {}
-impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for HtmlElementRender<'er, C> {}
-impl<'er, C: Component> HamsHandMade<C> for HtmlElementRender<'er, C> {}
 impl<'er, C: Component> MethodsForEvents<C> for HtmlElementRender<'er, C> {}

@@ -1,4 +1,4 @@
-use super::{SemsForDistinctNames, SvgNodesOwned};
+use super::SvgElementRender;
 use crate::component::Component;
 use crate::render::base::{
     ElementRender, ElementRenderMut, F64AttributeValue, StringAttributeValue,
@@ -403,6 +403,9 @@ impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributes<'er, C> {
     }
 }
 
+impl<'er, C: Component> SamsHandMade<C> for SvgElementRender<'er, C> {}
+impl<'er, C: Component> SamsForDistinctNames<C> for SvgElementRender<'er, C> {}
+
 impl<'er, C: Component> SamsForDistinctNames<C> for SvgStaticAttributes<'er, C> {}
 impl<'er, C: Component> SamsHandMade<C> for SvgStaticAttributes<'er, C> {}
 
@@ -411,7 +414,3 @@ impl<'er, C: Component> SamsHandMade<C> for SvgStaticAttributesOnly<'er, C> {}
 
 impl<'er, C: Component> SamsForDistinctNames<C> for SvgAttributesOnly<'er, C> {}
 impl<'er, C: Component> SamsHandMade<C> for SvgAttributesOnly<'er, C> {}
-
-impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticAttributes<'n, C> {
-    type Output = SvgNodesOwned<'n, C>;
-}
