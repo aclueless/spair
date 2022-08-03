@@ -1,10 +1,10 @@
-use super::{AnyComponentHandle, Element, GroupedNodeList, ParentAndChild, TextNode};
+use super::{AnyComponentHandle, Element, GroupedNodes, ParentAndChild, TextNode};
 
 #[derive(Clone)]
 pub enum Node {
     Element(Element),
     Text(TextNode),
-    GroupedNodeList(GroupedNodeList),
+    GroupedNodes(GroupedNodes),
     // #[cfg(feature = "keyed-list")]
     // KeyedList(super::KeyedList),
     ComponentHandle(AnyComponentHandle),
@@ -17,7 +17,7 @@ impl Node {
         match self {
             Self::Element(element) => element.remove_from(parent),
             Self::Text(text) => text.remove_from(parent),
-            Self::GroupedNodeList(g) => g.clear(parent),
+            Self::GroupedNodes(g) => g.clear(parent),
             // #[cfg(feature = "keyed-list")]
             // Self::KeyedList(list) => list.clear(parent),
             Self::ComponentHandle(_) => {
@@ -34,7 +34,7 @@ impl Node {
         match self {
             Self::Element(element) => element.append_to(parent),
             Self::Text(text) => text.append_to(parent),
-            Self::GroupedNodeList(g) => g.append_to(parent),
+            Self::GroupedNodes(g) => g.append_to(parent),
             // #[cfg(feature = "keyed-list")]
             // Self::KeyedList(list) => list.append_to(parent),
             Self::ComponentHandle(_) => {
@@ -50,7 +50,7 @@ impl Node {
         match self {
             Self::Element(element) => Some(element),
             Self::Text(_) => None,
-            Self::GroupedNodeList(g) => g.nodes().get_first_element(),
+            Self::GroupedNodes(g) => g.nodes().get_first_element(),
             // #[cfg(feature = "keyed-list")]
             // Self::KeyedList(list) => list.get_first_element(),
             Self::ComponentHandle(_) => None,
@@ -63,7 +63,7 @@ impl Node {
         match self {
             Self::Element(element) => Some(element),
             Self::Text(_) => None,
-            Self::GroupedNodeList(g) => g.nodes().get_last_element(),
+            Self::GroupedNodes(g) => g.nodes().get_last_element(),
             // #[cfg(feature = "keyed-list")]
             // Self::KeyedList(list) => list.get_last_element(),
             Self::ComponentHandle(_) => None,

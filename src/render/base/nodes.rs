@@ -1,12 +1,12 @@
 use crate::component::{Comp, Component};
-use crate::dom::{ElementStatus, GroupedNodeList, NameSpace, Nodes};
+use crate::dom::{ElementStatus, GroupedNodes, NameSpace, Nodes};
 use crate::render::base::element::ElementRender;
 
-pub trait NodeListRenderMut<C: Component> {
-    fn node_list_render_mut(&mut self) -> &mut NodeListRender<C>;
+pub trait NodesRenderMut<C: Component> {
+    fn nodes_render_mut(&mut self) -> &mut NodesRender<C>;
 }
 
-pub struct NodeListRender<'a, C: Component> {
+pub struct NodesRender<'a, C: Component> {
     comp: &'a Comp<C>,
     state: &'a C,
 
@@ -18,7 +18,7 @@ pub struct NodeListRender<'a, C: Component> {
     nodes: &'a mut Nodes,
 }
 
-impl<'a, C: Component> From<ElementRender<'a, C>> for NodeListRender<'a, C> {
+impl<'a, C: Component> From<ElementRender<'a, C>> for NodesRender<'a, C> {
     fn from(u: ElementRender<'a, C>) -> Self {
         let (comp, state, status, element) = u.into_parts();
         let (parent, nodes) = element.ws_node_and_node_list_mut();
@@ -36,7 +36,7 @@ impl<'a, C: Component> From<ElementRender<'a, C>> for NodeListRender<'a, C> {
     }
 }
 
-impl<'a, C: Component> NodeListRender<'a, C> {
+impl<'a, C: Component> NodesRender<'a, C> {
     pub fn state(&self) -> &'a C {
         self.state
     }
@@ -98,7 +98,7 @@ impl<'a, C: Component> NodeListRender<'a, C> {
     pub fn get_match_if_updater(&mut self) -> MatchIfRender<C> {
         let match_if = self
             .nodes
-            .grouped_node_list(self.index, self.parent, self.next_sibling);
+            .grouped_nodes(self.index, self.parent, self.next_sibling);
         self.index += 1;
         MatchIfRender {
             comp: self.comp,
@@ -114,15 +114,15 @@ pub struct MatchIfRender<'a, C: Component> {
     state: &'a C,
 
     parent: &'a web_sys::Node,
-    match_if: &'a mut GroupedNodeList,
+    match_if: &'a mut GroupedNodes,
 }
 
 impl<'a, C: Component> MatchIfRender<'a, C> {
-    pub fn render_on_arm_index(self, index: u32) -> NodeListRender<'a, C> {
+    pub fn render_on_arm_index(self, index: u32) -> NodesRender<'a, C> {
         let status = self.match_if.set_active_index(index, self.parent);
         let (nodes, next_sibling) = self.match_if.nodes_mut_and_end_flag_node();
 
-        NodeListRender {
+        NodesRender {
             comp: self.comp,
             state: self.state,
 

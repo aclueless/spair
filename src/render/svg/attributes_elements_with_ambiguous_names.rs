@@ -4,7 +4,7 @@ use super::{
     SvgStaticNodes, SvgStaticNodesOwned,
 };
 use crate::component::Component;
-use crate::render::base::{ElementRenderMut, NodeListRenderMut, StringAttributeValue};
+use crate::render::base::{ElementRenderMut, NodesRenderMut, StringAttributeValue};
 
 #[cfg(test)]
 use crate::render::svg::TestSvgMethods;

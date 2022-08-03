@@ -13,7 +13,7 @@ use wasm_bindgen::JsCast;
 /// `select` element got highlighted as selected. But setting the value attribute before
 /// adding the children (`option` elements) of the select will not work. This trait
 /// provide methods to work with attribute value to help handle the issue. But this
-/// trait alone can not sovle the issue. We also need HtmlElementRender and HtmlNodeListRender.
+/// trait alone can not sovle the issue. We also need HtmlElementRender and HtmlNodesRender.
 pub trait HamsForSelectElementValueAndIndex<C: Component>: Sized + HtmlElementRenderMut<C> {
     fn value(mut self, value: impl AttributeValue<C>) -> Self {
         value.render(self.html_element_render_mut());

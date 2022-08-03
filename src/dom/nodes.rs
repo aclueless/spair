@@ -99,27 +99,27 @@ impl Nodes {
         }
     }
 
-    pub fn grouped_node_list(
+    pub fn grouped_nodes(
         &mut self,
         index: usize,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
-    ) -> &mut GroupedNodeList {
+    ) -> &mut GroupedNodes {
         if index == self.0.len() {
-            let fnl = GroupedNodeList::new();
+            let fnl = GroupedNodes::new();
             parent
                 .insert_before(fnl.end_flag_node.as_ref(), next_sibling)
-                .expect_throw("dom::nodes::Nodes::grouped_node_list insert_before");
-            self.0.push(Node::GroupedNodeList(fnl));
+                .expect_throw("dom::nodes::Nodes::grouped_nodes insert_before");
+            self.0.push(Node::GroupedNodes(fnl));
         }
 
         match self
             .0
             .get_mut(index)
-            .expect_throw("dom::nodes::Nodes::grouped_node_list get_mut")
+            .expect_throw("dom::nodes::Nodes::grouped_nodes get_mut")
         {
-            Node::GroupedNodeList(grouped_node_list) => grouped_node_list,
-            _ => panic!("dom::nodes::Nodes::check_or_create_element_for_list expected Node::GroupedNodeList"),
+            Node::GroupedNodes(grouped_node_list) => grouped_node_list,
+            _ => panic!("dom::nodes::Nodes::grouped_nodes expected Node::GroupedNodes"),
         }
     }
 
@@ -168,9 +168,7 @@ impl Nodes {
                 .expect_throw("dom::nodes::Nodes::update_text get_mut")
             {
                 Node::Text(text_node) => text_node.update_text(text),
-                _ => panic!(
-                    "dom::nodes::Nodes::check_or_create_element_for_list expected Node::Text"
-                ),
+                _ => panic!("dom::nodes::Nodes::update_text expected Node::Text"),
             }
         }
     }
@@ -187,21 +185,21 @@ impl Nodes {
     }
 }
 
-pub struct GroupedNodeList {
+pub struct GroupedNodes {
     active_index: Option<u32>,
     // `end_node` marks the boundary of this fragment
     end_flag_node: web_sys::Node,
     nodes: Nodes,
 }
 
-impl Clone for GroupedNodeList {
+impl Clone for GroupedNodes {
     fn clone(&self) -> Self {
-        // a GroupedNodeList should not be cloned?
+        // a GroupedNodes should not be cloned?
         Self::new()
     }
 }
 
-impl GroupedNodeList {
+impl GroupedNodes {
     fn new() -> Self {
         let end_flag_node = crate::utils::document()
             .create_comment("Mark the end of a grouped node list")
@@ -227,14 +225,14 @@ impl GroupedNodeList {
         self.nodes.clear(parent);
         parent
             .remove_child(&self.end_flag_node)
-            .expect_throw("dom::nodes::GroupedNodeList::clear remove_child");
+            .expect_throw("dom::nodes::GroupedNodes::clear remove_child");
     }
 
     pub fn append_to(&self, parent: &web_sys::Node) {
         self.nodes.append_to(parent);
         parent
             .append_child(&self.end_flag_node)
-            .expect_throw("dom::nodes::GroupedNodeList::append_to append_child");
+            .expect_throw("dom::nodes::GroupedNodes::append_to append_child");
     }
 
     pub fn nodes(&self) -> &Nodes {

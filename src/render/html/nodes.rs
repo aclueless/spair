@@ -3,30 +3,30 @@ use super::{
     StaticAttributes, StaticAttributesOnly, StaticRender,
 };
 use crate::component::{ChildComp, Comp, Component};
-use crate::render::base::{ElementRenderMut, MatchIfRender, NodeListRender, NodeListRenderMut};
+use crate::render::base::{ElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut};
 #[cfg(feature = "svg")]
 use crate::render::svg::{SvgElementRender, SvgNameSpace};
 
-pub struct HtmlNodeListRender<'n, C: Component> {
-    node_list_render: NodeListRender<'n, C>,
+pub struct HtmlNodesRender<'n, C: Component> {
+    node_list_render: NodesRender<'n, C>,
     // Just keep this value until the completion of the build of the whole node list
     // After done building the node list, this value will be dropped. The Drop::drop method
     // will execute setting value for the <select> element
     _select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-impl<'n, C: Component> NodeListRenderMut<C> for HtmlNodeListRender<'n, C> {
-    fn node_list_render_mut(&mut self) -> &'n mut NodeListRender<C> {
+impl<'n, C: Component> NodesRenderMut<C> for HtmlNodesRender<'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
         &mut self.node_list_render
     }
 }
 
 pub trait HemsHandMade<C: Component>: Sized {
-    type Output: From<Self> + NodeListRenderMut<C>;
+    type Output: From<Self> + NodesRenderMut<C>;
 
     fn line_break(self) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.node_list_render_mut();
+        let render = this.nodes_render_mut();
         if render.require_render() {
             render.get_element_render::<HtmlNameSpace>("br");
         }
@@ -36,7 +36,7 @@ pub trait HemsHandMade<C: Component>: Sized {
 
     fn horizontal_line(self) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.node_list_render_mut();
+        let render = this.nodes_render_mut();
         if render.require_render() {
             render.get_element_render::<HtmlNameSpace>("hr");
         }
@@ -46,7 +46,7 @@ pub trait HemsHandMade<C: Component>: Sized {
 
     fn match_if(self, f: impl FnOnce(HtmlMatchIfRender<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.node_list_render_mut();
+        let render = this.nodes_render_mut();
         let mi = render.get_match_if_updater();
         let mi = HtmlMatchIfRender(mi);
         f(mi);
@@ -56,7 +56,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     #[cfg(feature = "svg")]
     fn svg(self, f: impl FnOnce(SvgElementRender<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.node_list_render_mut();
+        let render = this.nodes_render_mut();
         if render.require_render() {
             let r = render.get_element_render::<SvgNameSpace>("svg");
             f(r.into())
@@ -69,11 +69,11 @@ pub trait HemsHandMade<C: Component>: Sized {
 pub trait RenderHtmlElement<C, O>: Sized
 where
     C: Component,
-    O: From<Self> + NodeListRenderMut<C>,
+    O: From<Self> + NodesRenderMut<C>,
 {
     fn render_element(self, tag: &str, element_render: impl FnOnce(HtmlElementRender<C>)) -> O {
         let mut this: O = self.into();
-        let render = this.node_list_render_mut();
+        let render = this.nodes_render_mut();
         if render.require_render() {
             let e = render.get_element_render::<HtmlNameSpace>(tag).into();
             element_render(e);
@@ -142,59 +142,59 @@ make_trait_for_element_methods! {
         wbr //should be specialized?
 }
 
-pub struct NodesOwned<'n, C: Component>(HtmlNodeListRender<'n, C>);
-pub struct StaticNodesOwned<'n, C: Component>(HtmlNodeListRender<'n, C>);
-pub struct Nodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodeListRender<'n, C>);
-pub struct StaticNodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodeListRender<'n, C>);
+pub struct NodesOwned<'n, C: Component>(HtmlNodesRender<'n, C>);
+pub struct StaticNodesOwned<'n, C: Component>(HtmlNodesRender<'n, C>);
+pub struct Nodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodesRender<'n, C>);
+pub struct StaticNodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodesRender<'n, C>);
 
 impl<'n, C: Component> NodesOwned<'n, C> {
-    fn new(mut r: HtmlNodeListRender<'n, C>) -> Self {
+    fn new(mut r: HtmlNodesRender<'n, C>) -> Self {
         r.node_list_render.set_update_mode();
         Self(r)
     }
 }
 
 impl<'n, C: Component> StaticNodesOwned<'n, C> {
-    fn new(mut r: HtmlNodeListRender<'n, C>) -> Self {
+    fn new(mut r: HtmlNodesRender<'n, C>) -> Self {
         r.node_list_render.set_static_mode();
         Self(r)
     }
 }
 
 impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
-    fn new(r: &'h mut HtmlNodeListRender<'n, C>) -> Self {
+    fn new(r: &'h mut HtmlNodesRender<'n, C>) -> Self {
         r.node_list_render.set_update_mode();
         Self(r)
     }
 }
 
 impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
-    fn new(r: &'h mut HtmlNodeListRender<'n, C>) -> Self {
+    fn new(r: &'h mut HtmlNodesRender<'n, C>) -> Self {
         r.node_list_render.set_static_mode();
         Self(r)
     }
 }
 
-impl<'n, C: Component> NodeListRenderMut<C> for NodesOwned<'n, C> {
-    fn node_list_render_mut(&mut self) -> &'n mut NodeListRender<C> {
+impl<'n, C: Component> NodesRenderMut<C> for NodesOwned<'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
         &mut self.0.node_list_render
     }
 }
 
-impl<'n, C: Component> NodeListRenderMut<C> for StaticNodesOwned<'n, C> {
-    fn node_list_render_mut(&mut self) -> &'n mut NodeListRender<C> {
+impl<'n, C: Component> NodesRenderMut<C> for StaticNodesOwned<'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
         &mut self.0.node_list_render
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodeListRenderMut<C> for Nodes<'h, 'n, C> {
-    fn node_list_render_mut(&mut self) -> &'n mut NodeListRender<C> {
+impl<'h, 'n: 'h, C: Component> NodesRenderMut<C> for Nodes<'h, 'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
         &mut self.0.node_list_render
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodeListRenderMut<C> for StaticNodes<'h, 'n, C> {
-    fn node_list_render_mut(&mut self) -> &'n mut NodeListRender<C> {
+impl<'h, 'n: 'h, C: Component> NodesRenderMut<C> for StaticNodes<'h, 'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
         &mut self.0.node_list_render
     }
 }
@@ -223,7 +223,7 @@ impl<'h, 'n: 'h, C: Component> From<StaticNodes<'h, 'n, C>> for Nodes<'h, 'n, C>
     }
 }
 
-impl<'n, C: Component> From<HtmlElementRender<'n, C>> for HtmlNodeListRender<'n, C> {
+impl<'n, C: Component> From<HtmlElementRender<'n, C>> for HtmlNodesRender<'n, C> {
     fn from(r: HtmlElementRender<'n, C>) -> Self {
         let (r, m) = r.into_parts();
         Self {
@@ -334,14 +334,14 @@ impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
     pub fn update_render(self, render: impl Render<C>) -> Self {
         let n = Nodes::new(self.0);
         render.render(n);
-        //self.node_list_render_mut().set_update_mode();
+        //self.nodes_render_mut().set_update_mode();
         self
     }
 
     pub fn static_render(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(self.0);
         render.render(n);
-        self.node_list_render_mut().set_update_mode();
+        self.nodes_render_mut().set_update_mode();
         self
     }
 }
@@ -371,7 +371,7 @@ impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
     pub fn static_render(self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(self.0);
         render.render(n);
-        //self.node_list_render_mut().set_static_mode();
+        //self.nodes_render_mut().set_static_mode();
         self
     }
 }
@@ -386,14 +386,14 @@ impl<'n, C: Component> NodesOwned<'n, C> {
     pub fn update_render(mut self, render: impl Render<C>) -> Self {
         let n = Nodes::new(&mut self.0);
         render.render(n);
-        //self.node_list_render_mut().set_update_mode();
+        //self.nodes_render_mut().set_update_mode();
         self
     }
 
     pub fn static_render(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(&mut self.0);
         render.render(n);
-        self.node_list_render_mut().set_update_mode();
+        self.nodes_render_mut().set_update_mode();
         self
     }
 }
@@ -408,14 +408,14 @@ impl<'n, C: Component> StaticNodesOwned<'n, C> {
     pub fn update_render(mut self, render: impl Render<C>) -> Self {
         let n = Nodes::new(&mut self.0);
         render.render(n);
-        self.node_list_render_mut().set_static_mode();
+        self.nodes_render_mut().set_static_mode();
         self
     }
 
     pub fn static_render(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(&mut self.0);
         render.render(n);
-        //self.node_list_render_mut().set_update_mode();
+        //self.nodes_render_mut().set_update_mode();
         self
     }
 }
@@ -474,7 +474,7 @@ pub struct HtmlMatchIfRender<'a, C: Component>(MatchIfRender<'a, C>);
 
 impl<'a, C: Component> HtmlMatchIfRender<'a, C> {
     pub fn render_on_arm_index(self, index: u32) -> NodesOwned<'a, C> {
-        NodesOwned(HtmlNodeListRender {
+        NodesOwned(HtmlNodesRender {
             node_list_render: self.0.render_on_arm_index(index),
             _select_element_value_manager: None, // How about a match_if inside a <select> element?
         })

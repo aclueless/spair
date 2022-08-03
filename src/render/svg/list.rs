@@ -59,7 +59,7 @@ pub trait SemsForList<'a, C: Component>:
         I: Copy,
         for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
-        let r = self.element_render_mut().non_keyed_list_updater(mode, tag);
+        let r = self.element_render_mut().list_render(mode, tag);
         let mut r = SvgListRender(r);
         let _do_we_have_to_care_about_this_returned_value_ = r.render_list(items, render);
         self.make_nodes_extensions()
