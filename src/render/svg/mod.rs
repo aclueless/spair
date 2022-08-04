@@ -5,6 +5,7 @@ mod attributes_elements_with_ambiguous_names;
 mod element;
 mod list;
 mod nodes;
+mod partial_list;
 mod render;
 
 pub use attributes::*;
@@ -12,6 +13,7 @@ pub use attributes_elements_with_ambiguous_names::*;
 pub use element::*;
 pub use list::*;
 pub use nodes::*;
+pub use partial_list::*;
 pub use render::*;
 
 pub struct SvgNameSpace;

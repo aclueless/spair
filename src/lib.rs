@@ -61,15 +61,15 @@ pub mod prelude {
     pub use crate::render::html::{
         HamsForAmbiguousNames, HamsForDistinctNames, HamsForSelectElementValueAndIndex,
         HamsHandMade, HamsWithPredefinedValues, HemsForAmbiguousNames, HemsForDistinctNames,
-        HemsForList, HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
-        HemsForPartialList
+        HemsForList, HemsForPartialList, HemsHamsAmbiguous, HemsHandMade,
+        MethodsForHtmlElementContent,
     };
     //pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
     pub use crate::fetch::{FetchOptionsSetter, RawDataMode};
     #[cfg(feature = "svg")]
     pub use crate::render::svg::{
         MethodsForSvgElementContent, SamsForDistinctNames, SamsHandMade, SemsForDistinctNames,
-        SemsForList, SemsHandMade,
+        SemsForList, SemsForPartialList, SemsHandMade,
     };
     pub use crate::routing::Routes;
     pub use wasm_bindgen;

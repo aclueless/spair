@@ -1,12 +1,12 @@
-use super::ListItemRender;
-use super::{HtmlListRender, Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
+use super::SvgListItemRender;
+use super::{SvgListRender, SvgNodes, SvgNodesOwned, SvgStaticNodes, SvgStaticNodesOwned};
 use crate::component::Component;
 use crate::render::base::NodesRenderMut;
 use crate::render::ListElementCreation;
 
 // TODO: Is it possible to merge this and SvgListRender into ListRender using generic?
 
-pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
+pub trait SemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     fn list_with_render<I, R>(
         mut self,
         items: impl IntoIterator<Item = I>,
@@ -15,19 +15,19 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
         render: R,
     ) where
         I: Copy,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
         let r = self
             .nodes_render_mut()
             .get_list_render(tag, mode.use_template());
-        let mut r = HtmlListRender::new(r);
+        let mut r = SvgListRender::new(r);
         let _do_we_have_to_care_about_this_returned_value_ = r.render_list(items, render);
     }
 
     fn lwr_clone<I, R>(self, items: impl IntoIterator<Item = I>, tag: &'a str, render: R)
     where
         I: Copy,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
@@ -35,7 +35,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     fn lwr_new<I, R>(self, items: impl IntoIterator<Item = I>, tag: &'a str, render: R)
     where
         I: Copy,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
         self.list_with_render(items, ListElementCreation::New, tag, render)
     }
@@ -43,7 +43,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     fn list<I>(self, items: impl IntoIterator<Item = I>, mode: ListElementCreation)
     where
         I: Copy,
-        I: ListItemRender<C>,
+        I: SvgListItemRender<C>,
     {
         self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
     }
@@ -51,7 +51,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     fn list_clone<I>(self, items: impl IntoIterator<Item = I>)
     where
         I: Copy,
-        I: ListItemRender<C>,
+        I: SvgListItemRender<C>,
     {
         self.list_with_render(
             items,
@@ -62,7 +62,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     }
 }
 
-impl<'a, C: Component> HemsForPartialList<'a, C> for NodesOwned<'a, C> {}
-impl<'a, C: Component> HemsForPartialList<'a, C> for StaticNodesOwned<'a, C> {}
-impl<'h, 'n: 'h, C: Component> HemsForPartialList<'h, C> for Nodes<'h, 'n, C> {}
-impl<'h, 'n: 'h, C: Component> HemsForPartialList<'h, C> for StaticNodes<'h, 'n, C> {}
+impl<'a, C: Component> SemsForPartialList<'a, C> for SvgNodesOwned<'a, C> {}
+impl<'a, C: Component> SemsForPartialList<'a, C> for SvgStaticNodesOwned<'a, C> {}
+impl<'h, 'n: 'h, C: Component> SemsForPartialList<'h, C> for SvgNodes<'h, 'n, C> {}
+impl<'h, 'n: 'h, C: Component> SemsForPartialList<'h, C> for SvgStaticNodes<'h, 'n, C> {}

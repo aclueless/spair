@@ -14,6 +14,10 @@ pub struct SvgListRender<'a, C: Component>(ListRender<'a, C>);
 // TODO: Is it possible to merge this and HtmlListRender into ListRender using generic?
 
 impl<'a, C: Component> SvgListRender<'a, C> {
+    pub fn new(lr: ListRender<'a, C>) -> Self {
+        Self(lr)
+    }
+
     pub fn render_list<I, R>(
         &mut self,
         items: impl IntoIterator<Item = I>,
