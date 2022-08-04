@@ -1,6 +1,6 @@
 use crate::component::{Comp, Component};
 use crate::dom::{ElementStatus, GroupedNodes, NameSpace, Nodes};
-use crate::render::base::element::ElementRender;
+use super::{ElementRender, ListRender};
 
 pub trait NodesRenderMut<C: Component> {
     fn nodes_render_mut(&mut self) -> &mut NodesRender<C>;
@@ -106,6 +106,14 @@ impl<'a, C: Component> NodesRender<'a, C> {
             parent: self.parent,
             match_if,
         }
+    }
+
+    pub fn get_list_render(&mut self, tag: &'a str, use_template: bool) -> ListRender<C> {
+        let gn = self.nodes
+            .grouped_nodes(self.index, self.parent, self.next_sibling);
+        self.index += 1;
+        let (list, next_sibling) = gn.nodes_mut_and_end_flag_node();
+        ListRender::new(self.comp, self.state, list, tag, self.parent, Some(next_sibling), use_template)
     }
 }
 

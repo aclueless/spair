@@ -62,6 +62,7 @@ pub mod prelude {
         HamsForAmbiguousNames, HamsForDistinctNames, HamsForSelectElementValueAndIndex,
         HamsHandMade, HamsWithPredefinedValues, HemsForAmbiguousNames, HemsForDistinctNames,
         HemsForList, HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
+        HemsForPartialList
     };
     //pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
     pub use crate::fetch::{FetchOptionsSetter, RawDataMode};
