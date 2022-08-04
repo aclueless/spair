@@ -1,12 +1,12 @@
-use super::{AnyComponentHandle, Element, GroupedNodes, ParentAndChild, TextNode};
+use super::{AnyComponentHandle, Element, GroupedNodes, KeyedList, ParentAndChild, TextNode};
 
 #[derive(Clone)]
 pub enum Node {
     Element(Element),
     Text(TextNode),
     GroupedNodes(GroupedNodes),
-    // #[cfg(feature = "keyed-list")]
-    // KeyedList(super::KeyedList),
+    #[cfg(feature = "keyed-list")]
+    KeyedList(KeyedList),
     ComponentHandle(AnyComponentHandle),
     // #[cfg(feature = "queue-render")]
     // QueueRendering(QueueRendering),
@@ -18,8 +18,8 @@ impl Node {
             Self::Element(element) => element.remove_from(parent),
             Self::Text(text) => text.remove_from(parent),
             Self::GroupedNodes(g) => g.clear(parent),
-            // #[cfg(feature = "keyed-list")]
-            // Self::KeyedList(list) => list.clear(parent),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList(list) => list.clear(parent),
             Self::ComponentHandle(_) => {
                 // The component is the only child of an element
                 parent.set_text_content(None);
@@ -35,8 +35,8 @@ impl Node {
             Self::Element(element) => element.append_to(parent),
             Self::Text(text) => text.append_to(parent),
             Self::GroupedNodes(g) => g.append_to(parent),
-            // #[cfg(feature = "keyed-list")]
-            // Self::KeyedList(list) => list.append_to(parent),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList(list) => list.append_to(parent),
             Self::ComponentHandle(_) => {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");
@@ -51,8 +51,8 @@ impl Node {
             Self::Element(element) => Some(element),
             Self::Text(_) => None,
             Self::GroupedNodes(g) => g.nodes().get_first_element(),
-            // #[cfg(feature = "keyed-list")]
-            // Self::KeyedList(list) => list.get_first_element(),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList(list) => list.get_first_element(),
             Self::ComponentHandle(_) => None,
             // #[cfg(feature = "queue-render")]
             // Self::QueueRendering(qr) => qr.get_first_element(),
@@ -64,8 +64,8 @@ impl Node {
             Self::Element(element) => Some(element),
             Self::Text(_) => None,
             Self::GroupedNodes(g) => g.nodes().get_last_element(),
-            // #[cfg(feature = "keyed-list")]
-            // Self::KeyedList(list) => list.get_last_element(),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList(list) => list.get_last_element(),
             Self::ComponentHandle(_) => None,
             // #[cfg(feature = "queue-render")]
             // Self::QueueRendering(qr) => qr.get_last_element(),

@@ -26,8 +26,8 @@ pub use render::{
     html::{ListItemRender, Nodes, Render, StaticNodes, StaticRender},
     ListElementCreation,
 };
-// #[cfg(feature = "keyed-list")]
-// pub use dom::Keyed;
+#[cfg(feature = "keyed-list")]
+pub use dom::Keyed;
 // pub use dom::{
 //     HtmlUpdater as Element, ListElementCreation, ListItemRender, Nodes, RawWrapper, Render,
 //     StaticNodes, StaticRender,

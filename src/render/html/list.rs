@@ -36,7 +36,7 @@ impl<'a, C: Component> HtmlListRender<'a, C> {
                     self.0.tag,
                     index,
                     self.0.parent,
-                    self.0.next_sibling,
+                    self.0.end_of_list_flag,
                     self.0.use_template,
                 );
             let element = self.0.list.get_element_mut(index);

@@ -4,6 +4,9 @@ use crate::dom::{AttributeValueList, Element, ElementStatus};
 use crate::render::ListElementCreation;
 use wasm_bindgen::UnwrapThrowExt;
 
+#[cfg(feature = "keyed-list")]
+use crate::{dom::{Key, NameSpace}, render::base::{RememberSettingSelectedOption, KeyedListRender, RenderContext, KeyedListContext}};
+
 pub trait ElementRenderMut<C: Component> {
     fn element_render(&self) -> &ElementRender<C>;
     fn element_render_mut(&mut self) -> &mut ElementRender<C>;
@@ -262,6 +265,45 @@ impl<'a, C: Component> ElementRender<'a, C> {
             None,
             mode.use_template(),
         )
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list_with_render<N, I, G, K, R>(
+        &mut self,
+        items: impl IntoIterator<Item = I>,
+        mode: ListElementCreation,
+        tag: &'a str,
+        fn_get_key: G,
+        fn_render: R,
+    ) -> RememberSettingSelectedOption
+    where
+        N: NameSpace,
+        I: Copy,
+        G: Fn(I) -> K,
+        K: Into<Key> + PartialEq<Key>,
+        for<'er> R: Fn(I, ElementRender<'er, C>),
+    {
+        // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
+        // we need to collect items into a vec to know exact size
+        let items: Vec<_> = items.into_iter().collect();
+        let use_template = mode.use_template();
+        let (parent, nodes) = self.element.ws_node_and_nodes_mut();
+        let mut keyed_list_render = KeyedListRender {
+            list_context: KeyedListContext::new(nodes.keyed_list(),
+                tag,
+                items.len(),
+                parent,
+                use_template,
+                N::NAMESPACE,
+            ),
+            render_context: RenderContext {
+                comp: self.comp,
+                state: self.state,
+                fn_get_key,
+                fn_render,
+            },
+        };
+        keyed_list_render.update(items.into_iter())
     }
 
     pub fn component<CC: Component>(&mut self, child: &ChildComp<CC>) {

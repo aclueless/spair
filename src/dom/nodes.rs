@@ -1,6 +1,8 @@
 use super::{Element, ElementStatus, NameSpace, Node, ParentAndChild, TextNode};
 use crate::component::{Comp, Component, ComponentHandle};
 use wasm_bindgen::UnwrapThrowExt;
+#[cfg(feature = "keyed-list")]
+use super::KeyedList;
 
 #[derive(Default, Clone)]
 pub struct Nodes(Vec<Node>);
@@ -120,6 +122,22 @@ impl Nodes {
         {
             Node::GroupedNodes(grouped_node_list) => grouped_node_list,
             _ => panic!("dom::nodes::Nodes::grouped_nodes expected Node::GroupedNodes"),
+        }
+    }
+
+    #[cfg(feature = "keyed-list")]
+    pub fn keyed_list(&mut self) -> &mut KeyedList {
+        if self.0.is_empty() {
+            self.0.push(Node::KeyedList(Default::default()));
+        }
+
+        match self
+            .0
+            .first_mut()
+            .expect_throw("dom::nodes::Nodes::keyed_list first_mut")
+        {
+            Node::KeyedList(list) => list,
+            _ => panic!("dom::nodes::Nodes::keyed_list expected Node::KeyedList"),
         }
     }
 

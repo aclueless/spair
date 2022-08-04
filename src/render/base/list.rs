@@ -10,7 +10,11 @@ pub struct ListRender<'a, C: Component> {
     pub(crate) tag: &'a str,
     pub(crate) use_template: bool,
     pub(crate) parent: &'a web_sys::Node,
-    pub(crate) next_sibling: Option<&'a web_sys::Node>,
+    // This is None if the list is the only content of the parent node.
+    // This is Some(thing) if the list is just a part of the parent node.
+    // In other words, a part from the list, the parent also contains other
+    // nodes before or/and after the list's nodes.
+    pub(crate) end_of_list_flag: Option<&'a web_sys::Node>,
     pub(crate) list: &'a mut Nodes,
 }
 
@@ -21,7 +25,7 @@ impl<'a, C: Component> ListRender<'a, C> {
         list: &'a mut Nodes,
         tag: &'a str,
         parent: &'a web_sys::Node,
-        next_sibling: Option<&'a web_sys::Node>,
+        end_of_list_flag: Option<&'a web_sys::Node>,
         use_template: bool,
     ) -> Self {
         Self {
@@ -30,7 +34,7 @@ impl<'a, C: Component> ListRender<'a, C> {
             tag,
             use_template,
             parent,
-            next_sibling,
+            end_of_list_flag,
             list,
         }
     }
@@ -39,7 +43,7 @@ impl<'a, C: Component> ListRender<'a, C> {
         if index >= self.list.count() {
             return;
         }
-        if index == 0 && self.next_sibling.is_none() {
+        if index == 0 && self.end_of_list_flag.is_none() {
             self.parent.set_text_content(None);
             self.list.clear_vec();
         } else {

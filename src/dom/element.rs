@@ -33,7 +33,7 @@ impl ParentAndChild for Element {
 }
 
 impl Element {
-    pub fn new_ns(ns: Option<&'static str>, tag: &str) -> Self {
+    pub fn new_ns(ns: Option<&str>, tag: &str) -> Self {
         let document = crate::utils::document();
         Self {
             element_type: tag.into(),

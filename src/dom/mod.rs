@@ -2,12 +2,16 @@ use wasm_bindgen::UnwrapThrowExt;
 
 mod attributes;
 mod element;
+#[cfg(feature = "keyed-list")]
+mod keyed_list;
 mod node;
 mod nodes;
 mod text;
 
 pub use attributes::*;
 pub use element::*;
+#[cfg(feature = "keyed-list")]
+pub use keyed_list::*;
 pub use node::*;
 pub use nodes::*;
 pub use text::*;
@@ -16,7 +20,7 @@ pub trait NameSpace {
     const NAMESPACE: Option<&'static str>;
 }
 
-trait ParentAndChild {
+pub trait ParentAndChild {
     fn ws_node(&self) -> &web_sys::Node;
 
     fn append_to(&self, parent: &web_sys::Node) {
