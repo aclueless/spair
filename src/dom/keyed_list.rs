@@ -130,6 +130,11 @@ impl Clone for KeyedList {
 }
 
 impl KeyedList {
+    #[cfg(test)]
+    pub fn active_nodes(&self) -> &Vec<Option<KeyedElement>> {
+        &self.active
+    }
+
     pub fn get_first_element(&self) -> Option<&Element> {
         self.active
             .first()

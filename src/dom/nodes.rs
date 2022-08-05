@@ -1,8 +1,8 @@
+#[cfg(feature = "keyed-list")]
+use super::KeyedList;
 use super::{Element, ElementStatus, NameSpace, Node, ParentAndChild, TextNode};
 use crate::component::{Comp, Component, ComponentHandle};
 use wasm_bindgen::UnwrapThrowExt;
-#[cfg(feature = "keyed-list")]
-use super::KeyedList;
 
 #[derive(Default, Clone)]
 pub struct Nodes(Vec<Node>);
@@ -14,6 +14,11 @@ impl std::fmt::Debug for Nodes {
 }
 
 impl Nodes {
+    #[cfg(test)]
+    pub fn nodes_vec(&self) -> &Vec<Node> {
+        &self.0
+    }
+
     pub fn count(&self) -> usize {
         self.0.len()
     }
@@ -48,7 +53,7 @@ impl Nodes {
 
     pub fn create_new_element_ns(
         &mut self,
-        ns: Option<&'static str>,
+        ns: Option<&str>,
         tag: &str,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
@@ -74,9 +79,10 @@ impl Nodes {
         }
     }
 
-    pub fn check_or_create_element_for_list<N: NameSpace>(
+    pub fn check_or_create_element_for_list(
         &mut self,
         tag: &str,
+        name_space: Option<&str>,
         index: usize,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
@@ -86,7 +92,7 @@ impl Nodes {
         if index < item_count {
             ElementStatus::Existing
         } else if !use_template || item_count == 0 {
-            self.create_new_element_ns(N::NAMESPACE, tag, parent, next_sibling);
+            self.create_new_element_ns(name_space, tag, parent, next_sibling);
             ElementStatus::JustCreated
         } else {
             let element = self.0[0].clone();

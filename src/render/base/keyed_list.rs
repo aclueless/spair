@@ -25,10 +25,10 @@ impl<'a> KeyedListContext<'a> {
     pub fn new(
         list: &'a mut KeyedList,
         root_item_tag: &'a str,
+        name_space: Option<&'a str>,
         new_item_count: usize,
         parent: &'a web_sys::Node,
         use_template: bool,
-        name_space: Option<&'a str>,
     ) -> KeyedListContext<'a> {
         list.pre_render(new_item_count);
 
@@ -69,6 +69,14 @@ impl<'a, C, G, R> RenderContext<'a, C, G, R>
 where
     C: Component,
 {
+    pub fn new(comp: &'a Comp<C>, state: &'a C, fn_get_key: G, fn_render: R) -> Self {
+        Self {
+            comp,
+            state,
+            fn_get_key,
+            fn_render,
+        }
+    }
     fn get_key<I, K>(&self, item_state: I) -> K
     where
         G: Fn(I) -> K,
@@ -111,6 +119,15 @@ impl<'a, C, G, R> KeyedListRender<'a, C, G, R>
 where
     C: Component,
 {
+    pub fn new(
+        list_context: KeyedListContext<'a>,
+        render_context: RenderContext<'a, C, G, R>,
+    ) -> Self {
+        Self {
+            list_context,
+            render_context,
+        }
+    }
     fn create_element_for_new_item(&self) -> (Element, ElementStatus) {
         match &self.list_context.template {
             Some(template) => (Clone::clone(*template), ElementStatus::JustCloned),
@@ -657,13 +674,20 @@ mod keyed_list_with_render_tests {
     use wasm_bindgen::UnwrapThrowExt;
     use wasm_bindgen_test::*;
 
+    use crate::dom::{Element, Node};
+    use crate::render::ListElementCreation;
+    use crate::render::{
+        base::ElementRender,
+        html::{HemsForKeyedList, HtmlElementRender},
+    };
+
     impl super::ItemWithLis<&()> {
         fn index(index: usize) -> Self {
             Self {
                 item_state: &(),
                 old_element: Some(super::OldElement {
                     index,
-                    element: super::super::Element::new_ns(None, "div"),
+                    element: Element::new_ns(None, "div"),
                 }),
                 lis: false,
             }
@@ -758,8 +782,8 @@ mod keyed_list_with_render_tests {
             Self { root, _rc, comp }
         }
 
-        fn updater(&mut self) -> crate::dom::HtmlUpdater<Unit> {
-            crate::dom::ElementUpdater::new(
+        fn updater(&mut self) -> HtmlElementRender<Unit> {
+            ElementRender::new(
                 &self.comp,
                 &Unit,
                 &mut self.root,
@@ -769,21 +793,20 @@ mod keyed_list_with_render_tests {
         }
 
         fn collect_from_keyed_list(&self) -> Vec<String> {
-            if let crate::dom::nodes::Node::KeyedList(kl) = self.root.nodes.0.first().unwrap_throw()
-            {
-                kl.active
+            if let Node::KeyedList(kl) = self.root.nodes().nodes_vec().first().unwrap_throw() {
+                kl.active_nodes()
                     .iter()
                     .map(|item| {
                         item.as_ref()
                             .unwrap_throw()
-                            .1
-                            .nodes
-                            .0
+                            .element
+                            .nodes()
+                            .nodes_vec()
                             .first()
                             .unwrap_throw()
                     })
                     .map(|item| match item {
-                        crate::dom::nodes::Node::Text(text) => text.text.clone(),
+                        Node::Text(text) => text.text().to_string(),
                         _ => panic!("Should be a text?"),
                     })
                     .collect()
@@ -794,7 +817,8 @@ mod keyed_list_with_render_tests {
     }
 
     fn render(item: &&str, span: crate::Element<Unit>) {
-        span.render(*item);
+        use crate::render::html::MethodsForHtmlElementContent;
+        span.update_render(*item);
     }
 
     fn get_key<'a>(item: &'a &str) -> &'a str {
@@ -803,15 +827,15 @@ mod keyed_list_with_render_tests {
 
     #[wasm_bindgen_test]
     fn keyed_list_with_template() {
-        keyed_list(crate::dom::ListElementCreation::Clone);
+        keyed_list(ListElementCreation::Clone);
     }
 
     #[wasm_bindgen_test]
     fn keyed_list_no_template() {
-        keyed_list(crate::dom::ListElementCreation::New);
+        keyed_list(ListElementCreation::New);
     }
 
-    fn keyed_list(mode: crate::dom::ListElementCreation) {
+    fn keyed_list(mode: ListElementCreation) {
         let mut pa = PhantomApp::new();
 
         let empty: Vec<&'static str> = Vec::new();

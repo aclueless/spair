@@ -1,5 +1,6 @@
-use super::{AnyComponentHandle, Element, GroupedNodes, KeyedList, ParentAndChild, TextNode};
-
+#[cfg(feature = "keyed-list")]
+use super::KeyedList;
+use super::{AnyComponentHandle, Element, GroupedNodes, ParentAndChild, TextNode};
 #[derive(Clone)]
 pub enum Node {
     Element(Element),

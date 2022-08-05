@@ -90,6 +90,11 @@ impl Element {
         &mut self.attributes
     }
 
+    #[cfg(test)]
+    pub fn nodes(&self) -> &Nodes {
+        &self.nodes
+    }
+
     pub fn nodes_mut(&mut self) -> &mut Nodes {
         &mut self.nodes
     }

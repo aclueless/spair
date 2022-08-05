@@ -1,12 +1,12 @@
 use crate::component::Component;
 use crate::dom::{Key, Keyed, NameSpace};
 use crate::render::base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions};
-use crate::render::html::{
-    AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes, StaticAttributesOnly,
+use crate::render::svg::{
+    SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgStaticAttributes, SvgStaticAttributesOnly,
 };
 use crate::render::ListElementCreation;
 
-pub trait HemsForKeyedList<'a, C: Component>:
+pub trait SemsForKeyedList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>
 {
     fn keyed_list_with_render<I, II, G, K, R>(
@@ -22,7 +22,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'u> R: Fn(I, HtmlElementRender<'u, C>),
+        for<'u> R: Fn(I, SvgElementRender<'u, C>),
     {
         let fn_render = |item: I, element: ElementRender<C>| {
             fn_render(item, element.into());
@@ -32,7 +32,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
                 items,
                 mode,
                 tag,
-                HtmlNameSpace::NAMESPACE,
+                SvgNameSpace::NAMESPACE,
                 fn_get_key,
                 fn_render,
             );
@@ -41,7 +41,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
 
     fn keyed_list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
     where
-        for<'k> I: Copy + Keyed<'k> + super::ListItemRender<C>,
+        for<'k> I: Copy + Keyed<'k> + super::SvgListItemRender<C>,
         II: IntoIterator<Item = I>,
     {
         self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render)
@@ -59,7 +59,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'u> R: Fn(I, HtmlElementRender<'u, C>),
+        for<'u> R: Fn(I, SvgElementRender<'u, C>),
     {
         self.keyed_list_with_render(
             items,
@@ -71,7 +71,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
     }
 }
 
-impl<'a, C: Component> HemsForKeyedList<'a, C> for HtmlElementRender<'a, C> {}
-impl<'a, C: Component> HemsForKeyedList<'a, C> for AttributesOnly<'a, C> {}
-impl<'a, C: Component> HemsForKeyedList<'a, C> for StaticAttributes<'a, C> {}
-impl<'a, C: Component> HemsForKeyedList<'a, C> for StaticAttributesOnly<'a, C> {}
+impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgElementRender<'a, C> {}
+impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgAttributesOnly<'a, C> {}
+impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgStaticAttributes<'a, C> {}
+impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgStaticAttributesOnly<'a, C> {}

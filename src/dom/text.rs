@@ -53,4 +53,9 @@ impl TextNode {
             self.ws_node.set_text_content(Some(&self.text));
         }
     }
+
+    #[cfg(test)]
+    pub fn text(&self) -> &String {
+        &self.text
+    }
 }

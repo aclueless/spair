@@ -108,7 +108,12 @@ impl<'a, C: Component> NodesRender<'a, C> {
         }
     }
 
-    pub fn get_list_render(&mut self, tag: &'a str, use_template: bool) -> ListRender<C> {
+    pub fn get_list_render(
+        &mut self,
+        tag: &'a str,
+        name_space: Option<&'a str>,
+        use_template: bool,
+    ) -> ListRender<C> {
         let gn = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);
@@ -119,6 +124,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
             self.state,
             list,
             tag,
+            name_space,
             self.parent,
             Some(next_sibling),
             use_template,

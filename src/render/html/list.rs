@@ -1,53 +1,11 @@
 use super::ListItemRender;
 use crate::component::Component;
-use crate::render::base::{
-    ElementRender, ElementRenderMut, ListRender, MakeNodesExtensions, NodesExtensions,
-    RememberSettingSelectedOption,
-};
+use crate::dom::NameSpace;
+use crate::render::base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions};
 use crate::render::html::{
     AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes, StaticAttributesOnly,
 };
 use crate::render::ListElementCreation;
-
-pub struct HtmlListRender<'a, C: Component>(ListRender<'a, C>);
-
-// TODO: Is it possible to merge this and SvgListRender into ListRender using generic?
-
-impl<'a, C: Component> HtmlListRender<'a, C> {
-    pub fn new(lr: ListRender<'a, C>) -> Self {
-        Self(lr)
-    }
-
-    pub fn render_list<I, R>(
-        &mut self,
-        items: impl IntoIterator<Item = I>,
-        render: R,
-    ) -> RememberSettingSelectedOption
-    where
-        I: Copy,
-        for<'u> R: Fn(I, HtmlElementRender<'u, C>),
-    {
-        let mut index = 0;
-        for item in items {
-            let status = self
-                .0
-                .list
-                .check_or_create_element_for_list::<HtmlNameSpace>(
-                    self.0.tag,
-                    index,
-                    self.0.parent,
-                    self.0.end_of_list_flag,
-                    self.0.use_template,
-                );
-            let element = self.0.list.get_element_mut(index);
-            let u = ElementRender::new(self.0.comp, self.0.state, element, status);
-            render(item, u.into());
-            index += 1;
-        }
-        self.0.clear_after(index);
-        RememberSettingSelectedOption
-    }
-}
 
 pub trait HemsForList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>
@@ -63,9 +21,14 @@ pub trait HemsForList<'a, C: Component>:
         I: Copy,
         for<'u> R: Fn(I, crate::Element<'u, C>),
     {
-        let r = self.element_render_mut().list_render(mode, tag);
-        let mut r = HtmlListRender(r);
-        let _do_we_have_to_care_about_this_returned_value_ = r.render_list(items, render);
+        let mut r = self
+            .element_render_mut()
+            .list_render(mode, tag, HtmlNameSpace::NAMESPACE);
+        let _do_we_have_to_care_about_this_returned_value_ = r
+            .render(items, |item: I, er: ElementRender<C>| {
+                render(item, er.into())
+            });
+
         self.make_nodes_extensions()
     }
 
@@ -80,19 +43,6 @@ pub trait HemsForList<'a, C: Component>:
         for<'u> R: Fn(I, crate::Element<'u, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
-    }
-
-    fn lwr_new<I, R>(
-        self,
-        items: impl IntoIterator<Item = I>,
-        tag: &'a str,
-        render: R,
-    ) -> NodesExtensions<'a>
-    where
-        I: Copy,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
-    {
-        self.list_with_render(items, ListElementCreation::New, tag, render)
     }
 
     fn list<I>(

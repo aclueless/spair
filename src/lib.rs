@@ -19,18 +19,16 @@ pub use application::Application;
 #[cfg(feature = "queue-render")]
 pub use component::queue_render::Value;
 pub use component::{AsChildComp, Checklist, ChildComp, Comp, Component, ShouldRender};
-//pub use dom::attribute_types::*;
+#[cfg(feature = "keyed-list")]
+pub use dom::Keyed;
 pub use render::{
     html::predefined_attribute_types::*,
     html::HtmlElementRender as Element,
     html::{ListItemRender, Nodes, Render, StaticNodes, StaticRender},
     ListElementCreation,
 };
-#[cfg(feature = "keyed-list")]
-pub use dom::Keyed;
 // pub use dom::{
-//     HtmlUpdater as Element, ListElementCreation, ListItemRender, Nodes, RawWrapper, Render,
-//     StaticNodes, StaticRender,
+//     RawWrapper
 // };
 #[cfg(feature = "svg")]
 pub use render::svg::{
@@ -64,20 +62,26 @@ pub mod prelude {
         HemsForList, HemsForPartialList, HemsHamsAmbiguous, HemsHandMade,
         MethodsForHtmlElementContent,
     };
-    //pub use crate::dom::{AttributeSetter, DomBuilder, EventSetter};
+
+    #[cfg(feature = "keyed-list")]
+    pub use crate::render::html::HemsForKeyedList;
+
     pub use crate::fetch::{FetchOptionsSetter, RawDataMode};
     #[cfg(feature = "svg")]
     pub use crate::render::svg::{
         MethodsForSvgElementContent, SamsForDistinctNames, SamsHandMade, SemsForDistinctNames,
         SemsForList, SemsForPartialList, SemsHandMade,
     };
+
+    #[cfg(all(feature = "keyed-list", feature = "svg"))]
+    pub use crate::render::svg::SemsForKeyedList;
+
     pub use crate::routing::Routes;
     pub use wasm_bindgen;
     pub use wasm_bindgen::prelude::*;
     pub use wasm_bindgen::{JsCast, UnwrapThrowExt};
 }
 
-//pub type Callback = Box<dyn callback::Callback>;
 pub type Callback = Box<dyn callback::Callback>;
 pub type CallbackArg<A> = Box<dyn callback::CallbackArg<A>>;
 
@@ -151,3 +155,5 @@ impl<T: wasm_bindgen::JsCast> WsRef<T> {
         }
     }
 }
+
+examples/todomvc is not working now

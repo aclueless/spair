@@ -5,7 +5,12 @@ use crate::render::ListElementCreation;
 use wasm_bindgen::UnwrapThrowExt;
 
 #[cfg(feature = "keyed-list")]
-use crate::{dom::{Key, NameSpace}, render::base::{RememberSettingSelectedOption, KeyedListRender, RenderContext, KeyedListContext}};
+use crate::{
+    dom::Key,
+    render::base::{
+        KeyedListContext, KeyedListRender, RememberSettingSelectedOption, RenderContext,
+    },
+};
 
 pub trait ElementRenderMut<C: Component> {
     fn element_render(&self) -> &ElementRender<C>;
@@ -254,13 +259,19 @@ impl<'a, C: Component> ElementRender<'a, C> {
         }
     }
 
-    pub fn list_render(&mut self, mode: ListElementCreation, tag: &'a str) -> ListRender<C> {
+    pub fn list_render(
+        &mut self,
+        mode: ListElementCreation,
+        tag: &'a str,
+        name_space: Option<&'a str>,
+    ) -> ListRender<C> {
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
         ListRender::new(
             self.comp,
             self.state,
             nodes,
             tag,
+            name_space,
             parent,
             None,
             mode.use_template(),
@@ -268,17 +279,18 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_with_render<N, I, G, K, R>(
+    pub fn keyed_list_with_render<I, II, G, K, R>(
         &mut self,
-        items: impl IntoIterator<Item = I>,
+        items: II,
         mode: ListElementCreation,
         tag: &'a str,
+        name_space: Option<&'a str>,
         fn_get_key: G,
         fn_render: R,
     ) -> RememberSettingSelectedOption
     where
-        N: NameSpace,
         I: Copy,
+        II: IntoIterator<Item = I>,
         G: Fn(I) -> K,
         K: Into<Key> + PartialEq<Key>,
         for<'er> R: Fn(I, ElementRender<'er, C>),
@@ -288,21 +300,17 @@ impl<'a, C: Component> ElementRender<'a, C> {
         let items: Vec<_> = items.into_iter().collect();
         let use_template = mode.use_template();
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
-        let mut keyed_list_render = KeyedListRender {
-            list_context: KeyedListContext::new(nodes.keyed_list(),
+        let mut keyed_list_render = KeyedListRender::new(
+            KeyedListContext::new(
+                nodes.keyed_list(),
                 tag,
+                name_space,
                 items.len(),
                 parent,
                 use_template,
-                N::NAMESPACE,
             ),
-            render_context: RenderContext {
-                comp: self.comp,
-                state: self.state,
-                fn_get_key,
-                fn_render,
-            },
-        };
+            RenderContext::new(self.comp, self.state, fn_get_key, fn_render),
+        );
         keyed_list_render.update(items.into_iter())
     }
 

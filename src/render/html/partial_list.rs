@@ -1,10 +1,10 @@
+use super::HtmlNameSpace;
 use super::ListItemRender;
-use super::{HtmlListRender, Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
+use super::{Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
 use crate::component::Component;
-use crate::render::base::NodesRenderMut;
+use crate::dom::NameSpace;
+use crate::render::base::{ElementRender, NodesRenderMut};
 use crate::render::ListElementCreation;
-
-// TODO: Is it possible to merge this and SvgListRender into ListRender using generic?
 
 pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     fn list_with_render<I, R>(
@@ -17,11 +17,15 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
         I: Copy,
         for<'u> R: Fn(I, crate::Element<'u, C>),
     {
-        let r = self
-            .nodes_render_mut()
-            .get_list_render(tag, mode.use_template());
-        let mut r = HtmlListRender::new(r);
-        let _do_we_have_to_care_about_this_returned_value_ = r.render_list(items, render);
+        let mut r = self.nodes_render_mut().get_list_render(
+            tag,
+            HtmlNameSpace::NAMESPACE,
+            mode.use_template(),
+        );
+        let _do_we_have_to_care_about_this_returned_value_ = r
+            .render(items, |item: I, er: ElementRender<C>| {
+                render(item, er.into())
+            });
     }
 
     fn lwr_clone<I, R>(self, items: impl IntoIterator<Item = I>, tag: &'a str, render: R)
@@ -30,14 +34,6 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
         for<'u> R: Fn(I, crate::Element<'u, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
-    }
-
-    fn lwr_new<I, R>(self, items: impl IntoIterator<Item = I>, tag: &'a str, render: R)
-    where
-        I: Copy,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
-    {
-        self.list_with_render(items, ListElementCreation::New, tag, render)
     }
 
     fn list<I>(self, items: impl IntoIterator<Item = I>, mode: ListElementCreation)
