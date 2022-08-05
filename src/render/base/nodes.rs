@@ -10,7 +10,7 @@ pub struct NodesRender<'a, C: Component> {
     comp: &'a Comp<C>,
     state: &'a C,
 
-    static_mode: bool,
+    update_mode: bool,
     index: usize,
     parent_status: ElementStatus,
     parent: &'a web_sys::Node,
@@ -26,7 +26,7 @@ impl<'a, C: Component> From<ElementRender<'a, C>> for NodesRender<'a, C> {
             comp,
             state,
 
-            static_mode: false,
+            update_mode: true,
             index: 0,
             parent_status: status,
             parent,
@@ -50,18 +50,18 @@ impl<'a, C: Component> NodesRender<'a, C> {
     }
 
     pub fn set_static_mode(&mut self) {
-        self.static_mode = true
+        self.update_mode = false;
     }
 
     pub fn set_update_mode(&mut self) {
-        self.static_mode = false
+        self.update_mode = true;
     }
 
     pub fn require_render(&self) -> bool {
-        if self.static_mode {
-            self.parent_status == ElementStatus::JustCreated
-        } else {
+        if self.update_mode {
             true
+        } else {
+            self.parent_status == ElementStatus::JustCreated
         }
     }
 
@@ -95,7 +95,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
         ElementRender::new(self.comp, self.state, element, status)
     }
 
-    pub fn get_match_if_updater(&mut self) -> MatchIfRender<C> {
+    pub fn get_match_if_render(&mut self) -> MatchIfRender<C> {
         let match_if = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);
@@ -149,7 +149,7 @@ impl<'a, C: Component> MatchIfRender<'a, C> {
             comp: self.comp,
             state: self.state,
 
-            static_mode: false,
+            update_mode: true,
             index: 0,
             parent_status: status,
             parent: self.parent,

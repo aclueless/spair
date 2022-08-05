@@ -187,7 +187,7 @@ impl spair::Render<App> for Header {
                 .class("header")
                 .static_nodes()
                 .h1(|h| h.update_render("Spair Todos").done())
-                //.nodes()
+                .update_nodes()
                 .input(|i| {
                     i.value(&state.new_todo_title)
                         .static_attributes()
@@ -444,5 +444,7 @@ impl spair::Application for App {
 
 #[wasm_bindgen(start)]
 pub fn start_todo_mvc() {
+    //wasm_logger::init(wasm_logger::Config::default());
+    //std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     App::mount_to_body();
 }

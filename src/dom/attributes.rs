@@ -173,7 +173,7 @@ impl AttributeValueList {
                     std::mem::swap(&mut value, old_value);
                     (true, Some(value))
                 }
-                _ => panic!("Spair's internal error, expected an AttributeValue::String?"),
+                _ => panic!("Spair's internal error, expected an AttributeValue::String"),
             },
         }
     }

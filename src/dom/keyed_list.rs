@@ -111,7 +111,7 @@ impl KeyedElement {
 #[derive(Default)]
 pub struct KeyedList {
     active: Vec<Option<KeyedElement>>,
-    // The primary reason for the double buffer is for easy implementation, performance go after.
+    // The primary reason for the double buffer here is for easy implementation.
     buffer: Vec<Option<KeyedElement>>,
     template: Option<Element>,
     old_elements_map: HashMap<Key, OldElement>,
@@ -187,7 +187,7 @@ impl KeyedList {
     pub fn clear(&mut self, parent: &web_sys::Node) {
         self.active.iter().for_each(|item| {
             item.as_ref()
-                .expect_throw("Item should exist - clear")
+                .expect_throw("dom::keyed_list::KeyedList::clear")
                 .element
                 .remove_from(parent)
         });
@@ -196,7 +196,7 @@ impl KeyedList {
     pub fn append_to(&self, parent: &web_sys::Node) {
         self.active.iter().for_each(|item| {
             item.as_ref()
-                .expect_throw("Item should exist - append_to")
+                .expect_throw("dom::keyed_list::KeyedList::append_to")
                 .element
                 .append_to(parent)
         });

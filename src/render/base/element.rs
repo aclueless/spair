@@ -34,7 +34,7 @@ pub struct ElementRender<'a, C: Component> {
     comp: &'a Comp<C>,
     state: &'a C,
 
-    static_mode: bool,
+    update_mode: bool,
     index: usize,
     status: ElementStatus,
     element: &'a mut Element,
@@ -50,7 +50,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         Self {
             comp,
             state,
-            static_mode: false,
+            update_mode: true,
             index: 0,
             status,
             element,
@@ -78,15 +78,23 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn set_static_mode(&mut self) {
-        self.static_mode = true;
+        self.update_mode = false;
     }
 
     pub fn set_update_mode(&mut self) {
-        self.static_mode = false;
+        self.update_mode = true;
+    }
+
+    fn is_static_mode(&self) -> bool {
+        !self.update_mode
+    }
+
+    fn is_update_mode(&self) -> bool {
+        self.update_mode
     }
 
     pub fn require_set_listener(&mut self) -> bool {
-        if self.static_mode {
+        if self.is_static_mode() {
             if self.status == ElementStatus::Existing {
                 // self.store_listener will not be invoked.
                 // We must update the index here to count over the static event.
@@ -114,7 +122,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         &mut self,
         check: impl FnOnce(&mut AttributeValueList, usize) -> bool,
     ) -> bool {
-        if self.static_mode {
+        if self.is_static_mode() {
             self.status == ElementStatus::JustCreated
         } else {
             let rs = check(self.element.attribute_list_mut(), self.index);
@@ -187,15 +195,18 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn class(&mut self, class_name: &str) {
-        let (changed, old_value) = self
-            .element
-            .attribute_list_mut()
-            .check_str_attribute_and_return_old_value(self.index, class_name);
         // Here, we do not call through self.check_attribute(), so we have to
         // update the self.index by ourselves.
-        if self.static_mode == false {
+        let (changed, old_value) = if self.is_update_mode() {
+            let rs = self
+                .element
+                .attribute_list_mut()
+                .check_str_attribute_and_return_old_value(self.index, class_name);
             self.index += 1;
-        }
+            rs
+        } else {
+            (self.status == ElementStatus::JustCreated, None)
+        };
         if let Some(old_value) = old_value {
             self.remove_class(&old_value);
         }

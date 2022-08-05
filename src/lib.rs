@@ -155,5 +155,3 @@ impl<T: wasm_bindgen::JsCast> WsRef<T> {
         }
     }
 }
-
-examples/todomvc is not working now

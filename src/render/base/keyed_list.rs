@@ -111,7 +111,8 @@ where
             ElementStatus::Existing,
         );
         (self.fn_render)(item_state, er);
-        *new_item.expect_throw("Why overflow on new list? - render_item?") = old_item;
+        *new_item.expect_throw("render::base::keyed_list::RenderContext::update_existing_item") =
+            old_item;
     }
 }
 
@@ -201,7 +202,7 @@ where
                     let item = item
                         .1
                         .as_ref()
-                        .expect_throw("Why an old item None? - update_same_key_items_from_start");
+                        .expect_throw("render::base::keyed_list::KeyedListRender::update_same_key_items_from_start");
                     if !self.render_context.get_key(*item_state).eq(&item.key) {
                         return count;
                     }
@@ -238,10 +239,9 @@ where
                 self.list_context.old.peek_back(),
             ) {
                 (Some(item_state), Some(item)) => {
-                    let item = item
-                        .1
-                        .as_ref()
-                        .expect_throw("Why an old item None? - update_same_key_items_from_end");
+                    let item = item.1.as_ref().expect_throw(
+                        "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
+                    );
 
                     if !self.render_context.get_key(*item_state).eq(&item.key) {
                         return count;
@@ -274,10 +274,9 @@ where
     {
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
-                let item = item
-                    .1
-                    .as_ref()
-                    .expect_throw("Why an old item None? - update_same_key_items_from_end");
+                let item = item.1.as_ref().expect_throw(
+                    "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
+                );
                 if !self.render_context.get_key(*item_state).eq(&item.key) {
                     return 0;
                 }
@@ -317,10 +316,9 @@ where
     {
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
-                let item = item
-                    .1
-                    .as_ref()
-                    .expect_throw("Why an old item None? - update_same_key_items_from_end");
+                let item = item.1.as_ref().expect_throw(
+                    "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
+                );
                 if !self.render_context.get_key(*item_state).eq(&item.key) {
                     return 0;
                 }
@@ -409,11 +407,9 @@ where
             }
 
             self.list_context.next_sibling = Some(element.ws_element().clone());
-            *self
-                .list_context
-                .new
-                .next_back()
-                .expect_throw("Why new-list overflow?") = Some(KeyedElement::new(
+            *self.list_context.new.next_back().expect_throw(
+                "render::base::keyed_list::KeyedListRender::update_other_items_in_the_middle",
+            ) = Some(KeyedElement::new(
                 self.render_context.get_key(item_state).into(),
                 element,
             ));
@@ -424,7 +420,7 @@ where
         self.list_context.old_elements_map.clear();
         while let Some((index, item)) = self.list_context.old.next() {
             let KeyedElement { key, element } = item.take().expect_throw(
-                "Why no item in old list? - construct_old_elements_map_from_remaining_old_elements",
+                "render::base::keyed_list::KeyedListRender::construct_old_elements_map_from_remaining_old_elements",
             );
             self.list_context
                 .old_elements_map
@@ -446,7 +442,7 @@ where
         self.list_context.parent.set_text_content(None);
         while let Some((_, item)) = self.list_context.old.next() {
             item.take()
-                .expect_throw("Why no item in old list? - remove_all_old_items");
+                .expect_throw("render::base::keyed_list::KeyedListRender::remove_all_old_items");
         }
     }
 
@@ -454,7 +450,7 @@ where
         let parent = self.list_context.parent;
         while let Some((_, item)) = self.list_context.old.next() {
             item.take()
-                .expect_throw("Why no item in old list? - remove_remain_items")
+                .expect_throw("render::base::keyed_list::KeyedListRender::remove_remain_items")
                 .element
                 .remove_from(parent);
         }
@@ -491,10 +487,11 @@ where
                 .list_context
                 .new
                 .next()
-                .expect_throw("new remain items") = Some(KeyedElement::new(
-                self.render_context.get_key(item_state).into(),
-                element,
-            ));
+                .expect_throw("render::base::keyed_list::KeyedListRender::inser_remain_items") =
+                Some(KeyedElement::new(
+                    self.render_context.get_key(item_state).into(),
+                    element,
+                ));
         }
     }
 }
@@ -782,7 +779,7 @@ mod keyed_list_with_render_tests {
             Self { root, _rc, comp }
         }
 
-        fn updater(&mut self) -> HtmlElementRender<Unit> {
+        fn create_render(&mut self) -> HtmlElementRender<Unit> {
             ElementRender::new(
                 &self.comp,
                 &Unit,
@@ -840,14 +837,14 @@ mod keyed_list_with_render_tests {
 
         let empty: Vec<&'static str> = Vec::new();
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&empty, mode, "span", get_key, render);
         assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -858,7 +855,7 @@ mod keyed_list_with_render_tests {
         // Random shuffle + addition
         let data = vec!["f", "b", "d", "l", "g", "i", "m", "j", "a", "h", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(
             Some("fbdlgimjahk"),
@@ -868,7 +865,7 @@ mod keyed_list_with_render_tests {
 
         // Empty the list
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&empty, mode, "span", get_key, render);
         assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
@@ -876,7 +873,7 @@ mod keyed_list_with_render_tests {
         // Add back
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -887,7 +884,7 @@ mod keyed_list_with_render_tests {
         // Forward
         let data = vec!["a", "i", "b", "c", "d", "e", "f", "g", "h", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -898,7 +895,7 @@ mod keyed_list_with_render_tests {
         // Backward
         let data = vec!["a", "i", "c", "d", "e", "f", "g", "h", "b", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -909,7 +906,7 @@ mod keyed_list_with_render_tests {
         // Swap
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -920,7 +917,7 @@ mod keyed_list_with_render_tests {
         // Remove middle
         let data = vec!["a", "b", "c", "d", "i", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -931,7 +928,7 @@ mod keyed_list_with_render_tests {
         // Insert middle
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -942,7 +939,7 @@ mod keyed_list_with_render_tests {
         // Remove start
         let data = vec!["d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -953,7 +950,7 @@ mod keyed_list_with_render_tests {
         // Insert start
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -964,7 +961,7 @@ mod keyed_list_with_render_tests {
         // Remove end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
@@ -975,7 +972,7 @@ mod keyed_list_with_render_tests {
         // Append end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .updater()
+            .create_render()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
