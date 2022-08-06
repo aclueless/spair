@@ -1,6 +1,6 @@
 use super::{HtmlElementRender, HtmlElementRenderMut};
 use crate::component::Component;
-use crate::dom::ElementType;
+use crate::dom::{AttributeValueList, ElementType};
 use crate::render::base::{
     BoolAttributeValue, ElementRender, ElementRenderMut, F64AttributeValue, I32AttributeValue,
     MethodsForEvents, StringAttributeValue, U32AttributeValue,
@@ -66,7 +66,7 @@ pub trait HamsHandMade<C: Component>:
     fn checked_if_changed(mut self, value: bool) -> Self {
         if self
             .element_render_mut()
-            .need_to_render_attribute(|al, index| al.check_bool_attribute(index, value))
+            .must_render_attribute(value, AttributeValueList::check_bool_attribute)
         {
             self.checked(value)
         } else {

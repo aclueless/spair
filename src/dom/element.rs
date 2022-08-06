@@ -60,7 +60,7 @@ impl Element {
         }
     }
 
-    // This is intended for use with child component
+    // This is intended to use with child component
     pub fn replace_ws_element(&mut self, ws_element: web_sys::Element) {
         self.ws_element = ws_element;
         self.nodes.append_to(self.ws_element.as_ref());

@@ -9,7 +9,7 @@ pub struct Nodes(Vec<Node>);
 
 impl std::fmt::Debug for Nodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        f.write_fmt(format_args!("Nodes of {} items", self.0.len()))
+        f.write_fmt(format_args!("[{} nodes]", self.0.len()))
     }
 }
 
@@ -114,11 +114,11 @@ impl Nodes {
         next_sibling: Option<&web_sys::Node>,
     ) -> &mut GroupedNodes {
         if index == self.0.len() {
-            let fnl = GroupedNodes::new();
+            let gn = GroupedNodes::new();
             parent
-                .insert_before(fnl.end_flag_node.as_ref(), next_sibling)
+                .insert_before(gn.end_flag_node.as_ref(), next_sibling)
                 .expect_throw("dom::nodes::Nodes::grouped_nodes insert_before");
-            self.0.push(Node::GroupedNodes(fnl));
+            self.0.push(Node::GroupedNodes(gn));
         }
 
         match self
@@ -126,13 +126,19 @@ impl Nodes {
             .get_mut(index)
             .expect_throw("dom::nodes::Nodes::grouped_nodes get_mut")
         {
-            Node::GroupedNodes(grouped_node_list) => grouped_node_list,
+            Node::GroupedNodes(gn) => gn,
             _ => panic!("dom::nodes::Nodes::grouped_nodes expected Node::GroupedNodes"),
         }
     }
 
     #[cfg(feature = "keyed-list")]
     pub fn keyed_list(&mut self) -> &mut KeyedList {
+        // KeyedList is the only item of self.0, because spair only supports
+        // whole-keyed-list (keyed-list managed the whole content of the parent element)
+
+        // Partial keyed list is currently not supported yet. If partial-keyed-list
+        // support is adding to spair, this method will be changed to take an `index` argument.
+
         if self.0.is_empty() {
             self.0.push(Node::KeyedList(Default::default()));
         }
@@ -148,6 +154,8 @@ impl Nodes {
     }
 
     pub fn store_component_handle(&mut self, any: AnyComponentHandle) {
+        // Component handle is the only item of self.0
+
         let any = Node::ComponentHandle(any);
         if let Some(first) = self.0.first_mut() {
             *first = any;

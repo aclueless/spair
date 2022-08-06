@@ -1,6 +1,6 @@
 use super::{AttributesOnly, StaticAttributes, StaticAttributesOnly};
 use crate::component::{Comp, Component};
-use crate::dom::ElementType;
+use crate::dom::{AttributeValueList, ElementType};
 use crate::render::base::{ElementRender, ElementRenderMut, MethodsForEvents};
 use wasm_bindgen::JsCast;
 
@@ -182,20 +182,18 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     }
 
     pub(super) fn attribute_value_str(&mut self, value: &str) {
-        if self
+        if !self
             .element_render
-            .need_to_render_attribute(|al, index| al.check_str_attribute(index, value))
-            == false
+            .must_render_attribute(value, AttributeValueList::check_str_attribute)
         {
             return;
         }
         self.set_value(value);
     }
     pub(super) fn attribute_value_string(&mut self, value: String) {
-        if self
+        if !self
             .element_render
-            .need_to_render_attribute(|al, index| al.check_str_attribute(index, &value))
-            == false
+            .must_render_attribute(value.as_str(), AttributeValueList::check_str_attribute)
         {
             return;
         }
@@ -204,9 +202,9 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     pub(super) fn attribute_value_optional_str(&mut self, value: Option<&str>) {
         match self.element_render.element_mut().element_type() {
             ElementType::Select => {
-                if self.element_render.need_to_render_attribute(|al, index| {
-                    al.check_optional_str_attribute(index, value)
-                }) == false
+                if !self
+                    .element_render
+                    .must_render_attribute(value, AttributeValueList::check_optional_str_attribute)
                 {
                     return;
                 }
@@ -221,10 +219,9 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     fn attribute_selected_index(&mut self, value: i32) {
         match self.element_render.element_mut().element_type() {
             ElementType::Select => {
-                if self
+                if !self
                     .element_render
-                    .need_to_render_attribute(|al, index| al.check_i32_attribute(index, value))
-                    == false
+                    .must_render_attribute(value, AttributeValueList::check_i32_attribute)
                 {
                     return;
                 }

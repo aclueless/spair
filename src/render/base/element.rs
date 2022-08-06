@@ -118,61 +118,57 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.index += 1;
     }
 
-    pub fn need_to_render_attribute(
+    pub fn must_render_attribute<T>(
         &mut self,
-        check: impl FnOnce(&mut AttributeValueList, usize) -> bool,
+        value: T,
+        check: impl FnOnce(&mut AttributeValueList, usize, T) -> bool,
     ) -> bool {
         if self.is_static_mode() {
             self.status == ElementStatus::JustCreated
         } else {
-            let rs = check(self.element.attribute_list_mut(), self.index);
+            let rs = check(self.element.attribute_list_mut(), self.index, value);
             self.index += 1;
             rs
         }
     }
+
     pub fn set_bool_attribute(&mut self, name: &str, value: bool) {
-        if self.need_to_render_attribute(|al, index| al.check_bool_attribute(index, value)) == false
-        {
+        if !self.must_render_attribute(value, AttributeValueList::check_bool_attribute) {
             return;
         }
         self.element.set_bool_attribute(name, value);
     }
 
     pub fn set_str_attribute(&mut self, name: &str, value: &str) {
-        if self.need_to_render_attribute(|al, index| al.check_str_attribute(index, value)) == false
-        {
+        if !self.must_render_attribute(value, AttributeValueList::check_str_attribute) {
             return;
         }
         self.element.set_str_attribute(name, value);
     }
 
     pub fn set_string_attribute(&mut self, name: &str, value: String) {
-        if self.need_to_render_attribute(|al, index| al.check_str_attribute(index, &value)) == false
-        {
+        if !self.must_render_attribute(value.as_str(), AttributeValueList::check_str_attribute) {
             return;
         }
         self.element.set_str_attribute(name, &value);
     }
 
     pub fn set_i32_attribute(&mut self, name: &str, value: i32) {
-        if self.need_to_render_attribute(|al, index| al.check_i32_attribute(index, value)) == false
-        {
+        if !self.must_render_attribute(value, AttributeValueList::check_i32_attribute) {
             return;
         }
         self.element.set_i32_attribute(name, value);
     }
 
     pub fn set_u32_attribute(&mut self, name: &str, value: u32) {
-        if self.need_to_render_attribute(|al, index| al.check_u32_attribute(index, value)) == false
-        {
+        if !self.must_render_attribute(value, AttributeValueList::check_u32_attribute) {
             return;
         }
         self.element.set_u32_attribute(name, value);
     }
 
     pub fn set_f64_attribute(&mut self, name: &str, value: f64) {
-        if self.need_to_render_attribute(|al, index| al.check_f64_attribute(index, value)) == false
-        {
+        if !self.must_render_attribute(value, AttributeValueList::check_f64_attribute) {
             return;
         }
         self.element.set_f64_attribute(name, value);
@@ -195,8 +191,6 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn class(&mut self, class_name: &str) {
-        // Here, we do not call through self.check_attribute(), so we have to
-        // update the self.index by ourselves.
         let (changed, old_value) = if self.is_update_mode() {
             let rs = self
                 .element
@@ -214,10 +208,9 @@ impl<'a, C: Component> ElementRender<'a, C> {
             self.add_class(class_name);
         }
     }
+
     pub fn class_if(&mut self, class_on: bool, class_name: &str) {
-        if self.need_to_render_attribute(|al, index| al.check_bool_attribute(index, class_on))
-            == false
-        {
+        if !self.must_render_attribute(class_on, AttributeValueList::check_bool_attribute) {
             return;
         }
         if class_on {
@@ -228,8 +221,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn class_or(&mut self, first: bool, first_class: &str, second_class: &str) {
-        if self.need_to_render_attribute(|al, index| al.check_bool_attribute(index, first)) == false
-        {
+        if !self.must_render_attribute(first, AttributeValueList::check_bool_attribute) {
             return;
         }
         if first {
@@ -242,8 +234,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn focus(&mut self, value: bool) {
-        if self.need_to_render_attribute(|al, index| al.check_bool_attribute(index, value)) == false
-        {
+        if !self.must_render_attribute(value, AttributeValueList::check_bool_attribute) {
             return;
         }
         if value {
@@ -259,15 +250,17 @@ impl<'a, C: Component> ElementRender<'a, C> {
         // Is that possible? It may avoid calling `route.url()` if the route does not change.
         use crate::routing::Routes;
         let url = route.url();
-        if self.need_to_render_attribute(|al, index| al.check_str_attribute(index, &url)) {
-            self.element.set_str_attribute("href", &url);
+        if !self.must_render_attribute(url.as_str(), AttributeValueList::check_str_attribute) {
+            return;
         }
+        self.element.set_str_attribute("href", &url);
     }
 
     pub fn id(&mut self, id: &str) {
-        if self.need_to_render_attribute(|al, index| al.check_str_attribute(index, id)) {
-            self.element.ws_element().set_id(id);
+        if !self.must_render_attribute(id, AttributeValueList::check_str_attribute) {
+            return;
         }
+        self.element.ws_element().set_id(id);
     }
 
     pub fn list_render(
@@ -309,6 +302,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size
         let items: Vec<_> = items.into_iter().collect();
+
         let use_template = mode.use_template();
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
         let mut keyed_list_render = KeyedListRender::new(

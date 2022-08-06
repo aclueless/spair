@@ -13,7 +13,7 @@ impl<'a> NodesExtensions<'a> {
 
     pub fn done(self) {}
 
-    pub fn scroll_to_last_item_with_if(
+    pub fn scroll_to_last_element_if(
         self,
         need_to_scroll: bool,
         options: &web_sys::ScrollIntoViewOptions,
@@ -44,7 +44,7 @@ impl<'a> NodesExtensions<'a> {
         self
     }
 
-    pub fn scroll_to_first_item_with_if(
+    pub fn scroll_to_first_element_if(
         self,
         need_to_scroll: bool,
         options: &web_sys::ScrollIntoViewOptions,
