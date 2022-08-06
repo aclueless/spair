@@ -482,9 +482,9 @@ impl<C: Component> CompInstance<C> {
         } else {
             crate::dom::ElementStatus::Existing
         };
-        let u =
+        let er =
             crate::render::base::ElementRender::new(comp, state, &mut self.root_element, status);
-        state.render(u.into());
+        state.render(er.into());
     }
 
     fn extra_update(

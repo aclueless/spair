@@ -19,7 +19,7 @@ pub trait HemsForList<'a, C: Component>:
     where
         I: Copy,
         II: IntoIterator<Item = I>,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'r> R: Fn(I, crate::Element<'r, C>),
     {
         let mut r = self.element_render_mut().list_render(mode, tag);
         let _do_we_have_to_care_about_this_returned_value_ = r
@@ -34,7 +34,7 @@ pub trait HemsForList<'a, C: Component>:
     where
         I: Copy,
         II: IntoIterator<Item = I>,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'r> R: Fn(I, crate::Element<'r, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }

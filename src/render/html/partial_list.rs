@@ -15,7 +15,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     ) where
         I: Copy,
         II: IntoIterator<Item = I>,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'r> R: Fn(I, crate::Element<'r, C>),
     {
         let mut r = self
             .nodes_render_mut()
@@ -30,7 +30,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     where
         I: Copy,
         II: IntoIterator<Item = I>,
-        for<'u> R: Fn(I, crate::Element<'u, C>),
+        for<'r> R: Fn(I, crate::Element<'r, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }

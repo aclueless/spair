@@ -43,6 +43,7 @@ make_trait_for_element_methods! {
     RenderElementTraitName: RenderSvgElement
     ElementRenderType: SvgElementRender
     elements:
+        // https://developer.mozilla.org/en-US/docs/Web/SVG/Element
         a
         animate
         animate_motion "animateMotion"

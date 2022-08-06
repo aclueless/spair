@@ -43,6 +43,18 @@ impl<C: Component> SvgStaticRender<C> for &str {
     }
 }
 
+impl<C: Component> SvgRender<C> for &String {
+    fn render(self, nodes: SvgNodes<C>) {
+        nodes.update_text(self);
+    }
+}
+
+impl<C: Component> SvgStaticRender<C> for &String {
+    fn render(self, nodes: SvgStaticNodes<C>) {
+        nodes.static_text(self);
+    }
+}
+
 pub trait SvgListItemRender<C: Component> {
     const ROOT_ELEMENT_TAG: &'static str;
     fn render(self, item: SvgElementRender<C>);

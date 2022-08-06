@@ -302,6 +302,13 @@ pub trait MethodsForHtmlElementContent<'n, C: Component>:
         n.static_render(render)
     }
 
+    fn render_fn(self, func: impl FnOnce(Nodes<C>)) -> NodesOwned<'n, C> {
+        let mut n: NodesOwned<C> = self.into();
+        let nodes = Nodes::new(&mut n.0);
+        func(nodes);
+        n
+    }
+
     fn component<CC: Component>(mut self, child: &ChildComp<CC>) {
         self.element_render_mut().component(child)
     }
@@ -342,6 +349,12 @@ impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
         let n = StaticNodes::new(self.0);
         render.render(n);
         self.nodes_render_mut().set_update_mode();
+        self
+    }
+
+    pub fn render_fn(self, func: impl FnOnce(Nodes<C>)) -> Self {
+        let n = Nodes::new(self.0);
+        func(n);
         self
     }
 }
@@ -394,6 +407,12 @@ impl<'n, C: Component> NodesOwned<'n, C> {
         let n = StaticNodes::new(&mut self.0);
         render.render(n);
         self.nodes_render_mut().set_update_mode();
+        self
+    }
+
+    pub fn render_fn(mut self, func: impl FnOnce(Nodes<C>)) -> Self {
+        let n = Nodes::new(&mut self.0);
+        func(n);
         self
     }
 }

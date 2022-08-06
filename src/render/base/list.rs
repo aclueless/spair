@@ -56,7 +56,7 @@ impl<'a, C: Component> ListRender<'a, C> {
         N: NameSpace,
         I: Copy,
         II: IntoIterator<Item = I>,
-        for<'u> R: Fn(I, ElementRender<'u, C>),
+        for<'r> R: Fn(I, ElementRender<'r, C>),
     {
         let mut index = 0;
         for item in items {
