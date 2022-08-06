@@ -3,6 +3,15 @@ use wasm_bindgen::UnwrapThrowExt;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+compile_error!(
+    r#"
+QueueRenderingNode may need {
+    start_flag,
+    end_flat,
+} because the incremental dom does not no how a QueueRenderingNode work
+"#
+);
+
 use crate::dom::queue_render::text::MapTextNode;
 
 pub struct Value<T>(Rc<RefCell<ValueContent<T>>>);

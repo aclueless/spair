@@ -79,10 +79,9 @@ impl Nodes {
         }
     }
 
-    pub fn check_or_create_element_for_list(
+    pub fn check_or_create_element_for_list<N: NameSpace>(
         &mut self,
         tag: &str,
-        name_space: Option<&str>,
         index: usize,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
@@ -92,7 +91,7 @@ impl Nodes {
         if index < item_count {
             ElementStatus::Existing
         } else if !use_template || item_count == 0 {
-            self.create_new_element_ns(name_space, tag, parent, next_sibling);
+            self.create_new_element_ns(N::NAMESPACE, tag, parent, next_sibling);
             ElementStatus::JustCreated
         } else {
             let element = self.0[0].clone();
@@ -219,7 +218,7 @@ impl Nodes {
 
 pub struct GroupedNodes {
     active_index: Option<u32>,
-    // `end_node` marks the boundary of this fragment
+    // `end_flag_node` marks the boundary of the end of this group of nodes
     end_flag_node: web_sys::Node,
     nodes: Nodes,
 }
@@ -279,8 +278,8 @@ impl GroupedNodes {
 pub struct AnyComponentHandle(Box<dyn std::any::Any>);
 
 impl<C: Component> From<Comp<C>> for AnyComponentHandle {
-    fn from(ch: Comp<C>) -> Self {
-        Self(Box::new(ComponentHandle::from(ch)))
+    fn from(comp: Comp<C>) -> Self {
+        Self(Box::new(ComponentHandle::from(comp)))
     }
 }
 impl Clone for AnyComponentHandle {

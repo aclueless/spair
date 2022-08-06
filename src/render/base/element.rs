@@ -263,19 +263,13 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.element.ws_element().set_id(id);
     }
 
-    pub fn list_render(
-        &mut self,
-        mode: ListElementCreation,
-        tag: &'a str,
-        name_space: Option<&'a str>,
-    ) -> ListRender<C> {
+    pub fn list_render(&mut self, mode: ListElementCreation, tag: &'a str) -> ListRender<C> {
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
         ListRender::new(
             self.comp,
             self.state,
             nodes,
             tag,
-            name_space,
             parent,
             None,
             mode.use_template(),

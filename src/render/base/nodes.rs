@@ -19,8 +19,8 @@ pub struct NodesRender<'a, C: Component> {
 }
 
 impl<'a, C: Component> From<ElementRender<'a, C>> for NodesRender<'a, C> {
-    fn from(u: ElementRender<'a, C>) -> Self {
-        let (comp, state, status, element) = u.into_parts();
+    fn from(er: ElementRender<'a, C>) -> Self {
+        let (comp, state, parent_status, element) = er.into_parts();
         let (parent, nodes) = element.ws_node_and_nodes_mut();
         Self {
             comp,
@@ -28,7 +28,7 @@ impl<'a, C: Component> From<ElementRender<'a, C>> for NodesRender<'a, C> {
 
             update_mode: true,
             index: 0,
-            parent_status: status,
+            parent_status,
             parent,
             next_sibling: None,
             nodes,
@@ -108,12 +108,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
         }
     }
 
-    pub fn get_list_render(
-        &mut self,
-        tag: &'a str,
-        name_space: Option<&'a str>,
-        use_template: bool,
-    ) -> ListRender<C> {
+    pub fn get_list_render(&mut self, tag: &'a str, use_template: bool) -> ListRender<C> {
         let gn = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);
@@ -124,7 +119,6 @@ impl<'a, C: Component> NodesRender<'a, C> {
             self.state,
             list,
             tag,
-            name_space,
             self.parent,
             Some(next_sibling),
             use_template,

@@ -216,6 +216,7 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     pub(super) fn attribute_value_optional_string(&mut self, value: Option<String>) {
         self.attribute_value_optional_str(value.as_deref());
     }
+
     fn attribute_selected_index(&mut self, value: i32) {
         match self.element_render.element_mut().element_type() {
             ElementType::Select => {

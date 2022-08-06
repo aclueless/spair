@@ -1,52 +1,51 @@
 use super::SvgListItemRender;
 use super::{SvgNameSpace, SvgNodes, SvgNodesOwned, SvgStaticNodes, SvgStaticNodesOwned};
 use crate::component::Component;
-use crate::dom::NameSpace;
 use crate::render::base::{ElementRender, NodesRenderMut};
 use crate::render::ListElementCreation;
 
 pub trait SemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
-    fn list_with_render<I, R>(
+    fn list_with_render<I, II, R>(
         mut self,
-        items: impl IntoIterator<Item = I>,
+        items: II,
         mode: ListElementCreation,
         tag: &'a str,
         render: R,
     ) where
         I: Copy,
+        II: IntoIterator<Item = I>,
         for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
-        let mut r = self.nodes_render_mut().get_list_render(
-            tag,
-            SvgNameSpace::NAMESPACE,
-            mode.use_template(),
-        );
+        let mut r = self
+            .nodes_render_mut()
+            .get_list_render(tag, mode.use_template());
         let _do_we_have_to_care_about_this_returned_value_ = r
-            .render(items, |item: I, er: ElementRender<C>| {
+            .render::<SvgNameSpace, _, _, _>(items, |item: I, er: ElementRender<C>| {
                 render(item, er.into())
             });
     }
 
-    fn lwr_clone<I, R>(self, items: impl IntoIterator<Item = I>, tag: &'a str, render: R)
+    fn lwr_clone<I, II, R>(self, items: II, tag: &'a str, render: R)
     where
         I: Copy,
+        II: IntoIterator<Item = I>,
         for<'u> R: Fn(I, crate::Svg<'u, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
 
-    fn list<I>(self, items: impl IntoIterator<Item = I>, mode: ListElementCreation)
+    fn list<I, II>(self, items: II, mode: ListElementCreation)
     where
-        I: Copy,
-        I: SvgListItemRender<C>,
+        I: Copy + SvgListItemRender<C>,
+        II: IntoIterator<Item = I>,
     {
         self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
     }
 
-    fn list_clone<I>(self, items: impl IntoIterator<Item = I>)
+    fn list_clone<I, II>(self, items: II)
     where
-        I: Copy,
-        I: SvgListItemRender<C>,
+        I: Copy + SvgListItemRender<C>,
+        II: IntoIterator<Item = I>,
     {
         self.list_with_render(
             items,
