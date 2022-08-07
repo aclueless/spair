@@ -25,7 +25,7 @@ impl spair::Component for State {
     }
 
     fn default_should_render() -> spair::ShouldRender {
-        spair::ShouldRender::Yes
+        spair::ShouldRender::No
     }
 
     fn render(&self, element: spair::Element<Self>) {
@@ -34,28 +34,28 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
-                    .r#static("The initial value is ")
-                    .r#static(self.value.get())
+                    .static_render("The initial value is ")
+                    .static_render(self.value.get())
                     .line_break()
-                    .r#static("The factor is ")
-                    .r#static(self.factor)
+                    .static_render("The factor is ")
+                    .static_render(self.factor)
                     ;
             })
-            .r#static("Value: ")
-            .render(&self.value)
-            // .line_break()
-            // .r#static("Value / self.factor = ")
-            // // Unfortunately, Rust fail inference types for this closure
-            // .render(self.value.map(|state: &Self, value: &i32| value / state.factor))
-            // .line_break()
-            // .r#static("Value * self.factor = ")
-            // .render(self.value.map(|state: &Self, value: &i32| value * state.factor))
+            .static_render("Value: ")
+            .update_render(&self.value)
             .line_break()
-            .r#static(Button("-", comp.handler_mut(State::decrement)))
-            .r#static(Button("+", comp.handler_mut(State::increment)))
-            // .line_break()
-            // .r#static("This value will be never updated if the update method return `spair::ShouldRender::No`: ")
-            // .render(self.value.get())
+            .static_render("Value / self.factor = ")
+            // Unfortunately, Rust fail inference types for this closure
+            .update_render(self.value.map(|state: &Self, value: &i32| value / state.factor))
+            .line_break()
+            .static_render("Value * self.factor = ")
+            .update_render(self.value.map(|state: &Self, value: &i32| value * state.factor))
+            .line_break()
+            .static_render(Button("-", comp.handler_mut(State::decrement)))
+            .static_render(Button("+", comp.handler_mut(State::increment)))
+            .line_break()
+            .static_render("This value will be never updated if the update method return `spair::ShouldRender::No`: ")
+            .update_render(self.value.get())
             ;
     }
 }
@@ -67,7 +67,7 @@ impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
             b.static_attributes()
                 .on_click(self.1)
                 .static_nodes()
-                .r#static(self.0);
+                .static_render(self.0);
         });
     }
 }

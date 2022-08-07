@@ -1,5 +1,7 @@
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
+#[cfg(feature = "queue-render")]
+use super::QrNode;
 use super::{Element, ElementStatus, NameSpace, Node, ParentAndChild, TextNode};
 use crate::component::{Comp, Component, ComponentHandle};
 use wasm_bindgen::UnwrapThrowExt;
@@ -213,6 +215,23 @@ impl Nodes {
         let text = TextNode::new(text);
         text.insert_before(parent, next_sibling);
         self.0.push(Node::Text(text));
+    }
+
+    #[cfg(feature = "queue-render")]
+    pub fn add_qr_node(&mut self, qr: QrNode) {
+        self.0.push(Node::QrNode(qr));
+    }
+
+    #[cfg(feature = "queue-render")]
+    pub fn get_qr_node(&mut self, index: usize) -> &mut QrNode {
+        match self
+            .0
+            .get_mut(index)
+            .expect_throw("dom::nodes::Nodes::get_qr_node get_mut")
+        {
+            Node::QrNode(qr) => qr,
+            _ => panic!("dom::nodes::Nodes::get_qr_node expected Node::QrNode"),
+        }
     }
 }
 

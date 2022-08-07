@@ -1,6 +1,6 @@
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
-use super::{AnyComponentHandle, Element, GroupedNodes, ParentAndChild, TextNode};
+use super::{AnyComponentHandle, Element, GroupedNodes, ParentAndChild, QrNode, TextNode};
 #[derive(Clone)]
 pub enum Node {
     Element(Element),
@@ -9,8 +9,8 @@ pub enum Node {
     #[cfg(feature = "keyed-list")]
     KeyedList(KeyedList),
     ComponentHandle(AnyComponentHandle),
-    // #[cfg(feature = "queue-render")]
-    // QueueRendering(QueueRendering),
+    #[cfg(feature = "queue-render")]
+    QrNode(QrNode),
 }
 
 impl Node {
@@ -26,8 +26,8 @@ impl Node {
                 parent.set_text_content(None);
                 // The NodeList will drop the ComponentHandle in its.clear()
             }
-            // #[cfg(feature = "queue-render")]
-            // Self::QueueRendering(qr) => qr.remove_from(parent),
+            #[cfg(feature = "queue-render")]
+            Self::QrNode(qr) => qr.remove_from(parent),
         }
     }
 
@@ -42,8 +42,8 @@ impl Node {
                 // TODO: Not sure what to do here???
                 unreachable!("Node::ComponentHandle::append_to() is unreachable???");
             }
-            // #[cfg(feature = "queue-render")]
-            // Self::QueueRendering(qr) => qr.append_to(parent),
+            #[cfg(feature = "queue-render")]
+            Self::QrNode(qr) => qr.append_to(parent),
         }
     }
 
@@ -55,8 +55,8 @@ impl Node {
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.get_first_element(),
             Self::ComponentHandle(_) => None,
-            // #[cfg(feature = "queue-render")]
-            // Self::QueueRendering(qr) => qr.get_first_element(),
+            #[cfg(feature = "queue-render")]
+            Self::QrNode(qr) => qr.get_first_element(),
         }
     }
 
@@ -68,8 +68,8 @@ impl Node {
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.get_last_element(),
             Self::ComponentHandle(_) => None,
-            // #[cfg(feature = "queue-render")]
-            // Self::QueueRendering(qr) => qr.get_last_element(),
+            #[cfg(feature = "queue-render")]
+            Self::QrNode(qr) => qr.get_last_element(),
         }
     }
 }

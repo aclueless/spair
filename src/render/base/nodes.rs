@@ -51,6 +51,10 @@ impl<'a, C: Component> NodesRender<'a, C> {
         self.parent
     }
 
+    pub fn next_sibling(&self) -> Option<&web_sys::Node> {
+        self.next_sibling
+    }
+
     pub fn set_static_mode(&mut self) {
         self.update_mode = false;
     }
@@ -125,6 +129,18 @@ impl<'a, C: Component> NodesRender<'a, C> {
             Some(next_sibling),
             use_template,
         )
+    }
+
+    pub fn new_node(&self) -> bool {
+        self.index >= self.nodes.count()
+    }
+
+    pub fn nodes_mut(&mut self) -> &mut Nodes {
+        self.nodes
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
     }
 }
 

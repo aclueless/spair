@@ -1,33 +1,37 @@
+use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
-
-use std::cell::RefCell;
-use std::rc::Rc;
-
-compile_error!(
-    r#"
-QueueRenderingNode may need {
-    start_flag,
-    end_flat,
-} because the incremental dom does not no how a QueueRenderingNode work
-"#
-);
-
-use crate::dom::queue_render::text::MapTextNode;
+//use crate::{component::Component, render::html::{Render, Nodes}};
 
 pub struct Value<T>(Rc<RefCell<ValueContent<T>>>);
 pub struct MapValue<C, T, U, F>
-where
-    F: Fn(&C, &T) -> U,
+// where
+//     F: Fn(&C, &T) -> U,
 {
     value: Value<T>,
-    map: F,
-    phantom: std::marker::PhantomData<dyn Fn(C, T) -> U>,
+    fn_map: F,
+    phantom: PhantomData<dyn Fn(C, T) -> U>,
 }
 
-struct ValueContent<T> {
+impl<C, T, U, F> MapValue<C, T, U, F> {
+    pub fn into_parts(self) -> (Value<T>, F) {
+        (self.value, self.fn_map)
+    }
+}
+
+pub struct ValueContent<T> {
     value: T,
     // TODO: Removed dropped renders
-    renders: Vec<Box<dyn QueueRendering<T>>>,
+    renders: Vec<Box<dyn QueueRender<T>>>,
+}
+
+impl<T> ValueContent<T> {
+    pub fn value(&self) -> &T {
+        &self.value
+    }
+
+    pub fn add_render(&mut self, r: Box<dyn QueueRender<T>>) {
+        self.renders.push(r);
+    }
 }
 
 impl<T> From<T> for Value<T> {
@@ -39,6 +43,12 @@ impl<T> From<T> for Value<T> {
     }
 }
 
+impl<T: 'static> Value<T> {
+    pub(crate) fn content(&self) -> &Rc<RefCell<ValueContent<T>>> {
+        &self.0
+    }
+}
+
 impl<T: 'static + PartialEq + Copy> Value<T> {
     pub fn get(&self) -> T {
         self.0
@@ -47,6 +57,7 @@ impl<T: 'static + PartialEq + Copy> Value<T> {
             .value
     }
 }
+
 impl<T: 'static + PartialEq> Value<T> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
@@ -104,62 +115,21 @@ impl<T: 'static + PartialEq> Value<T> {
         }
     }
 
-    pub fn map<C, U, F>(&self, map: F) -> MapValue<C, T, U, F>
+    pub fn map<C, U, F>(&self, fn_map: F) -> MapValue<C, T, U, F>
     where
         F: Fn(&C, &T) -> U,
     {
         MapValue {
             value: self.clone(),
-            map,
-            phantom: std::marker::PhantomData,
+            fn_map,
+            phantom: PhantomData,
         }
     }
 }
 
-pub trait QueueRendering<T> {
+pub trait QueueRender<T> {
     fn render(&self, t: &T);
     fn dropped(&self) -> bool;
-}
-
-impl<C, T> crate::Render<C> for &Value<T>
-where
-    C: super::Component,
-    T: ToString,
-{
-    fn render(self, nodes: crate::Nodes<C>) {
-        if let Some(text_node) = nodes.create_queue_rendering_text() {
-            match self.0.try_borrow_mut() {
-                Ok(mut this) => {
-                    text_node.update_text(&this.value.to_string());
-                    this.renders.push(Box::new(text_node));
-                }
-                Err(e) => log::error!("{}", e),
-            }
-        }
-    }
-}
-
-impl<C, T, U, F> crate::Render<C> for MapValue<C, T, U, F>
-where
-    C: super::Component,
-    T: 'static + ToString,
-    U: 'static + ToString,
-    F: 'static + Fn(&C, &T) -> U,
-{
-    fn render(self, nodes: crate::Nodes<C>) {
-        let state = nodes.state();
-        if let Some(text_node) = nodes.create_queue_rendering_text() {
-            let map_node = MapTextNode::new(text_node, self.map);
-            match self.value.0.try_borrow_mut() {
-                Ok(mut this) => {
-                    let u = map_node.map_with_state(state, &this.value);
-                    map_node.update_text(&u.to_string());
-                    this.renders.push(Box::new(map_node));
-                }
-                Err(e) => log::error!("{}", e),
-            }
-        }
-    }
 }
 
 struct RenderQueue {

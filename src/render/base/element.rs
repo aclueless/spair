@@ -359,3 +359,4 @@ impl<'a, C: Component> ElementRender<'a, C> {
         //self.element.set_f64_attribute(name, value);
     }
 }
+

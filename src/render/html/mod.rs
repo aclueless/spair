@@ -10,8 +10,6 @@ mod attributes;
 mod attributes_elements_with_ambiguous_names;
 mod attributes_with_predefined_values;
 mod element;
-#[cfg(feature = "keyed-list")]
-mod keyed_list;
 mod list;
 mod nodes;
 mod partial_list;
@@ -21,12 +19,20 @@ pub use attributes::*;
 pub use attributes_elements_with_ambiguous_names::*;
 pub use attributes_with_predefined_values::*;
 pub use element::*;
-#[cfg(feature = "keyed-list")]
-pub use keyed_list::*;
 pub use list::*;
 pub use nodes::*;
 pub use partial_list::*;
 pub use render::*;
+
+#[cfg(feature = "keyed-list")]
+mod keyed_list;
+#[cfg(feature = "keyed-list")]
+pub use keyed_list::*;
+
+#[cfg(feature = "queue-render")]
+mod queue_render;
+#[cfg(feature = "queue-render")]
+pub use queue_render::*;
 
 struct HtmlNameSpace;
 impl NameSpace for HtmlNameSpace {

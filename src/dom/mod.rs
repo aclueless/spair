@@ -2,19 +2,25 @@ use wasm_bindgen::UnwrapThrowExt;
 
 mod attributes;
 mod element;
-#[cfg(feature = "keyed-list")]
-mod keyed_list;
 mod node;
 mod nodes;
 mod text;
 
 pub use attributes::*;
 pub use element::*;
-#[cfg(feature = "keyed-list")]
-pub use keyed_list::*;
 pub use node::*;
 pub use nodes::*;
 pub use text::*;
+
+#[cfg(feature = "keyed-list")]
+mod keyed_list;
+#[cfg(feature = "keyed-list")]
+pub use keyed_list::*;
+
+#[cfg(feature = "queue-render")]
+mod queue_render;
+#[cfg(feature = "queue-render")]
+pub use queue_render::*;
 
 pub trait NameSpace {
     const NAMESPACE: Option<&'static str>;
