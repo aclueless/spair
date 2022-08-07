@@ -1,10 +1,15 @@
 use super::SvgListItemRender;
-use crate::component::Component;
-use crate::render::base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions};
-use crate::render::svg::{
-    SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgStaticAttributes, SvgStaticAttributesOnly,
+use crate::{
+    component::Component,
+    render::{
+        base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        svg::{
+            SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgStaticAttributes,
+            SvgStaticAttributesOnly,
+        },
+        ListElementCreation,
+    },
 };
-use crate::render::ListElementCreation;
 
 pub trait SemsForList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>

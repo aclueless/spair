@@ -1,6 +1,7 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::component::{Comp, Component};
 
 struct SpairRouter {
     router: Box<dyn std::any::Any>,
@@ -77,26 +78,23 @@ pub fn execute_routing<R: Router>() {
     });
 }
 
-pub fn register_routing_callback<C: crate::component::Component>(comp: &crate::component::Comp<C>) {
+pub fn register_routing_callback<C: Component>(comp: &Comp<C>) {
     modify_router::<C, _>(|router| C::register_routing_callback(router, comp))
 }
 
-pub fn remove_routing_callback<C: crate::component::Component>() {
+pub fn remove_routing_callback<C: Component>() {
     modify_router::<C, _>(C::remove_routing_callback)
 }
 
-pub fn modify_router<
-    C: crate::component::Component,
-    F: FnOnce(&mut <<C as crate::component::Component>::Routes as Routes>::Router),
->(
+pub fn modify_router<C: Component, F: FnOnce(&mut <<C as Component>::Routes as Routes>::Router)>(
     f: F,
 ) {
     ROUTER.with(|router| {
         if let Ok(mut router) = router.try_borrow_mut() {
             if let Some(router) = router
                 .router
-                .downcast_mut::<<<C as crate::component::Component>::Routes as Routes>::Router>(
-            ) {
+                .downcast_mut::<<<C as Component>::Routes as Routes>::Router>()
+            {
                 f(router);
             }
         }

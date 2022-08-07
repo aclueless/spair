@@ -2,9 +2,9 @@ use super::{
     AttributesOnly, HtmlElementRender, Nodes, NodesOwned, RenderHtmlElement, StaticAttributes,
     StaticAttributesOnly, StaticNodes, StaticNodesOwned,
 };
-use crate::component::Component;
-use crate::render::base::{
-    ElementRenderMut, NodesRenderMut, StringAttributeValue, U32AttributeValue,
+use crate::{
+    component::Component,
+    render::base::{ElementRenderMut, NodesRenderMut, StringAttributeValue, U32AttributeValue},
 };
 
 #[cfg(test)]

@@ -1,6 +1,8 @@
 use super::{SvgAttributesOnly, SvgStaticAttributes, SvgStaticAttributesOnly};
-use crate::component::{Comp, Component};
-use crate::render::base::{ElementRender, ElementRenderMut};
+use crate::{
+    component::{Comp, Component},
+    render::base::{ElementRender, ElementRenderMut},
+};
 
 pub struct SvgElementRender<'er, C: Component>(ElementRender<'er, C>);
 

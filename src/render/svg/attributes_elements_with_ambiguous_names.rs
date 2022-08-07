@@ -1,10 +1,11 @@
-use super::{RenderSvgElement, SvgElementRender};
 use super::{
-    SvgAttributesOnly, SvgNodes, SvgNodesOwned, SvgStaticAttributes, SvgStaticAttributesOnly,
-    SvgStaticNodes, SvgStaticNodesOwned,
+    RenderSvgElement, SvgAttributesOnly, SvgElementRender, SvgNodes, SvgNodesOwned,
+    SvgStaticAttributes, SvgStaticAttributesOnly, SvgStaticNodes, SvgStaticNodesOwned,
 };
-use crate::component::Component;
-use crate::render::base::{ElementRenderMut, NodesRenderMut, StringAttributeValue};
+use crate::{
+    component::Component,
+    render::base::{ElementRenderMut, NodesRenderMut, StringAttributeValue},
+};
 
 #[cfg(test)]
 use crate::render::svg::TestSvgMethods;

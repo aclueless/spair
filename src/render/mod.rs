@@ -6,7 +6,7 @@ pub mod html;
 #[cfg(feature = "svg")]
 pub mod svg;
 
-pub struct AmbiguousName;
+pub struct SeeDeprecationNoteOrMethodDocForInformation;
 
 #[derive(Copy, Clone)]
 pub enum ListElementCreation {

@@ -1,7 +1,7 @@
 use super::SvgElementRender;
-use crate::component::Component;
-use crate::render::base::{
-    ElementRender, ElementRenderMut, F64AttributeValue, StringAttributeValue,
+use crate::{
+    component::Component,
+    render::base::{ElementRender, ElementRenderMut, F64AttributeValue, StringAttributeValue},
 };
 
 #[cfg(feature = "queue-render")]

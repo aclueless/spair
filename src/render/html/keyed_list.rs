@@ -1,10 +1,15 @@
-use crate::component::Component;
-use crate::dom::{Key, Keyed, NameSpace};
-use crate::render::base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions};
-use crate::render::html::{
-    AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes, StaticAttributesOnly,
+use crate::{
+    component::Component,
+    dom::{Key, Keyed, NameSpace},
+    render::{
+        base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        html::{
+            AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes,
+            StaticAttributesOnly,
+        },
+        ListElementCreation,
+    },
 };
-use crate::render::ListElementCreation;
 
 pub trait HemsForKeyedList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>

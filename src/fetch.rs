@@ -1,6 +1,11 @@
 // Most of code in this module is based on Yew's fetch service
 use wasm_bindgen::UnwrapThrowExt;
 
+use crate::{
+    component::{Checklist, Command as CommandTrait, Comp, Component},
+    Command,
+};
+
 #[derive(thiserror::Error, Debug)]
 pub enum FetchError {
     #[error("Invalid request header")]
@@ -393,11 +398,11 @@ pub struct TextResponseSetter(Result<web_sys::Request, FetchError>);
 pub struct BinaryResponseSetter(Result<web_sys::Request, FetchError>);
 
 impl TextResponseSetter {
-    pub fn text<C, E, Cl, Oh, Eh>(self, ok_callback: Oh, error_callback: Eh) -> crate::Command<C>
+    pub fn text<C, E, Cl, Oh, Eh>(self, ok_callback: Oh, error_callback: Eh) -> Command<C>
     where
-        C: crate::component::Component,
+        C: Component,
         E: 'static + BuildFrom<String> + From<FetchError>,
-        Cl: 'static + Into<crate::component::Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
         Oh: 'static + FnOnce(&mut C, String) -> Cl,
         Eh: 'static + FnOnce(&mut C, E),
     {
@@ -476,34 +481,34 @@ struct FetchCmdArgs<C, R, T, E, Cl, Oh, Eh> {
     error_callback: Eh,
 }
 
-impl<C, R, T, E, Cl, Oh, Eh> From<FetchCmdArgs<C, R, T, E, Cl, Oh, Eh>> for crate::Command<C>
+impl<C, R, T, E, Cl, Oh, Eh> From<FetchCmdArgs<C, R, T, E, Cl, Oh, Eh>> for Command<C>
 where
-    C: crate::component::Component,
+    C: Component,
     R: 'static + RawData,
     T: 'static + ParseFrom<R>,
     E: 'static + BuildFrom<R> + From<FetchError>,
-    Cl: 'static + Into<crate::component::Checklist<C>>,
+    Cl: 'static + Into<Checklist<C>>,
     Oh: 'static + FnOnce(&mut C, T) -> Cl,
     Eh: 'static + FnOnce(&mut C, E),
 {
     fn from(fca: FetchCmdArgs<C, R, T, E, Cl, Oh, Eh>) -> Self {
-        crate::Command(Box::new(FetchCmd(Some(fca))))
+        Command(Box::new(FetchCmd(Some(fca))))
     }
 }
 
 struct FetchCmd<C, R, T, E, Cl, Oh, Eh>(Option<FetchCmdArgs<C, R, T, E, Cl, Oh, Eh>>);
 
-impl<C, R, T, E, Cl, Oh, Eh> crate::component::Command<C> for FetchCmd<C, R, T, E, Cl, Oh, Eh>
+impl<C, R, T, E, Cl, Oh, Eh> CommandTrait<C> for FetchCmd<C, R, T, E, Cl, Oh, Eh>
 where
-    C: 'static + crate::component::Component,
+    C: 'static + Component,
     R: 'static + RawData,
     T: 'static + ParseFrom<R>,
     E: 'static + BuildFrom<R> + From<FetchError>,
-    Cl: 'static + Into<crate::component::Checklist<C>>,
+    Cl: 'static + Into<Checklist<C>>,
     Oh: 'static + FnOnce(&mut C, T) -> Cl,
     Eh: 'static + FnOnce(&mut C, E),
 {
-    fn execute(&mut self, comp: &crate::component::Comp<C>, state: &mut C) {
+    fn execute(&mut self, comp: &Comp<C>, state: &mut C) {
         let FetchCmdArgs {
             phantom_r: _,
             phantom_t: _,
@@ -631,12 +636,12 @@ macro_rules! impl_fetch {
                 self,
                 ok_callback: Oh,
                 error_callback: Eh,
-            ) -> crate::Command<C>
+            ) -> Command<C>
             where
-                C: crate::component::Component,
+                C: Component,
                 T: 'static + serde::de::DeserializeOwned,
                 E: 'static + BuildFrom<$RawDataType> + From<FetchError>,
-                Cl: 'static + Into<crate::component::Checklist<C>>,
+                Cl: 'static + Into<Checklist<C>>,
                 Oh: 'static + FnOnce(&mut C, T) -> Cl,
                 Eh: 'static + FnOnce(&mut C, E),
             {

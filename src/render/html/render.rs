@@ -1,7 +1,7 @@
 use super::{Nodes, StaticNodes};
+use crate::component::Component;
 /// This module provides traits that help users define how their types should be rendered.
 /// Implementation for primitive types are also provided.
-use crate::component::Component;
 
 pub trait Render<C: Component> {
     fn render(self, nodes: Nodes<C>);

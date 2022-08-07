@@ -1,9 +1,11 @@
 use super::{HtmlElementRender, HtmlElementRenderMut};
-use crate::component::Component;
-use crate::dom::{AttributeValueList, ElementType};
-use crate::render::base::{
-    BoolAttributeValue, ElementRender, ElementRenderMut, F64AttributeValue, I32AttributeValue,
-    MethodsForEvents, StringAttributeValue, U32AttributeValue,
+use crate::{
+    component::Component,
+    dom::{AttributeValueList, ElementType},
+    render::base::{
+        BoolAttributeValue, ElementRender, ElementRenderMut, F64AttributeValue, I32AttributeValue,
+        MethodsForEvents, StringAttributeValue, U32AttributeValue,
+    },
 };
 use wasm_bindgen::JsCast;
 

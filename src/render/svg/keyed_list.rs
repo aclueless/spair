@@ -1,10 +1,15 @@
-use crate::component::Component;
-use crate::dom::{Key, Keyed, NameSpace};
-use crate::render::base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions};
-use crate::render::svg::{
-    SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgStaticAttributes, SvgStaticAttributesOnly,
+use crate::{
+    component::Component,
+    dom::{Key, Keyed, NameSpace},
+    render::{
+        base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        svg::{
+            SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgStaticAttributes,
+            SvgStaticAttributesOnly,
+        },
+        ListElementCreation,
+    },
 };
-use crate::render::ListElementCreation;
 
 pub trait SemsForKeyedList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>

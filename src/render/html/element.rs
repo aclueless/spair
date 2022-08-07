@@ -1,7 +1,9 @@
 use super::{AttributesOnly, StaticAttributes, StaticAttributesOnly};
-use crate::component::{Comp, Component};
-use crate::dom::{AttributeValueList, ElementType};
-use crate::render::base::{ElementRender, ElementRenderMut, MethodsForEvents};
+use crate::{
+    component::{Comp, Component},
+    dom::{AttributeValueList, ElementType},
+    render::base::{ElementRender, ElementRenderMut, MethodsForEvents},
+};
 use wasm_bindgen::JsCast;
 
 #[derive(Debug)]

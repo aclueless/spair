@@ -67,9 +67,8 @@ macro_rules! make_trait_for_deprecated_methods {
             #[doc = "()` or `.static_nodes()."]
             #[doc = stringify!($name)]
             #[doc = "()` if you want to render an element."]
-            #[deprecated = "Call this method after `.attributes_only()`, `.static_attributes_only()`, `.update_nodes()`, `.static_nodes()`. See the documentation of this method for more information."]
-            fn $name(self, _error_this_method_name_is_used_for_both_element_and_attribute: crate::render::AmbiguousName) -> Self {self}
-            //fn $name(self) -> Self {self}
+            #[deprecated = "Call this method after `.attributes_only()`, `.static_attributes_only()`, `.update_nodes()`, `.static_nodes()` to disambiguate. See the documentation of this method for more information."]
+            fn $name(self, _see_the_deprecation_note_for_method_document_for_information: crate::render::SeeDeprecationNoteOrMethodDocForInformation) -> Self {self}
         )+}
     };
 }

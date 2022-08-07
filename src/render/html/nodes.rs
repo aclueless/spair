@@ -2,10 +2,12 @@ use super::{
     AttributesOnly, HtmlElementRender, HtmlNameSpace, Render, SelectElementValueManager,
     StaticAttributes, StaticAttributesOnly, StaticRender,
 };
-use crate::component::{ChildComp, Comp, Component};
-use crate::render::base::{ElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut};
 #[cfg(feature = "svg")]
 use crate::render::svg::{SvgElementRender, SvgNameSpace};
+use crate::{
+    component::{ChildComp, Comp, Component},
+    render::base::{ElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut},
+};
 
 pub struct HtmlNodesRender<'n, C: Component> {
     nodes_render: NodesRender<'n, C>,

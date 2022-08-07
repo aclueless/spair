@@ -1,9 +1,11 @@
-use super::HtmlNameSpace;
-use super::ListItemRender;
-use super::{Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
-use crate::component::Component;
-use crate::render::base::{ElementRender, NodesRenderMut};
-use crate::render::ListElementCreation;
+use super::{HtmlNameSpace, ListItemRender, Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
+use crate::{
+    component::Component,
+    render::{
+        base::{ElementRender, NodesRenderMut},
+        ListElementCreation,
+    },
+};
 
 pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     fn list_with_render<I, II, R>(

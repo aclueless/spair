@@ -1,6 +1,8 @@
 use super::ElementRender;
-use crate::component::{Comp, Component};
-use crate::dom::{NameSpace, Nodes};
+use crate::{
+    component::{Comp, Component},
+    dom::{NameSpace, Nodes},
+};
 
 #[must_use = "Caller should set selected option for <select> element"]
 pub struct RememberSettingSelectedOption;

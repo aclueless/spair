@@ -1,9 +1,9 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use super::ElementRender;
-use crate::component::{Comp, Component};
-use crate::dom::{
-    Element, ElementStatus, Key, KeyedElement, KeyedList, OldElement, ParentAndChild,
+use crate::{
+    component::{Comp, Component},
+    dom::{Element, ElementStatus, Key, KeyedElement, KeyedList, OldElement, ParentAndChild},
 };
 
 pub struct KeyedListContext<'a> {

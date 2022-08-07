@@ -1,7 +1,9 @@
 use super::ListRender;
-use crate::component::{ChildComp, Comp, Component};
-use crate::dom::{AttributeValueList, Element, ElementStatus};
-use crate::render::ListElementCreation;
+use crate::{
+    component::{ChildComp, Comp, Component},
+    dom::{AttributeValueList, Element, ElementStatus},
+    render::ListElementCreation,
+};
 use wasm_bindgen::UnwrapThrowExt;
 
 #[cfg(feature = "keyed-list")]

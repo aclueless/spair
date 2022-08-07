@@ -2,8 +2,10 @@ use super::{
     SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgRender, SvgStaticAttributes,
     SvgStaticAttributesOnly, SvgStaticRender,
 };
-use crate::component::{ChildComp, Comp, Component};
-use crate::render::base::{ElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut};
+use crate::{
+    component::{ChildComp, Comp, Component},
+    render::base::{ElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut},
+};
 
 pub trait RenderSvgElement<C, O>: Sized
 where

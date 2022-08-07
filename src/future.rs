@@ -1,4 +1,8 @@
-use crate::component::{Checklist, Comp, Component};
+use crate::{
+    component::{Checklist, Command as CommandTrait, Comp, Component},
+    Command,
+};
+use std::marker::PhantomData;
 use wasm_bindgen::UnwrapThrowExt;
 
 pub struct Future<F> {
@@ -14,7 +18,7 @@ where
         Self { future }
     }
 
-    pub fn callback<C, Cl, Cb>(self, f: Cb) -> crate::Command<C>
+    pub fn callback<C, Cl, Cb>(self, f: Cb) -> Command<C>
     where
         C: Component,
         Cl: 'static + Into<Checklist<C>>,
@@ -23,7 +27,7 @@ where
         Fc {
             future: self.future,
             callback: f,
-            phantom: std::marker::PhantomData,
+            phantom: PhantomData,
         }
         .into()
     }
@@ -34,10 +38,10 @@ struct FutureCallback<F, A, C, Cl, Cb>(Option<Fc<F, A, C, Cl, Cb>>);
 struct Fc<F, A, C, Cl, Cb> {
     future: F,
     callback: Cb,
-    phantom: std::marker::PhantomData<fn(C, A) -> Cl>,
+    phantom: PhantomData<fn(C, A) -> Cl>,
 }
 
-impl<F, A, C, Cl, Cb> crate::component::Command<C> for FutureCallback<F, A, C, Cl, Cb>
+impl<F, A, C, Cl, Cb> CommandTrait<C> for FutureCallback<F, A, C, Cl, Cb>
 where
     A: 'static,
     F: 'static + std::future::Future<Output = A>,
@@ -64,15 +68,15 @@ where
     }
 }
 
-impl<F, A, C, Cl, Cb> From<Fc<F, A, C, Cl, Cb>> for crate::Command<C>
+impl<F, A, C, Cl, Cb> From<Fc<F, A, C, Cl, Cb>> for Command<C>
 where
     A: 'static,
     F: 'static + std::future::Future<Output = A>,
-    C: crate::component::Component,
+    C: Component,
     Cl: 'static + Into<Checklist<C>>,
     Cb: 'static + FnOnce(&mut C, A) -> Cl,
 {
     fn from(fca: Fc<F, A, C, Cl, Cb>) -> Self {
-        crate::Command(Box::new(FutureCallback(Some(fca))))
+        Command(Box::new(FutureCallback(Some(fca))))
     }
 }

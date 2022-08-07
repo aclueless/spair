@@ -1,6 +1,8 @@
 use super::{ElementRender, ListRender};
-use crate::component::{Comp, Component};
-use crate::dom::{ElementStatus, GroupedNodes, NameSpace, Nodes};
+use crate::{
+    component::{Comp, Component},
+    dom::{ElementStatus, GroupedNodes, NameSpace, Nodes},
+};
 
 pub trait NodesRenderMut<C: Component> {
     fn nodes_render_mut(&mut self) -> &mut NodesRender<C>;

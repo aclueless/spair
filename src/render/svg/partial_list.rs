@@ -1,8 +1,13 @@
-use super::SvgListItemRender;
-use super::{SvgNameSpace, SvgNodes, SvgNodesOwned, SvgStaticNodes, SvgStaticNodesOwned};
-use crate::component::Component;
-use crate::render::base::{ElementRender, NodesRenderMut};
-use crate::render::ListElementCreation;
+use super::{
+    SvgListItemRender, SvgNameSpace, SvgNodes, SvgNodesOwned, SvgStaticNodes, SvgStaticNodesOwned,
+};
+use crate::{
+    component::Component,
+    render::{
+        base::{ElementRender, NodesRenderMut},
+        ListElementCreation,
+    },
+};
 
 pub trait SemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     fn list_with_render<I, II, R>(

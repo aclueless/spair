@@ -19,18 +19,15 @@ pub use component::queue_render::Value;
 pub use component::{AsChildComp, Checklist, ChildComp, Comp, Component, ShouldRender};
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;
+#[cfg(feature = "svg")]
+pub use render::svg::{
+    SvgElementRender as Svg, SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes,
+};
 pub use render::{
     html::predefined_attribute_types::*,
     html::HtmlElementRender as Element,
     html::{ListItemRender, Nodes, Render, StaticNodes, StaticRender},
     ListElementCreation,
-};
-// pub use dom::{
-//     RawWrapper
-// };
-#[cfg(feature = "svg")]
-pub use render::svg::{
-    SvgElementRender as Svg, SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes,
 };
 
 // TODO selectively export event traits only?

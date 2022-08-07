@@ -1,10 +1,15 @@
 use super::ListItemRender;
-use crate::component::Component;
-use crate::render::base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions};
-use crate::render::html::{
-    AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes, StaticAttributesOnly,
+use crate::{
+    component::Component,
+    render::{
+        base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        html::{
+            AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes,
+            StaticAttributesOnly,
+        },
+        ListElementCreation,
+    },
 };
-use crate::render::ListElementCreation;
 
 pub trait HemsForList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>
