@@ -1,6 +1,9 @@
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
-use super::{AnyComponentHandle, Element, GroupedNodes, ParentAndChild, QrNode, TextNode};
+use super::{AnyComponentHandle, Element, GroupedNodes, ParentAndChild, TextNode};
+#[cfg(feature = "queue-render")]
+use super::QrNode;
+
 #[derive(Clone)]
 pub enum Node {
     Element(Element),

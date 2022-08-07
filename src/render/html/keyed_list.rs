@@ -44,14 +44,6 @@ pub trait HemsForKeyedList<'a, C: Component>:
         self.make_nodes_extensions()
     }
 
-    fn keyed_list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
-    where
-        for<'k> I: Copy + Keyed<'k> + super::ListItemRender<C>,
-        II: IntoIterator<Item = I>,
-    {
-        self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render)
-    }
-
     fn klwr_clone<I, II, G, K, R>(
         self,
         items: II,
@@ -74,6 +66,23 @@ pub trait HemsForKeyedList<'a, C: Component>:
             fn_render,
         )
     }
+
+    fn keyed_list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
+    where
+        for<'k> I: Copy + Keyed<'k> + super::ListItemRender<C>,
+        II: IntoIterator<Item = I>,
+    {
+        self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render)
+    }
+
+    fn kl_clone<I, II>(self, items: II) -> NodesExtensions<'a>
+    where
+        for<'k> I: Copy + Keyed<'k> + super::ListItemRender<C>,
+        II: IntoIterator<Item = I>,
+    {
+        self.keyed_list_with_render(items, ListElementCreation::Clone, I::ROOT_ELEMENT_TAG, I::key, I::render)
+    }
+
 }
 
 impl<'a, C: Component> HemsForKeyedList<'a, C> for HtmlElementRender<'a, C> {}

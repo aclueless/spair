@@ -207,7 +207,6 @@ TraitName: HamsWithPredefinedValues
     TargetAttributeValue
     Target {
         _Self => "_self",
-        #[deprecated(note = "There is a Security_and_privacy_concerns when `target='_blank'`, please use `.target_blank_with_rel()`. See more at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#Security_and_privacy_concerns")]
         _Blank => "_blank",
         _Parent => "_parent",
         _Top => "_top",
