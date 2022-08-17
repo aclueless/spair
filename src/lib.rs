@@ -16,7 +16,7 @@ mod utils;
 pub use application::Application;
 #[cfg(feature = "queue-render")]
 pub use component::queue_render::Value;
-pub use component::{AsChildComp, Checklist, ChildComp, Comp, Component, ShouldRender};
+pub use component::{AsChildComp, Checklist, ChildComp, Comp, Component, ELementTag, ShouldRender};
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;
 #[cfg(feature = "svg")]

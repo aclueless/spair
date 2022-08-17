@@ -1,8 +1,12 @@
+use std::any::Any;
+
+use crate::component::{ChildComp, Component, ComponentHandle};
+
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
-use super::{AnyComponentHandle, Element, GroupedNodes, ParentAndChild, TextNode};
 #[cfg(feature = "queue-render")]
 use super::QrNode;
+use super::{Element, ElementStatus, GroupedNodes, ParentAndChild, TextNode};
 
 #[derive(Clone)]
 pub enum Node {
@@ -11,9 +15,83 @@ pub enum Node {
     GroupedNodes(GroupedNodes),
     #[cfg(feature = "keyed-list")]
     KeyedList(KeyedList),
-    ComponentHandle(AnyComponentHandle),
+    RefComponent(RefComponent),
+    OwnedComponent(OwnedComponent),
     #[cfg(feature = "queue-render")]
     QrNode(QrNode),
+}
+
+pub struct RefComponent {
+    _comp: Box<dyn std::any::Any>,
+    root_node: web_sys::Node,
+}
+
+impl RefComponent {
+    pub fn new<C: Component>(comp: &ChildComp<C>) -> Self {
+        let v = comp.comp_instance();
+        let root_node: &web_sys::Node = v.root_element().ws_element().as_ref();
+        let handle = ComponentHandle::from(comp.comp());
+        Self {
+            _comp: Box::new(handle),
+            root_node: root_node.clone(),
+        }
+    }
+}
+
+impl Clone for RefComponent {
+    fn clone(&self) -> Self {
+        panic!("Spair does not support using component_ref inside a list item");
+    }
+}
+
+pub struct OwnedComponent {
+    // A status value of 'JustCreated' means the element is just created.
+    // At creation, the root node is created, but the component is not rendered yet.
+    status: ElementStatus,
+    comp: Option<Box<dyn Any>>,
+    root_node: Option<web_sys::Node>,
+}
+
+impl Clone for OwnedComponent {
+    fn clone(&self) -> Self {
+        Self {
+            status: ElementStatus::JustCloned,
+            comp: None,
+            root_node: None,
+        }
+    }
+}
+
+impl OwnedComponent {
+    pub fn new(comp: Box<dyn Any>, root_node: web_sys::Node) -> Self {
+        Self {
+            status: ElementStatus::JustCreated,
+            comp: Some(comp),
+            root_node: Some(root_node),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.comp.is_none()
+    }
+
+    pub fn insert_before_a_sibling(
+        &self,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        if let Some(node) = self.root_node.as_ref() {
+            node.insert_before_a_sibling(parent, next_sibling);
+        }
+    }
+
+    pub fn get_any_component_mut(&mut self) -> Option<&mut Box<dyn Any>> {
+        self.comp.as_mut()
+    }
+
+    pub fn just_created(&self) -> bool {
+        self.status == ElementStatus::JustCreated
+    }
 }
 
 impl Node {
@@ -24,10 +102,14 @@ impl Node {
             Self::GroupedNodes(g) => g.clear(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.clear(parent),
-            Self::ComponentHandle(_) => {
-                // The component is the only child of an element
-                parent.set_text_content(None);
-                // The NodeList will drop the ComponentHandle in its.clear()
+            Self::RefComponent(rc) => {
+                rc.root_node.remove_from(parent);
+                // TODO: Make sure that the component is removed from the parent's Element
+            }
+            Self::OwnedComponent(oc) => {
+                if let Some(wsn) = oc.root_node.as_ref() {
+                    wsn.remove_from(parent);
+                }
             }
             #[cfg(feature = "queue-render")]
             Self::QrNode(qr) => qr.remove_from(parent),
@@ -41,9 +123,12 @@ impl Node {
             Self::GroupedNodes(g) => g.append_to(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.append_to(parent),
-            Self::ComponentHandle(_) => {
-                // TODO: Not sure what to do here???
-                unreachable!("Node::ComponentHandle::append_to() is unreachable???");
+            // This is actually never reachable?
+            Self::RefComponent(rc) => rc.root_node.append_to(parent),
+            Self::OwnedComponent(oc) => {
+                if let Some(wsn) = oc.root_node.as_ref() {
+                    wsn.append_to(parent);
+                }
             }
             #[cfg(feature = "queue-render")]
             Self::QrNode(qr) => qr.append_to(parent),
@@ -57,7 +142,9 @@ impl Node {
             Self::GroupedNodes(g) => g.nodes().get_first_element(),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.get_first_element(),
-            Self::ComponentHandle(_) => None,
+            // Should this return the RefComponent::root_node (wrapped in dom::Element)?
+            Self::RefComponent(_) => None,
+            Self::OwnedComponent(_) => None,
             #[cfg(feature = "queue-render")]
             Self::QrNode(qr) => qr.get_first_element(),
         }
@@ -70,7 +157,9 @@ impl Node {
             Self::GroupedNodes(g) => g.nodes().get_last_element(),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.get_last_element(),
-            Self::ComponentHandle(_) => None,
+            // Should this return the RefComponent::root_node (wrapped in dom::Element)?
+            Self::RefComponent(_) => None,
+            Self::OwnedComponent(_) => None,
             #[cfg(feature = "queue-render")]
             Self::QrNode(qr) => qr.get_last_element(),
         }

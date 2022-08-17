@@ -80,9 +80,14 @@ pub trait HemsForKeyedList<'a, C: Component>:
         for<'k> I: Copy + Keyed<'k> + super::ListItemRender<C>,
         II: IntoIterator<Item = I>,
     {
-        self.keyed_list_with_render(items, ListElementCreation::Clone, I::ROOT_ELEMENT_TAG, I::key, I::render)
+        self.keyed_list_with_render(
+            items,
+            ListElementCreation::Clone,
+            I::ROOT_ELEMENT_TAG,
+            I::key,
+            I::render,
+        )
     }
-
 }
 
 impl<'a, C: Component> HemsForKeyedList<'a, C> for HtmlElementRender<'a, C> {}

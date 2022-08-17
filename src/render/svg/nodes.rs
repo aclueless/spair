@@ -3,7 +3,7 @@ use super::{
     SvgStaticAttributesOnly, SvgStaticRender,
 };
 use crate::{
-    component::{ChildComp, Comp, Component},
+    component::{Child, ChildComp, Comp, Component},
     render::base::{ElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut},
 };
 
@@ -32,6 +32,29 @@ pub trait SemsHandMade<C: Component>: Sized {
         let mi = render.get_match_if_render();
         let mi = SvgMatchIfRender(mi);
         f(mi);
+        this
+    }
+
+    fn component_ref<CC: Component>(self, child: &ChildComp<CC>) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_render_mut();
+        if render.require_render() {
+            render.component_ref(child);
+        }
+        render.next_index();
+        this
+    }
+
+    fn component_owned<CC: Component, T: 'static + Clone + PartialEq>(
+        self,
+        create_child_comp: impl FnOnce(&C, &Comp<C>) -> Child<C, CC, T>,
+    ) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_render_mut();
+        if render.require_render() {
+            render.component_owned(create_child_comp);
+        }
+        render.next_index();
         this
     }
 }
@@ -391,9 +414,9 @@ pub trait MethodsForSvgElementContent<'n, C: Component>:
         n.static_render(render)
     }
 
-    fn component<CC: Component>(mut self, child: &ChildComp<CC>) {
-        self.element_render_mut().component(child)
-    }
+    // fn component<CC: Component>(mut self, child: &ChildComp<CC>) {
+    //     self.element_render_mut().component(child)
+    // }
 }
 
 impl<'n, C: Component> From<SvgElementRender<'n, C>> for SvgStaticNodesOwned<'n, C> {

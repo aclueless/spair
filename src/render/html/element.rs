@@ -115,6 +115,11 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
         self.element_render.comp()
     }
 
+    #[cfg(feature = "svg")]
+    pub fn as_svg_element(self) -> crate::render::svg::SvgElementRender<'er, C> {
+        self.element_render.into()
+    }
+
     pub fn attributes_only(self) -> AttributesOnly<'er, C> {
         AttributesOnly::new(self)
     }

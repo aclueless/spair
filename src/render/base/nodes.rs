@@ -1,8 +1,11 @@
 use super::{ElementRender, ListRender};
 use crate::{
-    component::{Comp, Component},
-    dom::{ElementStatus, GroupedNodes, NameSpace, Nodes},
+    component::{Child, ChildComp, Comp, Component},
+    dom::{
+        ElementStatus, GroupedNodes, NameSpace, Nodes, OwnedComponent, ParentAndChild, RefComponent,
+    },
 };
+use wasm_bindgen::UnwrapThrowExt;
 
 pub trait NodesRenderMut<C: Component> {
     fn nodes_render_mut(&mut self) -> &mut NodesRender<C>;
@@ -129,6 +132,58 @@ impl<'a, C: Component> NodesRender<'a, C> {
             Some(next_sibling),
             use_template,
         )
+    }
+
+    pub fn component_ref<CC: Component>(&mut self, child: &ChildComp<CC>) {
+        // if just created or unmounted:
+        // - do first render
+        // - attach the root element to self.parent
+        // - store the component handle on the node list
+        // on the second subsequent renders, do nothing.
+
+        if self.parent_status == ElementStatus::JustCreated || !child.comp_instance().is_mounted() {
+            child.first_render();
+            child
+                .comp_instance()
+                .root_element()
+                .insert_before_a_sibling(self.parent, self.next_sibling);
+            self.nodes
+                .store_ref_component(self.index, RefComponent::new(child));
+        }
+    }
+
+    pub fn component_owned<CC, T>(
+        &mut self,
+        create_child_comp: impl FnOnce(&C, &Comp<C>) -> Child<C, CC, T>,
+    )
+    //-> &mut OwnedComponent
+    where
+        CC: Component,
+        T: 'static + Clone + PartialEq,
+    {
+        let comp = self.comp;
+        let state = self.state;
+        let ccc = || -> OwnedComponent {
+            let cc = create_child_comp(state, comp);
+            let root_node = cc.get_root_node();
+            OwnedComponent::new(Box::new(cc), root_node)
+        };
+        let owned_component =
+            self.nodes
+                .owned_component(self.index, self.parent, self.next_sibling, ccc);
+        let just_created = owned_component.just_created();
+        let any = owned_component
+            .get_any_component_mut()
+            .expect_throw("render::base::nodes::NodesRender::component get_any_component");
+        match any.downcast_mut::<Child<C, CC, T>>() {
+            Some(child) => {
+                let have_a_queue_update = child.update(state);
+                if just_created && !have_a_queue_update {
+                    child.first_render();
+                }
+            }
+            None => log::warn!("Failed to downcast to the expected child component"),
+        }
     }
 
     pub fn new_node(&self) -> bool {

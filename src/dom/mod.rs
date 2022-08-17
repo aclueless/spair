@@ -35,7 +35,11 @@ pub trait ParentAndChild {
             .expect_throw("ParentAndChild::append_to");
     }
 
-    fn insert_before(&self, parent: &web_sys::Node, next_sibling: Option<&web_sys::Node>) {
+    fn insert_before_a_sibling(
+        &self,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
         parent
             .insert_before(self.ws_node(), next_sibling)
             .expect_throw("ParentAndChild::insert_before");
@@ -45,6 +49,12 @@ pub trait ParentAndChild {
         parent
             .remove_child(self.ws_node())
             .expect_throw("ParentAndChild::remove_from");
+    }
+}
+
+impl ParentAndChild for web_sys::Node {
+    fn ws_node(&self) -> &web_sys::Node {
+        self
     }
 }
 

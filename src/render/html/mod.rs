@@ -34,7 +34,7 @@ mod queue_render;
 #[cfg(feature = "queue-render")]
 pub use queue_render::*;
 
-struct HtmlNameSpace;
+pub(crate) struct HtmlNameSpace;
 impl NameSpace for HtmlNameSpace {
     const NAMESPACE: Option<&'static str> = None;
 }

@@ -63,6 +63,7 @@ impl spair::Component for ChildState {
 }
 
 impl spair::AsChildComp for ChildState {
+    const ROOT_ELEMENT_TAG: spair::ELementTag = spair::ELementTag::Html("div");
     type Properties = (spair::Callback, spair::CallbackArg<i32>);
     fn init(_comp: &spair::Comp<Self>, props: Self::Properties) -> Self {
         Self::new(props.0, props.1)

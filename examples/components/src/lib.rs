@@ -41,8 +41,6 @@ impl spair::Component for State {
         let comp = element.comp();
         element
             .static_nodes()
-            .div(|d| d.component(&self.child_comp))
-            .horizontal_line()
             .p(|p| {
                 p.static_nodes()
                     .static_render("This line and everything below is in the main-component");
@@ -61,7 +59,20 @@ impl spair::Component for State {
             .static_render(Button(
                 "Send value to the child-component",
                 comp.handler_mut(State::send_value_to_child),
-            ));
+            ))
+            .horizontal_line()
+            .component_ref(&self.child_comp)
+            .horizontal_line()
+            .component_owned(|_parent_state, parent_comp| {
+                let props = (
+                    parent_comp.callback_mut(State::child_value_is_divisible_by_five),
+                    parent_comp.callback_arg_mut(State::child_value),
+                );
+                spair::ChildComp::with_props(props).with_updater(
+                    |parent_state: &Self| &parent_state.value,
+                    ChildState::set_value,
+                )
+            });
     }
 }
 
@@ -91,5 +102,6 @@ impl spair::Application for State {
 }
 #[wasm_bindgen(start)]
 pub fn start_counter() {
+    wasm_logger::init(wasm_logger::Config::default());
     State::mount_to("root");
 }

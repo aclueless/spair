@@ -296,7 +296,10 @@ where
             self.list_context.new.next(),
             next_sibling,
             |element, next_sibling| {
-                element.insert_before(parent, next_sibling.map(|element| element.unchecked_ref()));
+                element.insert_before_a_sibling(
+                    parent,
+                    next_sibling.map(|element| element.unchecked_ref()),
+                );
             },
         );
         1
@@ -332,7 +335,7 @@ where
             self.list_context.new.next_back(),
             self.list_context.next_sibling.as_ref(),
             |element, next_sibling| {
-                element.insert_before(
+                element.insert_before_a_sibling(
                     self.list_context.parent,
                     next_sibling.map(|element| element.unchecked_ref()),
                 );
@@ -403,7 +406,7 @@ where
                     .next_sibling
                     .as_ref()
                     .map(|element| element.unchecked_ref());
-                element.insert_before(self.list_context.parent, next_sibling);
+                element.insert_before_a_sibling(self.list_context.parent, next_sibling);
             }
 
             self.list_context.next_sibling = Some(element.ws_element().clone());
@@ -476,7 +479,7 @@ where
             );
 
             self.render_context.render(item_state, er);
-            element.insert_before(
+            element.insert_before_a_sibling(
                 self.list_context.parent,
                 self.list_context
                     .next_sibling
@@ -772,7 +775,7 @@ mod keyed_list_with_render_tests {
     impl PhantomApp {
         fn new() -> Self {
             let root = crate::dom::Element::new_ns(None, "div");
-            let _rc = crate::component::RcComp::with_root(Some(root.ws_element().clone()));
+            let _rc = crate::component::RcComp::with_ws_root(root.ws_element().clone());
             _rc.set_state(Unit);
 
             let comp = _rc.comp();

@@ -1,6 +1,6 @@
 use super::ListRender;
 use crate::{
-    component::{ChildComp, Comp, Component},
+    component::{Comp, Component},
     dom::{AttributeValueList, Element, ElementStatus},
     render::ListElementCreation,
 };
@@ -314,20 +314,21 @@ impl<'a, C: Component> ElementRender<'a, C> {
         );
         keyed_list_render.update(items.into_iter())
     }
+    /*
+        pub fn component<CC: Component>(&mut self, child: &ChildComp<CC>) {
+            // if just created: replace child's root_element with this ws_element
+            // first render
+            // on the second subsequent renders, do nothing.
 
-    pub fn component<CC: Component>(&mut self, child: &ChildComp<CC>) {
-        // if just created: replace child's root_element with this ws_element
-        // first render
-        // on the second subsequent renders, do nothing.
-
-        if self.status == ElementStatus::JustCreated || !child.comp_instance().is_mounted() {
-            self.element.ws_element().set_text_content(None);
-            child.mount_to(self.element.ws_element());
-            self.element
-                .nodes_mut()
-                .store_component_handle(child.comp().into());
+            if self.status == ElementStatus::JustCreated || !child.comp_instance().is_mounted() {
+                self.element.ws_element().set_text_content(None);
+                child.mount_to(self.element.ws_element());
+                self.element
+                    .nodes_mut()
+                    .store_component_handle(child.comp().into());
+            }
         }
-    }
+    */
 }
 
 #[cfg(feature = "queue-render")]
@@ -359,4 +360,3 @@ impl<'a, C: Component> ElementRender<'a, C> {
         //self.element.set_f64_attribute(name, value);
     }
 }
-

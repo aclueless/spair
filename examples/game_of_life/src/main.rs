@@ -110,7 +110,6 @@ impl App {
             spair::ShouldRender::No
         }
     }
-
 }
 impl spair::Component for App {
     type Routes = ();
@@ -123,32 +122,39 @@ impl spair::Component for App {
                     .header(|h| {
                         h.class("app-header")
                             .img(|i| {
-                                i.alt("The app logo")
-                                .src("favicon.ico")
-                                .class("app-logo");
+                                i.alt("The app logo").src("favicon.ico").class("app-logo");
                             })
                             .h1(|h| {
-                                h.class("app-title")
-                                    .update_render("Game of Life");
+                                h.class("app-title").update_render("Game of Life");
                             });
                     })
                     .section(|s| {
                         s.class("game-area")
                             .div(|d| {
-                                d.class("game-of-life")
-                                    .kl_clone(self.cellules.chunks(self.cellules_width).enumerate().map(|r| Row(r.0, r.1)));
+                                d.class("game-of-life").kl_clone(
+                                    self.cellules
+                                        .chunks(self.cellules_width)
+                                        .enumerate()
+                                        .map(|r| Row(r.0, r.1)),
+                                );
                             })
                             .div(|d| {
                                 d.class("game-buttons")
-                                    .render_fn(|ns| button(ns, "Random", comp.handler_mut(App::random)))
+                                    .render_fn(|ns| {
+                                        button(ns, "Random", comp.handler_mut(App::random))
+                                    })
                                     .render_fn(|ns| button(ns, "Step", comp.handler_mut(App::step)))
-                                    .render_fn(|ns| button(ns, "Start", comp.handler_mut(App::start)))
+                                    .render_fn(|ns| {
+                                        button(ns, "Start", comp.handler_mut(App::start))
+                                    })
                                     .render_fn(|ns| button(ns, "Stop", comp.handler_mut(App::stop)))
-                                    .render_fn(|ns| button(ns, "Reset", comp.handler_mut(App::reset)))
-                                    ;
+                                    .render_fn(|ns| {
+                                        button(ns, "Reset", comp.handler_mut(App::reset))
+                                    });
                             });
                     });
-            }).footer(|f| {
+            })
+            .footer(|f| {
                 f.class("app-footer")
                     .strong(|s| {
                         s.class("footer-text")
@@ -165,16 +171,13 @@ impl spair::Component for App {
 }
 
 fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
-    nodes
-        .button(|b| {
-            b.class("game-button")
-                .on_click(h)
-                .update_render(name);
-        });
+    nodes.button(|b| {
+        b.class("game-button").on_click(h).update_render(name);
+    });
 }
 
 #[derive(Clone, Copy)]
-struct Row<'a>(usize, &'a[Cellule]);
+struct Row<'a>(usize, &'a [Cellule]);
 impl<'k, 'a> spair::Keyed<'k> for Row<'a> {
     type Key = u32;
     fn key(self) -> u32 {
@@ -187,20 +190,17 @@ impl<'a> spair::ListItemRender<App> for Row<'a> {
     fn render(self, element: spair::Element<App>) {
         let comp = element.comp();
         let offset = self.0 * element.state().cellules_width;
-        element
-            .class("game-row")
-            .klwr_clone(
-                self.1.iter().enumerate(),
-                "div",
-                |(index, _)| index as u32,
-                |(index, cellule), div| {
-                    let index = offset + index;
-                    div
-                        .class("game-cellule")
-                        .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
-                        .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
-                }
-            );
+        element.class("game-row").klwr_clone(
+            self.1.iter().enumerate(),
+            "div",
+            |(index, _)| index as u32,
+            |(index, cellule), div| {
+                let index = offset + index;
+                div.class("game-cellule")
+                    .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
+                    .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
+            },
+        );
     }
 }
 

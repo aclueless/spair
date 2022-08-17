@@ -4,6 +4,12 @@ use std::collections::VecDeque;
 use std::rc::{Rc, Weak};
 use wasm_bindgen::UnwrapThrowExt;
 
+use crate::dom::{Element, ElementStatus};
+
+mod child_component;
+
+pub use child_component::*;
+
 #[cfg(feature = "queue-render")]
 pub mod queue_render;
 
@@ -125,14 +131,12 @@ pub struct Comp<C: Component>(Weak<RefCell<CompInstance<C>>>);
 
 pub struct CompInstance<C> {
     state: Option<C>,
-    root_element: crate::dom::Element,
+    root_element: Element,
     mount_status: MountStatus,
     events: Vec<Box<dyn crate::events::Listener>>,
 }
 
 pub enum MountStatus {
-    // This is for a child component, when it was created but not mount yet.
-    Never,
     // A child component that is attached to the DOM.
     Mounted,
     // A child component that is previously attached to the DOM but
@@ -205,22 +209,23 @@ impl<C: Component> Checklist<C> {
 }
 
 impl<C: Component> RcComp<C> {
-    pub(crate) fn with_root(root: Option<web_sys::Element>) -> Self {
-        let (root_element, mount_status) = root
-            .map(|root| {
-                let root = crate::dom::Element::from_ws_element(root);
-                (root, MountStatus::PermanentlyMounted)
-            })
-            .unwrap_or_else(|| {
-                // Just an element to create CompInstance, the element will be replace by the
-                // actual node when attaching to the DOM
-                (crate::dom::Element::new_ns(None, "div"), MountStatus::Never)
-            });
+    pub(crate) fn with_ws_root(root: web_sys::Element) -> Self {
+        let root_element = Element::from_ws_element(root);
+        let mount_status = MountStatus::PermanentlyMounted;
 
         Self(Rc::new(RefCell::new(CompInstance {
             state: None,
             root_element,
             mount_status,
+            events: Vec::new(),
+        })))
+    }
+
+    pub(crate) fn with_root(root_element: Element) -> Self {
+        Self(Rc::new(RefCell::new(CompInstance {
+            state: None,
+            root_element,
+            mount_status: MountStatus::Mounted,
             events: Vec::new(),
         })))
     }
@@ -478,9 +483,9 @@ impl<C: Component> CompInstance<C> {
             .as_ref()
             .expect_throw("A immutable reference for rendering component");
         let status = if self.root_element.is_empty() {
-            crate::dom::ElementStatus::JustCreated
+            ElementStatus::JustCreated
         } else {
-            crate::dom::ElementStatus::Existing
+            ElementStatus::Existing
         };
         let er =
             crate::render::base::ElementRender::new(comp, state, &mut self.root_element, status);
@@ -513,115 +518,8 @@ impl<C: Component> CompInstance<C> {
     pub(crate) fn is_mounted(&self) -> bool {
         matches!(self.mount_status, MountStatus::Mounted)
     }
-}
 
-pub type ChildComp<C> = RcComp<C>;
-
-impl<C: Component> ChildComp<C> {
-    // Attach the component to the given ws_element, and run the render
-    pub(crate) fn mount_to(&self, ws_element: &web_sys::Element) {
-        let comp = self.comp();
-
-        C::init(&comp);
-
-        let promise = self::i_have_to_execute_update_queue();
-
-        {
-            let mut instance = self
-                .0
-                .try_borrow_mut()
-                .expect_throw("Why unable to borrow a child component on attaching?");
-
-            // TODO: This may cause problems
-            //  * When the component was detached from an element then
-            //      was attached to another element with mismatched attributes?
-            //  * When the component was detached and reattached to the
-            //      same element but somehow attributes are still mismatched?
-            //      because there is another component was attached in between?
-            instance.root_element.replace_ws_element(ws_element.clone());
-
-            instance.mount_status = MountStatus::Mounted;
-
-            // TODO: Allow an option to ignore render on re-mounted?
-            instance.render(&comp);
-        }
-        self::execute_update_queue(promise);
-    }
-
-    pub fn comp_instance(&self) -> std::cell::Ref<CompInstance<C>> {
-        self.0.borrow()
+    pub(crate) fn root_element(&self) -> &Element {
+        &self.root_element
     }
 }
-
-impl<C: Component> From<C> for ChildComp<C> {
-    fn from(state: C) -> Self {
-        let rc_comp = ChildComp::with_root(None);
-        rc_comp.set_state(state);
-        rc_comp
-    }
-}
-
-pub trait AsChildComp: Sized + Component {
-    type Properties;
-    fn init(comp: &Comp<Self>, props: Self::Properties) -> Self;
-}
-
-impl<C: AsChildComp + Component> ChildComp<C> {
-    pub fn with_props(props: C::Properties) -> Self {
-        let rc_comp = ChildComp::with_root(None);
-        let comp = rc_comp.comp();
-        let state = AsChildComp::init(&comp, props);
-        rc_comp.set_state(state);
-        crate::routing::register_routing_callback(&comp);
-        rc_comp
-    }
-
-    // pub fn init<P: Component>() -> NewChildComp<P, C> {
-    //     NewChildComp(std::marker::PhantomData)
-    // }
-}
-
-// A new struct and impl Drop on it, instead of impl Drop on Comp,
-// because we only want to set status to unmounted when removing
-// it from its parent.
-pub struct ComponentHandle<C: Component>(Comp<C>);
-
-impl<C: Component> Drop for ComponentHandle<C> {
-    fn drop(&mut self) {
-        self.0.set_mount_status_to_unmounted();
-    }
-}
-
-impl<C: Component> From<Comp<C>> for ComponentHandle<C> {
-    fn from(comp: Comp<C>) -> Self {
-        Self(comp)
-    }
-}
-
-impl<C: Component> Drop for ChildComp<C> {
-    fn drop(&mut self) {
-        crate::routing::remove_routing_callback::<C>();
-        self.0
-            .try_borrow_mut()
-            .expect_throw("Why unable to borrow a child component in dropping?")
-            .root_element
-            .ws_element()
-            .set_text_content(None);
-    }
-}
-
-// pub struct NewChildComp<P, C>(std::marker::PhantomData<fn(P) -> C>);
-
-/*
-            .div(|d| {
-                d.component(
-                    spair::ChildComp::init::<Self>()
-                        .set_props(|state, comp| {})
-                        .set_updaters(|updaters| {
-                            updaters
-                                .add(State::get_value, ChildState::set_value)
-                                .add(|_| (), ChildState.tick);
-                        }),
-                )
-            })
-*/

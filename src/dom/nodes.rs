@@ -2,7 +2,9 @@
 use super::KeyedList;
 #[cfg(feature = "queue-render")]
 use super::QrNode;
-use super::{Element, ElementStatus, NameSpace, Node, ParentAndChild, TextNode};
+use super::{
+    Element, ElementStatus, NameSpace, Node, OwnedComponent, ParentAndChild, RefComponent, TextNode,
+};
 use crate::component::{Comp, Component, ComponentHandle};
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -28,6 +30,8 @@ impl Nodes {
         self.0.drain(..).for_each(|mut node| node.clear(parent));
     }
 
+    /// Just clear the internal Vec of child nodes. The caller must make sure
+    /// that the web_sys::Node-child-elements are removed from their parent
     pub fn clear_vec(&mut self) {
         self.0.clear();
     }
@@ -61,7 +65,7 @@ impl Nodes {
         next_sibling: Option<&web_sys::Node>,
     ) {
         let e = Element::new_ns(ns, tag);
-        e.insert_before(parent, next_sibling);
+        e.insert_before_a_sibling(parent, next_sibling);
         self.0.push(Node::Element(e));
     }
 
@@ -98,7 +102,7 @@ impl Nodes {
         } else {
             let element = self.0[0].clone();
             match &element {
-                Node::Element(element) => element.insert_before(parent, next_sibling),
+                Node::Element(element) => element.insert_before_a_sibling(parent, next_sibling),
                 _ => panic!(
                     "dom::nodes::Nodes::check_or_create_element_for_list expected Node::Element"
                 ),
@@ -116,9 +120,9 @@ impl Nodes {
     ) -> &mut GroupedNodes {
         if index == self.0.len() {
             let gn = GroupedNodes::new();
-            parent
-                .insert_before(gn.end_flag_node.as_ref(), next_sibling)
-                .expect_throw("dom::nodes::Nodes::grouped_nodes insert_before");
+            gn.end_flag_node
+                .insert_before_a_sibling(parent, next_sibling);
+            //.expect_throw("dom::nodes::Nodes::grouped_nodes insert_before");
             self.0.push(Node::GroupedNodes(gn));
         }
 
@@ -154,14 +158,54 @@ impl Nodes {
         }
     }
 
-    pub fn store_component_handle(&mut self, any: AnyComponentHandle) {
-        // Component handle is the only item of self.0
+    // pub fn store_component_handle(&mut self, any: AnyComponentHandle) {
+    //     let any = Node::ComponentHandle(any);
+    //     if let Some(first) = self.0.first_mut() {
+    //         *first = any;
+    //     } else {
+    //         self.0.push(any);
+    //     }
+    // }
 
-        let any = Node::ComponentHandle(any);
-        if let Some(first) = self.0.first_mut() {
-            *first = any;
+    pub fn store_ref_component(&mut self, index: usize, rc: RefComponent) {
+        if index < self.0.len() {
+            panic!("Currently, spair expected a ref component to be add to the end of the nodes");
+        }
+        self.0.push(Node::RefComponent(rc));
+    }
+
+    fn get_owned_component_mut(&mut self, index: usize) -> &mut OwnedComponent {
+        match self
+            .0
+            .get_mut(index)
+            .expect_throw("dom::nodes::Nodes::get_owned_component_mut get_mut")
+        {
+            Node::OwnedComponent(oc) => oc,
+            _ => panic!("dom::nodes::Nodes::get_owned_component_mut expected Node::OwnedComponent"),
+        }
+    }
+
+    pub fn owned_component(
+        &mut self,
+        index: usize,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+        ccc: impl FnOnce() -> OwnedComponent,
+    ) -> &mut OwnedComponent {
+        log::info!("len/index {}/{}", self.0.len(), index);
+        if self.0.len() <= index {
+            let oc = ccc();
+            oc.insert_before_a_sibling(parent, next_sibling);
+            let oc = Node::OwnedComponent(oc);
+            self.0.push(oc);
+            self.get_owned_component_mut(index)
         } else {
-            self.0.push(any);
+            let oc = self.get_owned_component_mut(index);
+            if oc.is_empty() {
+                *oc = ccc();
+                oc.insert_before_a_sibling(parent, next_sibling);
+            }
+            oc
         }
     }
 
@@ -213,7 +257,7 @@ impl Nodes {
         next_sibling: Option<&web_sys::Node>,
     ) {
         let text = TextNode::new(text);
-        text.insert_before(parent, next_sibling);
+        text.insert_before_a_sibling(parent, next_sibling);
         self.0.push(Node::Text(text));
     }
 
