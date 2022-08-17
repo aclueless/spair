@@ -192,7 +192,6 @@ impl Nodes {
         next_sibling: Option<&web_sys::Node>,
         ccc: impl FnOnce() -> OwnedComponent,
     ) -> &mut OwnedComponent {
-        log::info!("len/index {}/{}", self.0.len(), index);
         if self.0.len() <= index {
             let oc = ccc();
             oc.insert_before_a_sibling(parent, next_sibling);

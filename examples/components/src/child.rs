@@ -1,18 +1,18 @@
 use spair::prelude::*;
 
 pub struct ChildState {
-    callback: spair::Callback,
-    _callback_arg: spair::CallbackArg<i32>,
+    props: ChildProps,
     value: i32,
 }
 
+pub struct ChildProps {
+    pub title: &'static str,
+    pub callback_arg: spair::CallbackArg<i32>,
+}
+
 impl ChildState {
-    pub fn new(callback: spair::Callback, _callback_arg: spair::CallbackArg<i32>) -> Self {
-        Self {
-            callback,
-            _callback_arg,
-            value: 42,
-        }
+    pub fn new(props: ChildProps) -> Self {
+        Self { props, value: 42 }
     }
 
     pub fn value(&self) -> i32 {
@@ -25,19 +25,17 @@ impl ChildState {
 
     fn increment(&mut self) {
         self.value += 1;
-        self.update_related_component()
+        self.update_parent_component()
     }
 
     fn decrement(&mut self) {
         self.value -= 1;
-        self.update_related_component()
+        self.update_parent_component()
     }
 
-    fn update_related_component(&self) {
+    fn update_parent_component(&self) {
         if self.value % 5 == 0 {
-            self.callback.queue();
-            // or
-            // self._callback_arg.queue(self.value);
+            self.props.callback_arg.queue(self.value);
         }
     }
 }
@@ -49,9 +47,10 @@ impl spair::Component for ChildState {
         let comp = element.comp();
         element
             .static_nodes()
+            .div(|d| d.static_render(self.props.title).done())
             .p(|p| {
                 p.static_render(
-                    "This counter is in a child-component,\
+                    "This counter is in a child-component, \
                     the parent component will be notified every \
                     time the value is divisible by five.",
                 );
@@ -64,8 +63,8 @@ impl spair::Component for ChildState {
 
 impl spair::AsChildComp for ChildState {
     const ROOT_ELEMENT_TAG: spair::ELementTag = spair::ELementTag::Html("div");
-    type Properties = (spair::Callback, spair::CallbackArg<i32>);
+    type Properties = ChildProps;
     fn init(_comp: &spair::Comp<Self>, props: Self::Properties) -> Self {
-        Self::new(props.0, props.1)
+        Self::new(props)
     }
 }
