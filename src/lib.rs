@@ -16,7 +16,9 @@ mod utils;
 pub use application::Application;
 #[cfg(feature = "queue-render")]
 pub use component::queue_render::Value;
-pub use component::{AsChildComp, Checklist, ChildComp, Comp, Component, ELementTag, ShouldRender};
+pub use component::{
+    AsChildComp, Checklist, Child, ChildComp, Comp, Component, ELementTag, ShouldRender,
+};
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;
 #[cfg(feature = "svg")]
@@ -49,7 +51,7 @@ pub mod prelude {
         Callback as TraitCallback, CallbackArg as TraitCallbackArg,
         CallbackOnce as TraitCallbackOne, CallbackOnceArg as TraitCallbackOnceArg,
     };
-    pub use crate::component::Component;
+    pub use crate::component::{AsChildComp, Component};
     pub use crate::render::base::MethodsForEvents;
     pub use crate::render::html::{
         HamsForAmbiguousNames, HamsForDistinctNames, HamsForSelectElementValueAndIndex,

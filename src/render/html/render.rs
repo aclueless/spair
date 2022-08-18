@@ -45,6 +45,12 @@ impl<C: Component> StaticRender<C> for &String {
     }
 }
 
+impl<C: Component> StaticRender<C> for String {
+    fn render(self, nodes: StaticNodes<C>) {
+        nodes.static_text(&self);
+    }
+}
+
 impl<C: Component> Render<C> for &str {
     fn render(self, nodes: Nodes<C>) {
         nodes.update_text(self);
@@ -54,6 +60,12 @@ impl<C: Component> Render<C> for &str {
 impl<C: Component> Render<C> for &String {
     fn render(self, nodes: Nodes<C>) {
         nodes.update_text(self);
+    }
+}
+
+impl<C: Component> Render<C> for String {
+    fn render(self, nodes: Nodes<C>) {
+        nodes.update_text(&self);
     }
 }
 

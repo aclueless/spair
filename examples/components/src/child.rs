@@ -15,10 +15,6 @@ impl ChildState {
         Self { props, value: 42 }
     }
 
-    pub fn value(&self) -> i32 {
-        self.value
-    }
-
     pub fn set_value(&mut self, value: i32) {
         self.value = value;
     }

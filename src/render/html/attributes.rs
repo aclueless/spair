@@ -3,8 +3,8 @@ use crate::{
     component::Component,
     dom::{AttributeValueList, ElementType},
     render::base::{
-        BoolAttributeValue, ElementRender, ElementRenderMut, F64AttributeValue, I32AttributeValue,
-        MethodsForEvents, StringAttributeValue, U32AttributeValue,
+        AttributeMinMax, BoolAttributeValue, ElementRender, ElementRenderMut, F64AttributeValue,
+        I32AttributeValue, MethodsForEvents, StringAttributeValue, U32AttributeValue,
     },
 };
 use wasm_bindgen::JsCast;
@@ -219,10 +219,10 @@ make_trait_for_attribute_methods! {
 
         bool    r#loop "loop"
         f64     low
-        // ??   max: what type? split into multiple methods?
+        minmax  max
         i32     max_length "maxlength"
         str     media
-        // ??   min: similar to max
+        minmax  min
         i32     min_length "minlength"
         bool    multiple
         bool    muted
@@ -255,7 +255,7 @@ make_trait_for_attribute_methods! {
         str     src_lang "srclang"
         str     src_set "srcset"
         i32     start
-        str     step
+        f64     step
         str     style
         str     title
         str     use_map "usemap"

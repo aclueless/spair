@@ -6,50 +6,10 @@ use crate::dom::{Element, NameSpace};
 pub type ChildComp<C> = RcComp<C>;
 
 impl<C: Component> ChildComp<C> {
-    // Attach the component to the given ws_element, and run the render
-    /*
-    pub(crate) fn mount_to(&self, ws_element: &web_sys::Element) {
-        let comp = self.comp();
-
-        C::init(&comp);
-
-        let promise = super::i_have_to_execute_update_queue();
-
-        {
-            let mut instance = self
-                .0
-                .try_borrow_mut()
-                .expect_throw("Why unable to borrow a child component on attaching?");
-
-            // TODO: This may cause problems
-            //  * When the component was detached from an element then
-            //      was attached to another element with mismatched attributes?
-            //  * When the component was detached and reattached to the
-            //      same element but somehow attributes are still mismatched?
-            //      because there is another component was attached in between?
-            instance.root_element.replace_ws_element(ws_element.clone());
-
-            instance.mount_status = MountStatus::Mounted;
-
-            // TODO: Allow an option to ignore render on re-mounted?
-            instance.render(&comp);
-        }
-        super::execute_update_queue(promise);
-    }
-    */
-
     pub fn comp_instance(&self) -> std::cell::Ref<CompInstance<C>> {
         self.0.borrow()
     }
 }
-
-// impl<C: Component> From<C> for ChildComp<C> {
-//     fn from(state: C) -> Self {
-//         let rc_comp = ChildComp::with_ws_root(None);
-//         rc_comp.set_state(state);
-//         rc_comp
-//     }
-// }
 
 pub enum ELementTag {
     Html(&'static str),
@@ -61,11 +21,8 @@ pub trait AsChildComp: Sized + Component {
     const ROOT_ELEMENT_TAG: ELementTag;
     type Properties;
     fn init(comp: &Comp<Self>, props: Self::Properties) -> Self;
-}
-
-impl<C: AsChildComp + Component> ChildComp<C> {
-    pub fn with_props(props: C::Properties) -> Self {
-        let root_element = match C::ROOT_ELEMENT_TAG {
+    fn with_props(props: Self::Properties) -> ChildComp<Self> {
+        let root_element = match Self::ROOT_ELEMENT_TAG {
             ELementTag::Html(tag) => {
                 Element::new_ns(crate::render::html::HtmlNameSpace::NAMESPACE, tag)
             }
@@ -81,11 +38,13 @@ impl<C: AsChildComp + Component> ChildComp<C> {
         crate::routing::register_routing_callback(&comp);
         rc_comp
     }
+}
 
+impl<C: AsChildComp + Component> ChildComp<C> {
     pub fn with_updater<P, T, G, U, Cl>(self, fn_get_value: G, cb: U) -> Child<P, C, T>
     where
         P: Component,
-        G: 'static + Fn(&P) -> &T,
+        G: 'static + Fn(&P) -> T,
         U: 'static + Fn(&mut C, T) -> Cl,
         Cl: 'static + Into<Checklist<C>>,
         T: 'static + Clone + PartialEq,
@@ -99,7 +58,7 @@ impl<C: AsChildComp + Component> ChildComp<C> {
         }
     }
 
-    pub fn no_updater<P, G, U, Cl>(self) -> Child<P, C, ()>
+    pub fn no_updater<P>(self) -> Child<P, C, ()>
     where
         P: Component,
     {
@@ -141,10 +100,6 @@ impl<C: Component> Drop for ChildComp<C> {
     }
 }
 
-// pub trait ChildOf<P: Component> {
-//     fn update(&self, parent_state: &P);
-// }
-
 pub struct Child<P, C, T>
 where
     P: Component,
@@ -153,7 +108,7 @@ where
 {
     child: ChildComp<C>,
     last_value: Option<T>,
-    fn_get_value: Option<Box<dyn Fn(&P) -> &T>>,
+    fn_get_value: Option<Box<dyn Fn(&P) -> T>>,
     child_callback: Option<crate::CallbackArg<T>>,
 }
 
@@ -172,14 +127,14 @@ where
 
         let new_value = (getter)(parent_state);
         if let Some(old_value) = self.last_value.as_ref() {
-            if new_value == old_value {
+            if new_value == *old_value {
                 return false;
             }
         }
         self.last_value = Some(new_value.clone());
 
         if let Some(cb) = self.child_callback.as_ref() {
-            cb.queue(new_value.clone());
+            cb.queue(new_value);
             return true;
         }
         false
@@ -198,45 +153,3 @@ where
         self.child.first_render();
     }
 }
-
-// impl<P: Component, C: Component, T> ChildOf<P> for Child<P, C, T>
-// {
-//     fn update(&mut self, parent_state: &P) {
-//
-//     }
-// }
-/*
-pub struct ChildComponent<P, C: AsChildComp + Component>{
-    child: ChildComp<C>,
-    updaters: Vec<Box<dyn UpdateChildComponent<P, C>>>,
-}
-
-trait UpdateChildComponent<P, C> {
-    fn update(&self, p: &P, c: &mut C);
-}
-
-struct Updater<G, S> {
-    getter: G,
-    setter: S,
-}
-
-impl<C: AsChildComp + Component> NewChildComp<C> {
-    fn add_updater(mut self) -> Self {
-        self.updaters.push(value);
-        self
-    }
-}
-*/
-/*
-            .div(|d| {
-                d.component(
-                    spair::ChildComp::init::<Self>()
-                        .set_props(|state, comp| {})
-                        .set_updaters(|updaters| {
-                            updaters
-                                .add(State::get_value, ChildState::set_value)
-                                .add(|_| (), ChildState.tick);
-                        }),
-                )
-            })
-*/

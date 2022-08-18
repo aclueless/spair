@@ -24,7 +24,9 @@ make_traits_for_attribute_values! {
     }
     StringAttributeValue
     {
+        // TODO: A spair::Value<T> only support for String, not &str or &String
         &str, set_str_attribute queue_str_attribute
+        &String, set_str_attribute queue_str_attribute
         String, set_string_attribute queue_string_attribute
     }
 }

@@ -52,7 +52,7 @@ impl spair::Component for State {
             .update_render(self.value)
             .static_render(Button("+", comp.handler_mut(State::increment)))
             .static_render(Button(
-                "Send value to the child-component",
+                "Send value to the child-component-ref",
                 comp.handler_mut(State::send_value_to_child),
             ))
             .horizontal_line()
@@ -63,8 +63,8 @@ impl spair::Component for State {
                     title: "child component owned",
                     callback_arg: parent_comp.callback_arg_mut(State::child_value),
                 };
-                spair::ChildComp::with_props(props).with_updater(
-                    |parent_state: &Self| &parent_state.value,
+                ChildState::with_props(props).with_updater(
+                    |parent_state: &Self| parent_state.value,
                     ChildState::set_value,
                 )
             })
@@ -118,7 +118,7 @@ impl spair::Application for State {
         Self {
             value: 42,
             value_sent_from_child: None,
-            child_comp: spair::ChildComp::with_props(ChildProps {
+            child_comp: ChildState::with_props(ChildProps {
                 title: "child component ref",
                 callback_arg: comp.callback_arg_mut(State::child_value),
             }),
