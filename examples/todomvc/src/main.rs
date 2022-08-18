@@ -442,8 +442,8 @@ impl spair::Application for App {
     }
 }
 
-#[wasm_bindgen(start)]
-pub fn start_todo_mvc() {
+//#[wasm_bindgen(start)]
+fn main() {
     //wasm_logger::init(wasm_logger::Config::default());
     //std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     App::mount_to_body();
