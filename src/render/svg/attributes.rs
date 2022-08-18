@@ -9,10 +9,10 @@ use crate::component::queue_render::Value;
 
 make_traits_for_attribute_values! {
     LengthPercentage {
-        i32, set_i32_attribute queue_i32_attribute
-        f64, set_f64_attribute queue_f64_attribute
-        &str, set_str_attribute queue_str_attribute
-        String, set_string_attribute queue_string_attribute
+        i32, set_i32_attribute queue_i32_attribute,
+        f64, set_f64_attribute queue_f64_attribute,
+        &str, set_str_attribute NO_QUEUE_RENDER,
+        String, set_string_attribute queue_string_attribute,
     }
 }
 

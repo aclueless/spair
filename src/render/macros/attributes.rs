@@ -231,7 +231,7 @@ macro_rules! make_traits_for_attribute_values {
     (
         $(
             $AttributeTrait:ident {
-                $($attribute_type:ty, $method_name:ident $queue_render_method_name:ident)+
+                $($attribute_type:ty, $method_name:ident $queue_render_method_name:ident,)+
             }
         )+
     ) => {
@@ -245,14 +245,31 @@ macro_rules! make_traits_for_attribute_values {
                         node.element_render_mut().$method_name(name, self);
                     }
                 }
-                #[cfg(feature = "queue-render")]
-                impl<C: Component> $AttributeTrait<C> for &Value<$attribute_type> {
-                    fn render(self, name: &str, mut node: impl ElementRenderMut<C>) {
-                        node.element_render_mut().$queue_render_method_name(name, self);
-                    }
+                make_traits_for_attribute_values! {
+                    @each_queue_render
+                    $AttributeTrait
+                    $attribute_type, $queue_render_method_name
                 }
             )+
         )+
+    };
+    (
+        @each_queue_render
+        $AttributeTrait:ident
+        $attribute_type:ty, NO_QUEUE_RENDER
+    ) => {
+    };
+    (
+        @each_queue_render
+        $AttributeTrait:ident
+        $attribute_type:ty, $queue_render_method_name:ident
+    ) => {
+        #[cfg(feature = "queue-render")]
+        impl<C: Component> $AttributeTrait<C> for &Value<$attribute_type> {
+            fn render(self, name: &str, mut node: impl ElementRenderMut<C>) {
+                node.element_render_mut().$queue_render_method_name(name, self);
+            }
+        }
     };
 }
 /*
