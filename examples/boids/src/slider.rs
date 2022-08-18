@@ -109,12 +109,12 @@ impl spair::Component for Slider {
             })
             .input(|i| {
                 i.r#type(spair::InputType::Range)
-                    .value(self.value.to_string())
                     .id(&id)
                     .class("slider__input")
                     .min(self.props.min)
                     .max(self.props.max)
                     .step(step)
+                    .value(self.value.to_string())
                     .on_input(comp.handler_arg_mut(|state, input: spair::InputEvent| {
                         if let Some(input) = input.target_as_input_element() {
                             state.value_changed(input.value_as_number())
