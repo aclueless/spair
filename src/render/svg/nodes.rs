@@ -413,10 +413,6 @@ pub trait MethodsForSvgElementContent<'n, C: Component>:
         let n: SvgNodesOwned<C> = self.into();
         n.static_render(render)
     }
-
-    // fn component<CC: Component>(mut self, child: &ChildComp<CC>) {
-    //     self.element_render_mut().component(child)
-    // }
 }
 
 impl<'n, C: Component> From<SvgElementRender<'n, C>> for SvgStaticNodesOwned<'n, C> {

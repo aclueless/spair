@@ -158,15 +158,6 @@ impl Nodes {
         }
     }
 
-    // pub fn store_component_handle(&mut self, any: AnyComponentHandle) {
-    //     let any = Node::ComponentHandle(any);
-    //     if let Some(first) = self.0.first_mut() {
-    //         *first = any;
-    //     } else {
-    //         self.0.push(any);
-    //     }
-    // }
-
     pub fn store_ref_component(&mut self, index: usize, rc: RefComponent) {
         if index < self.0.len() {
             panic!("Currently, spair expected a ref component to be add to the end of the nodes");

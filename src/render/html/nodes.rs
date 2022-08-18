@@ -333,10 +333,6 @@ pub trait MethodsForHtmlElementContent<'n, C: Component>:
         func(nodes);
         n
     }
-
-    // fn component<CC: Component>(mut self, child: &ChildComp<CC>) {
-    //     self.element_render_mut().component(child)
-    // }
 }
 
 impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for HtmlElementRender<'n, C> {}

@@ -104,7 +104,6 @@ impl Node {
             Self::KeyedList(list) => list.clear(parent),
             Self::RefComponent(rc) => {
                 rc.root_node.remove_from(parent);
-                // TODO: Make sure that the component is removed from the parent's Element
             }
             Self::OwnedComponent(oc) => {
                 if let Some(wsn) = oc.root_node.as_ref() {
