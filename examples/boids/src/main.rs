@@ -147,18 +147,22 @@ impl spair::Render<App> for Panel {
         nodes.div(|d| {
             d.class("panel")
                 .update_render(SettingsPanel)
-                .button(|b| {
-                    let pause_text = if state.paused { "Resume" } else { "Pause" };
-                    b.on_click(comp.handler_mut(App::toggle_pause))
-                        .update_render(pause_text);
-                })
-                .button(|b| {
-                    b.on_click(comp.handler_mut(App::reset_settings))
-                        .update_render("Use Defaults");
-                })
-                .button(|b| {
-                    b.on_click(comp.handler_mut(App::restart_simulation))
-                        .update_render("Restart");
+                .div(|d| {
+                    d
+                    .class("panel__buttons")
+                    .button(|b| {
+                        let pause_text = if state.paused { "Resume" } else { "Pause" };
+                        b.on_click(comp.handler_mut(App::toggle_pause))
+                            .update_render(pause_text);
+                    })
+                    .button(|b| {
+                        b.on_click(comp.handler_mut(App::reset_settings))
+                            .update_render("Use Defaults");
+                    })
+                    .button(|b| {
+                        b.on_click(comp.handler_mut(App::restart_simulation))
+                            .update_render("Restart");
+                    });
                 });
         });
     }
@@ -172,7 +176,7 @@ impl spair::Render<App> for SettingsPanel {
             id
         };
         nodes.div(|d| {
-            d.class("Settings")
+            d.class("settings")
                 .component_owned(|_pstate, pcomp| {
                     Slider::with_props(
                         SliderProps::new(
