@@ -4,9 +4,6 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use super::{AttributeValueList, ElementType, Nodes, ParentAndChild};
 
-#[cfg(feature = "queue-render")]
-use super::QrAttribute;
-
 #[derive(Debug)]
 pub struct Element {
     element_type: ElementType,
@@ -64,8 +61,8 @@ impl Element {
     }
 
     #[cfg(feature = "queue-render")]
-    pub fn make_qr_attribute(&self) -> QrAttribute {
-        todo!("make_qr_attribute is not implemented yet");
+    pub fn dropped(&self) -> Rc<Cell<bool>> {
+        self.dropped.clone()
     }
 
 
@@ -149,16 +146,8 @@ impl Element {
 
 // This is just a wrapper around web_sys::Element with some methods on it.
 // WsElement is made to use both in regular spair and queue-render spair.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WsElement(web_sys::Element);
-
-// impl Clone for WsElement {
-//     fn clone(&self) -> Self {
-//         Self(self.0.clone_node_with_deep(false).expect_throw(
-//             "render::element::WsElement::clone",
-//         ).unchecked_into())
-//     }
-// }
 
 pub trait AttributeValueAsString {
     fn to_string(self) -> String;
@@ -169,7 +158,7 @@ macro_rules! impl_string_attribute {
         $(
             impl AttributeValueAsString for $TypeName {
                 fn to_string(self) -> String {
-                    self.to_string()
+                    ToString::to_string(&self)
                 }
             }
         )+
@@ -262,3 +251,4 @@ impl WsElement {
         self.0.scroll_into_view_with_scroll_into_view_options(options);
     }
 }
+

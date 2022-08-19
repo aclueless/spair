@@ -237,11 +237,11 @@ macro_rules! make_traits_for_attribute_values {
     ) => {
         $(
             pub trait $AttributeTrait<C: Component> {
-                fn render(self, name: &str, node: impl ElementRenderMut<C>);
+                fn render(self, name: &'static str, node: impl ElementRenderMut<C>);
             }
             $(
                 impl<C: Component> $AttributeTrait<C> for $attribute_type {
-                    fn render(self, name: &str, mut node: impl ElementRenderMut<C>) {
+                    fn render(self, name: &'static str, mut node: impl ElementRenderMut<C>) {
                         node.element_render_mut().$method_name(name, self);
                     }
                 }
@@ -266,7 +266,7 @@ macro_rules! make_traits_for_attribute_values {
     ) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $AttributeTrait<C> for &Value<$attribute_type> {
-            fn render(self, name: &str, mut node: impl ElementRenderMut<C>) {
+            fn render(self, name: &'static str, mut node: impl ElementRenderMut<C>) {
                 node.element_render_mut().$queue_render_method_name(name, self);
             }
         }

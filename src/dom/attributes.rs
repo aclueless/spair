@@ -1,3 +1,6 @@
+#[cfg(feature = "queue-render")]
+use super::QrAttribute;
+
 enum AttributeValue {
     EventListener(Option<Box<dyn crate::events::Listener>>),
     String(String),
@@ -6,7 +9,9 @@ enum AttributeValue {
     I32(i32),
     U32(u32),
     F64(f64),
-//    QueueRender(QrAttribute),
+
+    #[cfg(feature = "queue-render")]
+    QueueRender(Option<QrAttribute>),
 }
 
 impl Clone for AttributeValue {
@@ -19,6 +24,8 @@ impl Clone for AttributeValue {
             Self::I32(v) => Self::I32(*v),
             Self::U32(v) => Self::U32(*v),
             Self::F64(v) => Self::F64(*v),
+            #[cfg(feature = "queue-render")]
+            Self::QueueRender(_) => Self::QueueRender(None),
         }
     }
 }
@@ -33,6 +40,8 @@ impl std::fmt::Debug for AttributeValue {
             Self::I32(value) => value.fmt(f),
             Self::U32(value) => value.fmt(f),
             Self::F64(value) => value.fmt(f),
+            #[cfg(feature = "queue-render")]
+            Self::QueueRender(_) => f.write_str("QueueRender(...)"),
         }
     }
 }
