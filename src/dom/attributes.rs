@@ -187,4 +187,24 @@ impl AttributeValueList {
             },
         }
     }
+
+    #[cfg(feature = "queue-render")]
+    pub fn store_queue_render(&mut self, index: usize, qra: QrAttribute) {
+        if self.0.len() <= index {
+            self.0.push(AttributeValue::QueueRender(Some(qra)));
+        } else {
+            match self.0.get_mut(index) {
+                None => {
+                    self.0.push(AttributeValue::QueueRender(Some(qra)));
+                }
+                Some(AttributeValue::QueueRender(Some(_))) => {
+                    panic!("Spair's internal error, expected None but found Some for QueueRender");
+                }
+                Some(AttributeValue::QueueRender(qr)) => {
+                    *qr = Some(qra);
+                }
+                _ => panic!("Spair's internal error, expected an AttributeValue::QueueRender"),
+            }
+        }
+    }
 }

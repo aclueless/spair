@@ -7,7 +7,6 @@ use crate::{
         I32AttributeValue, MethodsForEvents, StringAttributeValue, U32AttributeValue,
     },
 };
-use wasm_bindgen::JsCast;
 
 /// Elements that have attribute `value` are `select`, `input`, `option`, and `textarea`.
 /// Apart from `select`, other elements have no issues with the `value` attribute. Setting
