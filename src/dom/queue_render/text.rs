@@ -9,6 +9,7 @@ pub trait QrText: ParentAndChild {
 }
 
 pub struct QrTextNode<C: Component>(Rc<TextNodeInner<C>>);
+
 impl<C: Component> Clone for QrTextNode<C> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
@@ -115,6 +116,61 @@ where
     T: 'static + ToString,
     U: 'static + ToString,
     F: 'static + Fn(&C, &T) -> U,
+{
+    fn render(&self, t: &T) {
+        let u = self.map(t);
+        self.update_text(&u.to_string());
+    }
+
+    fn dropped(&self) -> bool {
+        self.text_node.0.dropped.get()
+    }
+}
+
+pub struct QrTextNodeMap2<C, T, U>
+where
+    C: Component,
+{
+    text_node: QrTextNode<C>,
+    fn_map: Box<dyn Fn(&C, &T) -> U>,
+}
+
+impl<C, T, U> QrTextNodeMap2<C, T, U>
+where
+    C: Component,
+    T: ToString,
+    U: 'static,
+{
+    pub fn new(text_node: QrTextNode<C>, fn_map: impl Fn(&C, &T)->U + 'static) -> Self {
+        Self {
+            text_node,
+            fn_map: Box::new(fn_map),
+        }
+    }
+
+    fn map(&self, value: &T) -> U {
+        let rc_comp = self.text_node.0.comp.upgrade();
+        let comp = rc_comp
+            .try_borrow_mut()
+            .expect_throw("QrTextNodeMap::map::rc_comp.try_borrow_mut().");
+        let state = comp.state();
+        (self.fn_map)(state, value)
+    }
+
+    pub fn map_with_state(&self, state: &C, value: &T) -> U {
+        (self.fn_map)(state, value)
+    }
+
+    pub fn update_text(&self, text: &str) {
+        self.text_node.update_text(text);
+    }
+}
+
+impl<C, T, U> QueueRender<T> for QrTextNodeMap2<C, T, U>
+where
+    C: Component,
+    T: 'static + ToString,
+    U: 'static + ToString,
 {
     fn render(&self, t: &T) {
         let u = self.map(t);

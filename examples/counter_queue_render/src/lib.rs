@@ -1,7 +1,7 @@
 use spair::prelude::*;
 
 struct State {
-    factor: i32,
+    rate: i32,
     value: spair::Value<i32>,
 }
 
@@ -19,7 +19,7 @@ impl spair::Component for State {
     type Routes = ();
     fn test_state() -> Option<Self> {
         Some(State {
-            factor: 2,
+            rate: 2,
             value: 4.into(),
         })
     }
@@ -37,19 +37,22 @@ impl spair::Component for State {
                     .static_render("The initial value is ")
                     .static_render(self.value.get())
                     .line_break()
-                    .static_render("The factor is ")
-                    .static_render(self.factor)
+                    .static_render("The rate is ")
+                    .static_render(self.rate)
                     ;
             })
             .static_render("Value: ")
             .update_render(&self.value)
             .line_break()
-            .static_render("Value / self.factor = ")
+            .static_render("Value / self.rate = ")
             // Unfortunately, Rust fail inference types for this closure
-            .update_render(self.value.map(|state: &Self, value: &i32| value / state.factor))
+            .update_render(self.value.map(|state: &Self, value: &i32| value / state.rate))
             .line_break()
-            .static_render("Value * self.factor = ")
-            .update_render(self.value.map(|state: &Self, value: &i32| value * state.factor))
+            .static_render("Value * self.rate = ")
+            .update_render(self.value.map(|state: &Self, value: &i32| value * state.rate))
+            .line_break()
+            .static_render("Value * self.rate  * 2 = ")
+            .update_render(self.value.map2(|state: &Self, value: &i32| value * state.rate * 2))
             .line_break()
             .static_render(Button("-", comp.handler_mut(State::decrement)))
             .static_render(Button("+", comp.handler_mut(State::increment)))
@@ -75,7 +78,7 @@ impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
 impl spair::Application for State {
     fn init(_: &spair::Comp<Self>) -> Self {
         Self {
-            factor: 3,
+            rate: 3,
             value: 42.into(),
         }
     }

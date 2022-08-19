@@ -4,16 +4,25 @@ use wasm_bindgen::UnwrapThrowExt;
 
 pub struct Value<T>(Rc<RefCell<ValueContent<T>>>);
 pub struct MapValue<C, T, U, F>
-// where
-//     F: Fn(&C, &T) -> U,
 {
     value: Value<T>,
     fn_map: F,
     phantom: PhantomData<dyn Fn(C, T) -> U>,
 }
+pub struct MapValue2<C, T, U>
+{
+    value: Value<T>,
+    fn_map: Box<dyn Fn(&C, &T) -> U>,
+}
 
 impl<C, T, U, F> MapValue<C, T, U, F> {
     pub fn into_parts(self) -> (Value<T>, F) {
+        (self.value, self.fn_map)
+    }
+}
+
+impl<C, T, U> MapValue2<C, T, U> {
+    pub fn into_parts(self) -> (Value<T>, Box<dyn Fn(&C,&T) -> U>) {
         (self.value, self.fn_map)
     }
 }
@@ -125,6 +134,15 @@ impl<T: 'static + PartialEq> Value<T> {
             phantom: PhantomData,
         }
     }
+
+    pub fn map2<C, U>(&self, fn_map: impl Fn(&C,&T)->U + 'static) -> MapValue2<C, T, U>
+    {
+        MapValue2 {
+            value: self.clone(),
+            fn_map: Box::new(fn_map),
+        }
+    }
+
 }
 
 pub trait QueueRender<T> {
