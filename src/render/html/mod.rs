@@ -36,7 +36,7 @@ pub use queue_render::*;
 
 pub(crate) struct HtmlNameSpace;
 impl NameSpace for HtmlNameSpace {
-    const NAMESPACE: Option<&'static str> = None;
+    const NAMESPACE: &'static str = "http://www.w3.org/1999/xhtml";
 }
 
 // This is a struct to make sure that a name that appears in both

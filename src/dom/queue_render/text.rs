@@ -5,11 +5,6 @@ use wasm_bindgen::UnwrapThrowExt;
 use crate::dom::ParentAndChild;
 
 pub trait QrText: ParentAndChild {
-    // fn remove_from(&self, parent: &web_sys::Node);
-    // fn append_to(&self, parent: &web_sys::Node);
-    // fn insert_before(&self, parent: &web_sys::Node, next_sibling: Option<&web_sys::Node>);
-
-    // fn ws_node(&self) -> &web_sys::Node;
     fn clone_ws_node(&self) -> web_sys::Node;
 }
 
@@ -55,29 +50,6 @@ impl<C: Component> ParentAndChild for QrTextNode<C> {
 }
 
 impl<C: Component> QrText for QrTextNode<C> {
-    // fn remove_from(&self, parent: &web_sys::Node) {
-    //     self.0.dropped.set(true);
-    //     parent
-    //         .remove_child(&self.0.ws_node)
-    //         .expect_throw("Unable to remove a child Element from its parent");
-    // }
-
-    // fn append_to(&self, parent: &web_sys::Node) {
-    //     parent
-    //         .append_child(&self.0.ws_node)
-    //         .expect_throw("Unable to append a child Text to its expected parent");
-    // }
-
-    // fn insert_before(&self, parent: &web_sys::Node, next_sibling: Option<&web_sys::Node>) {
-    //     parent
-    //         .insert_before(&self.0.ws_node, next_sibling)
-    //         .expect_throw("Unable to insert a child Text to its expected parent");
-    // }
-
-    // fn get_first_element(&self) -> Option<&super::Element> {
-    //     None
-    // }
-
     fn clone_ws_node(&self) -> web_sys::Node {
         self.0
             .ws_node

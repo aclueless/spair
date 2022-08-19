@@ -29,7 +29,7 @@ pub struct RefComponent {
 impl RefComponent {
     pub fn new<C: Component>(comp: &ChildComp<C>) -> Self {
         let v = comp.comp_instance();
-        let root_node: &web_sys::Node = v.root_element().ws_element().as_ref();
+        let root_node: &web_sys::Node = v.root_element().ws_element().ws_node();
         let handle = ComponentHandle::from(comp.comp());
         Self {
             _comp: Box::new(handle),

@@ -145,7 +145,7 @@ where
             self.child.0.try_borrow().expect_throw(
                 "component::child_component::Child::get_root_node borrow CompInstance",
             );
-        let n: &web_sys::Node = v.root_element.ws_element().as_ref();
+        let n: &web_sys::Node = v.root_element.ws_element().ws_node();
         n.clone()
     }
 

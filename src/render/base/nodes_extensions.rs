@@ -20,7 +20,7 @@ impl<'a> NodesExtensions<'a> {
     ) -> Self {
         if need_to_scroll {
             if let Some(e) = self.0.get_last_element() {
-                e.scroll_to_view_with_options(options);
+                e.ws_element().scroll_to_view_with_options(options);
             }
         }
         self
@@ -29,7 +29,7 @@ impl<'a> NodesExtensions<'a> {
     pub fn scroll_to_top_of_last_element_if(self, need_to_scroll: bool) -> Self {
         if need_to_scroll {
             if let Some(e) = self.0.get_last_element() {
-                e.scroll_to_view_with_bool(true);
+                e.ws_element().scroll_to_view_with_bool(true);
             }
         }
         self
@@ -38,7 +38,7 @@ impl<'a> NodesExtensions<'a> {
     pub fn scroll_to_bottom_of_last_element_if(self, need_to_scroll: bool) -> Self {
         if need_to_scroll {
             if let Some(e) = self.0.get_last_element() {
-                e.scroll_to_view_with_bool(false);
+                e.ws_element().scroll_to_view_with_bool(false);
             }
         }
         self
@@ -51,7 +51,7 @@ impl<'a> NodesExtensions<'a> {
     ) -> Self {
         if need_to_scroll {
             if let Some(e) = self.0.get_first_element() {
-                e.scroll_to_view_with_options(options);
+                e.ws_element().scroll_to_view_with_options(options);
             }
         }
         self
@@ -60,7 +60,7 @@ impl<'a> NodesExtensions<'a> {
     pub fn scroll_to_top_of_first_element_if(self, need_to_scroll: bool) -> Self {
         if need_to_scroll {
             if let Some(e) = self.0.get_first_element() {
-                e.scroll_to_view_with_bool(true);
+                e.ws_element().scroll_to_view_with_bool(true);
             }
         }
         self
@@ -69,7 +69,7 @@ impl<'a> NodesExtensions<'a> {
     pub fn scroll_to_bottom_of_first_element_if(self, need_to_scroll: bool) -> Self {
         if need_to_scroll {
             if let Some(e) = self.0.get_first_element() {
-                e.scroll_to_view_with_bool(false);
+                e.ws_element().scroll_to_view_with_bool(false);
             }
         }
         self

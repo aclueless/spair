@@ -145,6 +145,7 @@ pub trait HamsHandMade<C: Component>:
         if need_to_scroll {
             self.element_render()
                 .element()
+                .ws_element()
                 .scroll_to_view_with_bool(true);
         }
         self
@@ -154,6 +155,7 @@ pub trait HamsHandMade<C: Component>:
         if need_to_scroll {
             self.element_render()
                 .element()
+                .ws_element()
                 .scroll_to_view_with_bool(false);
         }
         self

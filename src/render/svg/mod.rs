@@ -22,7 +22,7 @@ pub use render::*;
 
 pub struct SvgNameSpace;
 impl NameSpace for SvgNameSpace {
-    const NAMESPACE: Option<&'static str> = Some("http://www.w3.org/2000/svg");
+    const NAMESPACE: &'static str = "http://www.w3.org/2000/svg";
 }
 
 // This is a struct to make sure that a name that appears in both

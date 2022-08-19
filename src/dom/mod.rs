@@ -23,7 +23,7 @@ mod queue_render;
 pub use queue_render::*;
 
 pub trait NameSpace {
-    const NAMESPACE: Option<&'static str>;
+    const NAMESPACE: &'static str;
 }
 
 pub trait ParentAndChild {

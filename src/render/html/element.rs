@@ -1,7 +1,7 @@
 use super::{AttributesOnly, StaticAttributes, StaticAttributesOnly};
 use crate::{
     component::{Comp, Component},
-    dom::{AttributeValueList, ElementType},
+    dom::{AttributeValueList, ElementType, WsElement},
     render::base::{ElementRender, ElementRenderMut, MethodsForEvents},
 };
 use wasm_bindgen::JsCast;
@@ -132,7 +132,7 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
         StaticAttributes::new(self)
     }
 
-    pub fn ws_element(&self) -> &web_sys::Element {
+    pub fn ws_element(&self) -> &WsElement {
         self.element_render.element().ws_element()
     }
 

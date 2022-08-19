@@ -59,7 +59,7 @@ impl Nodes {
 
     pub fn create_new_element_ns(
         &mut self,
-        ns: Option<&str>,
+        ns: &str,
         tag: &str,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,

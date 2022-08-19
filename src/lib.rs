@@ -142,8 +142,8 @@ impl<T: wasm_bindgen::JsCast> WsRef<T> {
         &self,
         element: &crate::render::html::HtmlElementRender<C>,
     ) {
-        use wasm_bindgen::JsCast;
-        *self.0.borrow_mut() = Some(element.ws_element().clone().unchecked_into());
+        let e = element.ws_element().unchecked_into::<T>();
+        *self.0.borrow_mut() = Some(e);
     }
 
     pub fn execute(&self, f: impl FnOnce(&T)) {

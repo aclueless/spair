@@ -138,59 +138,55 @@ impl<'a, C: Component> ElementRender<'a, C> {
         if !self.must_render_attribute(value, AttributeValueList::check_bool_attribute) {
             return;
         }
-        self.element.set_bool_attribute(name, value);
+        self.element.ws_element().set_bool_attribute(name, value);
     }
 
     pub fn set_str_attribute(&mut self, name: &str, value: &str) {
         if !self.must_render_attribute(value, AttributeValueList::check_str_attribute) {
             return;
         }
-        self.element.set_str_attribute(name, value);
+        self.element.ws_element().set_str_attribute(name, value);
     }
 
     pub fn set_string_attribute(&mut self, name: &str, value: String) {
         if !self.must_render_attribute(value.as_str(), AttributeValueList::check_str_attribute) {
             return;
         }
-        self.element.set_str_attribute(name, &value);
+        self.element.ws_element().set_str_attribute(name, &value);
     }
 
     pub fn set_i32_attribute(&mut self, name: &str, value: i32) {
         if !self.must_render_attribute(value, AttributeValueList::check_i32_attribute) {
             return;
         }
-        self.element.set_i32_attribute(name, value);
+        self.element.ws_element().set_attribute(name, value);
     }
 
     pub fn set_u32_attribute(&mut self, name: &str, value: u32) {
         if !self.must_render_attribute(value, AttributeValueList::check_u32_attribute) {
             return;
         }
-        self.element.set_u32_attribute(name, value);
+        self.element.ws_element().set_attribute(name, value);
     }
 
     pub fn set_f64_attribute(&mut self, name: &str, value: f64) {
         if !self.must_render_attribute(value, AttributeValueList::check_f64_attribute) {
             return;
         }
-        self.element.set_f64_attribute(name, value);
+        self.element.ws_element().set_attribute(name, value);
     }
 
-    fn add_class(&mut self, class_name: &str) {
-        self.element
-            .ws_element()
-            .class_list()
-            .add_1(class_name)
-            .expect_throw("render::base::element::ElementRender::add_class");
-    }
+    // fn add_class(&mut self, class_name: &str) {
+    //     self.element
+    //         .ws_element()
+    //         .add_class(class_name);
+    // }
 
-    fn remove_class(&mut self, class_name: &str) {
-        self.element
-            .ws_element()
-            .class_list()
-            .remove_1(class_name)
-            .expect_throw("render::base::element::ElementRender::remove_class");
-    }
+    // fn remove_class(&mut self, class_name: &str) {
+    //     self.element
+    //         .ws_element()
+    //         .remove_class(class_name);
+    // }
 
     pub fn class(&mut self, class_name: &str) {
         let (changed, old_value) = if self.is_update_mode() {
@@ -204,21 +200,22 @@ impl<'a, C: Component> ElementRender<'a, C> {
             (self.status == ElementStatus::JustCreated, None)
         };
         if let Some(old_value) = old_value {
-            self.remove_class(&old_value);
+            self.element.ws_element().remove_class(&old_value);
         }
         if changed {
-            self.add_class(class_name);
+            self.element.ws_element().add_class(class_name);
         }
     }
 
+    /// Make sure that value of `class_name` does not change between calls.
     pub fn class_if(&mut self, class_on: bool, class_name: &str) {
         if !self.must_render_attribute(class_on, AttributeValueList::check_bool_attribute) {
             return;
         }
         if class_on {
-            self.add_class(class_name);
+            self.element.ws_element().add_class(class_name);
         } else {
-            self.remove_class(class_name);
+            self.element.ws_element().remove_class(class_name);
         }
     }
 
@@ -227,11 +224,11 @@ impl<'a, C: Component> ElementRender<'a, C> {
             return;
         }
         if first {
-            self.add_class(first_class);
-            self.remove_class(second_class);
+            self.element.ws_element().add_class(first_class);
+            self.element.ws_element().remove_class(second_class);
         } else {
-            self.remove_class(first_class);
-            self.add_class(second_class);
+            self.element.ws_element().remove_class(first_class);
+            self.element.ws_element().add_class(second_class);
         }
     }
 
@@ -255,7 +252,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         if !self.must_render_attribute(url.as_str(), AttributeValueList::check_str_attribute) {
             return;
         }
-        self.element.set_str_attribute("href", &url);
+        self.element.ws_element().set_str_attribute("href", &url);
     }
 
     pub fn id(&mut self, id: &str) {
@@ -316,32 +313,3 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 }
 
-#[cfg(feature = "queue-render")]
-use crate::component::queue_render::Value;
-
-#[cfg(feature = "queue-render")]
-impl<'a, C: Component> ElementRender<'a, C> {
-    pub fn queue_bool_attribute(&mut self, name: &str, value: &Value<bool>) {
-        //self.element.set_bool_attribute(name, value);
-    }
-
-    pub fn queue_str_attribute(&mut self, name: &str, value: &Value<&str>) {
-        //self.element.set_str_attribute(name, value);
-    }
-
-    pub fn queue_string_attribute(&mut self, name: &str, value: &Value<String>) {
-        //self.element.set_str_attribute(name, value);
-    }
-
-    pub fn queue_i32_attribute(&mut self, name: &str, value: &Value<i32>) {
-        //self.element.set_i32_attribute(name, value);
-    }
-
-    pub fn queue_u32_attribute(&mut self, name: &str, value: &Value<u32>) {
-        //self.element.set_u32_attribute(name, value);
-    }
-
-    pub fn queue_f64_attribute(&mut self, name: &str, value: &Value<f64>) {
-        //self.element.set_f64_attribute(name, value);
-    }
-}

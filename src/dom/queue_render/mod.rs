@@ -2,8 +2,10 @@ use super::{Element, ParentAndChild};
 use wasm_bindgen::UnwrapThrowExt;
 
 mod text;
+mod attribute;
 
 pub use text::*;
+pub use attribute::*;
 
 pub enum QrNode {
     ActiveTextNode(Box<dyn QrText>),
