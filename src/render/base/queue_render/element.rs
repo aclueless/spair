@@ -6,8 +6,8 @@ impl<'a, C: Component> ElementRender<'a, C> {
             return;
         }
         let element = self.element().ws_element().clone();
-        let dropped = self.element().dropped();
-        let qra = QrBoolAttribute::new(self.comp(), element, dropped, name);
+        let unmounted = self.element().unmounted();
+        let qra = QrBoolAttribute::new(self.comp(), element, unmounted, name);
         let index = self.index();
         self.element_mut().attribute_list_mut().store_queue_render(index, QrAttribute::new(Box::new(qra.clone())));
         self.next_index();
@@ -25,8 +25,8 @@ impl<'a, C: Component> ElementRender<'a, C> {
             return;
         }
         let element = self.element().ws_element().clone();
-        let dropped = self.element().dropped();
-        let qra = QrNormalAttribute::new(self.comp(), element, dropped, name);
+        let unmounted = self.element().unmounted();
+        let qra = QrNormalAttribute::new(self.comp(), element, unmounted, name);
         let index = self.index();
         self.element_mut().attribute_list_mut().store_queue_render(index, QrAttribute::new(Box::new(qra.clone())));
         self.next_index();
@@ -44,8 +44,8 @@ impl<'a, C: Component> ElementRender<'a, C> {
             return;
         }
         let element = self.element().ws_element().clone();
-        let dropped = self.element().dropped();
-        let qra = QrNormalAttribute::new(self.comp(), element, dropped, name);
+        let unmounted = self.element().unmounted();
+        let qra = QrNormalAttribute::new(self.comp(), element, unmounted, name);
         let index = self.index();
         self.element_mut().attribute_list_mut().store_queue_render(index, QrAttribute::new(Box::new(qra.clone())));
         self.next_index();
@@ -57,16 +57,4 @@ impl<'a, C: Component> ElementRender<'a, C> {
             Err(e) => log::error!("{}", e),
         }
     }
-
-    // pub fn queue_i32_attribute(&mut self, name: &'static str, value: &Value<i32>) {
-    //     self.qra(name, value);
-    // }
-
-    // pub fn queue_u32_attribute(&mut self, name: &'static str, value: &Value<u32>) {
-    //     self.qra(name, value);
-    // }
-
-    // pub fn queue_f64_attribute(&mut self, name: &'static str, value: &Value<f64>) {
-    //     self.qra(name, value);
-    // }
 }

@@ -11,7 +11,7 @@ pub struct Element {
     attributes: AttributeValueList,
     nodes: Nodes,
     #[cfg(feature = "queue-render")]
-    dropped: Rc<Cell<bool>>,
+    unmounted: Rc<Cell<bool>>,
 }
 
 impl Clone for Element {
@@ -26,7 +26,7 @@ impl Clone for Element {
             nodes,
             attributes: self.attributes.clone(),
             #[cfg(feature = "queue-render")]
-            dropped: Rc::new(Cell::new(false)),
+            unmounted: Rc::new(Cell::new(false)),
         }
     }
 }
@@ -45,7 +45,7 @@ impl Element {
             attributes: Default::default(),
             nodes: Default::default(),
             #[cfg(feature = "queue-render")]
-            dropped: Rc::new(Cell::new(false)),
+            unmounted: Rc::new(Cell::new(false)),
         }
     }
 
@@ -56,13 +56,17 @@ impl Element {
             attributes: Default::default(),
             nodes: Default::default(),
             #[cfg(feature = "queue-render")]
-            dropped: Rc::new(Cell::new(false)),
+            unmounted: Rc::new(Cell::new(false)),
         }
     }
 
+    pub fn mark_as_unmounted(&self) {
+        #[cfg(feature = "queue-render")]
+        self.unmounted.set(true);
+    }
     #[cfg(feature = "queue-render")]
-    pub fn dropped(&self) -> Rc<Cell<bool>> {
-        self.dropped.clone()
+    pub fn unmounted(&self) -> Rc<Cell<bool>> {
+        self.unmounted.clone()
     }
 
 

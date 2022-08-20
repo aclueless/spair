@@ -1,9 +1,9 @@
 use crate::{
     component::{
-        queue_render::{MapValue, MapValue2, Value},
+        queue_render::{MapValue, Value},
         Component,
     },
-    dom::{QrTextNode, QrTextNodeMap, QrTextNodeMap2},
+    dom::{QrTextNode, QrTextNodeMap},
     render::{
         base::NodesRenderMut,
         html::{Nodes, Render},
@@ -34,41 +34,17 @@ where
     }
 }
 
-impl<C, T, U, F> Render<C> for MapValue<C, T, U, F>
+impl<C, T, U> Render<C> for MapValue<C, T, U>
 where
     C: Component,
     T: 'static + ToString,
     U: 'static + ToString,
-    F: 'static + Fn(&C, &T) -> U,
 {
     fn render(self, nodes: Nodes<C>) {
         let state = nodes.state();
         if let Some(text_node) = nodes.create_qr_text_node() {
             let (value, fn_map) = self.into_parts();
             let map_node = QrTextNodeMap::new(text_node, fn_map);
-            match value.content().try_borrow_mut() {
-                Ok(mut this) => {
-                    let u = map_node.map_with_state(state, this.value());
-                    map_node.update_text(&u.to_string());
-                    this.add_render(Box::new(map_node));
-                }
-                Err(e) => log::error!("{}", e),
-            };
-        }
-    }
-}
-
-impl<C, T, U> Render<C> for MapValue2<C, T, U>
-where
-    C: Component,
-    T: 'static + ToString,
-    U: 'static + ToString,
-{
-    fn render(self, nodes: Nodes<C>) {
-        let state = nodes.state();
-        if let Some(text_node) = nodes.create_qr_text_node() {
-            let (value, fn_map) = self.into_parts();
-            let map_node = QrTextNodeMap2::new(text_node, fn_map);
             match value.content().try_borrow_mut() {
                 Ok(mut this) => {
                     let u = map_node.map_with_state(state, this.value());

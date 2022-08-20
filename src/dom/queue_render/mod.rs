@@ -37,6 +37,14 @@ impl QrNode {
             Self::ClonedWsNode(_) => None,
         }
     }
+
+    #[cfg(feature = "queue-render")]
+    pub fn mark_as_unmounted(&self) {
+        match self {
+            Self::ActiveTextNode(tn) => tn.mark_as_unmounted(),
+            Self::ClonedWsNode(_) => {},
+        }
+    }
 }
 impl Clone for QrNode {
     fn clone(&self) -> Self {

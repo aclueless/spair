@@ -1,11 +1,12 @@
 use crate::component::{queue_render::QueueRender, Comp, Component};
-use std::{cell::Cell, marker::PhantomData, rc::Rc};
+use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::dom::ParentAndChild;
 
 pub trait QrText: ParentAndChild {
     fn clone_ws_node(&self) -> web_sys::Node;
+    fn mark_as_unmounted(&self);
 }
 
 pub struct QrTextNode<C: Component>(Rc<TextNodeInner<C>>);
@@ -18,7 +19,7 @@ impl<C: Component> Clone for QrTextNode<C> {
 
 struct TextNodeInner<C: Component> {
     comp: Comp<C>,
-    dropped: Cell<bool>,
+    unmounted: Cell<bool>,
     ws_node: web_sys::Node,
 }
 
@@ -26,7 +27,7 @@ impl<C: Component> QrTextNode<C> {
     pub fn new(comp: Comp<C>) -> Self {
         Self(Rc::new(TextNodeInner {
             comp,
-            dropped: Cell::new(false),
+            unmounted: Cell::new(false),
             ws_node: crate::utils::document().create_text_node("").into(),
         }))
     }
@@ -34,7 +35,7 @@ impl<C: Component> QrTextNode<C> {
     pub fn with_cloned_node(ws_node: web_sys::Node, comp: Comp<C>) -> Self {
         Self(Rc::new(TextNodeInner {
             comp,
-            dropped: Cell::new(false),
+            unmounted: Cell::new(false),
             ws_node,
         }))
     }
@@ -57,77 +58,22 @@ impl<C: Component> QrText for QrTextNode<C> {
             .clone_node_with_deep(false)
             .expect_throw("dom::queue_render::text::QrText for TextNode::clone_ws_node")
     }
+
+    fn mark_as_unmounted(&self) {
+        self.0.unmounted.set(true);
+    }
 }
 
 impl<C: Component, T: ToString> QueueRender<T> for QrTextNode<C> {
     fn render(&self, t: &T) {
         self.update_text(&t.to_string());
     }
-    fn dropped(&self) -> bool {
-        self.0.dropped.get()
+    fn unmounted(&self) -> bool {
+        self.0.unmounted.get()
     }
 }
 
-pub struct QrTextNodeMap<C, T, U, F>
-where
-    C: Component,
-    F: Fn(&C, &T) -> U,
-{
-    text_node: QrTextNode<C>,
-    fn_map: F,
-    phantom: PhantomData<dyn Fn(C, T) -> U>,
-}
-
-impl<C, T, U, F> QrTextNodeMap<C, T, U, F>
-where
-    C: Component,
-    T: ToString,
-    F: Fn(&C, &T) -> U,
-{
-    pub fn new(text_node: QrTextNode<C>, fn_map: F) -> Self {
-        Self {
-            text_node,
-            fn_map,
-            phantom: PhantomData,
-        }
-    }
-
-    fn map(&self, value: &T) -> U {
-        let rc_comp = self.text_node.0.comp.upgrade();
-        let comp = rc_comp
-            .try_borrow_mut()
-            .expect_throw("QrTextNodeMap::map::rc_comp.try_borrow_mut().");
-        let state = comp.state();
-        (self.fn_map)(state, value)
-    }
-
-    pub fn map_with_state(&self, state: &C, value: &T) -> U {
-        (self.fn_map)(state, value)
-    }
-
-    pub fn update_text(&self, text: &str) {
-        self.text_node.update_text(text);
-    }
-}
-
-impl<C, T, U, F> QueueRender<T> for QrTextNodeMap<C, T, U, F>
-where
-    C: Component,
-    T: 'static + ToString,
-    U: 'static + ToString,
-    F: 'static + Fn(&C, &T) -> U,
-{
-    fn render(&self, t: &T) {
-        let u = self.map(t);
-        self.update_text(&u.to_string());
-    }
-
-    fn dropped(&self) -> bool {
-        self.text_node.0.dropped.get()
-    }
-}
-
-pub struct QrTextNodeMap2<C, T, U>
+pub struct QrTextNodeMap<C, T, U>
 where
     C: Component,
 {
@@ -135,7 +81,7 @@ where
     fn_map: Box<dyn Fn(&C, &T) -> U>,
 }
 
-impl<C, T, U> QrTextNodeMap2<C, T, U>
+impl<C, T, U> QrTextNodeMap<C, T, U>
 where
     C: Component,
     T: ToString,
@@ -166,7 +112,7 @@ where
     }
 }
 
-impl<C, T, U> QueueRender<T> for QrTextNodeMap2<C, T, U>
+impl<C, T, U> QueueRender<T> for QrTextNodeMap<C, T, U>
 where
     C: Component,
     T: 'static + ToString,
@@ -177,7 +123,7 @@ where
         self.update_text(&u.to_string());
     }
 
-    fn dropped(&self) -> bool {
-        self.text_node.0.dropped.get()
+    fn unmounted(&self) -> bool {
+        self.text_node.0.unmounted.get()
     }
 }

@@ -13,6 +13,13 @@ impl QrAttribute {
 pub trait QrAttributeNode {}
 
 pub struct QrNormalAttribute<C: Component>(Rc<QrNormalAttributeInner<C>>);
+pub struct QrNormalAttributeMap<C, T, U>
+where
+    C: Component,
+{
+    text_node: QrNormalAttribute<C>,
+    fn_map: Box<dyn Fn(&C, &T) -> U>,
+}
 
 impl<C: Component> Clone for QrNormalAttribute<C> {
     fn clone(&self) -> Self {
@@ -23,22 +30,19 @@ impl<C: Component> Clone for QrNormalAttribute<C> {
 // For attributes that can be updated with WsElement::set_str_attribute
 struct QrNormalAttributeInner<C: Component> {
     comp: Comp<C>,
-    dropped: Rc<Cell<bool>>,
+    unmounted: Rc<Cell<bool>>,
     ws_element: WsElement,
     attribute_name: &'static str,
-    //fn_update: fn(&WsElement, &str, &T)
 }
 
 impl<C: Component> QrNormalAttribute<C> {
-    pub fn new(comp: Comp<C>, ws_element: WsElement, element_dropped: Rc<Cell<bool>>, attribute_name: &'static str,
-    //fn_update: fn(&WsElement, &str, &T)
+    pub fn new(comp: Comp<C>, ws_element: WsElement, element_unmounted: Rc<Cell<bool>>, attribute_name: &'static str,
     ) -> Self {
         Self(Rc::new(QrNormalAttributeInner {
             comp,
-            dropped: element_dropped,
+            unmounted: element_unmounted,
             ws_element,
             attribute_name,
-            //fn_update,
         }))
     }
 
@@ -53,8 +57,8 @@ impl<C: Component, T: ToString> QueueRender<T> for QrNormalAttribute<C> {
     fn render(&self, t: &T) {
         self.update(&t.to_string());
     }
-    fn dropped(&self) -> bool {
-        self.0.dropped.get()
+    fn unmounted(&self) -> bool {
+        self.0.unmounted.get()
     }
 }
 
@@ -66,20 +70,19 @@ impl<C: Component> Clone for QrBoolAttribute<C> {
     }
 }
 
-// For attributes that can be updated with WsElement::set_str_attribute
 struct QrBoolAttributeInner<C: Component> {
     comp: Comp<C>,
-    dropped: Rc<Cell<bool>>,
+    unmounted: Rc<Cell<bool>>,
     ws_element: WsElement,
     attribute_name: &'static str,
 }
 
 impl<C: Component> QrBoolAttribute<C> {
-    pub fn new(comp: Comp<C>, ws_element: WsElement, element_dropped: Rc<Cell<bool>>, attribute_name: &'static str,
+    pub fn new(comp: Comp<C>, ws_element: WsElement, element_unmounted: Rc<Cell<bool>>, attribute_name: &'static str,
     ) -> Self {
         Self(Rc::new(QrBoolAttributeInner {
             comp,
-            dropped: element_dropped,
+            unmounted: element_unmounted,
             ws_element,
             attribute_name,
         }))
@@ -96,15 +99,11 @@ impl<C: Component> QueueRender<bool> for QrBoolAttribute<C> {
     fn render(&self, t: &bool) {
         self.update(*t);
     }
-    fn dropped(&self) -> bool {
-        self.0.dropped.get()
+    fn unmounted(&self) -> bool {
+        self.0.unmounted.get()
     }
 }
 
-/*
-ClassAttribute: to remember last class and remove it before setting new class
-Attribute:
-Property: for value, id, checked, enabled, disabled?
-*/
-
+// QrAttributeClass: to remember last class and remove it before setting new class
+// QrProperty: for value, id, checked, enabled, disabled?
 

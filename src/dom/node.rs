@@ -95,9 +95,12 @@ impl OwnedComponent {
 }
 
 impl Node {
-    pub fn clear(&mut self, parent: &web_sys::Node) {
+    pub fn remove_from_dom(&mut self, parent: &web_sys::Node) {
         match self {
-            Self::Element(element) => element.remove_from(parent),
+            Self::Element(element) => {
+                element.mark_as_unmounted();
+                element.remove_from(parent);
+            }
             Self::Text(text) => text.remove_from(parent),
             Self::GroupedNodes(g) => g.clear(parent),
             #[cfg(feature = "keyed-list")]
@@ -111,7 +114,10 @@ impl Node {
                 }
             }
             #[cfg(feature = "queue-render")]
-            Self::QrNode(qr) => qr.remove_from(parent),
+            Self::QrNode(qr) => {
+                qr.mark_as_unmounted();
+                qr.remove_from(parent);
+            }
         }
     }
 

@@ -27,7 +27,7 @@ impl Nodes {
         self.0.len()
     }
     pub fn clear(&mut self, parent: &web_sys::Node) {
-        self.0.drain(..).for_each(|mut node| node.clear(parent));
+        self.0.drain(..).for_each(|mut node| node.remove_from_dom(parent));
     }
 
     /// Just clear the internal Vec of child nodes. The caller must make sure
@@ -39,7 +39,7 @@ impl Nodes {
     pub fn clear_after(&mut self, index: usize, parent: &web_sys::Node) {
         self.0
             .drain(index..)
-            .for_each(|mut node| node.clear(parent));
+            .for_each(|mut node| node.remove_from_dom(parent));
     }
 
     pub fn append_to(&self, parent: &web_sys::Node) {
