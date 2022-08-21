@@ -1,5 +1,5 @@
-pub mod dom;
 pub mod base;
+pub mod dom;
 pub mod html;
 
 use std::{cell::RefCell, rc::Rc};

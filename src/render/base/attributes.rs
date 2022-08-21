@@ -2,7 +2,7 @@ use super::ElementRenderMut;
 use crate::component::Component;
 
 #[cfg(feature = "queue-render")]
-use crate::component::queue_render::{MapValue, Value};
+use crate::queue_render::{MapValue, Value};
 
 make_traits_for_attribute_values! {
     BoolAttributeValue

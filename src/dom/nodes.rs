@@ -1,11 +1,11 @@
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
-#[cfg(feature = "queue-render")]
-use super::QrNode;
 use super::{
     Element, ElementStatus, NameSpace, Node, OwnedComponent, ParentAndChild, RefComponent, TextNode,
 };
 use crate::component::{Comp, Component, ComponentHandle};
+#[cfg(feature = "queue-render")]
+use crate::queue_render::dom::QrNode;
 use wasm_bindgen::UnwrapThrowExt;
 
 #[derive(Default, Clone)]

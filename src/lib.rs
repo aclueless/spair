@@ -16,15 +16,14 @@ mod utils;
 #[cfg(feature = "queue-render")]
 mod queue_render;
 
-
 pub use application::Application;
-#[cfg(feature = "queue-render")]
-pub use queue_render::Value;
 pub use component::{
     AsChildComp, Checklist, Child, ChildComp, Comp, Component, ELementTag, ShouldRender,
 };
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;
+#[cfg(feature = "queue-render")]
+pub use queue_render::Value;
 #[cfg(feature = "svg")]
 pub use render::svg::{
     SvgElementRender as Svg, SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes,

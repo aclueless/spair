@@ -1,9 +1,9 @@
 use crate::{
-    component::{
-        queue_render::{MapValue, Value},
-        Component,
+    component::Component,
+    queue_render::{
+        dom::{QrTextNode, QrTextNodeMap},
+        MapValue, Value,
     },
-    dom::{QrTextNode, QrTextNodeMap},
     render::{
         base::NodesRenderMut,
         html::{Nodes, Render},

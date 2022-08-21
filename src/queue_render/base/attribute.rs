@@ -2,8 +2,9 @@ use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{
-    component::{queue_render::QueueRender, Comp, Component},
+    component::{Comp, Component},
     dom::WsElement,
+    queue_render::QueueRender,
 };
 
 pub struct QrNormalAttribute<C: Component>(Rc<QrNormalAttributeInner<C>>);

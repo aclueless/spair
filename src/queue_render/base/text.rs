@@ -1,6 +1,7 @@
 use crate::{
     component::Component,
-    dom::{ParentAndChild, QrNode, QrTextNode},
+    dom::ParentAndChild,
+    queue_render::dom::{QrNode, QrTextNode},
     render::base::NodesRender,
 };
 

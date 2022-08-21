@@ -4,9 +4,9 @@ use crate::component::{ChildComp, Component, ComponentHandle};
 
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
-#[cfg(feature = "queue-render")]
-use super::QrNode;
 use super::{Element, ElementStatus, GroupedNodes, ParentAndChild, TextNode};
+#[cfg(feature = "queue-render")]
+use crate::queue_render::dom::QrNode;
 
 #[derive(Clone)]
 pub enum Node {

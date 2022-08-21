@@ -1,4 +1,7 @@
-use crate::component::{queue_render::QueueRender, Comp, Component};
+use crate::{
+    component::{Comp, Component},
+    queue_render::QueueRender,
+};
 use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 

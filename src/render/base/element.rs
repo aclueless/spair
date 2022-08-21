@@ -79,9 +79,9 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.element
     }
 
-    pub(crate) fn status(&self) -> ElementStatus {
-        self.status
-    }
+    // pub(crate) fn status(&self) -> ElementStatus {
+    //     self.status
+    // }
 
     // pub(crate) fn index(&self) -> usize {
     //     self.index
