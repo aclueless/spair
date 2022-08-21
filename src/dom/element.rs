@@ -69,7 +69,6 @@ impl Element {
         self.unmounted.clone()
     }
 
-
     // This is intended to use with child component
     // pub fn replace_ws_element(&mut self, ws_element: web_sys::Element) {
     //     self.ws_element = ws_element;
@@ -173,9 +172,11 @@ impl_string_attribute! { i32 u32 f64 }
 
 impl WsElement {
     pub fn new(namespace: &str, tag: &str) -> Self {
-        Self(crate::utils::document().create_element_ns(Some(namespace), tag).expect_throw(
-            "dom::element::WsElement::new",
-        ))
+        Self(
+            crate::utils::document()
+                .create_element_ns(Some(namespace), tag)
+                .expect_throw("dom::element::WsElement::new"),
+        )
     }
 
     pub fn ws_node(&self) -> &web_sys::Node {
@@ -195,11 +196,13 @@ impl WsElement {
     }
 
     fn shadow_clone(&self) -> Self {
-        Self(self.0.clone_node_with_deep(false).expect_throw(
-            "render::element::WsElement::clone",
-        ).unchecked_into())
+        Self(
+            self.0
+                .clone_node_with_deep(false)
+                .expect_throw("render::element::WsElement::clone")
+                .unchecked_into(),
+        )
     }
-
 
     pub fn set_id(&self, id: &str) {
         self.0.set_id(id);
@@ -216,11 +219,16 @@ impl WsElement {
     }
 
     pub fn remove_attribute(&self, attribute_name: &str) {
-        self.0.remove_attribute(attribute_name)
+        self.0
+            .remove_attribute(attribute_name)
             .expect_throw("dom::element::WsElement::remove_attribute");
     }
 
-    pub fn set_attribute<T: AttributeValueAsString>(&self, attribute_name: &str, attribute_value: T) {
+    pub fn set_attribute<T: AttributeValueAsString>(
+        &self,
+        attribute_name: &str,
+        attribute_value: T,
+    ) {
         self.set_str_attribute(attribute_name, &attribute_value.to_string());
     }
 
@@ -246,13 +254,12 @@ impl WsElement {
             .expect_throw("dom::element::WsElement::remove_class");
     }
 
-
     pub fn scroll_to_view_with_bool(&self, align_to_top: bool) {
         self.0.scroll_into_view_with_bool(align_to_top);
     }
 
     pub fn scroll_to_view_with_options(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0.scroll_into_view_with_scroll_into_view_options(options);
+        self.0
+            .scroll_into_view_with_scroll_into_view_options(options);
     }
 }
-

@@ -1,2 +1,2 @@
-mod text;
 mod element;
+mod text;

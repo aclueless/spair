@@ -231,7 +231,7 @@ macro_rules! make_traits_for_attribute_values {
     (
         $(
             $AttributeTrait:ident {
-                $($attribute_type:ty, $method_name:ident $queue_render_method_name:ident,)+
+                $($attribute_type:ty, $method_name:ident $queue_render_method_name:ident $queue_render_method_name_map:ident,)+
             }
         )+
     ) => {
@@ -248,7 +248,7 @@ macro_rules! make_traits_for_attribute_values {
                 make_traits_for_attribute_values! {
                     @each_queue_render
                     $AttributeTrait
-                    $attribute_type, $queue_render_method_name
+                    $attribute_type, $queue_render_method_name $queue_render_method_name_map
                 }
             )+
         )+
@@ -256,18 +256,24 @@ macro_rules! make_traits_for_attribute_values {
     (
         @each_queue_render
         $AttributeTrait:ident
-        $attribute_type:ty, NO_QUEUE_RENDER
+        $attribute_type:ty, NO_QUEUE_RENDER NO_QUEUE_RENDER
     ) => {
     };
     (
         @each_queue_render
         $AttributeTrait:ident
-        $attribute_type:ty, $queue_render_method_name:ident
+        $attribute_type:ty, $queue_render_method_name:ident $queue_render_method_name_map:ident
     ) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $AttributeTrait<C> for &Value<$attribute_type> {
             fn render(self, name: &'static str, mut node: impl ElementRenderMut<C>) {
                 node.element_render_mut().$queue_render_method_name(name, self);
+            }
+        }
+        #[cfg(feature = "queue-render")]
+        impl<C: Component, T: 'static> $AttributeTrait<C> for MapValue<C, T, $attribute_type> {
+            fn render(self, name: &'static str, mut node: impl ElementRenderMut<C>) {
+                node.element_render_mut().$queue_render_method_name_map(name, self);
             }
         }
     };

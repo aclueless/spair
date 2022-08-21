@@ -1,6 +1,3 @@
-#[cfg(feature = "queue-render")]
-use super::QrAttribute;
-
 enum AttributeValue {
     EventListener(Option<Box<dyn crate::events::Listener>>),
     String(String),
@@ -9,9 +6,6 @@ enum AttributeValue {
     I32(i32),
     U32(u32),
     F64(f64),
-
-    #[cfg(feature = "queue-render")]
-    QueueRender(Option<QrAttribute>),
 }
 
 impl Clone for AttributeValue {
@@ -24,8 +18,6 @@ impl Clone for AttributeValue {
             Self::I32(v) => Self::I32(*v),
             Self::U32(v) => Self::U32(*v),
             Self::F64(v) => Self::F64(*v),
-            #[cfg(feature = "queue-render")]
-            Self::QueueRender(_) => Self::QueueRender(None),
         }
     }
 }
@@ -40,8 +32,6 @@ impl std::fmt::Debug for AttributeValue {
             Self::I32(value) => value.fmt(f),
             Self::U32(value) => value.fmt(f),
             Self::F64(value) => value.fmt(f),
-            #[cfg(feature = "queue-render")]
-            Self::QueueRender(_) => f.write_str("QueueRender(...)"),
         }
     }
 }
@@ -185,26 +175,6 @@ impl AttributeValueList {
                 }
                 _ => panic!("Spair's internal error, expected an AttributeValue::String"),
             },
-        }
-    }
-
-    #[cfg(feature = "queue-render")]
-    pub fn store_queue_render(&mut self, index: usize, qra: QrAttribute) {
-        if self.0.len() <= index {
-            self.0.push(AttributeValue::QueueRender(Some(qra)));
-        } else {
-            match self.0.get_mut(index) {
-                None => {
-                    self.0.push(AttributeValue::QueueRender(Some(qra)));
-                }
-                Some(AttributeValue::QueueRender(Some(_))) => {
-                    panic!("Spair's internal error, expected None but found Some for QueueRender");
-                }
-                Some(AttributeValue::QueueRender(qr)) => {
-                    *qr = Some(qra);
-                }
-                _ => panic!("Spair's internal error, expected an AttributeValue::QueueRender"),
-            }
         }
     }
 }

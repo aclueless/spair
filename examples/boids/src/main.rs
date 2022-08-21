@@ -145,11 +145,8 @@ impl spair::Render<App> for Panel {
         let comp = nodes.comp();
         let state = nodes.state();
         nodes.div(|d| {
-            d.class("panel")
-                .update_render(SettingsPanel)
-                .div(|d| {
-                    d
-                    .class("panel__buttons")
+            d.class("panel").update_render(SettingsPanel).div(|d| {
+                d.class("panel__buttons")
                     .button(|b| {
                         let pause_text = if state.paused { "Resume" } else { "Pause" };
                         b.on_click(comp.handler_mut(App::toggle_pause))
@@ -163,7 +160,7 @@ impl spair::Render<App> for Panel {
                         b.on_click(comp.handler_mut(App::restart_simulation))
                             .update_render("Restart");
                     });
-                });
+            });
         });
     }
 }

@@ -1,11 +1,11 @@
 use super::{Element, ParentAndChild};
 use wasm_bindgen::UnwrapThrowExt;
 
-mod text;
 mod attribute;
+mod text;
 
-pub use text::*;
 pub use attribute::*;
+pub use text::*;
 
 pub enum QrNode {
     ActiveTextNode(Box<dyn QrText>),
@@ -42,7 +42,7 @@ impl QrNode {
     pub fn mark_as_unmounted(&self) {
         match self {
             Self::ActiveTextNode(tn) => tn.mark_as_unmounted(),
-            Self::ClonedWsNode(_) => {},
+            Self::ClonedWsNode(_) => {}
         }
     }
 }

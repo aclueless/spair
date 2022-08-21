@@ -8,7 +8,7 @@ pub struct MapValue<C, T, U> {
 }
 
 impl<C, T, U> MapValue<C, T, U> {
-    pub fn into_parts(self) -> (Value<T>, Box<dyn Fn(&C,&T) -> U>) {
+    pub fn into_parts(self) -> (Value<T>, Box<dyn Fn(&C, &T) -> U>) {
         (self.value, self.fn_map)
     }
 }
