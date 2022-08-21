@@ -1,10 +1,8 @@
-use super::{Element, ParentAndChild};
+use crate::dom::{Element, ParentAndChild};
 use wasm_bindgen::UnwrapThrowExt;
 
-mod attribute;
 mod text;
 
-pub use attribute::*;
 pub use text::*;
 
 pub enum QrNode {

@@ -17,7 +17,3 @@ mod keyed_list;
 #[cfg(feature = "keyed-list")]
 pub use keyed_list::*;
 
-#[cfg(feature = "queue-render")]
-mod queue_render;
-#[cfg(feature = "queue-render")]
-pub use queue_render::*;

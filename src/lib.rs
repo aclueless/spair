@@ -13,9 +13,13 @@ mod render;
 mod routing;
 mod utils;
 
+#[cfg(feature = "queue-render")]
+mod queue_render;
+
+
 pub use application::Application;
 #[cfg(feature = "queue-render")]
-pub use component::queue_render::Value;
+pub use queue_render::Value;
 pub use component::{
     AsChildComp, Checklist, Child, ChildComp, Comp, Component, ELementTag, ShouldRender,
 };

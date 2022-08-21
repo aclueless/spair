@@ -1,6 +1,5 @@
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
-//use std::future::Future;
 use std::rc::{Rc, Weak};
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -9,9 +8,6 @@ use crate::dom::{Element, ElementStatus};
 mod child_component;
 
 pub use child_component::*;
-
-#[cfg(feature = "queue-render")]
-pub mod queue_render;
 
 struct UpdateQueue {
     // A hack to avoid circular borrowing and mutable borrowing between
@@ -329,7 +325,7 @@ impl<C: Component> Comp<C> {
         }
         self::execute_update_queue(promise);
         #[cfg(feature = "queue-render")]
-        queue_render::execute_render_queue();
+        crate::queue_render::execute_render_queue();
     }
 
     pub fn callback_once_mut<Cl, F>(&self, f: F) -> crate::callback::CallbackFnOnce<C, Cl, F>

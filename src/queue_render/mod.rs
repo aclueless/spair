@@ -1,3 +1,7 @@
+pub mod dom;
+pub mod base;
+pub mod html;
+
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
