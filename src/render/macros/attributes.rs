@@ -28,12 +28,12 @@ macro_rules! make_trait_for_attribute_methods {
             $method_name stringify!($method_name) => $attribute_type
         }
     };
-    (@each $method_name:ident $attribute_name:expr => minmax) => {
-        make_trait_for_attribute_methods! {
-            @create_fn
-            $method_name $attribute_name => AttributeMinMax
-        }
-    };
+    // (@each $method_name:ident $attribute_name:expr => minmax) => {
+    //     make_trait_for_attribute_methods! {
+    //         @create_fn
+    //         $method_name $attribute_name => AttributeMinMax
+    //     }
+    // };
     (@each $method_name:ident $attribute_name:expr => bool) => {
         make_trait_for_attribute_methods! {
             @create_fn

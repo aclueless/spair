@@ -8,6 +8,9 @@ use crate::{
     },
 };
 
+#[cfg(feature = "queue-render")]
+use crate::queue_render::{MapValue, Value};
+
 /// Elements that have attribute `value` are `select`, `input`, `option`, and `textarea`.
 /// Apart from `select`, other elements have no issues with the `value` attribute. Setting
 /// `value` on a `select` element expect the corresponding `option` element inside the
@@ -41,29 +44,56 @@ pub trait AttributeIndex<C: Component> {
 }
 
 macro_rules! impl_attribute_value_index_trait_for_types {
-    ($($TraitName:ident, $SelfType:ty, $method_name:ident)+) => {$(
+    ($($TraitName:ident, $SelfType:ty, $method_name:ident $queue_method_name:ident $queue_method_name_map:ident,)+) => {$(
         impl<C: Component> $TraitName<C> for $SelfType {
             fn render(self, element: &mut HtmlElementRender<C>) {
                 element.$method_name(self);
             }
         }
+
+        impl_attribute_value_index_trait_for_types! {
+            @each_queue_render
+            $TraitName, $SelfType, $queue_method_name $queue_method_name_map
+        }
     )+};
+    (@each_queue_render $TraitName:ident, $SelfType:ty, NO_QUEUE_RENDER NO_QUEUE_RENDER) => {};
+    (@each_queue_render $TraitName:ident, $SelfType:ty, $queue_method_name:ident $queue_method_name_map:ident) => {
+        #[cfg(feature = "queue-render")]
+        impl<C: Component> $TraitName<C> for &Value<$SelfType> {
+            fn render(self, element: &mut HtmlElementRender<C>) {
+                element.$queue_method_name(self);
+            }
+        }
+        #[cfg(feature = "queue-render")]
+        impl<C: Component, T: 'static> $TraitName<C> for MapValue<C, T, $SelfType> {
+            fn render(self, element: &mut HtmlElementRender<C>) {
+                element.$queue_method_name_map(self);
+            }
+        }
+    }
 }
 
 impl_attribute_value_index_trait_for_types! {
-    AttributeValue, &str,           attribute_value_str
-    AttributeValue, String,         attribute_value_string
-    AttributeValue, &String,        attribute_value_str
-    AttributeValue, Option<&str>,   attribute_value_optional_str
+    AttributeValue, &str,           attribute_value_str             NO_QUEUE_RENDER NO_QUEUE_RENDER,
+    AttributeValue, String,         attribute_value_string          queue_attribute_value_string queue_attribute_value_string_map,
+    AttributeValue, &String,        attribute_value_str             NO_QUEUE_RENDER NO_QUEUE_RENDER,
+    AttributeValue, Option<&str>,   attribute_value_optional_str    NO_QUEUE_RENDER NO_QUEUE_RENDER,
     AttributeValue, Option<String>, attribute_value_optional_string
+                                    queue_attribute_value_optional_string
+                                    queue_attribute_value_optional_string_map,
     AttributeIndex, usize,          attribute_selected_index_usize
+                                    queue_attribute_selected_index_usize
+                                    queue_attribute_selected_index_usize_map,
     AttributeIndex, Option<usize>,  attribute_selected_index_optional_usize
+                                    queue_attribute_selected_index_optional_usize
+                                    queue_attribute_selected_index_optional_usize_map,
 }
 
 pub trait HamsHandMade<C: Component>:
     Sized + ElementRenderMut<C> + HamsForDistinctNames<C>
 {
-    /// Only execute `input.set_checked` if the value changed.
+    /// Only execute `input.set_checked` if the value changed. But it's safer
+    /// to use `.checked()` instead.
     fn checked_if_changed(mut self, value: bool) -> Self {
         if self
             .element_render_mut()
@@ -220,10 +250,10 @@ make_trait_for_attribute_methods! {
 
         bool    r#loop "loop"
         f64     low
-        minmax  max
+        AttributeMinMax  max
         i32     max_length "maxlength"
         str     media
-        minmax  min
+        AttributeMinMax  min
         i32     min_length "minlength"
         bool    multiple
         bool    muted

@@ -14,7 +14,7 @@ use super::{QrBoolAttribute, QrBoolAttributeMap, QrNormalAttribute, QrNormalAttr
 
 impl<'a, C: Component> ElementRender<'a, C> {
     fn qa<T: 'static + ToString, Q: 'static + QueueRender<T>>(
-        &mut self,
+        &self,
         name: &'static str,
         value: &Value<T>,
         new: impl FnOnce(Comp<C>, WsElement, Rc<Cell<bool>>, &'static str) -> Q,
@@ -37,7 +37,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     fn qa_map<T: 'static, U: 'static, Q, M: 'static + QueueRender<T>>(
-        &mut self,
+        &self,
         name: &'static str,
         value: MapValue<C, T, U>,
         new: impl FnOnce(Comp<C>, WsElement, Rc<Cell<bool>>, &'static str) -> Q,
