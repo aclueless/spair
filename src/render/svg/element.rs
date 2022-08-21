@@ -1,6 +1,7 @@
 use super::{SvgAttributesOnly, SvgStaticAttributes, SvgStaticAttributesOnly};
 use crate::{
     component::{Comp, Component},
+    dom::WsElement,
     render::base::{ElementRender, ElementRenderMut},
 };
 
@@ -46,7 +47,7 @@ impl<'er, C: Component> SvgElementRender<'er, C> {
         SvgStaticAttributes::new(self.0)
     }
 
-    pub fn ws_element(&self) -> &web_sys::Element {
+    pub fn ws_element(&self) -> &WsElement {
         self.0.element().ws_element()
     }
 }

@@ -179,6 +179,16 @@ impl WsElement {
         )
     }
 
+    // A quick fix for keyed_list to work with WsElement
+    pub fn into_inner(self) -> web_sys::Element {
+        self.0
+    }
+
+    // A quick fix for keyed_list to work with WsElement
+    pub fn as_ref(&self) -> &web_sys::Element {
+        &self.0
+    }
+
     pub fn ws_node(&self) -> &web_sys::Node {
         self.0.as_ref()
     }

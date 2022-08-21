@@ -79,9 +79,10 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.element
     }
 
-    // pub(crate) fn status(&self) -> ElementStatus {
-    //     self.status
-    // }
+    #[cfg(feature = "queue-render")]
+    pub(crate) fn status(&self) -> ElementStatus {
+        self.status
+    }
 
     // pub(crate) fn index(&self) -> usize {
     //     self.index
@@ -293,7 +294,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         items: II,
         mode: ListElementCreation,
         tag: &'a str,
-        name_space: Option<&'a str>,
+        name_space: &'a str,
         fn_get_key: G,
         fn_render: R,
     ) -> RememberSettingSelectedOption

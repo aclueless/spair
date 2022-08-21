@@ -16,7 +16,7 @@ pub struct KeyedListContext<'a> {
     old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
     new_item_count: usize,
     next_sibling: Option<web_sys::Element>,
-    name_space: Option<&'a str>,
+    name_space: &'a str,
     template: Option<&'a mut Element>,
     require_init_template: bool,
 }
@@ -25,7 +25,7 @@ impl<'a> KeyedListContext<'a> {
     pub fn new(
         list: &'a mut KeyedList,
         root_item_tag: &'a str,
-        name_space: Option<&'a str>,
+        name_space: &'a str,
         new_item_count: usize,
         parent: &'a web_sys::Node,
         use_template: bool,
@@ -258,7 +258,7 @@ where
                 None,
                 |_, _| {},
             );
-            self.list_context.next_sibling = Some(ws_element);
+            self.list_context.next_sibling = Some(ws_element.into_inner());
         }
     }
 
@@ -284,11 +284,11 @@ where
             _ => return 0,
         }
         let moved = self.list_context.old.next_back();
-        let next_sibling = self
-            .list_context
-            .old
-            .peek()
-            .and_then(|item| item.1.as_ref().map(|item| item.element.ws_element()));
+        let next_sibling = self.list_context.old.peek().and_then(|item| {
+            item.1
+                .as_ref()
+                .map(|item| item.element.ws_element().as_ref())
+        });
         let parent = self.list_context.parent;
         self.render_context.update_existing_item(
             items_state_iter.next().unwrap_throw(),
@@ -341,7 +341,7 @@ where
                 );
             },
         );
-        self.list_context.next_sibling = Some(new_next_sibling);
+        self.list_context.next_sibling = Some(new_next_sibling.into_inner());
         1
     }
 
@@ -409,7 +409,7 @@ where
                 element.insert_before_a_sibling(self.list_context.parent, next_sibling);
             }
 
-            self.list_context.next_sibling = Some(element.ws_element().clone());
+            self.list_context.next_sibling = Some(element.ws_element().clone().into_inner());
             *self.list_context.new.next_back().expect_throw(
                 "render::base::keyed_list::KeyedListRender::update_other_items_in_the_middle",
             ) = Some(KeyedElement::new(
@@ -674,7 +674,7 @@ mod keyed_list_with_render_tests {
     use wasm_bindgen::UnwrapThrowExt;
     use wasm_bindgen_test::*;
 
-    use crate::dom::{Element, Node};
+    use crate::dom::{Element, NameSpace, Node};
     use crate::render::ListElementCreation;
     use crate::render::{
         base::ElementRender,
@@ -687,7 +687,7 @@ mod keyed_list_with_render_tests {
                 item_state: &(),
                 old_element: Some(super::OldElement {
                     index,
-                    element: Element::new_ns(None, "div"),
+                    element: Element::new_ns(crate::render::html::HtmlNameSpace::NAMESPACE, "div"),
                 }),
                 lis: false,
             }
@@ -774,8 +774,10 @@ mod keyed_list_with_render_tests {
 
     impl PhantomApp {
         fn new() -> Self {
-            let root = crate::dom::Element::new_ns(None, "div");
-            let _rc = crate::component::RcComp::with_ws_root(root.ws_element().clone());
+            let root =
+                crate::dom::Element::new_ns(crate::render::html::HtmlNameSpace::NAMESPACE, "div");
+            let _rc =
+                crate::component::RcComp::with_ws_root(root.ws_element().clone().into_inner());
             _rc.set_state(Unit);
 
             let comp = _rc.comp();
@@ -842,7 +844,10 @@ mod keyed_list_with_render_tests {
         let _ = pa
             .create_render()
             .keyed_list_with_render(&empty, mode, "span", get_key, render);
-        assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
+        assert_eq!(
+            Some(""),
+            pa.root.ws_element().as_ref().text_content().as_deref()
+        );
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
@@ -852,7 +857,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Random shuffle + addition
@@ -862,7 +867,7 @@ mod keyed_list_with_render_tests {
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(
             Some("fbdlgimjahk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
         assert_eq!(data, pa.collect_from_keyed_list());
 
@@ -870,7 +875,10 @@ mod keyed_list_with_render_tests {
         let _ = pa
             .create_render()
             .keyed_list_with_render(&empty, mode, "span", get_key, render);
-        assert_eq!(Some(""), pa.root.ws_element().text_content().as_deref());
+        assert_eq!(
+            Some(""),
+            pa.root.ws_element().as_ref().text_content().as_deref()
+        );
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         // Add back
@@ -881,7 +889,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Forward
@@ -892,7 +900,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("aibcdefghjk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Backward
@@ -903,7 +911,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("aicdefghbjk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Swap
@@ -914,7 +922,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Remove middle
@@ -925,7 +933,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdijk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Insert middle
@@ -936,7 +944,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Remove start
@@ -947,7 +955,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("defghijk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Insert start
@@ -958,7 +966,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Remove end
@@ -969,7 +977,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefgh"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
 
         // Append end
@@ -980,7 +988,7 @@ mod keyed_list_with_render_tests {
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(
             Some("abcdefghijk"),
-            pa.root.ws_element().text_content().as_deref()
+            pa.root.ws_element().as_ref().text_content().as_deref()
         );
     }
 }
