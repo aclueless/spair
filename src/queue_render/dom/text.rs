@@ -100,8 +100,8 @@ where
     fn map(&self, value: &T) -> U {
         let rc_comp = self.text_node.0.comp.upgrade();
         let comp = rc_comp
-            .try_borrow_mut()
-            .expect_throw("QrTextNodeMap::map::rc_comp.try_borrow_mut().");
+            .try_borrow()
+            .expect_throw("QrTextNodeMap::map::rc_comp.try_borrow().");
         let state = comp.state();
         (self.fn_map)(state, value)
     }

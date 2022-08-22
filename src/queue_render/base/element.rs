@@ -65,26 +65,26 @@ impl<'a, C: Component> ElementRender<'a, C> {
         };
     }
 
-    pub fn queue_bool_attribute(&mut self, name: &'static str, value: &Value<bool>) {
+    pub fn queue_bool_attribute(&self, name: &'static str, value: &Value<bool>) {
         self.qa(name, value, QrBoolAttribute::new, |qra, value| {
             qra.update(*value.value());
         })
     }
 
-    pub fn queue_string_attribute(&mut self, name: &'static str, value: &Value<String>) {
+    pub fn queue_string_attribute(&self, name: &'static str, value: &Value<String>) {
         self.qa(name, value, QrNormalAttribute::new, |qra, value| {
             qra.update(value.value());
         });
     }
 
-    pub fn queue_attribute<T: 'static + ToString>(&mut self, name: &'static str, value: &Value<T>) {
+    pub fn queue_attribute<T: 'static + ToString>(&self, name: &'static str, value: &Value<T>) {
         self.qa(name, value, QrNormalAttribute::new, |qra, value| {
             qra.update(&value.value().to_string());
         });
     }
 
     pub fn queue_bool_attribute_map<T: 'static>(
-        &mut self,
+        &self,
         name: &'static str,
         value: MapValue<C, T, bool>,
     ) {
@@ -100,7 +100,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn queue_attribute_map<T: 'static, U: 'static + ToString>(
-        &mut self,
+        &self,
         name: &'static str,
         value: MapValue<C, T, U>,
     ) {

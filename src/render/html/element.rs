@@ -153,38 +153,12 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     }
 
     fn set_value(&mut self, value: &str) {
-        let element = self.element_render.element_mut();
-        match element.element_type() {
-            ElementType::Input => {
-                let input = element
-                    .ws_element()
-                    .unchecked_ref::<web_sys::HtmlInputElement>();
-                input.set_value(value);
-            }
-            ElementType::Select => {
-                // It has no effect if you set a value for
-                // a <select> element before adding its <option>s,
-                // the hacking should finish in the list() method.
-                // Is there a better solution?
-                self.set_selected_value(Some(value));
-            }
-            ElementType::TextArea => {
-                let text_area = element
-                    .ws_element()
-                    .unchecked_ref::<web_sys::HtmlTextAreaElement>();
-                text_area.set_value(value);
-            }
-            ElementType::Option => {
-                let option = element
-                    .ws_element()
-                    .unchecked_ref::<web_sys::HtmlOptionElement>();
-                option.set_value(value);
-            }
-            ElementType::Other => {
-                log::warn!(
-                    ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
-                );
-            }
+        if self.ws_element().set_value(value, false) {
+            // It has no effect if you set a value for
+            // a <select> element before adding its <option>s,
+            // this hacking should finish in the list() method.
+            // Is there a better solution?
+            self.set_selected_value(Some(value));
         }
     }
 

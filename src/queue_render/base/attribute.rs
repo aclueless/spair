@@ -7,13 +7,14 @@ use crate::{
     queue_render::QueueRender,
 };
 
+// TODO: remove indirection from this struct
 pub struct QrNormalAttribute<C: Component>(Rc<QrNormalAttributeInner<C>>);
 
-impl<C: Component> Clone for QrNormalAttribute<C> {
-    fn clone(&self) -> Self {
-        Self(self.0.clone())
-    }
-}
+// impl<C: Component> Clone for QrNormalAttribute<C> {
+//     fn clone(&self) -> Self {
+//         Self(self.0.clone())
+//     }
+// }
 
 // For attributes that can be updated with WsElement::set_str_attribute
 struct QrNormalAttributeInner<C: Component> {
@@ -70,21 +71,21 @@ impl<C: Component, T, U> QrNormalAttributeMap<C, T, U> {
     fn map(&self, value: &T) -> U {
         let rc_comp = self.qra.0.comp.upgrade();
         let comp = rc_comp
-            .try_borrow_mut()
-            .expect_throw("QrNormalAttributeMap::map::rc_comp.try_borrow_mut().");
+            .try_borrow()
+            .expect_throw("QrNormalAttributeMap::map::rc_comp.try_borrow().");
         let state = comp.state();
         (self.fn_map)(state, value)
     }
 
-    pub fn update(&self, value: &str) {
-        self.qra.update(value);
-    }
+    // pub fn update(&self, value: &str) {
+    //     self.qra.update(value);
+    // }
 }
 
 impl<C: Component, T, U: ToString> QueueRender<T> for QrNormalAttributeMap<C, T, U> {
     fn render(&self, t: &T) {
         let u = self.map(t);
-        self.update(&u.to_string());
+        self.qra.update(&u.to_string());
     }
     fn unmounted(&self) -> bool {
         self.qra.0.unmounted.get()
@@ -93,11 +94,11 @@ impl<C: Component, T, U: ToString> QueueRender<T> for QrNormalAttributeMap<C, T,
 
 pub struct QrBoolAttribute<C: Component>(Rc<QrBoolAttributeInner<C>>);
 
-impl<C: Component> Clone for QrBoolAttribute<C> {
-    fn clone(&self) -> Self {
-        Self(self.0.clone())
-    }
-}
+// impl<C: Component> Clone for QrBoolAttribute<C> {
+//     fn clone(&self) -> Self {
+//         Self(self.0.clone())
+//     }
+// }
 
 struct QrBoolAttributeInner<C: Component> {
     comp: Comp<C>,
@@ -153,21 +154,21 @@ impl<C: Component, T> QrBoolAttributeMap<C, T> {
     fn map(&self, value: &T) -> bool {
         let rc_comp = self.qra.0.comp.upgrade();
         let comp = rc_comp
-            .try_borrow_mut()
-            .expect_throw("QrBoolAttributeMap::map::rc_comp.try_borrow_mut().");
+            .try_borrow()
+            .expect_throw("QrBoolAttributeMap::map::rc_comp.try_borrow().");
         let state = comp.state();
         (self.fn_map)(state, value)
     }
 
-    pub fn update(&self, value: bool) {
-        self.qra.update(value);
-    }
+    // pub fn update(&self, value: bool) {
+    //     self.qra.update(value);
+    // }
 }
 
 impl<C: Component, T> QueueRender<T> for QrBoolAttributeMap<C, T> {
     fn render(&self, t: &T) {
         let u = self.map(t);
-        self.update(u);
+        self.qra.update(u);
     }
     fn unmounted(&self) -> bool {
         self.qra.0.unmounted.get()

@@ -6,7 +6,6 @@ use super::{AttributeValueList, ElementType, Nodes, ParentAndChild};
 
 #[derive(Debug)]
 pub struct Element {
-    element_type: ElementType,
     ws_element: WsElement,
     attributes: AttributeValueList,
     nodes: Nodes,
@@ -21,7 +20,6 @@ impl Clone for Element {
         nodes.append_to(ws_element.ws_node());
 
         Self {
-            element_type: self.element_type,
             ws_element,
             nodes,
             attributes: self.attributes.clone(),
@@ -40,7 +38,6 @@ impl ParentAndChild for Element {
 impl Element {
     pub fn new_ns(ns: &str, tag: &str) -> Self {
         Self {
-            element_type: tag.into(),
             ws_element: WsElement::new(ns, tag),
             attributes: Default::default(),
             nodes: Default::default(),
@@ -51,8 +48,10 @@ impl Element {
 
     pub fn from_ws_element(ws_element: web_sys::Element) -> Self {
         Self {
-            element_type: ws_element.tag_name().to_ascii_lowercase().as_str().into(),
-            ws_element: WsElement(ws_element),
+            ws_element: WsElement {
+                element_type: ws_element.tag_name().to_ascii_lowercase().as_str().into(),
+                ws_element,
+            },
             attributes: Default::default(),
             nodes: Default::default(),
             #[cfg(feature = "queue-render")]
@@ -84,15 +83,15 @@ impl Element {
     }
 
     pub fn ws_node_and_nodes_mut(&mut self) -> (&web_sys::Node, &mut Nodes) {
-        (self.ws_element.0.as_ref(), &mut self.nodes)
+        (self.ws_element.as_ref(), &mut self.nodes)
     }
 
     pub fn ws_html_element(&self) -> &web_sys::HtmlElement {
-        self.ws_element.0.unchecked_ref()
+        self.ws_element.ws_element.unchecked_ref()
     }
 
     pub fn element_type(&self) -> ElementType {
-        self.element_type
+        self.ws_element.element_type
     }
 
     pub fn attribute_list_mut(&mut self) -> &mut AttributeValueList {
@@ -107,50 +106,15 @@ impl Element {
     pub fn nodes_mut(&mut self) -> &mut Nodes {
         &mut self.nodes
     }
-
-    // pub fn scroll_to_view_with_bool(&self, align_to_top: bool) {
-    //     self.ws_element.scroll_to_view_with_bool(align_to_top);
-    // }
-
-    // pub fn scroll_to_view_with_options(&self, options: &web_sys::ScrollIntoViewOptions) {
-    //     self.ws_element.scroll_to_view_with_options(options);
-    // }
-
-    // pub fn set_bool_attribute(&mut self, name: &str, value: bool) {
-    //     self.ws_element.set_bool_attribute(name, value);
-    // }
-
-    // pub fn set_str_attribute(&mut self, name: &str, value: &str) {
-    //     self.ws_element.set_str_attribute(name, value);
-    // }
-
-    // pub fn set_attribute<T: AttributeValueAsString>(&mut self, name: &str, value: T) {
-    //     self.ws_element.set_attribute(name, value);
-    // }
-
-    // pub fn set_i32_attribute(&mut self, name: &str, value: i32) {
-    //     self.ws_element()
-    //         .set_attribute(name, &value.to_string())
-    //         .expect_throw("dom::element::Element::set_i32_attribute::set");
-    // }
-
-    // pub fn set_u32_attribute(&mut self, name: &str, value: u32) {
-    //     self.ws_element()
-    //         .set_attribute(name, &value.to_string())
-    //         .expect_throw("dom::element::Element::set_u32_attribute::set");
-    // }
-
-    // pub fn set_f64_attribute(&mut self, name: &str, value: f64) {
-    //     self.ws_element()
-    //         .set_attribute(name, &value.to_string())
-    //         .expect_throw("dom::element::Element::set_f64_attribute::set");
-    // }
 }
 
 // This is just a wrapper around web_sys::Element with some methods on it.
 // WsElement is made to use both in regular spair and queue-render spair.
 #[derive(Debug, Clone)]
-pub struct WsElement(web_sys::Element);
+pub struct WsElement {
+    ws_element: web_sys::Element,
+    element_type: ElementType,
+}
 
 pub trait AttributeValueAsString {
     fn to_string(self) -> String;
@@ -172,64 +136,68 @@ impl_string_attribute! { i32 u32 f64 }
 
 impl WsElement {
     pub fn new(namespace: &str, tag: &str) -> Self {
-        Self(
-            crate::utils::document()
+        Self {
+            ws_element: crate::utils::document()
                 .create_element_ns(Some(namespace), tag)
                 .expect_throw("dom::element::WsElement::new"),
-        )
+            element_type: tag.into(),
+        }
     }
 
-    // A quick fix for keyed_list to work with WsElement
+    // A quick fix for keyed_list to work with WsElement. keyed_list is broken after intruducing
+    // WsElement. keyed_list does not make use of WsElement yet.
     pub fn into_inner(self) -> web_sys::Element {
-        self.0
+        self.ws_element
     }
 
-    // A quick fix for keyed_list to work with WsElement
+    // A quick fix for keyed_list to work with WsElement. See into_inner for more.
     pub fn as_ref(&self) -> &web_sys::Element {
-        &self.0
+        &self.ws_element
     }
 
     pub fn ws_node(&self) -> &web_sys::Node {
-        self.0.as_ref()
+        self.ws_element.as_ref()
     }
 
     pub fn ws_event_target(&self) -> &web_sys::EventTarget {
-        self.0.as_ref()
+        self.ws_element.as_ref()
     }
 
     pub fn unchecked_ref<T: JsCast>(&self) -> &T {
-        self.0.unchecked_ref::<T>()
+        self.ws_element.unchecked_ref::<T>()
     }
 
     pub fn unchecked_into<T: JsCast>(&self) -> T {
-        self.0.clone().unchecked_into::<T>()
+        self.ws_element.clone().unchecked_into::<T>()
     }
 
     fn shadow_clone(&self) -> Self {
-        Self(
-            self.0
+        Self {
+            ws_element: self
+                .ws_element
                 .clone_node_with_deep(false)
                 .expect_throw("render::element::WsElement::clone")
                 .unchecked_into(),
-        )
+            element_type: self.element_type,
+        }
     }
 
     pub fn set_id(&self, id: &str) {
-        self.0.set_id(id);
+        self.ws_element.set_id(id);
     }
 
     pub fn set_text_content(&self, text: Option<&str>) {
-        self.0.set_text_content(text);
+        self.ws_element.set_text_content(text);
     }
 
     pub fn set_str_attribute(&self, attribute_name: &str, attribute_value: &str) {
-        self.0
+        self.ws_element
             .set_attribute(attribute_name, attribute_value)
             .expect_throw("dom::element::WsElement::set_str_attribute");
     }
 
     pub fn remove_attribute(&self, attribute_name: &str) {
-        self.0
+        self.ws_element
             .remove_attribute(attribute_name)
             .expect_throw("dom::element::WsElement::remove_attribute");
     }
@@ -251,25 +219,79 @@ impl WsElement {
     }
 
     pub fn add_class(&self, class_name: &str) {
-        self.0
+        self.ws_element
             .class_list()
             .add_1(class_name)
             .expect_throw("dom::element::WsElement::add_class");
     }
 
     pub fn remove_class(&self, class_name: &str) {
-        self.0
+        self.ws_element
             .class_list()
             .remove_1(class_name)
             .expect_throw("dom::element::WsElement::remove_class");
     }
 
+    // return `true` if the element is a <select>
+    // If it's in queue render mode, the value is always set, users
+    // must make sure that the value is set after the children
+    // of <select> are added.
+    #[must_use = "Make sure that the value is handled if not call queue render"]
+    pub fn set_value(&self, value: &str, queue_render: bool) -> bool {
+        match self.element_type {
+            ElementType::Input => {
+                let input = self.ws_element.unchecked_ref::<web_sys::HtmlInputElement>();
+                input.set_value(value);
+            }
+            ElementType::Select => {
+                if queue_render {
+                    let select = self
+                        .ws_element
+                        .unchecked_ref::<web_sys::HtmlSelectElement>();
+                    select.set_value(value);
+                }
+                return true;
+            }
+            ElementType::TextArea => {
+                let text_area = self
+                    .ws_element
+                    .unchecked_ref::<web_sys::HtmlTextAreaElement>();
+                text_area.set_value(value);
+            }
+            ElementType::Option => {
+                let option = self
+                    .ws_element
+                    .unchecked_ref::<web_sys::HtmlOptionElement>();
+                option.set_value(value);
+            }
+            ElementType::Other => {
+                log::warn!(
+                    ".value() is called on an element that is not <input>, <select>, <option>, <textarea>"
+                );
+            }
+        }
+        false
+    }
+    pub fn set_selected_index(&self, index: i32) {
+        match self.element_type {
+            ElementType::Select => {
+                let select = self
+                    .ws_element
+                    .unchecked_ref::<web_sys::HtmlSelectElement>();
+                select.set_selected_index(index);
+            }
+            _ => {
+                log::warn!(".set_selected_index() is called on an element that is not a <select>");
+            }
+        }
+    }
+
     pub fn scroll_to_view_with_bool(&self, align_to_top: bool) {
-        self.0.scroll_into_view_with_bool(align_to_top);
+        self.ws_element.scroll_into_view_with_bool(align_to_top);
     }
 
     pub fn scroll_to_view_with_options(&self, options: &web_sys::ScrollIntoViewOptions) {
-        self.0
+        self.ws_element
             .scroll_into_view_with_scroll_into_view_options(options);
     }
 }
