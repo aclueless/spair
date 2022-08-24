@@ -7,16 +7,14 @@ use crate::{
     queue_render::QueueRender,
 };
 
-pub struct QrValueAttribute<C: Component> {
-    comp: Comp<C>,
+pub struct QrSelectedValueIndex {
     unmounted: Rc<Cell<bool>>,
     ws_element: WsElement,
 }
 
-impl<C: Component> QrValueAttribute<C> {
-    pub fn new(comp: Comp<C>, ws_element: WsElement, element_unmounted: Rc<Cell<bool>>) -> Self {
+impl QrSelectedValueIndex {
+    pub fn new(ws_element: WsElement, element_unmounted: Rc<Cell<bool>>) -> Self {
         Self {
-            comp,
             unmounted: element_unmounted,
             ws_element,
         }
@@ -40,7 +38,7 @@ impl<C: Component> QrValueAttribute<C> {
     }
 }
 
-impl<C: Component> QueueRender<String> for QrValueAttribute<C> {
+impl QueueRender<String> for QrSelectedValueIndex {
     fn render(&self, t: &String) {
         self.update_str_value(Some(t));
     }
@@ -49,7 +47,7 @@ impl<C: Component> QueueRender<String> for QrValueAttribute<C> {
     }
 }
 
-impl<C: Component> QueueRender<Option<String>> for QrValueAttribute<C> {
+impl QueueRender<Option<String>> for QrSelectedValueIndex {
     fn render(&self, t: &Option<String>) {
         self.update_str_value(t.as_deref());
     }
@@ -58,7 +56,7 @@ impl<C: Component> QueueRender<Option<String>> for QrValueAttribute<C> {
     }
 }
 
-impl<C: Component> QueueRender<usize> for QrValueAttribute<C> {
+impl QueueRender<usize> for QrSelectedValueIndex {
     fn render(&self, t: &usize) {
         self.update_usize_index(Some(*t));
     }
@@ -67,7 +65,7 @@ impl<C: Component> QueueRender<usize> for QrValueAttribute<C> {
     }
 }
 
-impl<C: Component> QueueRender<Option<usize>> for QrValueAttribute<C> {
+impl QueueRender<Option<usize>> for QrSelectedValueIndex {
     fn render(&self, t: &Option<usize>) {
         self.update_usize_index(*t);
     }
@@ -76,69 +74,145 @@ impl<C: Component> QueueRender<Option<usize>> for QrValueAttribute<C> {
     }
 }
 
-pub struct QrValueAttributeMap<C, T, U>
+pub struct QrSelectedValueIndexMap<C, T, U>
 where
     C: Component,
 {
-    qra: QrValueAttribute<C>,
+    qr: QrSelectedValueIndex,
+    comp: Comp<C>,
     fn_map: Box<dyn Fn(&C, &T) -> U>,
 }
 
-impl<C: Component, T, U> QrValueAttributeMap<C, T, U> {
-    pub fn new(qra: QrValueAttribute<C>, fn_map: Box<dyn Fn(&C, &T) -> U + 'static>) -> Self {
-        Self { qra, fn_map }
+impl<C: Component, T, U> QrSelectedValueIndexMap<C, T, U> {
+    pub fn new(
+        qr: QrSelectedValueIndex,
+        comp: Comp<C>,
+        fn_map: Box<dyn Fn(&C, &T) -> U + 'static>,
+    ) -> Self {
+        Self { qr, comp, fn_map }
     }
 
     fn map(&self, value: &T) -> U {
-        let rc_comp = self.qra.comp.upgrade();
+        let rc_comp = self.comp.upgrade();
         let comp = rc_comp
-            .try_borrow() // TODO: change other instance to try_borrow also
-            .expect_throw("QrValueAttributeMap::map::rc_comp.try_borrow().");
+            .try_borrow()
+            .expect_throw("QrSelectedValueIndexMap::map::rc_comp.try_borrow().");
         let state = comp.state();
         (self.fn_map)(state, value)
     }
-
-    // pub fn update_str_value(&self, value: Option<&str>) {
-    //     self.qra.update_str_value(value);
-    // }
 }
 
-impl<C: Component, T> QueueRender<T> for QrValueAttributeMap<C, T, String> {
+impl<C: Component, T> QueueRender<T> for QrSelectedValueIndexMap<C, T, String> {
     fn render(&self, t: &T) {
         let t = self.map(t);
-        self.qra.update_str_value(Some(&t));
+        self.qr.update_str_value(Some(&t));
     }
     fn unmounted(&self) -> bool {
-        self.qra.unmounted.get()
+        self.qr.unmounted.get()
     }
 }
 
-impl<C: Component, T> QueueRender<T> for QrValueAttributeMap<C, T, Option<String>> {
+impl<C: Component, T> QueueRender<T> for QrSelectedValueIndexMap<C, T, Option<String>> {
     fn render(&self, t: &T) {
         let t = self.map(t);
-        self.qra.update_str_value(t.as_deref());
+        self.qr.update_str_value(t.as_deref());
     }
     fn unmounted(&self) -> bool {
-        self.qra.unmounted.get()
+        self.qr.unmounted.get()
     }
 }
 
-impl<C: Component, T> QueueRender<T> for QrValueAttributeMap<C, T, usize> {
+impl<C: Component, T> QueueRender<T> for QrSelectedValueIndexMap<C, T, usize> {
     fn render(&self, t: &T) {
         let t = self.map(t);
-        self.qra.update_usize_index(Some(t));
+        self.qr.update_usize_index(Some(t));
     }
     fn unmounted(&self) -> bool {
-        self.qra.unmounted.get()
+        self.qr.unmounted.get()
     }
 }
 
-impl<C: Component, T> QueueRender<T> for QrValueAttributeMap<C, T, Option<usize>> {
+impl<C: Component, T> QueueRender<T> for QrSelectedValueIndexMap<C, T, Option<usize>> {
     fn render(&self, t: &T) {
         let t = self.map(t);
-        self.qra.update_usize_index(t);
+        self.qr.update_usize_index(t);
     }
     fn unmounted(&self) -> bool {
-        self.qra.unmounted.get()
+        self.qr.unmounted.get()
+    }
+}
+
+pub struct QrProperty<T> {
+    unmounted: Rc<Cell<bool>>,
+    ws_element: WsElement,
+    fn_update: Box<dyn Fn(&WsElement, &T)>,
+}
+
+impl<T> QrProperty<T> {
+    pub fn new(
+        ws_element: WsElement,
+        element_unmounted: Rc<Cell<bool>>,
+        fn_update: Box<dyn Fn(&WsElement, &T)>,
+    ) -> Self {
+        Self {
+            unmounted: element_unmounted,
+            ws_element,
+            fn_update,
+        }
+    }
+
+    pub fn update(&self, value: &T) {
+        (self.fn_update)(&self.ws_element, value);
+    }
+}
+
+impl<T> QueueRender<T> for QrProperty<T> {
+    fn render(&self, t: &T) {
+        self.update(t);
+    }
+    fn unmounted(&self) -> bool {
+        self.unmounted.get()
+    }
+}
+
+pub struct QrPropertyMap<C, T, U>
+where
+    C: Component,
+{
+    qr_property: QrProperty<U>,
+    comp: Comp<C>,
+    fn_map: Box<dyn Fn(&C, &T) -> U>,
+}
+
+impl<C: Component, T, U> QrPropertyMap<C, T, U> {
+    pub fn new(
+        qr_property: QrProperty<U>,
+        comp: Comp<C>,
+        fn_map: Box<dyn Fn(&C, &T) -> U + 'static>,
+    ) -> Self {
+        Self {
+            qr_property,
+            comp,
+            fn_map,
+        }
+    }
+
+    fn map(&self, value: &T) -> U {
+        let rc_comp = self.comp.upgrade();
+        let comp = rc_comp
+            .try_borrow()
+            .expect_throw("QrPropertyMap::map::rc_comp.try_borrow().");
+        let state = comp.state();
+        (self.fn_map)(state, value)
+    }
+}
+
+impl<C: Component, T, U> QueueRender<T> for QrPropertyMap<C, T, U> {
+    fn render(&self, t: &T) {
+        let t = self.map(t);
+        self.qr_property.update(&t);
+    }
+    fn unmounted(&self) -> bool {
+        self.qr_property.unmounted.get()
     }
 }

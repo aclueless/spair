@@ -272,6 +272,7 @@ impl WsElement {
         }
         false
     }
+
     pub fn set_selected_index(&self, index: i32) {
         match self.element_type {
             ElementType::Select => {
@@ -283,6 +284,19 @@ impl WsElement {
             _ => {
                 log::warn!(".set_selected_index() is called on an element that is not a <select>");
             }
+        }
+    }
+
+    pub fn checked_ref(&self, value: &bool) {
+        self.checked(*value);
+    }
+
+    pub fn checked(&self, value: bool) {
+        if self.element_type == ElementType::Input {
+            let input = self.ws_element.unchecked_ref::<web_sys::HtmlInputElement>();
+            input.set_checked(value);
+        } else {
+            log::warn!(".checked() is called on an element that is not an <input>");
         }
     }
 

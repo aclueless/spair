@@ -1,7 +1,7 @@
 use super::{HtmlElementRender, HtmlElementRenderMut};
 use crate::{
     component::Component,
-    dom::{AttributeValueList, ElementType},
+    dom::AttributeValueList,
     render::base::{
         AttributeMinMax, BoolAttributeValue, ElementRender, ElementRenderMut, F64AttributeValue,
         I32AttributeValue, MethodsForEvents, StringAttributeValue, U32AttributeValue,
@@ -44,29 +44,33 @@ pub trait AttributeIndex<C: Component> {
 }
 
 macro_rules! impl_attribute_value_index_trait_for_types {
-    ($($TraitName:ident, $SelfType:ty, $method_name:ident $queue_method_name:ident $queue_method_name_map:ident,)+) => {$(
+    (
+        $RenderType:ident
+        $($TraitName:ident, $SelfType:ty, $method_name:ident $queue_method_name:ident $queue_method_name_map:ident,)+
+    ) => {$(
         impl<C: Component> $TraitName<C> for $SelfType {
-            fn render(self, element: &mut HtmlElementRender<C>) {
+            fn render(self, element: &mut $RenderType<C>) {
                 element.$method_name(self);
             }
         }
 
         impl_attribute_value_index_trait_for_types! {
             @each_queue_render
+            $RenderType
             $TraitName, $SelfType, $queue_method_name $queue_method_name_map
         }
     )+};
-    (@each_queue_render $TraitName:ident, $SelfType:ty, NO_QUEUE_RENDER NO_QUEUE_RENDER) => {};
-    (@each_queue_render $TraitName:ident, $SelfType:ty, $queue_method_name:ident $queue_method_name_map:ident) => {
+    (@each_queue_render $RenderType:ident $TraitName:ident, $SelfType:ty, NO_QUEUE_RENDER NO_QUEUE_RENDER) => {};
+    (@each_queue_render $RenderType:ident $TraitName:ident, $SelfType:ty, $queue_method_name:ident $queue_method_name_map:ident) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $TraitName<C> for &Value<$SelfType> {
-            fn render(self, element: &mut HtmlElementRender<C>) {
+            fn render(self, element: &mut $RenderType<C>) {
                 element.$queue_method_name(self);
             }
         }
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $TraitName<C> for MapValue<C, T, $SelfType> {
-            fn render(self, element: &mut HtmlElementRender<C>) {
+            fn render(self, element: &mut $RenderType<C>) {
                 element.$queue_method_name_map(self);
             }
         }
@@ -74,19 +78,29 @@ macro_rules! impl_attribute_value_index_trait_for_types {
 }
 
 impl_attribute_value_index_trait_for_types! {
-    AttributeValue, &str,           attribute_value_str             NO_QUEUE_RENDER NO_QUEUE_RENDER,
-    AttributeValue, String,         attribute_value_string          queue_attribute_value_string queue_attribute_value_string_map,
-    AttributeValue, &String,        attribute_value_str             NO_QUEUE_RENDER NO_QUEUE_RENDER,
-    AttributeValue, Option<&str>,   attribute_value_optional_str    NO_QUEUE_RENDER NO_QUEUE_RENDER,
-    AttributeValue, Option<String>, attribute_value_optional_string
-                                    queue_attribute_value_optional_string
-                                    queue_attribute_value_optional_string_map,
-    AttributeIndex, usize,          attribute_selected_index_usize
-                                    queue_attribute_selected_index_usize
-                                    queue_attribute_selected_index_usize_map,
-    AttributeIndex, Option<usize>,  attribute_selected_index_optional_usize
-                                    queue_attribute_selected_index_optional_usize
-                                    queue_attribute_selected_index_optional_usize_map,
+    HtmlElementRender
+    AttributeValue, &str,           selected_value_str             NO_QUEUE_RENDER NO_QUEUE_RENDER,
+    AttributeValue, String,         selected_value_string          qr_selected_value_string qrm_selected_value_string,
+    AttributeValue, &String,        selected_value_str             NO_QUEUE_RENDER NO_QUEUE_RENDER,
+    AttributeValue, Option<&str>,   selected_value_optional_str    NO_QUEUE_RENDER NO_QUEUE_RENDER,
+    AttributeValue, Option<String>, selected_value_optional_string
+                                    qr_selected_value_optional_string
+                                    qrm_selected_value_optional_string,
+    AttributeIndex, usize,          selected_index_usize
+                                    qr_selected_index_usize
+                                    qrm_selected_index_usize,
+    AttributeIndex, Option<usize>,  selected_index_optional_usize
+                                    qr_selected_index_optional_usize
+                                    qrm_selected_index_optional_usize,
+}
+
+pub trait PropertyChecked<C: Component> {
+    fn render(self, element: &mut ElementRender<C>);
+}
+
+impl_attribute_value_index_trait_for_types! {
+    ElementRender
+    PropertyChecked, bool,         checked     qr_checked      qrm_checked,
 }
 
 pub trait HamsHandMade<C: Component>:
@@ -105,29 +119,26 @@ pub trait HamsHandMade<C: Component>:
         }
     }
 
-    /// Always execute `input.set_checked` with the given value. This is
-    /// useful in situation like in TodoMVC example. TodoMVC spec requires
-    /// that when the app in a filtered mode, for example, just display
-    /// active todos, if an item is checked (completed) by clicking the
+    /// The issue describes here does not affect elements in queue render
+    /// list or keyed list.
+    ///
+    /// In incremental mode, this method always execute `input.set_checked`
+    /// with the given value. This is useful in situation like in TodoMVC
+    /// example. TodoMVC specification requires that when the app in a
+    /// filtered mode, for example, 'active' mode just display
+    /// active todo-items, if an item is checked (completed) by clicking the
     /// input, the app should hide the todo item. In such a situation, the
     /// DOM item is checked, but Spair DOM is not checked yet. But the
     /// checked item was filtered out (hidden), and only active todos
     /// are displayed, all of them are unchecked which match the state in
     /// Spair DOM, hence Spair skip setting check, leaving the DOM checked
     /// but display an unchecked item. In my understand, this only occurs
-    /// with non-keyed list. I choose always setting checked to avoid
-    /// surprise for new users. `checked_if_changed` can be used to reduce
-    /// interaction with DOM if it does not bug you.
-    fn checked(self, value: bool) -> Self {
-        let element = self.element_render().element();
-        if element.element_type() == ElementType::Input {
-            let input = element
-                .ws_element()
-                .unchecked_ref::<web_sys::HtmlInputElement>();
-            input.set_checked(value);
-        } else {
-            log::warn!(".checked() is called on an element that is not <input>");
-        }
+    /// with non-keyed list, keyed_list is not affect by this.
+    /// I choose to always set checked to avoid surprises for new users.
+    /// `checked_if_changed` can be used to reduce interaction with DOM if
+    /// it does not bug you.
+    fn checked(mut self, value: impl PropertyChecked<C>) -> Self {
+        value.render(self.element_render_mut());
         self
     }
 
@@ -158,7 +169,7 @@ pub trait HamsHandMade<C: Component>:
     }
 
     /// This method only accepts a &Route. If you want set `href` with a str, please use `href_str()`.
-    /// It is possible to make this method accept both a Route and a str, but I intentionally make
+    /// It is possible to make this method accept either a Route or a str, but I intentionally make
     /// them two separate methods. The purpose is to remind users to use a Route when it's possible.
     fn href(mut self, route: &C::Routes) -> Self {
         self.element_render_mut().href(route);

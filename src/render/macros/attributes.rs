@@ -2,7 +2,6 @@
 macro_rules! make_trait_for_attribute_methods {
     (
         TestStructs: ($($TestStructName:ident)*)
-        //TraitDefinitionTokens: ($($TraitDefinitionTokens:tt)+)
         TraitName: $TraitName:ident
         attributes: $(
             $attribute_type:ident $method_name:ident $($attribute_name:literal)?
@@ -13,7 +12,6 @@ macro_rules! make_trait_for_attribute_methods {
             names: $($method_name)+
         }
 
-        //$($TraitDefinitionTokens)+
         pub trait $TraitName<C: Component>: Sized + ElementRenderMut<C>
         {$(
             make_trait_for_attribute_methods! {
@@ -28,12 +26,6 @@ macro_rules! make_trait_for_attribute_methods {
             $method_name stringify!($method_name) => $attribute_type
         }
     };
-    // (@each $method_name:ident $attribute_name:expr => minmax) => {
-    //     make_trait_for_attribute_methods! {
-    //         @create_fn
-    //         $method_name $attribute_name => AttributeMinMax
-    //     }
-    // };
     (@each $method_name:ident $attribute_name:expr => bool) => {
         make_trait_for_attribute_methods! {
             @create_fn
@@ -237,12 +229,12 @@ macro_rules! make_traits_for_attribute_values {
     ) => {
         $(
             pub trait $AttributeTrait<C: Component> {
-                fn render(self, name: &'static str, node: impl ElementRenderMut<C>);
+                fn render(self, name: &'static str, element: impl ElementRenderMut<C>);
             }
             $(
                 impl<C: Component> $AttributeTrait<C> for $attribute_type {
-                    fn render(self, name: &'static str, mut node: impl ElementRenderMut<C>) {
-                        node.element_render_mut().$method_name(name, self);
+                    fn render(self, name: &'static str, mut element: impl ElementRenderMut<C>) {
+                        element.element_render_mut().$method_name(name, self);
                     }
                 }
                 make_traits_for_attribute_values! {
@@ -266,51 +258,15 @@ macro_rules! make_traits_for_attribute_values {
     ) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $AttributeTrait<C> for &Value<$attribute_type> {
-            fn render(self, name: &'static str, mut node: impl ElementRenderMut<C>) {
-                node.element_render_mut().$queue_render_method_name(name, self);
+            fn render(self, name: &'static str, mut element: impl ElementRenderMut<C>) {
+                element.element_render_mut().$queue_render_method_name(name, self);
             }
         }
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $AttributeTrait<C> for MapValue<C, T, $attribute_type> {
-            fn render(self, name: &'static str, mut node: impl ElementRenderMut<C>) {
-                node.element_render_mut().$queue_render_method_name_map(name, self);
+            fn render(self, name: &'static str, mut element: impl ElementRenderMut<C>) {
+                element.element_render_mut().$queue_render_method_name_map(name, self);
             }
         }
     };
 }
-/*
-        // $(
-        //     make_traits_for_attribute_values!(
-        //         @each
-        //         $AttributeTrait
-        //         { $($attribute_type)+ }
-        //         $method_name
-        //         $queue_render_method_name
-        //     );
-        // )+
-    };
-    (
-        @each
-        $AttributeTrait:ident
-        { $($attribute_type:ty)+ }
-        $method_name:ident
-        $queue_render_method_name:ident
-    ) => {
-        pub trait $AttributeTrait<C: Component> {
-            fn render(self, name: &str, node: impl ElementRenderMut<C>);
-        }
-        $(
-            impl<C: Component> $AttributeTrait<C> for $attribute_type {
-                fn render(self, name: &str, mut node: impl ElementRenderMut<C>) {
-                    node.element_render_mut().$method_name(name, self);
-                }
-            }
-            #[cfg(feature = "queue-render")]
-            impl<C: Component> $AttributeTrait<C> for &Value<$attribute_type> {
-                fn render(self, name: &str, mut node: impl ElementRenderMut<C>) {
-                    node.element_render_mut().$queue_render_method_name(name, self);
-                }
-            }
-        )+
-    };
-}*/

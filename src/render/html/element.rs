@@ -162,7 +162,7 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
         }
     }
 
-    pub(super) fn attribute_value_str(&mut self, value: &str) {
+    pub(super) fn selected_value_str(&mut self, value: &str) {
         if !self
             .element_render
             .must_render_attribute(value, AttributeValueList::check_str_attribute)
@@ -171,7 +171,7 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
         }
         self.set_value(value);
     }
-    pub(super) fn attribute_value_string(&mut self, value: String) {
+    pub(super) fn selected_value_string(&mut self, value: String) {
         if !self
             .element_render
             .must_render_attribute(value.as_str(), AttributeValueList::check_str_attribute)
@@ -180,7 +180,7 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
         }
         self.set_value(&value);
     }
-    pub(super) fn attribute_value_optional_str(&mut self, value: Option<&str>) {
+    pub(super) fn selected_value_optional_str(&mut self, value: Option<&str>) {
         match self.element_render.element_mut().element_type() {
             ElementType::Select => {
                 if !self
@@ -194,11 +194,11 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
             _ => log::warn!("Should a value:Option<String> only can be set on a select element?"),
         }
     }
-    pub(super) fn attribute_value_optional_string(&mut self, value: Option<String>) {
-        self.attribute_value_optional_str(value.as_deref());
+    pub(super) fn selected_value_optional_string(&mut self, value: Option<String>) {
+        self.selected_value_optional_str(value.as_deref());
     }
 
-    fn attribute_selected_index(&mut self, value: i32) {
+    fn selected_index(&mut self, value: i32) {
         match self.element_render.element_mut().element_type() {
             ElementType::Select => {
                 if !self
@@ -212,12 +212,12 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
             _ => log::warn!("Should a selected_index only can be set on a select element?"),
         }
     }
-    pub(super) fn attribute_selected_index_usize(&mut self, value: usize) {
-        self.attribute_selected_index(value as i32);
+    pub(super) fn selected_index_usize(&mut self, value: usize) {
+        self.selected_index(value as i32);
     }
-    pub(super) fn attribute_selected_index_optional_usize(&mut self, value: Option<usize>) {
+    pub(super) fn selected_index_optional_usize(&mut self, value: Option<usize>) {
         let value = value.map(|value| value as i32).unwrap_or(-1);
-        self.attribute_selected_index(value);
+        self.selected_index(value);
     }
 }
 

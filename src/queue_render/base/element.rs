@@ -13,11 +13,11 @@ use crate::{
 use super::{QrBoolAttribute, QrBoolAttributeMap, QrNormalAttribute, QrNormalAttributeMap};
 
 impl<'a, C: Component> ElementRender<'a, C> {
-    fn qa<T: 'static + ToString, Q: 'static + QueueRender<T>>(
+    fn qra<T: 'static + ToString, Q: 'static + QueueRender<T>>(
         &self,
         name: &'static str,
         value: &Value<T>,
-        new: impl FnOnce(Comp<C>, WsElement, Rc<Cell<bool>>, &'static str) -> Q,
+        new: impl FnOnce(WsElement, Rc<Cell<bool>>, &'static str) -> Q,
         init: impl FnOnce(&Q, &RefMut<ValueContent<T>>),
     ) {
         if self.status() == ElementStatus::Existing {
@@ -25,7 +25,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         }
         let element = self.element().ws_element().clone();
         let unmounted = self.element().unmounted();
-        let q = new(self.comp(), element, unmounted, name);
+        let q = new(element, unmounted, name);
 
         match value.content().try_borrow_mut() {
             Ok(mut this) => {
@@ -36,12 +36,12 @@ impl<'a, C: Component> ElementRender<'a, C> {
         }
     }
 
-    fn qa_map<T: 'static, U: 'static, Q, M: 'static + QueueRender<T>>(
+    fn qra_map<T: 'static, U: 'static, Q, M: 'static + QueueRender<T>>(
         &self,
         name: &'static str,
         value: MapValue<C, T, U>,
-        new: impl FnOnce(Comp<C>, WsElement, Rc<Cell<bool>>, &'static str) -> Q,
-        new_map: impl FnOnce(Q, Box<dyn Fn(&C, &T) -> U>) -> M,
+        new: impl FnOnce(WsElement, Rc<Cell<bool>>, &'static str) -> Q,
+        new_map: impl FnOnce(Q, Comp<C>, Box<dyn Fn(&C, &T) -> U>) -> M,
         init: impl FnOnce(&Q, U),
     ) {
         if self.status() == ElementStatus::Existing {
@@ -50,7 +50,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
 
         let element = self.element().ws_element().clone();
         let unmounted = self.element().unmounted();
-        let q = new(self.comp(), element, unmounted, name);
+        let q = new(element, unmounted, name);
 
         let state = self.state();
         let (value, fn_map) = value.into_parts();
@@ -58,37 +58,33 @@ impl<'a, C: Component> ElementRender<'a, C> {
             Ok(mut this) => {
                 let u = (fn_map)(state, this.value());
                 init(&q, u);
-                let q = new_map(q, fn_map);
+                let q = new_map(q, self.comp(), fn_map);
                 this.add_render(Box::new(q));
             }
             Err(e) => log::error!("{}", e),
         };
     }
 
-    pub fn queue_bool_attribute(&self, name: &'static str, value: &Value<bool>) {
-        self.qa(name, value, QrBoolAttribute::new, |qra, value| {
+    pub fn qr_bool_attribute(&self, name: &'static str, value: &Value<bool>) {
+        self.qra(name, value, QrBoolAttribute::new, |qra, value| {
             qra.update(*value.value());
         })
     }
 
-    pub fn queue_string_attribute(&self, name: &'static str, value: &Value<String>) {
-        self.qa(name, value, QrNormalAttribute::new, |qra, value| {
+    pub fn qr_string_attribute(&self, name: &'static str, value: &Value<String>) {
+        self.qra(name, value, QrNormalAttribute::new, |qra, value| {
             qra.update(value.value());
         });
     }
 
-    pub fn queue_attribute<T: 'static + ToString>(&self, name: &'static str, value: &Value<T>) {
-        self.qa(name, value, QrNormalAttribute::new, |qra, value| {
+    pub fn qr_attribute<T: 'static + ToString>(&self, name: &'static str, value: &Value<T>) {
+        self.qra(name, value, QrNormalAttribute::new, |qra, value| {
             qra.update(&value.value().to_string());
         });
     }
 
-    pub fn queue_bool_attribute_map<T: 'static>(
-        &self,
-        name: &'static str,
-        value: MapValue<C, T, bool>,
-    ) {
-        self.qa_map(
+    pub fn qrm_bool_attribute<T: 'static>(&self, name: &'static str, value: MapValue<C, T, bool>) {
+        self.qra_map(
             name,
             value,
             QrBoolAttribute::new,
@@ -99,12 +95,12 @@ impl<'a, C: Component> ElementRender<'a, C> {
         );
     }
 
-    pub fn queue_attribute_map<T: 'static, U: 'static + ToString>(
+    pub fn qrm_attribute<T: 'static, U: 'static + ToString>(
         &self,
         name: &'static str,
         value: MapValue<C, T, U>,
     ) {
-        self.qa_map(
+        self.qra_map(
             name,
             value,
             QrNormalAttribute::new,

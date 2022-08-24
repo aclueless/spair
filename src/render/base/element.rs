@@ -189,17 +189,10 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.element.ws_element().set_attribute(name, value);
     }
 
-    // fn add_class(&mut self, class_name: &str) {
-    //     self.element
-    //         .ws_element()
-    //         .add_class(class_name);
-    // }
-
-    // fn remove_class(&mut self, class_name: &str) {
-    //     self.element
-    //         .ws_element()
-    //         .remove_class(class_name);
-    // }
+    /// Always checked.
+    pub fn checked(&self, value: bool) {
+        self.element.ws_element().checked(value);
+    }
 
     pub fn class(&mut self, class_name: &str) {
         let (changed, old_value) = if self.is_update_mode() {
