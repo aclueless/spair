@@ -167,6 +167,10 @@ impl WsElement {
         self.ws_element.unchecked_ref::<T>()
     }
 
+    pub fn html_element(&self) -> &web_sys::HtmlElement {
+        self.ws_element.unchecked_ref()
+    }
+
     pub fn unchecked_into<T: JsCast>(&self) -> T {
         self.ws_element.clone().unchecked_into::<T>()
     }
@@ -334,6 +338,26 @@ impl WsElement {
             input.set_checked(value);
         } else {
             log::warn!(".checked() is called on an element that is not an <input>");
+        }
+    }
+
+    pub fn enabled_ref(&self, value: &bool) {
+        self.enabled(*value);
+    }
+
+    pub fn enabled(&self, value: bool) {
+        self.set_bool_attribute("disabled", !value);
+    }
+
+    pub fn focus_ref(&self, value: &bool) {
+        self.focus(*value);
+    }
+
+    pub fn focus(&self, value: bool) {
+        if value {
+            self.html_element()
+                .focus()
+                .expect_throw("render::base::element::ElementRender::focus");
         }
     }
 

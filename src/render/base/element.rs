@@ -194,6 +194,10 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.element.ws_element().checked(value);
     }
 
+    pub fn enabled(&self, value: bool) {
+        self.element.ws_element().enabled(value);
+    }
+
     pub fn class(&mut self, class_name: &str) {
         let (changed, old_value) = if self.is_update_mode() {
             let rs = self

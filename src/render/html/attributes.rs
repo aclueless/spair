@@ -1,99 +1,20 @@
 use super::{HtmlElementRender, HtmlElementRenderMut};
 use crate::{
     component::Component,
-    dom::{AttributeValueList, WsElement},
+    dom::AttributeValueList,
     render::base::{
-        AttributeMinMax, BoolAttributeValue, ElementRender, ElementRenderMut, F64AttributeValue,
-        I32AttributeValue, MethodsForEvents, StringAttributeValue, U32AttributeValue,
+        AttributeMinMax, BoolAttributeValue, Class, ElementRender, ElementRenderMut,
+        F64AttributeValue, I32AttributeValue, MethodsForEvents, StringAttributeValue,
+        U32AttributeValue,
     },
 };
 
 #[cfg(feature = "queue-render")]
-use crate::queue_render::{MapValue, Value};
-/*
-/// Elements that have attribute `value` are `select`, `input`, `option`, and `textarea`.
-/// Apart from `select`, other elements have no issues with the `value` attribute. Setting
-/// `value` on a `select` element expect the corresponding `option` element inside the
-/// `select` element got highlighted as selected. But setting the value attribute before
-/// adding the children (`option` elements) of the select will not work. This trait
-/// provide methods to work with attribute value to help handle the issue. But this
-/// trait alone can not sovle the issue. We also need HtmlElementRender and HtmlNodesRender.
-pub trait MethodsForSelectedValueSelectedIndex<C: Component>: Sized + HtmlElementRenderMut<C> {
-    fn value(mut self, value: impl AttributeValue<C>) -> Self {
-        value.render(self.html_element_render_mut());
-        self
-    }
+use crate::{
+    dom::WsElement,
+    queue_render::{MapValue, Value},
+};
 
-    fn selected_value(mut self, value: impl AttributeValue<C>) -> Self {
-        value.render(self.html_element_render_mut());
-        self
-    }
-
-    fn selected_index(mut self, value: impl AttributeIndex<C>) -> Self {
-        value.render(self.html_element_render_mut());
-        self
-    }
-}
-
-pub trait AttributeValue<C: Component> {
-    fn render(self, element: &mut HtmlElementRender<C>);
-}
-
-pub trait AttributeIndex<C: Component> {
-    fn render(self, element: &mut HtmlElementRender<C>);
-}
-
-macro_rules! impl_attribute_value_index_trait_for_types {
-    (
-        $RenderType:ident
-        $($TraitName:ident, $SelfType:ty, $method_name:ident $queue_method_name:ident $queue_method_name_map:ident,)+
-    ) => {$(
-        impl<C: Component> $TraitName<C> for $SelfType {
-            fn render(self, element: &mut $RenderType<C>) {
-                element.$method_name(self);
-            }
-        }
-
-        impl_attribute_value_index_trait_for_types! {
-            @each_queue_render
-            $RenderType
-            $TraitName, $SelfType, $queue_method_name $queue_method_name_map
-        }
-    )+};
-    (@each_queue_render $RenderType:ident $TraitName:ident, $SelfType:ty, NO_QUEUE_RENDER NO_QUEUE_RENDER) => {};
-    (@each_queue_render $RenderType:ident $TraitName:ident, $SelfType:ty, $queue_method_name:ident $queue_method_name_map:ident) => {
-        #[cfg(feature = "queue-render")]
-        impl<C: Component> $TraitName<C> for &Value<$SelfType> {
-            fn render(self, element: &mut $RenderType<C>) {
-                element.$queue_method_name(self);
-            }
-        }
-        #[cfg(feature = "queue-render")]
-        impl<C: Component, T: 'static> $TraitName<C> for MapValue<C, T, $SelfType> {
-            fn render(self, element: &mut $RenderType<C>) {
-                element.$queue_method_name_map(self);
-            }
-        }
-    }
-}
-
-impl_attribute_value_index_trait_for_types! {
-    HtmlElementRender
-    AttributeValue, &str,           selected_value_str             NO_QUEUE_RENDER NO_QUEUE_RENDER,
-    AttributeValue, String,         selected_value_string          qr_selected_value_string qrm_selected_value_string,
-    AttributeValue, &String,        selected_value_str             NO_QUEUE_RENDER NO_QUEUE_RENDER,
-    AttributeValue, Option<&str>,   selected_value_optional_str    NO_QUEUE_RENDER NO_QUEUE_RENDER,
-    AttributeValue, Option<String>, selected_value_optional_string
-                                    qr_selected_value_optional_string
-                                    qrm_selected_value_optional_string,
-    AttributeIndex, usize,          selected_index_usize
-                                    qr_selected_index_usize
-                                    qrm_selected_index_usize,
-    AttributeIndex, Option<usize>,  selected_index_optional_usize
-                                    qr_selected_index_optional_usize
-                                    qrm_selected_index_optional_usize,
-}
-*/
 macro_rules! make_traits_for_property_values {
     (
         $RenderType:ident
@@ -182,7 +103,9 @@ make_traits_for_property_values! {
 /// with attribute value to help handle the issue. But this trait alone
 /// can not sovle the issue. We also need HtmlElementRender and
 /// HtmlNodesRender.
-pub trait MethodsForSelectedValueSelectedIndex<C: Component>: Sized + HtmlElementRenderMut<C> {
+pub trait MethodsForSelectedValueSelectedIndex<C: Component>:
+    Sized + HtmlElementRenderMut<C>
+{
     fn value(mut self, value: impl PropertyValue<C>) -> Self {
         value.render(self.html_element_render_mut());
         self
@@ -199,11 +122,16 @@ pub trait MethodsForSelectedValueSelectedIndex<C: Component>: Sized + HtmlElemen
     }
 }
 
-
 make_traits_for_property_values! {
     ElementRender
     PropertyChecked {
         bool, checked checked_ref qr_property qrm_property,
+    }
+    AttributeEnabled {
+        bool, enabled enabled_ref qr_property qrm_property,
+    }
+    ActionFocus {
+        bool, focus focus_ref qr_property qrm_property,
     }
 }
 
@@ -246,8 +174,8 @@ pub trait HamsHandMade<C: Component>:
         self
     }
 
-    fn class(mut self, class_name: &str) -> Self {
-        self.element_render_mut().class(class_name);
+    fn class(mut self, value: impl Class<C>) -> Self {
+        value.render(self.element_render_mut());
         self
     }
 
@@ -263,12 +191,13 @@ pub trait HamsHandMade<C: Component>:
         self
     }
 
-    fn enabled(self, value: bool) -> Self {
-        self.disabled(!value)
+    fn enabled(mut self, value: impl AttributeEnabled<C>) -> Self {
+        value.render(self.element_render_mut());
+        self
     }
 
-    fn focus(mut self, value: bool) -> Self {
-        self.element_render_mut().focus(value);
+    fn focus(mut self, value: impl ActionFocus<C>) -> Self {
+        value.render(self.element_render_mut());
         self
     }
 

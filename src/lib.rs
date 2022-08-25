@@ -57,10 +57,10 @@ pub mod prelude {
     pub use crate::component::{AsChildComp, Component};
     pub use crate::render::base::MethodsForEvents;
     pub use crate::render::html::{
-        HamsForAmbiguousNames, HamsForDistinctNames, MethodsForSelectedValueSelectedIndex,
-        HamsHandMade, HamsWithPredefinedValues, HemsForAmbiguousNames, HemsForDistinctNames,
-        HemsForList, HemsForPartialList, HemsHamsAmbiguous, HemsHandMade,
-        MethodsForHtmlElementContent,
+        HamsForAmbiguousNames, HamsForDistinctNames, HamsHandMade, HamsWithPredefinedValues,
+        HemsForAmbiguousNames, HemsForDistinctNames, HemsForList, HemsForPartialList,
+        HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
+        MethodsForSelectedValueSelectedIndex,
     };
 
     #[cfg(feature = "keyed-list")]
