@@ -68,7 +68,7 @@ impl<C: Component> QrText for QrTextNode<C> {
 }
 
 impl<C: Component, T: ToString> QueueRender<T> for QrTextNode<C> {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         self.update_text(&t.to_string());
     }
     fn unmounted(&self) -> bool {
@@ -121,7 +121,7 @@ where
     T: 'static + ToString,
     U: 'static + ToString,
 {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         let u = self.map(t);
         self.update_text(&u.to_string());
     }

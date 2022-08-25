@@ -33,7 +33,7 @@ impl QrNormalAttribute {
 }
 
 impl<T: ToString> QueueRender<T> for QrNormalAttribute {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         self.update(&t.to_string());
     }
     fn unmounted(&self) -> bool {
@@ -70,7 +70,7 @@ impl<C: Component, T, U> QrNormalAttributeMap<C, T, U> {
 }
 
 impl<C: Component, T, U: ToString> QueueRender<T> for QrNormalAttributeMap<C, T, U> {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         let u = self.map(t);
         self.qra.update(&u.to_string());
     }
@@ -105,7 +105,7 @@ impl QrBoolAttribute {
 }
 
 impl QueueRender<bool> for QrBoolAttribute {
-    fn render(&self, t: &bool) {
+    fn render(&mut self, t: &bool) {
         self.update(*t);
     }
     fn unmounted(&self) -> bool {
@@ -138,7 +138,7 @@ impl<C: Component, T> QrBoolAttributeMap<C, T> {
 }
 
 impl<C: Component, T> QueueRender<T> for QrBoolAttributeMap<C, T> {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         let u = self.map(t);
         self.qra.update(u);
     }
@@ -147,5 +147,3 @@ impl<C: Component, T> QueueRender<T> for QrBoolAttributeMap<C, T> {
     }
 }
 
-// QrAttributeClass: to remember last class and remove it before setting new class
-// QrProperty: for value, id, checked, enabled, disabled?

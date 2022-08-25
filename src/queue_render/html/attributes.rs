@@ -32,7 +32,7 @@ impl<T> QrProperty<T> {
 }
 
 impl<T> QueueRender<T> for QrProperty<T> {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         self.update(t);
     }
     fn unmounted(&self) -> bool {
@@ -73,7 +73,7 @@ impl<C: Component, T, U> QrPropertyMap<C, T, U> {
 }
 
 impl<C: Component, T, U> QueueRender<T> for QrPropertyMap<C, T, U> {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         let u = self.map(t);
         self.qr_property.update(&u);
     }
@@ -97,17 +97,30 @@ impl QrClass {
         }
     }
 
-    pub fn update_str(&self, value: Option<&str>) {
-        todo!("Must be mutable or last class as RefCell")
+    pub fn update_str(&mut self, value: Option<&str>) {
+        let last = self.last_class.as_deref();
+        if value.eq(&last) {
+            return;
+        }
+        self.ws_element.remove_class_optional(last);
+        self.ws_element.add_class_optional(value);
+
+        self.last_class = value.map(ToString::to_string);
     }
 
-    pub fn update_string(&self, value: Option<String>) {
-        todo!("Must be mutable or last class as RefCell")
+    pub fn update_string(&mut self, value: Option<String>) {
+        if value.eq(&self.last_class) {
+            return;
+        }
+        self.ws_element.remove_class_optional(self.last_class.as_deref());
+        self.ws_element.add_class_optional(value.as_deref());
+
+        self.last_class = value;
     }
 }
 
 impl QueueRender<String> for QrClass {
-    fn render(&self, t: &String) {
+    fn render(&mut self, t: &String) {
         self.update_str(Some(t));
     }
     fn unmounted(&self) -> bool {
@@ -116,7 +129,7 @@ impl QueueRender<String> for QrClass {
 }
 
 impl QueueRender<Option<String>> for QrClass {
-    fn render(&self, t: &Option<String>) {
+    fn render(&mut self, t: &Option<String>) {
         self.update_str(t.as_deref());
     }
     fn unmounted(&self) -> bool {
@@ -153,7 +166,7 @@ impl<C: Component, T, U> QrClassMap<C, T, U> {
 }
 
 impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, String> {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         let u = self.map(t);
         self.qr.update_string(Some(u));
     }
@@ -163,7 +176,7 @@ impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, String> {
 }
 
 impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, Option<String>> {
-    fn render(&self, t: &T) {
+    fn render(&mut self, t: &T) {
         let t = self.map(t);
         self.qr.update_str(t.as_deref());
     }

@@ -31,6 +31,12 @@ impl<T> ValueContent<T> {
     pub fn add_render(&mut self, r: Box<dyn QueueRender<T>>) {
         self.renders.push(r);
     }
+
+    fn render(&mut self) {
+        for r in self.renders.iter_mut() {
+            r.render(&self.value)
+        }
+    }
 }
 
 impl<T> From<T> for Value<T> {
@@ -104,13 +110,9 @@ impl<T: 'static + PartialEq> Value<T> {
     }
 
     fn render(&self) {
-        match self.0.try_borrow() {
-            Ok(this) => {
-                for r in this.renders.iter() {
-                    r.render(&this.value);
-                }
-            }
-            Err(e) => log::error!("{}", e),
+        match self.0.try_borrow_mut() {
+            Ok(mut this) => this.render(),
+            Err(e) => log::error!("queue render error: {}", e),
         }
     }
 
@@ -126,7 +128,7 @@ impl<T: 'static + PartialEq> Value<T> {
 }
 
 pub trait QueueRender<T> {
-    fn render(&self, t: &T);
+    fn render(&mut self, t: &T);
     fn unmounted(&self) -> bool;
 }
 

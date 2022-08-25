@@ -232,6 +232,18 @@ impl WsElement {
             .expect_throw("dom::element::WsElement::remove_class");
     }
 
+    pub fn add_class_optional(&self, class_name: Option<&str>) {
+        if let Some(class_name) = class_name {
+            self.add_class(class_name);
+        }
+    }
+
+    pub fn remove_class_optional(&self, class_name: Option<&str>) {
+        if let Some(class_name) = class_name {
+            self.remove_class(class_name);
+        }
+    }
+
     // return `true` if the element is a <select>
     // If it's in queue render mode, the value is always set, users
     // must make sure that the value is set after the children
