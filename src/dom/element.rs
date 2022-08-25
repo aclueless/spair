@@ -236,7 +236,7 @@ impl WsElement {
     // If it's in queue render mode, the value is always set, users
     // must make sure that the value is set after the children
     // of <select> are added.
-    #[must_use = "Make sure that the value is handled if not call queue render"]
+    #[must_use = "Make sure that the return value is handled if queue_render = false"]
     pub fn set_value(&self, value: &str, queue_render: bool) -> bool {
         match self.element_type {
             ElementType::Input => {
@@ -273,6 +273,20 @@ impl WsElement {
         false
     }
 
+    #[allow(clippy::ptr_arg)]
+    pub fn set_value_for_qr(&self, value: &String) {
+        let _user = self.set_value(value, true);
+    }
+
+    pub fn set_value_for_qr_optional(&self, value: &Option<String>) {
+        match value {
+            Some(value) => {
+                let _user = self.set_value(value, true);
+            }
+            None => self.set_selected_index(-1),
+        }
+    }
+
     pub fn set_selected_index(&self, index: i32) {
         match self.element_type {
             ElementType::Select => {
@@ -284,6 +298,17 @@ impl WsElement {
             _ => {
                 log::warn!(".set_selected_index() is called on an element that is not a <select>");
             }
+        }
+    }
+
+    pub fn set_selected_index_ref(&self, index: &usize) {
+        self.set_selected_index(*index as i32);
+    }
+
+    pub fn set_selected_index_optional(&self, index: &Option<usize>) {
+        match index {
+            Some(index) => self.set_selected_index(*index as i32),
+            None => self.set_selected_index(-1),
         }
     }
 

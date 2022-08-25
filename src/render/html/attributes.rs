@@ -1,7 +1,7 @@
 use super::{HtmlElementRender, HtmlElementRenderMut};
 use crate::{
     component::Component,
-    dom::AttributeValueList,
+    dom::{AttributeValueList, WsElement},
     render::base::{
         AttributeMinMax, BoolAttributeValue, ElementRender, ElementRenderMut, F64AttributeValue,
         I32AttributeValue, MethodsForEvents, StringAttributeValue, U32AttributeValue,
@@ -10,7 +10,7 @@ use crate::{
 
 #[cfg(feature = "queue-render")]
 use crate::queue_render::{MapValue, Value};
-
+/*
 /// Elements that have attribute `value` are `select`, `input`, `option`, and `textarea`.
 /// Apart from `select`, other elements have no issues with the `value` attribute. Setting
 /// `value` on a `select` element expect the corresponding `option` element inside the
@@ -18,7 +18,7 @@ use crate::queue_render::{MapValue, Value};
 /// adding the children (`option` elements) of the select will not work. This trait
 /// provide methods to work with attribute value to help handle the issue. But this
 /// trait alone can not sovle the issue. We also need HtmlElementRender and HtmlNodesRender.
-pub trait HamsForSelectElementValueAndIndex<C: Component>: Sized + HtmlElementRenderMut<C> {
+pub trait MethodsForSelectedValueSelectedIndex<C: Component>: Sized + HtmlElementRenderMut<C> {
     fn value(mut self, value: impl AttributeValue<C>) -> Self {
         value.render(self.html_element_render_mut());
         self
@@ -93,14 +93,118 @@ impl_attribute_value_index_trait_for_types! {
                                     qr_selected_index_optional_usize
                                     qrm_selected_index_optional_usize,
 }
-
-pub trait PropertyChecked<C: Component> {
-    fn render(self, element: &mut ElementRender<C>);
+*/
+macro_rules! make_traits_for_property_values {
+    (
+        $RenderType:ident
+        $(
+            $TraitName:ident {
+                $(
+                    $attribute_type:ty,
+                    $method_name:ident
+                    $ws_method_for_qr:ident $qr_method_name:ident $qrm_method_name:ident,
+                )+
+            }
+        )+
+    ) => {
+        $(
+            pub trait $TraitName<C: Component> {
+                fn render(self, element: &mut $RenderType<C>);
+            }
+            $(
+                impl<C: Component> $TraitName<C> for $attribute_type {
+                    fn render(self, element: &mut $RenderType<C>) {
+                        element.$method_name(self);
+                    }
+                }
+                make_traits_for_property_values! {
+                    @each_queue_render
+                    $RenderType
+                    $TraitName
+                    $attribute_type,
+                    $ws_method_for_qr $qr_method_name $qrm_method_name
+                }
+            )+
+        )+
+    };
+    (
+        @each_queue_render
+        $RenderType:ident
+        $TraitName:ident
+        $attribute_type:ty,
+        NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER
+    ) => {
+    };
+    (
+        @each_queue_render
+        $RenderType:ident
+        $TraitName:ident
+        $attribute_type:ty,
+        $ws_method_for_qr:ident $qr_method_name:ident $qrm_method_name:ident
+    ) => {
+        #[cfg(feature = "queue-render")]
+        impl<C: Component> $TraitName<C> for &Value<$attribute_type> {
+            fn render(self, element: &mut $RenderType<C>) {
+                element.$qr_method_name(WsElement::$ws_method_for_qr, self);
+            }
+        }
+        #[cfg(feature = "queue-render")]
+        impl<C: Component, T: 'static> $TraitName<C> for MapValue<C, T, $attribute_type> {
+            fn render(self, element: &mut $RenderType<C>) {
+                element.$qrm_method_name(WsElement::$ws_method_for_qr, self);
+            }
+        }
+    };
 }
 
-impl_attribute_value_index_trait_for_types! {
+make_traits_for_property_values! {
+    HtmlElementRender
+    PropertyValue {
+        &str,           selected_value_str              NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
+        Option<&str>,   selected_value_optional_str     NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
+        String,         selected_value_string           set_value_for_qr qr_property qrm_property,
+        &String,        selected_value_str              NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
+        Option<String>, selected_value_optional_string  set_value_for_qr_optional qr_property qrm_property,
+    }
+    PropertyIndex {
+        usize,          selected_index_usize            set_selected_index_ref qr_property qrm_property,
+        Option<usize>,  selected_index_optional_usize   set_selected_index_optional qr_property qrm_property,
+    }
+}
+
+/// Elements that have attribute/property `value` are `select`, `input`,
+/// `option`, and `textarea`. Apart from `select`, other elements have
+/// no issues with the `value` property. Setting `value` on a `select`
+/// element expect the corresponding `option` element inside the
+/// `select` element got highlighted as an selected item. But setting
+/// the value property before adding the children (`option` elements)
+/// of the select will not work. This trait provide methods to work
+/// with attribute value to help handle the issue. But this trait alone
+/// can not sovle the issue. We also need HtmlElementRender and
+/// HtmlNodesRender.
+pub trait MethodsForSelectedValueSelectedIndex<C: Component>: Sized + HtmlElementRenderMut<C> {
+    fn value(mut self, value: impl PropertyValue<C>) -> Self {
+        value.render(self.html_element_render_mut());
+        self
+    }
+
+    fn selected_value(mut self, value: impl PropertyValue<C>) -> Self {
+        value.render(self.html_element_render_mut());
+        self
+    }
+
+    fn selected_index(mut self, value: impl PropertyIndex<C>) -> Self {
+        value.render(self.html_element_render_mut());
+        self
+    }
+}
+
+
+make_traits_for_property_values! {
     ElementRender
-    PropertyChecked, bool,         checked     qr_checked      qrm_checked,
+    PropertyChecked {
+        bool, checked checked_ref qr_property qrm_property,
+    }
 }
 
 pub trait HamsHandMade<C: Component>:
@@ -386,19 +490,19 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for StaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for HtmlElementRender<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for HtmlElementRender<'er, C> {}
 impl<'er, C: Component> HamsForDistinctNames<C> for HtmlElementRender<'er, C> {}
 
-impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributes<'er, C> {}
 
-impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for AttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for AttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsForDistinctNames<C> for AttributesOnly<'er, C> {}
 
-impl<'er, C: Component> HamsForSelectElementValueAndIndex<C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for StaticAttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for StaticAttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributesOnly<'er, C> {}
 

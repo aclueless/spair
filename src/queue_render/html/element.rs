@@ -1,13 +1,8 @@
-use std::{
-    cell::{Cell, RefMut},
-    rc::Rc,
-};
-
-use super::{QrProperty, QrPropertyMap, QrSelectedValueIndex, QrSelectedValueIndexMap};
+use super::{QrProperty, QrPropertyMap};
 use crate::{
-    component::{Comp, Component},
+    component::Component,
     dom::{ElementStatus, WsElement},
-    queue_render::{MapValue, QueueRender, Value, ValueContent},
+    queue_render::{MapValue, Value},
     render::{
         base::{ElementRender, ElementRenderMut},
         html::HtmlElementRender,
@@ -15,7 +10,7 @@ use crate::{
 };
 
 impl<'a, C: Component> ElementRender<'a, C> {
-    fn qr_property<T: 'static>(
+    fn qrp<T: 'static>(
         &self,
         value: &Value<T>,
         fn_update: impl Fn(&WsElement, &T) + 'static,
@@ -36,7 +31,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         }
     }
 
-    fn qrm_property<T: 'static, U: 'static>(
+    fn qrp_map<T: 'static, U: 'static>(
         &self,
         value: MapValue<C, T, U>,
         fn_update: impl Fn(&WsElement, &U) + 'static,
@@ -59,13 +54,21 @@ impl<'a, C: Component> ElementRender<'a, C> {
             Err(e) => log::error!("{}", e),
         };
     }
-
+/*
     pub fn qr_checked(&self, value: &Value<bool>) {
-        self.qr_property(value, WsElement::checked_ref)
+        self.qrp(value, WsElement::checked_ref)
     }
 
     pub fn qrm_checked<T: 'static>(&self, value: MapValue<C, T, bool>) {
-        self.qrm_property(value, WsElement::checked_ref)
+        self.qrp_map(value, WsElement::checked_ref)
+    }
+*/
+    pub fn qr_property<T: 'static>(&self, fn_update: impl Fn(&WsElement, &T) + 'static, value: &Value<T>) {
+        self.qrp(value, fn_update)
+    }
+
+    pub fn qrm_property<T: 'static, U: 'static>(&self, fn_update: impl Fn(&WsElement, &U) + 'static, value: MapValue<C, T, U>) {
+        self.qrp_map(value, fn_update)
     }
 }
 
@@ -74,6 +77,22 @@ impl<'a, C: Component> ElementRender<'a, C> {
 // render) need to be on HtmlElementRender, so these methods need to be on
 // HtmlElementRender, too.
 impl<'a, C: Component> HtmlElementRender<'a, C> {
+    pub fn qr_property<T: 'static>(
+        &self,
+        fn_update: impl Fn(&WsElement, &T) + 'static,
+        value: &Value<T>
+    ) {
+        self.element_render().qrp(value, fn_update)
+    }
+
+    pub fn qrm_property<T: 'static, U: 'static>(
+        &self,
+        fn_update: impl Fn(&WsElement, &U) + 'static,
+        value: MapValue<C, T, U>
+    ) {
+        self.element_render().qrp_map(value, fn_update)
+    }
+/*
     fn qr_value<T: 'static, Q: 'static + QueueRender<T>>(
         &self,
         value: &Value<T>,
@@ -195,4 +214,5 @@ impl<'a, C: Component> HtmlElementRender<'a, C> {
             },
         );
     }
+    */
 }
