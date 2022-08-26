@@ -84,13 +84,13 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.status
     }
 
-    // pub(crate) fn index(&self) -> usize {
-    //     self.index
-    // }
+    pub(crate) fn index(&self) -> usize {
+        self.index
+    }
 
-    // pub(crate) fn next_index(&mut self) {
-    //     self.index += 1;
-    // }
+    pub(crate) fn next_index(&mut self) {
+        self.index += 1;
+    }
 
     pub fn set_static_mode(&mut self) {
         self.update_mode = false;

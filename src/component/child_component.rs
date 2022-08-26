@@ -1,7 +1,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{Checklist, Comp, CompInstance, Component, RcComp};
-use crate::dom::{Element, NameSpace};
+use crate::dom::{Element, NameSpace, ELementTag};
 
 pub type ChildComp<C> = RcComp<C>;
 
@@ -9,12 +9,6 @@ impl<C: Component> ChildComp<C> {
     pub fn comp_instance(&self) -> std::cell::Ref<CompInstance<C>> {
         self.0.borrow()
     }
-}
-
-pub enum ELementTag {
-    Html(&'static str),
-    #[cfg(feature = "svg")]
-    Svg(&'static str),
 }
 
 pub trait AsChildComp: Sized + Component {

@@ -4,7 +4,7 @@ use crate::component::{ChildComp, Component, ComponentHandle};
 
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
-use super::{Element, ElementStatus, GroupedNodes, ParentAndChild, TextNode};
+use super::{Element, ElementStatus, GroupedNodes, ParentAndChild, MaybeAChildNode, TextNode};
 #[cfg(feature = "queue-render")]
 use crate::queue_render::dom::QrNode;
 

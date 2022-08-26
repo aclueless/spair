@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     dom::{ElementStatus, WsElement},
     queue_render::{MapValue, QueueRender, Value},
-    render::base::ElementRender,
+    render::{base::ElementRender},
 };
 
 use super::{
@@ -135,4 +135,19 @@ impl<'a, C: Component> ElementRender<'a, C> {
             Err(e) => log::error!("{}", e),
         };
     }
+
+    // pub fn qr_list_render(&mut self, mode: ListElementCreation, tag: &'a str) -> ListRender<C> {
+    //     let (parent, nodes) = self.element.ws_node_and_nodes_mut();
+    //     ListRender::new(
+    //         self.comp,
+    //         self.state,
+    //         nodes,
+    //         tag,
+    //         parent,
+    //         None,
+    //         mode.use_template(),
+    //     )
+    // }
+
+
 }

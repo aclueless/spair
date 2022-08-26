@@ -11,7 +11,7 @@ use crate::{
 };
 
 impl<'n, 'h, C: Component> Nodes<'n, 'h, C> {
-    pub fn create_qr_text_node(mut self) -> Option<QrTextNode<C>> {
+    pub fn create_qr_text_node(mut self) -> Option<QrTextNode> {
         self.nodes_render_mut().create_qr_text_node()
     }
 }
@@ -42,9 +42,10 @@ where
 {
     fn render(self, nodes: Nodes<C>) {
         let state = nodes.state();
+        let comp = nodes.comp();
         if let Some(text_node) = nodes.create_qr_text_node() {
             let (value, fn_map) = self.into_parts();
-            let map_node = QrTextNodeMap::new(text_node, fn_map);
+            let map_node = QrTextNodeMap::new(text_node, comp, fn_map);
             match value.content().try_borrow_mut() {
                 Ok(mut this) => {
                     let u = map_node.map_with_state(state, this.value());
