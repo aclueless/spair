@@ -62,8 +62,12 @@ impl<C: Component, I> QrListRender<C, I> {
             .try_borrow()
             .expect_throw("QrListRender::render::rc_comp.try_borrow().");
         let state = comp.state();
-        for d in diffs.iter() {
-            self.render_change(state, items, d);
+        if diffs.iter().any(|d| matches!(d, Diff::New)) {
+            self.render_change(state, items, &Diff::New);
+        } else {
+            for d in diffs.iter() {
+                self.render_change(state, items, d);
+            }
         }
     }
 
@@ -78,8 +82,13 @@ impl<C: Component, I> QrListRender<C, I> {
     }
 
     fn all_new(&mut self, state: &C, items: &[I]) {
-        // clear
-        // render
+        if self.end_flag_node.is_none() {
+            self.parent.set_text_content(None);
+            self.nodes.clear_vec();
+        } else {
+            self.nodes.clear(&self.parent);
+        }
+        //check_or_create_element_for_list
     }
 
     fn push(&mut self, state: &C, item: &I) {
