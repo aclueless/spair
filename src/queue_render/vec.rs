@@ -22,7 +22,7 @@ impl<I> QrVec<I> {
 
 pub struct QrVecContent<I> {
     values: Vec<I>,
-    queue: bool,
+    a_render_is_queued: bool,
     diffs: Vec<Diff<I>>,
     // TODO: remove dropped renders
     renders: Vec<Box<dyn ListRender<I>>>,
@@ -38,7 +38,7 @@ impl<I> QrVecContent<I> {
             r.render(&self.values, &self.diffs);
         }
         self.diffs.clear();
-        self.queue = false;
+        self.a_render_is_queued = false;
     }
 }
 
@@ -58,7 +58,7 @@ impl<I: 'static> QrVec<I> {
     pub fn new() -> Self {
         Self(Rc::new(RefCell::new(QrVecContent {
             values: Vec::new(),
-            queue: false,
+            a_render_is_queued: false,
             diffs: Vec::new(),
             renders: Vec::new(),
         })))
@@ -70,10 +70,10 @@ impl<I: 'static> QrVec<I> {
                 .0
                 .try_borrow_mut()
                 .expect_throw("queue_render::vec::QrVec::queue_me try_borrow_mut");
-            if this.queue {
+            if this.a_render_is_queued {
                 return;
             }
-            this.queue = true;
+            this.a_render_is_queued = true;
         }
         let this = self.clone();
         super::queue_render(move || this.render());

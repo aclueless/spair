@@ -15,7 +15,7 @@ impl<C, T, U> MapValue<C, T, U> {
 
 pub struct ValueContent<T> {
     value: T,
-    queue: bool,
+    a_render_is_queued: bool,
     // TODO: Removed dropped renders
     renders: Vec<Box<dyn QueueRender<T>>>,
 }
@@ -33,14 +33,14 @@ impl<T> ValueContent<T> {
         for r in self.renders.iter_mut() {
             r.render(&self.value)
         }
-        self.queue = false;
+        self.a_render_is_queued = false;
     }
 
     fn need_to_queue_a_render(&mut self) -> bool {
-        if self.queue {
+        if self.a_render_is_queued {
             return false;
         }
-        self.queue = true;
+        self.a_render_is_queued = true;
         true
     }
 }
@@ -49,7 +49,7 @@ impl<T> From<T> for Value<T> {
     fn from(t: T) -> Self {
         Value(Rc::new(RefCell::new(ValueContent {
             value: t,
-            queue: false,
+            a_render_is_queued: false,
             renders: Vec::new(),
         })))
     }
