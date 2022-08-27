@@ -1,7 +1,7 @@
 mod attribute;
 mod element;
-mod text;
+mod nodes;
 
 pub use attribute::*;
 pub use element::*;
-pub use text::*;
+pub use nodes::*;

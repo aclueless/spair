@@ -1,4 +1,4 @@
-use super::ParentAndChild;
+use super::AChildNode;
 use wasm_bindgen::UnwrapThrowExt;
 
 pub struct TextNode {
@@ -17,7 +17,7 @@ impl Clone for TextNode {
     }
 }
 
-impl ParentAndChild for TextNode {
+impl AChildNode for TextNode {
     fn ws_node(&self) -> &web_sys::Node {
         &self.ws_node
     }

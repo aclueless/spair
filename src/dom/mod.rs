@@ -37,14 +37,13 @@ pub trait NameSpace {
     const NAMESPACE: &'static str;
 }
 
-#[deprecated = "Renamed this to AChildNode"]
-pub trait ParentAndChild {
+pub trait AChildNode {
     fn ws_node(&self) -> &web_sys::Node;
 
     fn append_to(&self, parent: &web_sys::Node) {
         parent
             .append_child(self.ws_node())
-            .expect_throw("ParentAndChild::append_to");
+            .expect_throw("AChildNode::append_to");
     }
 
     fn insert_before_a_sibling(
@@ -54,17 +53,17 @@ pub trait ParentAndChild {
     ) {
         parent
             .insert_before(self.ws_node(), next_sibling)
-            .expect_throw("ParentAndChild::insert_before");
+            .expect_throw("AChildNode::insert_before");
     }
 
     fn remove_from(&self, parent: &web_sys::Node) {
         parent
             .remove_child(self.ws_node())
-            .expect_throw("ParentAndChild::remove_from");
+            .expect_throw("AChildNode::remove_from");
     }
 }
 
-impl ParentAndChild for web_sys::Node {
+impl AChildNode for web_sys::Node {
     fn ws_node(&self) -> &web_sys::Node {
         self
     }

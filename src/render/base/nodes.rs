@@ -2,7 +2,7 @@ use super::{ElementRender, ListRender};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
     dom::{
-        ElementStatus, GroupedNodes, NameSpace, Nodes, OwnedComponent, ParentAndChild, RefComponent,
+        ElementStatus, GroupedNodes, NameSpace, Nodes, OwnedComponent, AChildNode, RefComponent,
     },
 };
 use wasm_bindgen::UnwrapThrowExt;

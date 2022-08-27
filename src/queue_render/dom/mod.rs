@@ -1,4 +1,4 @@
-use crate::dom::{Element, MaybeAChildNode, ParentAndChild};
+use crate::dom::{Element, MaybeAChildNode, AChildNode};
 use wasm_bindgen::UnwrapThrowExt;
 
 mod list;

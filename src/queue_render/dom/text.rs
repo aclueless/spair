@@ -5,9 +5,9 @@ use crate::{
 use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::dom::ParentAndChild;
+use crate::dom::AChildNode;
 
-// pub trait QrText: ParentAndChild {
+// pub trait QrText: AChildNode {
 //     fn clone_ws_node(&self) -> web_sys::Node;
 //     fn mark_as_unmounted(&self);
 // }
@@ -56,7 +56,7 @@ impl QrTextNode {
     }
 }
 
-impl ParentAndChild for QrTextNode {
+impl AChildNode for QrTextNode {
     fn ws_node(&self) -> &web_sys::Node {
         &self.0.ws_node
     }

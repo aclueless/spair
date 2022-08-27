@@ -3,7 +3,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use super::ElementRender;
 use crate::{
     component::{Comp, Component},
-    dom::{Element, ElementStatus, Key, KeyedElement, KeyedList, OldElement, ParentAndChild},
+    dom::{Element, ElementStatus, Key, KeyedElement, KeyedList, OldElement, AChildNode},
 };
 
 pub struct KeyedListContext<'a> {

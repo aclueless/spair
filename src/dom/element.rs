@@ -2,7 +2,7 @@
 use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use super::{AttributeValueList, ElementType, Nodes, ParentAndChild};
+use super::{AttributeValueList, ElementType, Nodes, AChildNode};
 
 #[derive(Debug)]
 pub struct Element {
@@ -29,7 +29,7 @@ impl Clone for Element {
     }
 }
 
-impl ParentAndChild for Element {
+impl AChildNode for Element {
     fn ws_node(&self) -> &web_sys::Node {
         self.ws_element.ws_node()
     }
