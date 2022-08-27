@@ -2,7 +2,7 @@
 use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use super::{AttributeValueList, ElementType, Nodes, AChildNode};
+use super::{AChildNode, AttributeValueList, ElementType, Nodes};
 
 #[derive(Debug)]
 pub struct Element {

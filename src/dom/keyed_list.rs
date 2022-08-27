@@ -1,4 +1,4 @@
-use super::{Element, AChildNode};
+use super::{AChildNode, Element};
 use std::collections::HashMap;
 use wasm_bindgen::UnwrapThrowExt;
 

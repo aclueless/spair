@@ -1,9 +1,9 @@
-use std::{rc::Rc, cell::Cell};
+use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{
     component::{Comp, Component},
-    dom::{WsElement, Nodes, ElementStatus, ELementTag},
+    dom::{ELementTag, ElementStatus, Nodes, WsElement},
     queue_render::vec::ListDiff,
     render::base::ElementRender,
 };
@@ -75,7 +75,7 @@ impl<C: Component, I> QrList<C, I> {
         match diff {
             ListDiff::Push(item) => self.push(state, item),
             ListDiff::Pop => self.pop(),
-            ListDiff::Insert { index, value} => self.insert(state, *index, value),
+            ListDiff::Insert { index, value } => self.insert(state, *index, value),
             ListDiff::RemoveAtIndex(index) => self.remove(*index),
         }
     }
@@ -83,7 +83,8 @@ impl<C: Component, I> QrList<C, I> {
     fn push(&mut self, state: &C, item: &I) {
         let index = self.nodes.count();
         let (namespace, tag) = self.element_tag.namespace_and_tag();
-        self.nodes.create_new_element_ns(namespace, tag, &self.parent, self.end_flag_node.as_ref());
+        self.nodes
+            .create_new_element_ns(namespace, tag, &self.parent, self.end_flag_node.as_ref());
         let element = self.nodes.get_element_mut(index);
         let render = ElementRender::new(&self.comp, state, element, ElementStatus::JustCreated);
         (self.fn_render)(item, render);

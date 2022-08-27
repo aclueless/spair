@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     dom::{ElementStatus, WsElement},
     queue_render::{MapValue, QueueRender, Value},
-    render::{base::ElementRender},
+    render::base::ElementRender,
 };
 
 use super::{
@@ -148,6 +148,4 @@ impl<'a, C: Component> ElementRender<'a, C> {
     //         mode.use_template(),
     //     )
     // }
-
-
 }

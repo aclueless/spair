@@ -99,7 +99,11 @@ where
     T: ToString,
     U: 'static,
 {
-    pub fn new(text_node: QrTextNode, comp: Comp<C>, fn_map: impl Fn(&C, &T) -> U + 'static) -> Self {
+    pub fn new(
+        text_node: QrTextNode,
+        comp: Comp<C>,
+        fn_map: impl Fn(&C, &T) -> U + 'static,
+    ) -> Self {
         Self {
             text_node,
             comp,

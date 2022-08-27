@@ -17,9 +17,7 @@ mod utils;
 mod queue_render;
 
 pub use application::Application;
-pub use component::{
-    AsChildComp, Checklist, Child, ChildComp, Comp, Component, ShouldRender,
-};
+pub use component::{AsChildComp, Checklist, Child, ChildComp, Comp, Component, ShouldRender};
 pub use dom::ELementTag;
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;

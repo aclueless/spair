@@ -1,8 +1,11 @@
 use crate::{
     component::Component,
     dom::{AChildNode, ELementTag},
-    queue_render::dom::{QrNode, QrTextNode, QrList},
-    render::{ListElementCreation, base::{NodesRender, ElementRender}},
+    queue_render::dom::{QrList, QrNode, QrTextNode},
+    render::{
+        base::{ElementRender, NodesRender},
+        ListElementCreation,
+    },
 };
 
 impl<'a, C: Component> NodesRender<'a, C> {
@@ -12,27 +15,23 @@ impl<'a, C: Component> NodesRender<'a, C> {
         let tn = if self.new_node() {
             let tn = QrTextNode::new();
             tn.insert_before_a_sibling(self.parent(), self.next_sibling());
-            self.nodes_mut()
-                //.add_qr_node(QrNode::ActiveTextNode(Box::new(tn.clone())));
-                .add_qr_node(QrNode::ActiveText(tn.clone()));
+            self.nodes_mut().add_qr_node(QrNode::Text(tn.clone()));
             Some(tn)
         } else {
             let index = self.index();
             let qr_node = self.nodes_mut().get_qr_node(index);
             match qr_node {
-                //QrNode::ActiveTextNode(_) => None,
-                QrNode::ActiveText(_) => None,
+                QrNode::Text(_) => None,
                 QrNode::ClonedWsNode(wsn) => match wsn.take() {
                     Some(wsn) => {
                         let tn = QrTextNode::with_cloned_node(wsn);
-                        //*qr_node = QrNode::ActiveTextNode(Box::new(tn.clone()));
-                        *qr_node = QrNode::ActiveText(tn.clone());
+                        *qr_node = QrNode::Text(tn.clone());
                         Some(tn)
                     }
                     None => None,
                 },
                 QrNode::List(_) => {
-                    panic!("spair internal error: Expect a ClonedWsNode or ActiveText");
+                    panic!("spair internal error: Expect a ClonedWsNode or Text");
                 }
             }
         };
@@ -40,7 +39,13 @@ impl<'a, C: Component> NodesRender<'a, C> {
         tn
     }
 
-    pub fn create_qr_list<I, R>(&mut self, mode: ListElementCreation, tag: ELementTag, fn_render: R, full_list: bool) -> Option<QrList<C,I>>
+    pub fn create_qr_list<I, R>(
+        &mut self,
+        mode: ListElementCreation,
+        tag: ELementTag,
+        fn_render: R,
+        full_list: bool,
+    ) -> Option<QrList<C, I>>
     where
         for<'r> R: 'static + Fn(&I, ElementRender<'r, C>),
     {
@@ -49,8 +54,8 @@ impl<'a, C: Component> NodesRender<'a, C> {
                 None
             } else {
                 let n: web_sys::Node = crate::utils::document()
-                .create_comment("Mark the end of a qr list")
-                .into();
+                    .create_comment("Mark the end of a qr list")
+                    .into();
                 n.insert_before_a_sibling(self.parent(), self.next_sibling());
                 Some(n)
             };
@@ -88,8 +93,8 @@ impl<'a, C: Component> NodesRender<'a, C> {
                     }
                     None => None,
                 },
-                QrNode::ActiveText(_) => {
-                    panic!("spair internal error: Expect a ClonedWsNode or ActiveText");
+                QrNode::Text(_) => {
+                    panic!("spair internal error: Expect a ClonedWsNode or Text");
                 }
             }
         };

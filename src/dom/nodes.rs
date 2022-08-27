@@ -1,7 +1,7 @@
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
 use super::{
-    Element, ElementStatus, NameSpace, Node, OwnedComponent, AChildNode, RefComponent, TextNode,
+    AChildNode, Element, ElementStatus, NameSpace, Node, OwnedComponent, RefComponent, TextNode,
 };
 use crate::component::{Comp, Component, ComponentHandle};
 #[cfg(feature = "queue-render")]
