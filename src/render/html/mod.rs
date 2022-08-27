@@ -4,7 +4,7 @@
 // `Hems` is short for `HTML element methods`
 // `Hams` is short for `HTML attribute methods`
 
-use crate::dom::NameSpace;
+use crate::dom::ElementTag;
 
 mod attributes;
 mod attributes_elements_with_ambiguous_names;
@@ -29,9 +29,14 @@ mod keyed_list;
 #[cfg(feature = "keyed-list")]
 pub use keyed_list::*;
 
-pub(crate) struct HtmlNameSpace;
-impl NameSpace for HtmlNameSpace {
+#[derive(Copy, Clone)]
+pub struct HtmlTag(pub &'static str);
+
+impl ElementTag for HtmlTag {
     const NAMESPACE: &'static str = "http://www.w3.org/1999/xhtml";
+    fn tag_name(&self) -> &str {
+        self.0
+    }
 }
 
 // This is a struct to make sure that a name that appears in both

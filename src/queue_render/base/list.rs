@@ -3,7 +3,7 @@ use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{
     component::{Comp, Component},
-    dom::{ELementTag, ElementStatus, Nodes},
+    dom::{ElementTag, ElementStatus, Nodes},
     queue_render::{
         dom::QrListRepresentative,
         vec::{Diff, ListRender},
@@ -11,18 +11,18 @@ use crate::{
     render::base::ElementRender,
 };
 
-pub struct QrListRender<C: Component, I> {
+pub struct QrListRender<C: Component, E, I> {
     comp: Comp<C>,
     parent: web_sys::Node,
     nodes: Nodes,
     end_flag_node: Option<web_sys::Node>,
-    element_tag: ELementTag,
+    element_tag: E,
     use_template: bool,
     fn_render: Box<dyn Fn(&I, ElementRender<C>)>,
     unmounted: Rc<Cell<bool>>,
 }
 
-impl<C: Component, I> ListRender<I> for QrListRender<C, I> {
+impl<C: Component, E: ElementTag, I> ListRender<I> for QrListRender<C, E, I> {
     fn render(&mut self, items: &[I], diffs: &[Diff<I>]) {
         self.render_list(items, diffs);
     }
@@ -32,9 +32,9 @@ impl<C: Component, I> ListRender<I> for QrListRender<C, I> {
     }
 }
 
-impl<C: Component, I> QrListRender<C, I> {
+impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
     pub fn new(
-        element_tag: ELementTag,
+        element_tag: E,
         comp: Comp<C>,
         parent: web_sys::Node,
         end_flag_node: Option<web_sys::Node>,
@@ -88,14 +88,15 @@ impl<C: Component, I> QrListRender<C, I> {
         } else {
             self.nodes.clear(&self.parent);
         }
-        //check_or_create_element_for_list
+        for item in items {
+            self.push(state, item);
+        }
     }
 
     fn push(&mut self, state: &C, item: &I) {
         let index = self.nodes.count();
-        let (namespace, tag) = self.element_tag.namespace_and_tag();
         self.nodes
-            .create_new_element_ns(namespace, tag, &self.parent, self.end_flag_node.as_ref());
+            .check_or_create_element_for_list(self.element_tag, index, &self.parent, self.end_flag_node.as_ref(), self.use_template);
         let element = self.nodes.get_element_mut(index);
         let render = ElementRender::new(&self.comp, state, element, ElementStatus::JustCreated);
         (self.fn_render)(item, render);

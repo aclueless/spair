@@ -2,7 +2,7 @@
 use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use super::{AChildNode, AttributeValueList, ElementType, Nodes};
+use super::{AChildNode, AttributeValueList, ElementTag, ElementType, Nodes};
 
 #[derive(Debug)]
 pub struct Element {
@@ -36,9 +36,9 @@ impl AChildNode for Element {
 }
 
 impl Element {
-    pub fn new_ns(ns: &str, tag: &str) -> Self {
+    pub fn new_ns<E: ElementTag>(tag: E) -> Self {
         Self {
-            ws_element: WsElement::new(ns, tag),
+            ws_element: WsElement::new(E::NAMESPACE, tag.tag_name()),
             attributes: Default::default(),
             nodes: Default::default(),
             #[cfg(feature = "queue-render")]

@@ -17,24 +17,15 @@ mod keyed_list;
 #[cfg(feature = "keyed-list")]
 pub use keyed_list::*;
 
-pub enum ELementTag {
-    Html(&'static str),
-    #[cfg(feature = "svg")]
-    Svg(&'static str),
-}
-
-impl ELementTag {
-    pub fn namespace_and_tag(&self) -> (&str, &str) {
-        match self {
-            Self::Html(tag) => (crate::render::html::HtmlNameSpace::NAMESPACE, tag),
-            #[cfg(feature = "svg")]
-            Self::Svg(tag) => (crate::render::svg::SvgNameSpace::NAMESPACE, tag),
-        }
-    }
-}
-
-pub trait NameSpace {
+pub trait ElementTag: Copy {
     const NAMESPACE: &'static str;
+    fn tag_name(&self) -> &str;
+}
+
+pub enum TagName {
+    Html(crate::render::html::HtmlTag),
+    #[cfg(feature = "svg")]
+    Svg(crate::render::svg::SvgTag),
 }
 
 pub trait AChildNode {

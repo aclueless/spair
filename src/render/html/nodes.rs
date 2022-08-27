@@ -1,6 +1,6 @@
 use super::{
-    AttributesOnly, HtmlElementRender, HtmlNameSpace, Render, SelectElementValueManager,
-    StaticAttributes, StaticAttributesOnly, StaticRender,
+    AttributesOnly, HtmlElementRender, Render, SelectElementValueManager,
+    StaticAttributes, StaticAttributesOnly, StaticRender, HtmlTag,
 };
 #[cfg(feature = "svg")]
 use crate::render::svg::{SvgElementRender, SvgNameSpace};
@@ -30,7 +30,7 @@ pub trait HemsHandMade<C: Component>: Sized {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            render.get_element_render::<HtmlNameSpace>("br");
+            render.get_element_render(HtmlTag("br"));
         }
         render.next_index();
         this
@@ -40,7 +40,7 @@ pub trait HemsHandMade<C: Component>: Sized {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            render.get_element_render::<HtmlNameSpace>("hr");
+            render.get_element_render(HtmlTag("hr"));
         }
         render.next_index();
         this
@@ -96,11 +96,11 @@ where
     C: Component,
     O: From<Self> + NodesRenderMut<C>,
 {
-    fn render_element(self, tag: &str, element_render: impl FnOnce(HtmlElementRender<C>)) -> O {
+    fn render_element(self, tag: &'static str, element_render: impl FnOnce(HtmlElementRender<C>)) -> O {
         let mut this: O = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            let e = render.get_element_render::<HtmlNameSpace>(tag).into();
+            let e = render.get_element_render(HtmlTag(tag)).into();
             element_render(e);
         }
         render.next_index();

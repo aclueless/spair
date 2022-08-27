@@ -1,7 +1,7 @@
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
 use super::{
-    AChildNode, Element, ElementStatus, NameSpace, Node, OwnedComponent, RefComponent, TextNode,
+    AChildNode, Element, ElementTag, ElementStatus, Node, OwnedComponent, RefComponent, TextNode,
 };
 use crate::component::{Comp, Component, ComponentHandle};
 #[cfg(feature = "queue-render")]
@@ -59,37 +59,36 @@ impl Nodes {
         }
     }
 
-    pub fn create_new_element_ns(
+    pub fn create_new_element_ns<E: ElementTag>(
         &mut self,
-        ns: &str,
-        tag: &str,
+        tag: E,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
     ) {
-        let e = Element::new_ns(ns, tag);
+        let e = Element::new_ns(tag);
         e.insert_before_a_sibling(parent, next_sibling);
         self.0.push(Node::Element(e));
     }
 
-    pub fn check_or_create_element<N: NameSpace>(
+    pub fn check_or_create_element<E: ElementTag>(
         &mut self,
-        tag: &str,
+        tag: E,
         index: usize,
         parent_status: ElementStatus,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
     ) -> ElementStatus {
         if index == self.0.len() {
-            self.create_new_element_ns(N::NAMESPACE, tag, parent, next_sibling);
+            self.create_new_element_ns(tag, parent, next_sibling);
             ElementStatus::JustCreated
         } else {
             parent_status
         }
     }
 
-    pub fn check_or_create_element_for_list<N: NameSpace>(
+    pub fn check_or_create_element_for_list<E: ElementTag>(
         &mut self,
-        tag: &str,
+        tag: E,
         index: usize,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
@@ -99,7 +98,7 @@ impl Nodes {
         if index < item_count {
             ElementStatus::Existing
         } else if !use_template || item_count == 0 {
-            self.create_new_element_ns(N::NAMESPACE, tag, parent, next_sibling);
+            self.create_new_element_ns(tag, parent, next_sibling);
             ElementStatus::JustCreated
         } else {
             let element = self.0[0].clone();

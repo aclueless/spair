@@ -1,10 +1,10 @@
 use crate::{
     component::Component,
-    dom::{Key, Keyed, NameSpace},
+    dom::{Key, Keyed},
     render::{
         base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
         html::{
-            AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes,
+            AttributesOnly, HtmlElementRender, HtmlTag, StaticAttributes,
             StaticAttributesOnly,
         },
         ListElementCreation,

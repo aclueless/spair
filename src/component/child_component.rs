@@ -1,7 +1,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{Checklist, Comp, CompInstance, Component, RcComp};
-use crate::dom::{ELementTag, Element, NameSpace};
+use crate::dom::{Element, TagName};
 
 pub type ChildComp<C> = RcComp<C>;
 
@@ -12,18 +12,14 @@ impl<C: Component> ChildComp<C> {
 }
 
 pub trait AsChildComp: Sized + Component {
-    const ROOT_ELEMENT_TAG: ELementTag;
+    const ROOT_ELEMENT_TAG: TagName;
     type Properties;
     fn init(comp: &Comp<Self>, props: Self::Properties) -> Self;
     fn with_props(props: Self::Properties) -> ChildComp<Self> {
         let root_element = match Self::ROOT_ELEMENT_TAG {
-            ELementTag::Html(tag) => {
-                Element::new_ns(crate::render::html::HtmlNameSpace::NAMESPACE, tag)
-            }
+            TagName::Html(tag) => Element::new_ns(tag),
             #[cfg(feature = "svg")]
-            ELementTag::Svg(tag) => {
-                Element::new_ns(crate::render::svg::SvgNameSpace::NAMESPACE, tag)
-            }
+            TagName::Svg(tag) => Element::new_ns(tag),
         };
         let rc_comp = ChildComp::with_root(root_element);
         let comp = rc_comp.comp();

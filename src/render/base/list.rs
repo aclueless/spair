@@ -1,16 +1,13 @@
 use super::ElementRender;
 use crate::{
     component::{Comp, Component},
-    dom::{NameSpace, Nodes},
+    dom::{ElementTag, Nodes},
 };
 
 #[must_use = "Caller should set selected option for <select> element"]
 pub struct RememberSettingSelectedOption;
 
-pub struct ListRender<'a, C: Component> {
-    comp: &'a Comp<C>,
-    state: &'a C,
-    tag: &'a str,
+pub struct ListRender<'a> {
     use_template: bool,
     parent: &'a web_sys::Node,
     // This is None if it is a whole-list, the list is the only content of the parent node.
@@ -20,20 +17,14 @@ pub struct ListRender<'a, C: Component> {
     list: &'a mut Nodes,
 }
 
-impl<'a, C: Component> ListRender<'a, C> {
+impl<'a> ListRender<'a> {
     pub fn new(
-        comp: &'a Comp<C>,
-        state: &'a C,
         list: &'a mut Nodes,
-        tag: &'a str,
         parent: &'a web_sys::Node,
         end_of_list_flag: Option<&'a web_sys::Node>,
         use_template: bool,
     ) -> Self {
         Self {
-            comp,
-            state,
-            tag,
             use_template,
             parent,
             end_of_list_flag,
@@ -53,24 +44,25 @@ impl<'a, C: Component> ListRender<'a, C> {
         }
     }
 
-    pub fn render<N, I, II, R>(&mut self, items: II, render: R) -> RememberSettingSelectedOption
+    pub fn render<C, E, I, II, R>(&mut self, comp: &Comp<C>, state: &C, items: II, tag: E, render: R) -> RememberSettingSelectedOption
     where
-        N: NameSpace,
+        C: Component,
+        E: ElementTag,
         I: Copy,
         II: IntoIterator<Item = I>,
         for<'r> R: Fn(I, ElementRender<'r, C>),
     {
         let mut index = 0;
         for item in items {
-            let status = self.list.check_or_create_element_for_list::<N>(
-                self.tag,
+            let status = self.list.check_or_create_element_for_list(
+                tag,
                 index,
                 self.parent,
                 self.end_of_list_flag,
                 self.use_template,
             );
             let element = self.list.get_element_mut(index);
-            let r = ElementRender::new(self.comp, self.state, element, status);
+            let r = ElementRender::new(comp, state, element, status);
             render(item, r);
             index += 1;
         }

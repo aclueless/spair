@@ -1,6 +1,6 @@
 use crate::{
     component::Component,
-    dom::{AChildNode, ELementTag},
+    dom::{AChildNode, ElementTag},
     queue_render::{
         base::QrListRender,
         dom::{QrNode, QrTextNode},
@@ -42,13 +42,13 @@ impl<'a, C: Component> NodesRender<'a, C> {
         tn
     }
 
-    pub fn create_qr_list_render<I, R>(
+    pub fn create_qr_list_render<E: ElementTag, I, R>(
         &mut self,
         full_list: bool,
         mode: ListElementCreation,
-        tag: ELementTag,
+        tag: E,
         fn_render: R,
-    ) -> Option<QrListRender<C, I>>
+    ) -> Option<QrListRender<C, E, I>>
     where
         for<'i, 'r> R: 'static + Fn(&'i I, ElementRender<'r, C>),
     {

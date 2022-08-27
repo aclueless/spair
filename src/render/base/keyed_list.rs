@@ -674,11 +674,11 @@ mod keyed_list_with_render_tests {
     use wasm_bindgen::UnwrapThrowExt;
     use wasm_bindgen_test::*;
 
-    use crate::dom::{Element, NameSpace, Node};
+    use crate::dom::{Element, Node};
     use crate::render::ListElementCreation;
     use crate::render::{
         base::ElementRender,
-        html::{HemsForKeyedList, HtmlElementRender},
+        html::{HemsForKeyedList, HtmlElementRender, HtmlTag},
     };
 
     impl super::ItemWithLis<&()> {
@@ -687,7 +687,7 @@ mod keyed_list_with_render_tests {
                 item_state: &(),
                 old_element: Some(super::OldElement {
                     index,
-                    element: Element::new_ns(crate::render::html::HtmlNameSpace::NAMESPACE, "div"),
+                    element: Element::new_ns(HtmlTag("div")),
                 }),
                 lis: false,
             }
@@ -775,7 +775,7 @@ mod keyed_list_with_render_tests {
     impl PhantomApp {
         fn new() -> Self {
             let root =
-                crate::dom::Element::new_ns(crate::render::html::HtmlNameSpace::NAMESPACE, "div");
+                crate::dom::Element::new_ns(HtmlTag("div"));
             let _rc =
                 crate::component::RcComp::with_ws_root(root.ws_element().clone().into_inner());
             _rc.set_state(Unit);

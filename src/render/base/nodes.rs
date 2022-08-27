@@ -2,7 +2,7 @@ use super::{ElementRender, ListRender};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
     dom::{
-        AChildNode, ElementStatus, GroupedNodes, NameSpace, Nodes, OwnedComponent, RefComponent,
+        AChildNode, ElementStatus, ElementTag, GroupedNodes, Nodes, OwnedComponent, RefComponent,
     },
 };
 use wasm_bindgen::UnwrapThrowExt;
@@ -90,8 +90,8 @@ impl<'a, C: Component> NodesRender<'a, C> {
         self.index += 1;
     }
 
-    pub fn get_element_render<N: NameSpace>(&mut self, tag: &str) -> ElementRender<C> {
-        let status = self.nodes.check_or_create_element::<N>(
+    pub fn get_element_render<E: ElementTag>(&mut self, tag: E) -> ElementRender<C> {
+        let status = self.nodes.check_or_create_element(
             tag,
             self.index,
             self.parent_status,
@@ -117,21 +117,19 @@ impl<'a, C: Component> NodesRender<'a, C> {
         }
     }
 
-    pub fn get_list_render(&mut self, tag: &'a str, use_template: bool) -> ListRender<C> {
+    pub fn get_list_render(&mut self, use_template: bool) -> (&Comp<C>, &C, ListRender) {
         let gn = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);
         self.index += 1;
         let (list, next_sibling) = gn.nodes_mut_and_end_flag_node();
-        ListRender::new(
-            self.comp,
-            self.state,
+        let lr = ListRender::new(
             list,
-            tag,
             self.parent,
             Some(next_sibling),
             use_template,
-        )
+        );
+        (self.comp, self.state, lr)
     }
 
     pub fn component_ref<CC: Component>(&mut self, child: &ChildComp<CC>) {

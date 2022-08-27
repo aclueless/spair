@@ -4,8 +4,8 @@ use crate::{
     render::{
         base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
         html::{
-            AttributesOnly, HtmlElementRender, HtmlNameSpace, StaticAttributes,
-            StaticAttributesOnly,
+            AttributesOnly, HtmlElementRender, StaticAttributes,
+            StaticAttributesOnly, HtmlTag,
         },
         ListElementCreation,
     },
@@ -18,7 +18,7 @@ pub trait HemsForList<'a, C: Component>:
         mut self,
         items: II,
         mode: ListElementCreation,
-        tag: &'a str,
+        tag: &'static str,
         render: R,
     ) -> NodesExtensions<'a>
     where
@@ -26,16 +26,19 @@ pub trait HemsForList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         for<'r> R: Fn(I, crate::Element<'r, C>),
     {
-        let mut r = self.element_render_mut().list_render(mode, tag);
+        let tag = HtmlTag(tag);
+        //let comp = self.comp();
+        //let state = self.state();
+        let (comp, state, mut r) = self.element_render_mut().list_render(mode);
         let _do_we_have_to_care_about_this_returned_value_ = r
-            .render::<HtmlNameSpace, _, _, _>(items, |item: I, er: ElementRender<C>| {
+            .render(&comp, state, items, tag, |item: I, er: ElementRender<C>| {
                 render(item, er.into())
             });
 
         self.make_nodes_extensions()
     }
 
-    fn lwr_clone<I, II, R>(self, items: II, tag: &'a str, render: R) -> NodesExtensions<'a>
+    fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> NodesExtensions<'a>
     where
         I: Copy,
         II: IntoIterator<Item = I>,
