@@ -1,7 +1,10 @@
 use crate::{
     component::Component,
     dom::{AChildNode, ELementTag},
-    queue_render::dom::{QrList, QrNode, QrTextNode},
+    queue_render::{
+        base::QrListRender,
+        dom::{QrNode, QrTextNode},
+    },
     render::{
         base::{ElementRender, NodesRender},
         ListElementCreation,
@@ -39,15 +42,15 @@ impl<'a, C: Component> NodesRender<'a, C> {
         tn
     }
 
-    pub fn create_qr_list<I, R>(
+    pub fn create_qr_list_render<I, R>(
         &mut self,
+        full_list: bool,
         mode: ListElementCreation,
         tag: ELementTag,
         fn_render: R,
-        full_list: bool,
-    ) -> Option<QrList<C, I>>
+    ) -> Option<QrListRender<C, I>>
     where
-        for<'r> R: 'static + Fn(&I, ElementRender<'r, C>),
+        for<'i, 'r> R: 'static + Fn(&'i I, ElementRender<'r, C>),
     {
         let list = if self.new_node() {
             let end_flag_node = if full_list {
@@ -60,7 +63,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
                 Some(n)
             };
 
-            let list = QrList::new(
+            let list = QrListRender::new(
                 tag,
                 self.comp(),
                 self.parent().clone(),
@@ -80,7 +83,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
                 QrNode::List(_) => None,
                 QrNode::ClonedWsNode(wsn) => match wsn.take() {
                     Some(wsn) => {
-                        let list = QrList::new(
+                        let list = QrListRender::new(
                             tag,
                             comp,
                             parent,
@@ -94,7 +97,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
                     None => None,
                 },
                 QrNode::Text(_) => {
-                    panic!("spair internal error: Expect a ClonedWsNode or Text");
+                    panic!("spair internal error: Expect a ClonedWsNode or List");
                 }
             }
         };

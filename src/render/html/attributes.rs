@@ -12,7 +12,7 @@ use crate::{
 #[cfg(feature = "queue-render")]
 use crate::{
     dom::WsElement,
-    queue_render::{MapValue, Value},
+    queue_render::value::{MapValue, Value},
 };
 
 macro_rules! make_traits_for_property_values {

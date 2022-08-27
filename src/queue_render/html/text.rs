@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     queue_render::{
         dom::{QrTextNode, QrTextNodeMap},
-        MapValue, Value,
+        value::{MapValue, Value},
     },
     render::{
         base::NodesRenderMut,

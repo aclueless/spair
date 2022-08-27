@@ -1,7 +1,7 @@
 use crate::{
     component::Component,
     dom::WsElement,
-    queue_render::{MapValue, Value},
+    queue_render::value::{MapValue, Value},
     render::{base::ElementRenderMut, html::HtmlElementRender},
 };
 

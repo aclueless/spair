@@ -1,16 +1,11 @@
 use crate::{
     component::{Comp, Component},
-    queue_render::QueueRender,
+    queue_render::value::QueueRender,
 };
 use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
 use crate::dom::AChildNode;
-
-// pub trait QrText: AChildNode {
-//     fn clone_ws_node(&self) -> web_sys::Node;
-//     fn mark_as_unmounted(&self);
-// }
 
 pub struct QrTextNode(Rc<TextNodeInner>);
 
@@ -61,19 +56,6 @@ impl AChildNode for QrTextNode {
         &self.0.ws_node
     }
 }
-
-// impl QrText for QrTextNode {
-//     fn clone_ws_node(&self) -> web_sys::Node {
-//         self.0
-//             .ws_node
-//             .clone_node_with_deep(false)
-//             .expect_throw("dom::queue_render::text::QrText for TextNode::clone_ws_node")
-//     }
-
-//     fn mark_as_unmounted(&self) {
-//         self.0.unmounted.set(true);
-//     }
-// }
 
 impl<T: ToString> QueueRender<T> for QrTextNode {
     fn render(&mut self, t: &T) {

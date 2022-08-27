@@ -22,7 +22,7 @@ pub use dom::ELementTag;
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;
 #[cfg(feature = "queue-render")]
-pub use queue_render::Value;
+pub use queue_render::value::Value;
 #[cfg(feature = "svg")]
 pub use render::svg::{
     SvgElementRender as Svg, SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes,
@@ -61,6 +61,9 @@ pub mod prelude {
         HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
         MethodsForSelectedValueSelectedIndex,
     };
+
+    #[cfg(feature = "queue-render")]
+    pub use crate::queue_render::html::HemsForQrList;
 
     #[cfg(feature = "keyed-list")]
     pub use crate::render::html::HemsForKeyedList;
