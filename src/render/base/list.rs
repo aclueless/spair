@@ -44,7 +44,14 @@ impl<'a> ListRender<'a> {
         }
     }
 
-    pub fn render<C, E, I, II, R>(&mut self, comp: &Comp<C>, state: &C, items: II, tag: E, render: R) -> RememberSettingSelectedOption
+    pub fn render<C, E, I, II, R>(
+        &mut self,
+        comp: &Comp<C>,
+        state: &C,
+        items: II,
+        tag: E,
+        render: R,
+    ) -> RememberSettingSelectedOption
     where
         C: Component,
         E: ElementTag,

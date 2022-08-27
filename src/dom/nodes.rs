@@ -1,7 +1,7 @@
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
 use super::{
-    AChildNode, Element, ElementTag, ElementStatus, Node, OwnedComponent, RefComponent, TextNode,
+    AChildNode, Element, ElementStatus, ElementTag, Node, OwnedComponent, RefComponent, TextNode,
 };
 use crate::component::{Comp, Component, ComponentHandle};
 #[cfg(feature = "queue-render")]
@@ -47,6 +47,31 @@ impl Nodes {
     pub fn append_to(&self, parent: &web_sys::Node) {
         self.0.iter().for_each(|node| node.append_to(parent));
     }
+
+    // The following methods, from here until '================' are especically
+    // use for QrListRender, but the list only store elements: Vec<Element>.
+    // TODO: Should we have an Vec<Element> for List and QrList
+    // This method is use for QrList, so the items are always Element
+    pub fn pop_element(&mut self) -> Option<Element> {
+        match self.0.pop()? {
+            Node::Element(e) => Some(e),
+            _ => None, // Actually, it is a bug if it is not an Element
+        }
+    }
+
+    pub fn insert_element_at(&mut self, index: usize, element: Element) {
+        self.0.insert(index, Node::Element(element));
+    }
+
+    pub fn remove_element_at(&mut self, index: usize) -> Element {
+        match self.0.remove(index) {
+            Node::Element(e) => e,
+            _ => panic!("remove_element_at should be an Element"),
+        }
+    }
+
+    // '================'
+    // end of QrListRender only methods
 
     pub fn get_element_mut(&mut self, index: usize) -> &mut Element {
         match self

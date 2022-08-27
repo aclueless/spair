@@ -123,12 +123,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
             .grouped_nodes(self.index, self.parent, self.next_sibling);
         self.index += 1;
         let (list, next_sibling) = gn.nodes_mut_and_end_flag_node();
-        let lr = ListRender::new(
-            list,
-            self.parent,
-            Some(next_sibling),
-            use_template,
-        );
+        let lr = ListRender::new(list, self.parent, Some(next_sibling), use_template);
         (self.comp, self.state, lr)
     }
 

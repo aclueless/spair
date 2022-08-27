@@ -1,15 +1,14 @@
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::queue_render::{base::QrListRender, vec::QrVec};
+use crate::queue_render::vec::QrVec;
 
 use crate::{
     component::Component,
-    dom::ElementTag,
     render::{
         base::{ElementRender, NodesRenderMut},
         html::{
-            AttributesOnly, HtmlElementRender, NodesOwned, StaticAttributes, StaticAttributesOnly,
-            HtmlTag,
+            AttributesOnly, HtmlElementRender, HtmlTag, NodesOwned, StaticAttributes,
+            StaticAttributesOnly,
         },
         ListElementCreation,
     },

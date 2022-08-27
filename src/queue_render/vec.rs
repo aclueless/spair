@@ -42,16 +42,17 @@ impl<I> QrVecContent<I> {
     }
 }
 
+// To support multi-changes, we have to store a copy of the item for some change here.
 pub enum Diff<I> {
     New,
     Push(I),
     Pop,
-    Insert {
-        // To support multi-change, we have to store a copy of the item here.
-        index: usize,
-        value: I,
-    },
+    Insert { index: usize, value: I },
     RemoveAtIndex(usize),
+    Change { index: usize, new_value: I },
+    Move { old_index: usize, new_index: usize },
+    Swap { index_1: usize, index_2: usize },
+    Clear,
 }
 
 impl<I: 'static> QrVec<I> {
@@ -84,5 +85,11 @@ impl<I: 'static> QrVec<I> {
             Ok(mut this) => this.render(),
             Err(e) => log::error!("queue_render::vec::QrVec::render {}", e),
         }
+    }
+}
+
+impl<I: 'static + Clone> QrVec<I> {
+    pub fn pop(&mut self) -> Option<I> {
+        None
     }
 }

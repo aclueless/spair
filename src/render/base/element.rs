@@ -84,13 +84,13 @@ impl<'a, C: Component> ElementRender<'a, C> {
         self.status
     }
 
-    pub(crate) fn index(&self) -> usize {
-        self.index
-    }
+    // pub(crate) fn index(&self) -> usize {
+    //     self.index
+    // }
 
-    pub(crate) fn next_index(&mut self) {
-        self.index += 1;
-    }
+    // pub(crate) fn next_index(&mut self) {
+    //     self.index += 1;
+    // }
 
     pub fn set_static_mode(&mut self) {
         self.update_mode = false;
@@ -274,12 +274,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
 
     pub fn list_render(&mut self, mode: ListElementCreation) -> (&Comp<C>, &C, ListRender) {
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
-        let lr = ListRender::new(
-            nodes,
-            parent,
-            None,
-            mode.use_template(),
-        );
+        let lr = ListRender::new(nodes, parent, None, mode.use_template());
         (self.comp, self.state, lr)
     }
 

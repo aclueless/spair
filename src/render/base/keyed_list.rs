@@ -774,8 +774,7 @@ mod keyed_list_with_render_tests {
 
     impl PhantomApp {
         fn new() -> Self {
-            let root =
-                crate::dom::Element::new_ns(HtmlTag("div"));
+            let root = crate::dom::Element::new_ns(HtmlTag("div"));
             let _rc =
                 crate::component::RcComp::with_ws_root(root.ws_element().clone().into_inner());
             _rc.set_state(Unit);

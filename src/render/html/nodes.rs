@@ -1,6 +1,6 @@
 use super::{
-    AttributesOnly, HtmlElementRender, Render, SelectElementValueManager,
-    StaticAttributes, StaticAttributesOnly, StaticRender, HtmlTag,
+    AttributesOnly, HtmlElementRender, HtmlTag, Render, SelectElementValueManager,
+    StaticAttributes, StaticAttributesOnly, StaticRender,
 };
 #[cfg(feature = "svg")]
 use crate::render::svg::{SvgElementRender, SvgNameSpace};
@@ -96,7 +96,11 @@ where
     C: Component,
     O: From<Self> + NodesRenderMut<C>,
 {
-    fn render_element(self, tag: &'static str, element_render: impl FnOnce(HtmlElementRender<C>)) -> O {
+    fn render_element(
+        self,
+        tag: &'static str,
+        element_render: impl FnOnce(HtmlElementRender<C>),
+    ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {

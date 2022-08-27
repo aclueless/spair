@@ -4,8 +4,7 @@ use crate::{
     render::{
         base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
         html::{
-            AttributesOnly, HtmlElementRender, StaticAttributes,
-            StaticAttributesOnly, HtmlTag,
+            AttributesOnly, HtmlElementRender, HtmlTag, StaticAttributes, StaticAttributesOnly,
         },
         ListElementCreation,
     },
@@ -30,8 +29,8 @@ pub trait HemsForList<'a, C: Component>:
         //let comp = self.comp();
         //let state = self.state();
         let (comp, state, mut r) = self.element_render_mut().list_render(mode);
-        let _do_we_have_to_care_about_this_returned_value_ = r
-            .render(&comp, state, items, tag, |item: I, er: ElementRender<C>| {
+        let _do_we_have_to_care_about_this_returned_value_ =
+            r.render(&comp, state, items, tag, |item: I, er: ElementRender<C>| {
                 render(item, er.into())
             });
 

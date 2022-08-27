@@ -18,11 +18,11 @@ mod queue_render;
 
 pub use application::Application;
 pub use component::{AsChildComp, Checklist, Child, ChildComp, Comp, Component, ShouldRender};
-pub use render::{html::HtmlTag};
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;
 #[cfg(feature = "queue-render")]
-pub use queue_render::value::Value;
+pub use queue_render::{value::Value, vec::QrVec};
+pub use render::html::HtmlTag;
 #[cfg(feature = "svg")]
 pub use render::svg::{
     SvgElementRender as Svg, SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes,

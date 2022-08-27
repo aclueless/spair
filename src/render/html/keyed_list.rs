@@ -4,8 +4,7 @@ use crate::{
     render::{
         base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
         html::{
-            AttributesOnly, HtmlElementRender, HtmlTag, StaticAttributes,
-            StaticAttributesOnly,
+            AttributesOnly, HtmlElementRender, HtmlTag, StaticAttributes, StaticAttributesOnly,
         },
         ListElementCreation,
     },
