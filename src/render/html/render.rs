@@ -73,3 +73,8 @@ pub trait ListItemRender<C: Component> {
     const ROOT_ELEMENT_TAG: &'static str;
     fn render(self, item: crate::Element<C>);
 }
+
+pub trait ListItemRenderRef<C: Component> {
+    const ROOT_ELEMENT_TAG: &'static str;
+    fn render(&self, item: crate::Element<C>);
+}

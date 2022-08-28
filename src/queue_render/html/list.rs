@@ -1,6 +1,6 @@
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::queue_render::vec::QrVec;
+use crate::{queue_render::vec::QrVec, render::html::ListItemRenderRef};
 
 use crate::{
     component::Component,
@@ -43,37 +43,36 @@ pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
             .add_render(Box::new(qr_list_render));
         list.check_and_queue_a_render();
     }
-    /*
-        fn lwr_clone<I, II, R>(self, items: II, tag: &'a str, render: R) -> NodesExtensions<'a>
-        where
-            I: Copy,
-            II: IntoIterator<Item = I>,
-            for<'r> R: Fn(I, crate::Element<'r, C>),
-        {
-            self.list_with_render(items, ListElementCreation::Clone, tag, render)
-        }
 
-        fn list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
-        where
-            I: Copy + ListItemRender<C>,
-            II: IntoIterator<Item = I>,
-        {
-            self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
-        }
+    fn qr_lwr_clone<I, R>(self,
+        list: &QrVec<I>,
+        tag: &'static str,
+        render: R,
+    ) where
+        I: 'static,
+        for<'i, 'r> R: 'static + Fn(&'i I, crate::Element<'r, C>),
+    {
+        self.qr_list_with_render(list, ListElementCreation::Clone, tag, render)
+    }
 
-        fn list_clone<I, II>(self, items: II) -> NodesExtensions<'a>
-        where
-            I: Copy + ListItemRender<C>,
-            II: IntoIterator<Item = I>,
-        {
-            self.list_with_render(
-                items,
-                ListElementCreation::Clone,
-                I::ROOT_ELEMENT_TAG,
-                I::render,
-            )
-        }
-    */
+    fn qr_list<I: 'static>(self, list: &QrVec<I>, mode: ListElementCreation)
+    where
+        I: ListItemRenderRef<C>,
+    {
+        self.qr_list_with_render(list, mode, I::ROOT_ELEMENT_TAG, I::render)
+    }
+
+    fn qr_list_clone<I: 'static>(self, list: &QrVec<I>)
+    where
+        I: ListItemRenderRef<C>,
+    {
+        self.qr_list_with_render(
+            list,
+            ListElementCreation::Clone,
+            I::ROOT_ELEMENT_TAG,
+            I::render,
+        )
+    }
 }
 
 impl<'a, C: Component> HemsForQrList<'a, C> for HtmlElementRender<'a, C> {}

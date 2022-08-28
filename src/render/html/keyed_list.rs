@@ -17,7 +17,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         mut self,
         items: II,
         mode: ListElementCreation,
-        tag: &'a str,
+        tag: &'static str,
         fn_get_key: G,
         fn_render: R,
     ) -> NodesExtensions<'a>
@@ -31,22 +31,16 @@ pub trait HemsForKeyedList<'a, C: Component>:
         let fn_render = |item: I, element: ElementRender<C>| {
             fn_render(item, element.into());
         };
-        let _select_element_value_will_be_set_on_dropping_of_the_manager =
-            self.element_render_mut().keyed_list_with_render(
-                items,
-                mode,
-                tag,
-                HtmlNameSpace::NAMESPACE,
-                fn_get_key,
-                fn_render,
-            );
+        let _select_element_value_will_be_set_on_dropping_of_the_manager = self
+            .element_render_mut()
+            .keyed_list_with_render(items, mode, HtmlTag(tag), fn_get_key, fn_render);
         self.make_nodes_extensions()
     }
 
     fn klwr_clone<I, II, G, K, R>(
         self,
         items: II,
-        tag: &'a str,
+        tag: &'static str,
         fn_get_key: G,
         fn_render: R,
     ) -> NodesExtensions<'a>

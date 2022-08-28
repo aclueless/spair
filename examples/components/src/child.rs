@@ -58,7 +58,7 @@ impl spair::Component for ChildState {
 }
 
 impl spair::AsChildComp for ChildState {
-    const ROOT_ELEMENT_TAG: spair::ELementTag = spair::ELementTag::Html("div");
+    const ROOT_ELEMENT_TAG: spair::TagName = spair::TagName::Html(spair::HtmlTag("div"));
     type Properties = ChildProps;
     fn init(_comp: &spair::Comp<Self>, props: Self::Properties) -> Self {
         Self::new(props)

@@ -1,6 +1,6 @@
 use super::{
-    SvgAttributesOnly, SvgElementRender, SvgNameSpace, SvgRender, SvgStaticAttributes,
-    SvgStaticAttributesOnly, SvgStaticRender,
+    SvgAttributesOnly, SvgElementRender, SvgRender, SvgStaticAttributes, SvgStaticAttributesOnly,
+    SvgStaticRender, SvgTag,
 };
 use crate::{
     component::{Child, ChildComp, Comp, Component},
@@ -12,11 +12,15 @@ where
     C: Component,
     O: From<Self> + NodesRenderMut<C>,
 {
-    fn render_element(self, tag: &str, element_render: impl FnOnce(SvgElementRender<C>)) -> O {
+    fn render_element(
+        self,
+        tag: &'static str,
+        element_render: impl FnOnce(SvgElementRender<C>),
+    ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            let e = render.get_element_render::<SvgNameSpace>(tag).into();
+            let e = render.get_element_render(SvgTag(tag)).into();
             element_render(e);
         }
         render.next_index();

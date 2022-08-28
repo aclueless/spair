@@ -98,7 +98,7 @@ impl spair::Component for Simulation {
 }
 
 impl spair::AsChildComp for Simulation {
-    const ROOT_ELEMENT_TAG: spair::ELementTag = spair::ELementTag::Svg("svg");
+    const ROOT_ELEMENT_TAG: spair::TagName = spair::TagName::Svg(spair::SvgTag("svg"));
     type Properties = Settings;
     fn init(comp: &spair::Comp<Self>, props: Self::Properties) -> Self {
         Self::new(props, comp)

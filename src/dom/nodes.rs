@@ -309,6 +309,12 @@ impl Clone for GroupedNodes {
     }
 }
 
+impl Default for GroupedNodes {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GroupedNodes {
     pub fn new() -> Self {
         let end_flag_node = crate::utils::document()

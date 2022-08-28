@@ -3,12 +3,14 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use super::ElementRender;
 use crate::{
     component::{Comp, Component},
-    dom::{AChildNode, Element, ElementStatus, Key, KeyedElement, KeyedList, OldElement},
+    dom::{
+        AChildNode, Element, ElementStatus, ElementTag, Key, KeyedElement, KeyedList, OldElement,
+    },
 };
 
-pub struct KeyedListContext<'a> {
+pub struct KeyedListContext<'a, E> {
     parent: &'a web_sys::Node,
-    root_item_tag: &'a str,
+    root_item_tag: E,
     old: PeekableDoubleEndedIterator<
         std::iter::Enumerate<std::slice::IterMut<'a, Option<KeyedElement>>>,
     >,
@@ -16,26 +18,23 @@ pub struct KeyedListContext<'a> {
     old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
     new_item_count: usize,
     next_sibling: Option<web_sys::Element>,
-    name_space: &'a str,
     template: Option<&'a mut Element>,
     require_init_template: bool,
 }
 
-impl<'a> KeyedListContext<'a> {
+impl<'a, E: ElementTag> KeyedListContext<'a, E> {
     pub fn new(
         list: &'a mut KeyedList,
-        root_item_tag: &'a str,
-        name_space: &'a str,
+        root_item_tag: E,
         new_item_count: usize,
         parent: &'a web_sys::Node,
         use_template: bool,
-    ) -> KeyedListContext<'a> {
+    ) -> Self {
         list.pre_render(new_item_count);
 
         let mut require_init_template = false;
         if use_template {
-            require_init_template =
-                list.set_template(|| Element::new_ns(name_space, root_item_tag));
+            require_init_template = list.set_template(|| Element::new_ns(root_item_tag));
         }
         let (template, old, new, old_elements_map) = list.items_mut();
         KeyedListContext {
@@ -46,15 +45,14 @@ impl<'a> KeyedListContext<'a> {
             old_elements_map,
             new_item_count,
             next_sibling: None,
-            name_space,
             template,
             require_init_template,
         }
     }
 }
 
-pub struct KeyedListRender<'a, C: Component, G, R> {
-    list_context: KeyedListContext<'a>,
+pub struct KeyedListRender<'a, C: Component, E, G, R> {
+    list_context: KeyedListContext<'a, E>,
     render_context: RenderContext<'a, C, G, R>,
 }
 
@@ -116,12 +114,13 @@ where
     }
 }
 
-impl<'a, C, G, R> KeyedListRender<'a, C, G, R>
+impl<'a, C, E, G, R> KeyedListRender<'a, C, E, G, R>
 where
     C: Component,
+    E: ElementTag,
 {
     pub fn new(
-        list_context: KeyedListContext<'a>,
+        list_context: KeyedListContext<'a, E>,
         render_context: RenderContext<'a, C, G, R>,
     ) -> Self {
         Self {
@@ -133,10 +132,7 @@ where
         match &self.list_context.template {
             Some(template) => (Clone::clone(*template), ElementStatus::JustCloned),
             None => (
-                Element::new_ns(
-                    self.list_context.name_space,
-                    self.list_context.root_item_tag,
-                ),
+                Element::new_ns(self.list_context.root_item_tag),
                 ElementStatus::JustCreated,
             ),
         }

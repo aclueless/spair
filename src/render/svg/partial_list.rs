@@ -1,5 +1,5 @@
 use super::{
-    SvgListItemRender, SvgNameSpace, SvgNodes, SvgNodesOwned, SvgStaticNodes, SvgStaticNodesOwned,
+    SvgListItemRender, SvgNodes, SvgNodesOwned, SvgStaticNodes, SvgStaticNodesOwned, SvgTag,
 };
 use crate::{
     component::Component,
@@ -14,23 +14,24 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
         mut self,
         items: II,
         mode: ListElementCreation,
-        tag: &'a str,
+        tag: &'static str,
         render: R,
     ) where
         I: Copy,
         II: IntoIterator<Item = I>,
         for<'r> R: Fn(I, crate::Svg<'r, C>),
     {
-        let mut r = self
-            .nodes_render_mut()
-            .get_list_render(tag, mode.use_template());
-        let _do_we_have_to_care_about_this_returned_value_ = r
-            .render::<SvgNameSpace, _, _, _>(items, |item: I, er: ElementRender<C>| {
-                render(item, er.into())
-            });
+        let (comp, state, mut r) = self.nodes_render_mut().get_list_render(mode.use_template());
+        let _do_we_have_to_care_about_this_returned_value_ = r.render(
+            comp,
+            state,
+            items,
+            SvgTag(tag),
+            |item: I, er: ElementRender<C>| render(item, er.into()),
+        );
     }
 
-    fn lwr_clone<I, II, R>(self, items: II, tag: &'a str, render: R)
+    fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R)
     where
         I: Copy,
         II: IntoIterator<Item = I>,

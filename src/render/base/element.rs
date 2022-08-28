@@ -8,7 +8,7 @@ use wasm_bindgen::UnwrapThrowExt;
 
 #[cfg(feature = "keyed-list")]
 use crate::{
-    dom::Key,
+    dom::{ElementTag, Key},
     render::base::{
         KeyedListContext, KeyedListRender, RememberSettingSelectedOption, RenderContext,
     },
@@ -279,16 +279,16 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_with_render<I, II, G, K, R>(
+    pub fn keyed_list_with_render<E, I, II, G, K, R>(
         &mut self,
         items: II,
         mode: ListElementCreation,
-        tag: &'a str,
-        name_space: &'a str,
+        tag: E,
         fn_get_key: G,
         fn_render: R,
     ) -> RememberSettingSelectedOption
     where
+        E: ElementTag,
         I: Copy,
         II: IntoIterator<Item = I>,
         G: Fn(I) -> K,
@@ -302,14 +302,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         let use_template = mode.use_template();
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
         let mut keyed_list_render = KeyedListRender::new(
-            KeyedListContext::new(
-                nodes.keyed_list(),
-                tag,
-                name_space,
-                items.len(),
-                parent,
-                use_template,
-            ),
+            KeyedListContext::new(nodes.keyed_list(), tag, items.len(), parent, use_template),
             RenderContext::new(self.comp, self.state, fn_get_key, fn_render),
         );
         keyed_list_render.update(items.into_iter())

@@ -1,3 +1,4 @@
+#[cfg(feature = "queue-render")]
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{
@@ -555,6 +556,6 @@ impl<'a, C: Component> HtmlMatchIfRender<'a, C> {
     }
 
     pub fn comp(&self) -> Comp<C> {
-        self.0.comp().clone()
+        self.0.comp()
     }
 }

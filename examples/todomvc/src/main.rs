@@ -239,7 +239,7 @@ impl spair::Render<App> for Main {
                 })
                 .update_nodes()
                 .ul(|u| {
-                    u.static_attributes().class("todo-list").list(
+                    u.static_attributes().class("todo-list").list_ref(
                         state
                             .data
                             .items
@@ -353,9 +353,9 @@ impl spair::Render<App> for Info {
 //     }
 // }
 
-impl spair::ListItemRender<App> for &TodoItem {
+impl spair::ListItemRenderRef<App> for TodoItem {
     const ROOT_ELEMENT_TAG: &'static str = "li";
-    fn render(self, li: spair::Element<App>) {
+    fn render(&self, li: spair::Element<App>) {
         let comp = li.comp();
         let state = li.state();
         let id = self.id;

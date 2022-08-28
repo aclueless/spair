@@ -20,17 +20,18 @@ pub use application::Application;
 pub use component::{AsChildComp, Checklist, Child, ChildComp, Comp, Component, ShouldRender};
 #[cfg(feature = "keyed-list")]
 pub use dom::Keyed;
+pub use dom::TagName;
 #[cfg(feature = "queue-render")]
 pub use queue_render::{value::Value, vec::QrVec};
 pub use render::html::HtmlTag;
 #[cfg(feature = "svg")]
 pub use render::svg::{
-    SvgElementRender as Svg, SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes,
+    SvgElementRender as Svg, SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgTag,
 };
 pub use render::{
     html::predefined_attribute_types::*,
     html::HtmlElementRender as Element,
-    html::{ListItemRender, Nodes, Render, StaticNodes, StaticRender},
+    html::{ListItemRender, ListItemRenderRef, Nodes, Render, StaticNodes, StaticRender},
     ListElementCreation,
 };
 

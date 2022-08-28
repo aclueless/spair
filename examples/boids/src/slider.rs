@@ -128,7 +128,7 @@ impl spair::Component for Slider {
 }
 
 impl spair::AsChildComp for Slider {
-    const ROOT_ELEMENT_TAG: spair::ELementTag = spair::ELementTag::Html("div");
+    const ROOT_ELEMENT_TAG: spair::TagName = spair::TagName::Html(spair::HtmlTag("div"));
     type Properties = SliderProps;
     fn init(_: &spair::Comp<Self>, props: Self::Properties) -> Self {
         Self { props, value: 0.0 }
