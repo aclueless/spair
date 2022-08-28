@@ -41,7 +41,7 @@ pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
                 "queue_render::html::list::HemsForQrList::qr_list_with_render content borrow mut",
             )
             .add_render(Box::new(qr_list_render));
-        list.queue_me();
+        list.check_and_queue_a_render();
     }
     /*
         fn lwr_clone<I, II, R>(self, items: II, tag: &'a str, render: R) -> NodesExtensions<'a>

@@ -78,7 +78,7 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
             Diff::Pop => self.pop(),
             Diff::Insert { index, value } => self.insert(state, *index, value),
             Diff::RemoveAtIndex(index) => self.remove(*index),
-            Diff::Change { index, new_value } => self.re_render(state, *index, new_value),
+            Diff::ReplaceAt { index, new_value } => self.re_render(state, *index, new_value),
             Diff::Move {
                 old_index,
                 new_index,
