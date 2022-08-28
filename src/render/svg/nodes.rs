@@ -456,4 +456,12 @@ impl<'a, C: Component> SvgMatchIfRender<'a, C> {
     pub fn render_on_arm_index(self, index: u32) -> SvgNodesOwned<'a, C> {
         SvgNodesOwned::new(self.0.render_on_arm_index(index))
     }
+
+    pub fn state(&self) -> &'a C {
+        self.0.state()
+    }
+
+    pub fn comp(&self) -> Comp<C> {
+        self.0.comp().clone()
+    }
 }

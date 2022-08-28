@@ -1,13 +1,18 @@
+use wasm_bindgen::UnwrapThrowExt;
+
 use super::{
     AttributesOnly, HtmlElementRender, HtmlTag, Render, SelectElementValueManager,
     StaticAttributes, StaticAttributesOnly, StaticRender,
 };
 #[cfg(feature = "svg")]
-use crate::render::svg::{SvgElementRender, SvgNameSpace};
+use crate::render::svg::{SvgElementRender, SvgTag};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
     render::base::{ElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut},
 };
+
+#[cfg(feature = "queue-render")]
+use crate::queue_render::value::Value;
 
 pub struct HtmlNodesRender<'n, C: Component> {
     nodes_render: NodesRender<'n, C>,
@@ -55,12 +60,33 @@ pub trait HemsHandMade<C: Component>: Sized {
         this
     }
 
+    #[cfg(feature = "queue-render")]
+    fn qr_match_if<T: 'static>(
+        self,
+        value: &Value<T>,
+        f: impl Fn(&T, HtmlMatchIfRender<C>) + 'static,
+    ) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_render_mut();
+        if let Some(mi) = render.create_qr_match_if(move |t, mi| {
+            let mi = HtmlMatchIfRender(mi);
+            f(t, mi);
+        }) {
+            value
+                .content()
+                .try_borrow_mut()
+                .expect_throw("render::html::nodes::HemsHandMade::qr_match_if")
+                .add_render(Box::new(mi));
+        }
+        this
+    }
+
     #[cfg(feature = "svg")]
     fn svg(self, f: impl FnOnce(SvgElementRender<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            let r = render.get_element_render::<SvgNameSpace>("svg");
+            let r = render.get_element_render(SvgTag("svg"));
             f(r.into())
         }
         render.next_index();
@@ -522,5 +548,13 @@ impl<'a, C: Component> HtmlMatchIfRender<'a, C> {
             nodes_render: self.0.render_on_arm_index(index),
             _select_element_value_manager: None, // How about a match_if inside a <select> element?
         })
+    }
+
+    pub fn state(&self) -> &'a C {
+        self.0.state()
+    }
+
+    pub fn comp(&self) -> Comp<C> {
+        self.0.comp().clone()
     }
 }

@@ -310,7 +310,7 @@ impl Clone for GroupedNodes {
 }
 
 impl GroupedNodes {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let end_flag_node = crate::utils::document()
             .create_comment("Mark the end of a grouped node list")
             .into();
@@ -319,6 +319,18 @@ impl GroupedNodes {
             end_flag_node,
             nodes: Nodes::default(),
         }
+    }
+
+    pub fn with_flag(end_flag_node: web_sys::Node) -> Self {
+        Self {
+            active_index: None,
+            end_flag_node,
+            nodes: Nodes::default(),
+        }
+    }
+
+    pub fn end_flag_node(&self) -> &web_sys::Node {
+        &self.end_flag_node
     }
 
     pub fn set_active_index(&mut self, index: u32, parent: &web_sys::Node) -> ElementStatus {

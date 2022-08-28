@@ -105,7 +105,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
     }
 
     pub fn get_match_if_render(&mut self) -> MatchIfRender<C> {
-        let match_if = self
+        let grouped_nodes = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);
         self.index += 1;
@@ -113,7 +113,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
             comp: self.comp,
             state: self.state,
             parent: self.parent,
-            match_if,
+            grouped_nodes,
         }
     }
 
@@ -197,13 +197,36 @@ pub struct MatchIfRender<'a, C: Component> {
     state: &'a C,
 
     parent: &'a web_sys::Node,
-    match_if: &'a mut GroupedNodes,
+    grouped_nodes: &'a mut GroupedNodes,
 }
 
 impl<'a, C: Component> MatchIfRender<'a, C> {
+    pub fn new(
+        comp: &'a Comp<C>,
+        state: &'a C,
+
+        parent: &'a web_sys::Node,
+        grouped_nodes: &'a mut GroupedNodes,
+    ) -> Self {
+        Self {
+            comp,
+            state,
+            parent,
+            grouped_nodes,
+        }
+    }
+
+    pub fn state(&self) -> &'a C {
+        self.state
+    }
+
+    pub fn comp(&self) -> Comp<C> {
+        self.comp.clone()
+    }
+
     pub fn render_on_arm_index(self, index: u32) -> NodesRender<'a, C> {
-        let status = self.match_if.set_active_index(index, self.parent);
-        let (nodes, next_sibling) = self.match_if.nodes_mut_and_end_flag_node();
+        let status = self.grouped_nodes.set_active_index(index, self.parent);
+        let (nodes, next_sibling) = self.grouped_nodes.nodes_mut_and_end_flag_node();
 
         NodesRender {
             comp: self.comp,
