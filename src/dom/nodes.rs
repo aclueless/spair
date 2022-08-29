@@ -70,6 +70,14 @@ impl Nodes {
         }
     }
 
+    pub fn get_element(&self, index: usize) -> Option<&Element> {
+        match self.0.get(index) {
+            Some(Node::Element(element)) => Some(element),
+            None => None,
+            _ => panic!("dom::nodes::Nodes::get_element expected Node::Element"),
+        }
+    }
+
     // '================'
     // end of QrListRender only methods
 

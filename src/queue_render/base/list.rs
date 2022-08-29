@@ -125,21 +125,17 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
     }
 
     fn insert(&mut self, state: &C, index: usize, item: &I) {
-        let (mut new_element, status, next_sibling) = if self.use_template {
-            let existing_element = self.nodes.get_element_mut(index);
-            let new_element = existing_element.clone();
-            (
-                new_element,
-                ElementStatus::JustCloned,
-                Some(existing_element.ws_node()),
-            )
+        // An insert at the end of the list is handled by QrVec as a push
+        let existing_element = self.nodes.get_element(index);
+        let next_sibling = existing_element.map(|e| e.ws_node());
+        let (mut new_element, status) = if self.use_template {
+            let new_element = existing_element
+                .expect_throw("guanrantee valid index by QrVec::insert")
+                .clone();
+            (new_element, ElementStatus::JustCloned)
         } else {
             let element = Element::new_ns(self.element_tag);
-            (
-                element,
-                ElementStatus::JustCreated,
-                self.end_flag_node.as_ref(),
-            )
+            (element, ElementStatus::JustCreated)
         };
         let render = ElementRender::new(&self.comp, state, &mut new_element, status);
         (self.fn_render)(item, render);
@@ -160,8 +156,12 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
 
     fn move_item(&mut self, old_index: usize, new_index: usize) {
         let element = self.nodes.remove_element_at(old_index);
-        let next_sibling = self.nodes.get_element_mut(new_index).ws_node();
-        element.insert_before_a_sibling(&self.parent, Some(next_sibling));
+        let next_sibling = self
+            .nodes
+            .get_element(new_index)
+            .map(|e| e.ws_node())
+            .or(self.end_flag_node.as_ref());
+        element.insert_before_a_sibling(&self.parent, next_sibling);
         self.nodes.insert_element_at(new_index, element);
     }
 
@@ -178,13 +178,12 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
         high_element.insert_before_a_sibling(&self.parent, Some(low_node));
         self.nodes.insert_element_at(low_index, high_element);
 
-        let next_sibling = {
-            if high_index < self.nodes.count() {
-                Some(self.nodes.get_element_mut(high_index).ws_node())
-            } else {
-                self.end_flag_node.as_ref()
-            }
-        };
+        let next_sibling = self
+            .nodes
+            .get_element(high_index)
+            .map(|e| e.ws_node())
+            .or(self.end_flag_node.as_ref());
+
         low_element.insert_before_a_sibling(&self.parent, next_sibling);
         self.nodes.insert_element_at(high_index, low_element);
     }
@@ -230,7 +229,7 @@ mod qr_list_tests {
     impl Application for State {
         fn init(_comp: &crate::Comp<Self>) -> Self {
             Self {
-                vec: QrVec::with_values(vec![1, 5, 3, 3]),
+                vec: QrVec::with_values(vec![1, 5, 3, 7]),
             }
         }
     }
@@ -262,8 +261,8 @@ mod qr_list_tests {
     macro_rules! both_eq {
         ($x:literal, $expr:expr) => {
             let r = $expr;
-            assert_eq!(Some($x), r.0.as_deref());
-            assert_eq!(Some($x), r.1.as_deref());
+            assert_eq!(Some($x), r.0.as_deref(), "by cloning");
+            assert_eq!(Some($x), r.1.as_deref(), "by creating new");
         };
     }
 
@@ -273,12 +272,24 @@ mod qr_list_tests {
         let rc =
             crate::application::mount_to_element::<State>(root.ws_element().clone().into_inner());
 
-        both_eq! { "1533", qr_list_test(&rc, |_| {}) }
-        both_eq! { "15331", qr_list_test(&rc, |vec| vec.push(1)) }
-        both_eq! { "1331", qr_list_test(&rc, |vec| { vec.remove_at(1); }) }
-        both_eq! { "133", qr_list_test(&rc, |vec| { vec.pop(); }) }
-        both_eq! { "3133", qr_list_test(&rc, |vec| { vec.insert_at(0, 3).expect_throw("insert at 0"); }) }
-        both_eq! { "37133", qr_list_test(&rc, |vec| { vec.insert_at(1, 7).expect_throw("insert at 1"); }) }
-        both_eq! { "37133", qr_list_test(&rc, |vec| { vec.insert_at(5, 5).expect_throw("insert at 5"); }) }
+        both_eq! { "1537", qr_list_test(&rc, |_| {}) }
+        both_eq! { "15374", qr_list_test(&rc, |vec| vec.push(4)) }
+        both_eq! { "1374", qr_list_test(&rc, |vec| { vec.remove_at(1); }) }
+        both_eq! { "137", qr_list_test(&rc, |vec| { vec.pop(); }) }
+        both_eq! { "2137", qr_list_test(&rc, |vec| { vec.insert_at(0, 2).expect_throw("insert at 0"); }) }
+        both_eq! { "28137", qr_list_test(&rc, |vec| { vec.insert_at(1, 8).expect_throw("insert at 1"); }) }
+        both_eq! { "281375", qr_list_test(&rc, |vec| { vec.insert_at(5, 5).expect_throw("insert at 5"); }) }
+        both_eq! { "581372", qr_list_test(&rc, |vec| { vec.swap(0, 5).expect_throw("swap 0-5"); }) }
+        both_eq! { "781352", qr_list_test(&rc, |vec| { vec.swap(4, 0).expect_throw("swap 0-4"); }) }
+        both_eq! { "782351", qr_list_test(&rc, |vec| { vec.swap(2, 5).expect_throw("swap 2-5"); }) }
+        both_eq! { "723518", qr_list_test(&rc, |vec| { vec.r#move(1, 5).expect_throw("move 1-5"); }) }
+        both_eq! { "235718", qr_list_test(&rc, |vec| { vec.r#move(0, 3).expect_throw("move 0-3"); }) }
+        both_eq! { "723518", qr_list_test(&rc, |vec| { vec.r#move(3, 0).expect_throw("move 3-0"); }) }
+        both_eq! { "872351", qr_list_test(&rc, |vec| { vec.r#move(5, 0).expect_throw("move 5-0"); }) }
+        both_eq! { "870351", qr_list_test(&rc, |vec| { vec.replace_at(2, 0).expect_throw("move at 2"); }) }
+        both_eq! { "870359", qr_list_test(&rc, |vec| { vec.replace_at(5, 9).expect_throw("move at 5"); }) }
+        both_eq! { "670359", qr_list_test(&rc, |vec| { vec.replace_at(0, 6).expect_throw("move at 0"); }) }
+        both_eq! { "123456", qr_list_test(&rc, |vec| { vec.push(0); vec.new_values(vec![1,2,3,4,5,6]); }) }
+        both_eq! { "", qr_list_test(&rc, |vec| { vec.clear(); }) }
     }
 }
