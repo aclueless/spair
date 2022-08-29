@@ -1,5 +1,4 @@
 use super::ListItemRender;
-use super::ListItemRenderRef;
 use crate::{
     component::Component,
     render::{
@@ -14,7 +13,7 @@ use crate::{
 pub trait HemsForList<'a, C: Component>:
     Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>
 {
-    fn list_with_render_ref<'i, I, II, R>(
+    fn list_with_render<I, II, R>(
         mut self,
         items: II,
         mode: ListElementCreation,
@@ -22,8 +21,7 @@ pub trait HemsForList<'a, C: Component>:
         render: R,
     ) -> NodesExtensions<'a>
     where
-        I: 'static,
-        II: IntoIterator<Item = &'i I>,
+        II: Iterator<Item = I>,
         for<'r> R: Fn(&I, crate::Element<'r, C>),
     {
         let tag = HtmlTag(tag);
@@ -36,57 +34,26 @@ pub trait HemsForList<'a, C: Component>:
         self.make_nodes_extensions()
     }
 
-    fn list_with_render<I, II, R>(
-        mut self,
-        items: II,
-        mode: ListElementCreation,
-        tag: &'static str,
-        render: R,
-    ) -> NodesExtensions<'a>
-    where
-        I: Copy,
-        II: IntoIterator<Item = I>,
-        for<'r> R: Fn(I, crate::Element<'r, C>),
-    {
-        let tag = HtmlTag(tag);
-        let (comp, state, mut r) = self.element_render_mut().list_render(mode);
-        let _do_we_have_to_care_about_this_returned_value_ =
-            r.render(comp, state, items, tag, |item: I, er: ElementRender<C>| {
-                render(item, er.into())
-            });
-
-        self.make_nodes_extensions()
-    }
-
     fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> NodesExtensions<'a>
     where
-        I: Copy,
-        II: IntoIterator<Item = I>,
-        for<'r> R: Fn(I, crate::Element<'r, C>),
+        II: Iterator<Item = I>,
+        for<'r> R: Fn(&I, crate::Element<'r, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
 
-    fn list_ref<'i, I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
-    where
-        I: 'static + ListItemRenderRef<C>,
-        II: Iterator<Item = &'i I>,
-    {
-        self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
-    }
-
     fn list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
     where
-        I: Copy + ListItemRender<C>,
-        II: IntoIterator<Item = I>,
+        I: ListItemRender<C>,
+        II: Iterator<Item = I>,
     {
         self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
     }
 
     fn list_clone<I, II>(self, items: II) -> NodesExtensions<'a>
     where
-        I: Copy + ListItemRender<C>,
-        II: IntoIterator<Item = I>,
+        I: ListItemRender<C>,
+        II: Iterator<Item = I>,
     {
         self.list_with_render(
             items,

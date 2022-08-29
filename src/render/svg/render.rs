@@ -57,5 +57,12 @@ impl<C: Component> SvgStaticRender<C> for &String {
 
 pub trait SvgListItemRender<C: Component> {
     const ROOT_ELEMENT_TAG: &'static str;
-    fn render(self, item: SvgElementRender<C>);
+    fn render(&self, item: SvgElementRender<C>);
+}
+
+impl<C: Component, T: SvgListItemRender<C>> SvgListItemRender<C> for &T {
+    const ROOT_ELEMENT_TAG: &'static str = T::ROOT_ELEMENT_TAG;
+    fn render(&self, item: SvgElementRender<C>) {
+        (*self).render(item);
+    }
 }

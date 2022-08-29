@@ -22,13 +22,12 @@ pub trait HemsForKeyedList<'a, C: Component>:
         fn_render: R,
     ) -> NodesExtensions<'a>
     where
-        I: Copy,
         II: IntoIterator<Item = I>,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, HtmlElementRender<'r, C>),
+        for<'r> R: Fn(&I, HtmlElementRender<'r, C>),
     {
-        let fn_render = |item: I, element: ElementRender<C>| {
+        let fn_render = |item: &I, element: ElementRender<C>| {
             fn_render(item, element.into());
         };
         let _select_element_value_will_be_set_on_dropping_of_the_manager = self
@@ -45,11 +44,10 @@ pub trait HemsForKeyedList<'a, C: Component>:
         fn_render: R,
     ) -> NodesExtensions<'a>
     where
-        I: Copy,
         II: IntoIterator<Item = I>,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, HtmlElementRender<'r, C>),
+        for<'r> R: Fn(&I, HtmlElementRender<'r, C>),
     {
         self.keyed_list_with_render(
             items,
@@ -62,15 +60,15 @@ pub trait HemsForKeyedList<'a, C: Component>:
 
     fn keyed_list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
     where
-        for<'k> I: Copy + Keyed<'k> + super::ListItemRender<C>,
+        for<'k> I: Keyed<'k> + super::ListItemRender<C>,
         II: IntoIterator<Item = I>,
     {
         self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render)
     }
 
-    fn kl_clone<I, II>(self, items: II) -> NodesExtensions<'a>
+    fn keyed_list_clone<I, II>(self, items: II) -> NodesExtensions<'a>
     where
-        for<'k> I: Copy + Keyed<'k> + super::ListItemRender<C>,
+        for<'k> I: Keyed<'k> + super::ListItemRender<C>,
         II: IntoIterator<Item = I>,
     {
         self.keyed_list_with_render(

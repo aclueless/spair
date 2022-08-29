@@ -23,13 +23,12 @@ pub trait SemsForKeyedList<'a, C: Component>:
         fn_render: R,
     ) -> NodesExtensions<'a>
     where
-        I: Copy,
         II: IntoIterator<Item = I>,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, SvgElementRender<'r, C>),
+        for<'r> R: Fn(&I, SvgElementRender<'r, C>),
     {
-        let fn_render = |item: I, element: ElementRender<C>| {
+        let fn_render = |item: &I, element: ElementRender<C>| {
             fn_render(item, element.into());
         };
         let _select_element_value_will_be_set_on_dropping_of_the_manager = self
@@ -40,7 +39,7 @@ pub trait SemsForKeyedList<'a, C: Component>:
 
     fn keyed_list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
     where
-        for<'k> I: Copy + Keyed<'k> + super::SvgListItemRender<C>,
+        for<'k> I: Keyed<'k> + super::SvgListItemRender<C>,
         II: IntoIterator<Item = I>,
     {
         self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render)
@@ -54,11 +53,10 @@ pub trait SemsForKeyedList<'a, C: Component>:
         fn_render: R,
     ) -> NodesExtensions<'a>
     where
-        I: Copy,
         II: IntoIterator<Item = I>,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, SvgElementRender<'r, C>),
+        for<'r> R: Fn(&I, SvgElementRender<'r, C>),
     {
         self.keyed_list_with_render(
             items,
@@ -66,6 +64,20 @@ pub trait SemsForKeyedList<'a, C: Component>:
             tag,
             fn_get_key,
             fn_render,
+        )
+    }
+
+    fn keyed_list_clone<I, II>(self, items: II) -> NodesExtensions<'a>
+    where
+        for<'k> I: Keyed<'k> + super::SvgListItemRender<C>,
+        II: IntoIterator<Item = I>,
+    {
+        self.keyed_list_with_render(
+            items,
+            ListElementCreation::Clone,
+            I::ROOT_ELEMENT_TAG,
+            I::key,
+            I::render,
         )
     }
 }

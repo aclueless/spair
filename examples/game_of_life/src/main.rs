@@ -131,7 +131,7 @@ impl spair::Component for App {
                     .section(|s| {
                         s.class("game-area")
                             .div(|d| {
-                                d.class("game-of-life").kl_clone(
+                                d.class("game-of-life").keyed_list_clone(
                                     self.cellules
                                         .chunks(self.cellules_width)
                                         .enumerate()
@@ -180,21 +180,21 @@ fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
 struct Row<'a>(usize, &'a [Cellule]);
 impl<'k, 'a> spair::Keyed<'k> for Row<'a> {
     type Key = u32;
-    fn key(self) -> u32 {
+    fn key(&self) -> u32 {
         self.0 as u32
     }
 }
 
 impl<'a> spair::ListItemRender<App> for Row<'a> {
     const ROOT_ELEMENT_TAG: &'static str = "div";
-    fn render(self, element: spair::Element<App>) {
+    fn render(&self, element: spair::Element<App>) {
         let comp = element.comp();
         let offset = self.0 * element.state().cellules_width;
         element.class("game-row").klwr_clone(
             self.1.iter().enumerate(),
             "div",
-            |(index, _)| index as u32,
-            |(index, cellule), div| {
+            |&(index, _)| index as u32,
+            |&(index, cellule), div| {
                 let index = offset + index;
                 div.class("game-cellule")
                     .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")

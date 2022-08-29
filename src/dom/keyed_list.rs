@@ -2,9 +2,16 @@ use super::{AChildNode, Element};
 use std::collections::HashMap;
 use wasm_bindgen::UnwrapThrowExt;
 
-pub trait Keyed<'a> {
-    type Key: 'a + Into<Key> + PartialEq<Key>;
-    fn key(self) -> Self::Key;
+pub trait Keyed<'k> {
+    type Key: 'k + Into<Key> + PartialEq<Key>;
+    fn key(&self) -> Self::Key;
+}
+
+impl<'k, T: Keyed<'k>> Keyed<'k> for &T {
+    type Key = T::Key;
+    fn key(&self) -> Self::Key {
+        (*self).key()
+    }
 }
 
 #[derive(PartialEq, Eq, Hash, Clone)]

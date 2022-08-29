@@ -10,7 +10,7 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-spair = { path = "../../", features = ["svg"] }
+spair = { path = "../../", features = ["svg", "keyed-list"] }
 js-sys = "0.3"
 #wasm-logger = "0.2"
 gloo-timers = "0.2"

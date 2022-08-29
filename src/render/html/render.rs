@@ -71,10 +71,12 @@ impl<C: Component> Render<C> for String {
 
 pub trait ListItemRender<C: Component> {
     const ROOT_ELEMENT_TAG: &'static str;
-    fn render(self, item: crate::Element<C>);
+    fn render(&self, item: crate::Element<C>);
 }
 
-pub trait ListItemRenderRef<C: Component> {
-    const ROOT_ELEMENT_TAG: &'static str;
-    fn render(&self, item: crate::Element<C>);
+impl<C: Component, T: ListItemRender<C>> ListItemRender<C> for &T {
+    const ROOT_ELEMENT_TAG: &'static str = T::ROOT_ELEMENT_TAG;
+    fn render(&self, item: crate::Element<C>) {
+        (*self).render(item);
+    }
 }

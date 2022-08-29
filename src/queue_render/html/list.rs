@@ -1,6 +1,6 @@
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::{queue_render::vec::QrVec, render::html::ListItemRenderRef};
+use crate::{queue_render::vec::QrVec, render::html::ListItemRender};
 
 use crate::{
     component::Component,
@@ -44,11 +44,8 @@ pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
         list.check_and_queue_a_render();
     }
 
-    fn qr_lwr_clone<I, R>(self,
-        list: &QrVec<I>,
-        tag: &'static str,
-        render: R,
-    ) where
+    fn qr_lwr_clone<I, R>(self, list: &QrVec<I>, tag: &'static str, render: R)
+    where
         I: 'static,
         for<'i, 'r> R: 'static + Fn(&'i I, crate::Element<'r, C>),
     {
@@ -57,14 +54,14 @@ pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
 
     fn qr_list<I: 'static>(self, list: &QrVec<I>, mode: ListElementCreation)
     where
-        I: ListItemRenderRef<C>,
+        I: ListItemRender<C>,
     {
         self.qr_list_with_render(list, mode, I::ROOT_ELEMENT_TAG, I::render)
     }
 
     fn qr_list_clone<I: 'static>(self, list: &QrVec<I>)
     where
-        I: ListItemRenderRef<C>,
+        I: ListItemRender<C>,
     {
         self.qr_list_with_render(
             list,

@@ -17,9 +17,8 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
         tag: &'static str,
         render: R,
     ) where
-        I: Copy,
-        II: IntoIterator<Item = I>,
-        for<'r> R: Fn(I, crate::Svg<'r, C>),
+        II: Iterator<Item = I>,
+        for<'r> R: Fn(&I, crate::Svg<'r, C>),
     {
         let (comp, state, mut r) = self.nodes_render_mut().get_list_render(mode.use_template());
         let _do_we_have_to_care_about_this_returned_value_ = r.render(
@@ -27,31 +26,30 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
             state,
             items,
             SvgTag(tag),
-            |item: I, er: ElementRender<C>| render(item, er.into()),
+            |item: &I, er: ElementRender<C>| render(item, er.into()),
         );
     }
 
     fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R)
     where
-        I: Copy,
-        II: IntoIterator<Item = I>,
-        for<'r> R: Fn(I, crate::Svg<'r, C>),
+        II: Iterator<Item = I>,
+        for<'r> R: Fn(&I, crate::Svg<'r, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
 
     fn list<I, II>(self, items: II, mode: ListElementCreation)
     where
-        I: Copy + SvgListItemRender<C>,
-        II: IntoIterator<Item = I>,
+        I: SvgListItemRender<C>,
+        II: Iterator<Item = I>,
     {
         self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
     }
 
     fn list_clone<I, II>(self, items: II)
     where
-        I: Copy + SvgListItemRender<C>,
-        II: IntoIterator<Item = I>,
+        I: SvgListItemRender<C>,
+        II: Iterator<Item = I>,
     {
         self.list_with_render(
             items,

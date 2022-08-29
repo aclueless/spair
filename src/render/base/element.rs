@@ -289,11 +289,10 @@ impl<'a, C: Component> ElementRender<'a, C> {
     ) -> RememberSettingSelectedOption
     where
         E: ElementTag,
-        I: Copy,
         II: IntoIterator<Item = I>,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, ElementRender<'er, C>),
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size

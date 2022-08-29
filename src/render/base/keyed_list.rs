@@ -75,16 +75,16 @@ where
             fn_render,
         }
     }
-    fn get_key<I, K>(&self, item_state: I) -> K
+    fn get_key<I, K>(&self, item_state: &I) -> K
     where
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
     {
         (self.fn_get_key)(item_state)
     }
 
-    fn render<I>(&self, item_state: I, r: ElementRender<C>)
+    fn render<I>(&self, item_state: &I, r: ElementRender<C>)
     where
-        for<'r> R: Fn(I, ElementRender<'r, C>),
+        for<'r> R: Fn(&I, ElementRender<'r, C>),
     {
         (self.fn_render)(item_state, r)
     }
@@ -143,10 +143,9 @@ where
         items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
     ) -> super::RememberSettingSelectedOption
     where
-        I: Copy,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, ElementRender<'er, C>),
     {
         // No items? Just clear the current list.
         if self.list_context.new_item_count == 0 {
@@ -165,7 +164,7 @@ where
 
             // Render the template with the first item's state
             self.render_context
-                .render(*items_state_iter.peek().unwrap_throw(), er);
+                .render(&items_state_iter.peek().unwrap_throw(), er);
         }
         loop {
             let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
@@ -186,10 +185,9 @@ where
         items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
-        I: Copy,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, ElementRender<'er, C>),
     {
         let mut count = 0;
         loop {
@@ -199,7 +197,7 @@ where
                         .1
                         .as_ref()
                         .expect_throw("render::base::keyed_list::KeyedListRender::update_same_key_items_from_start");
-                    if !self.render_context.get_key(*item_state).eq(&item.key) {
+                    if !self.render_context.get_key(&item_state).eq(&item.key) {
                         return count;
                     }
                 }
@@ -207,7 +205,7 @@ where
             }
             count += 1;
             self.render_context.update_existing_item(
-                items_state_iter.next().unwrap_throw(),
+                &items_state_iter.next().unwrap_throw(),
                 self.list_context.old.next(),
                 self.list_context.new.next(),
                 None,
@@ -223,10 +221,9 @@ where
         >,
     ) -> usize
     where
-        I: Copy,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, ElementRender<'er, C>),
     {
         let mut count = 0;
         loop {
@@ -239,7 +236,7 @@ where
                         "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
                     );
 
-                    if !self.render_context.get_key(*item_state).eq(&item.key) {
+                    if !self.render_context.get_key(item_state).eq(&item.key) {
                         return count;
                     }
                     item.element.ws_element().clone()
@@ -248,7 +245,7 @@ where
             };
             count += 1;
             self.render_context.update_existing_item(
-                items_state_iter.next_back().unwrap_throw(),
+                &items_state_iter.next_back().unwrap_throw(),
                 self.list_context.old.next_back(),
                 self.list_context.new.next_back(),
                 None,
@@ -263,17 +260,16 @@ where
         items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
-        I: Copy,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, ElementRender<'er, C>),
     {
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
                 let item = item.1.as_ref().expect_throw(
                     "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
                 );
-                if !self.render_context.get_key(*item_state).eq(&item.key) {
+                if !self.render_context.get_key(item_state).eq(&item.key) {
                     return 0;
                 }
             }
@@ -287,7 +283,7 @@ where
         });
         let parent = self.list_context.parent;
         self.render_context.update_existing_item(
-            items_state_iter.next().unwrap_throw(),
+            &items_state_iter.next().unwrap_throw(),
             moved,
             self.list_context.new.next(),
             next_sibling,
@@ -308,17 +304,16 @@ where
         >,
     ) -> usize
     where
-        I: Copy,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, ElementRender<'er, C>),
     {
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
                 let item = item.1.as_ref().expect_throw(
                     "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
                 );
-                if !self.render_context.get_key(*item_state).eq(&item.key) {
+                if !self.render_context.get_key(item_state).eq(&item.key) {
                     return 0;
                 }
                 item.element.ws_element().clone()
@@ -326,7 +321,7 @@ where
             _ => return 0,
         };
         self.render_context.update_existing_item(
-            items_state_iter.next_back().unwrap_throw(),
+            &items_state_iter.next_back().unwrap_throw(),
             self.list_context.old.next(),
             self.list_context.new.next_back(),
             self.list_context.next_sibling.as_ref(),
@@ -345,10 +340,9 @@ where
         &mut self,
         items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
-        I: Copy,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, ElementRender<'er, C>),
     {
         if items_state_iter.peek().is_none() {
             self.remove_remain_items();
@@ -369,7 +363,7 @@ where
                 let old_element = self
                     .list_context
                     .old_elements_map
-                    .remove(&self.render_context.get_key(item).into());
+                    .remove(&self.render_context.get_key(&item).into());
                 ItemWithLis::new(item, old_element)
             })
             .collect();
@@ -395,7 +389,7 @@ where
                 status,
             );
 
-            self.render_context.render(item_state, er);
+            self.render_context.render(&item_state, er);
             if !lis {
                 let next_sibling = self
                     .list_context
@@ -409,7 +403,7 @@ where
             *self.list_context.new.next_back().expect_throw(
                 "render::base::keyed_list::KeyedListRender::update_other_items_in_the_middle",
             ) = Some(KeyedElement::new(
-                self.render_context.get_key(item_state).into(),
+                self.render_context.get_key(&item_state).into(),
                 element,
             ));
         }
@@ -459,10 +453,9 @@ where
         &mut self,
         items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
-        I: Copy,
-        G: Fn(I) -> K,
+        G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, ElementRender<'er, C>),
     {
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item();
@@ -474,7 +467,7 @@ where
                 status,
             );
 
-            self.render_context.render(item_state, er);
+            self.render_context.render(&item_state, er);
             element.insert_before_a_sibling(
                 self.list_context.parent,
                 self.list_context
@@ -488,7 +481,7 @@ where
                 .next()
                 .expect_throw("render::base::keyed_list::KeyedListRender::inser_remain_items") =
                 Some(KeyedElement::new(
-                    self.render_context.get_key(item_state).into(),
+                    self.render_context.get_key(&item_state).into(),
                     element,
                 ));
         }
@@ -813,12 +806,12 @@ mod keyed_list_with_render_tests {
         }
     }
 
-    fn render(item: &&str, span: crate::Element<Unit>) {
+    fn render(item: &&&str, span: crate::Element<Unit>) {
         use crate::render::html::MethodsForHtmlElementContent;
-        span.update_render(*item);
+        span.update_render(**item);
     }
 
-    fn get_key<'a>(item: &'a &str) -> &'a str {
+    fn get_key<'k>(item: &'k &&'static str) -> &'static str {
         *item
     }
 
