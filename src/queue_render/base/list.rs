@@ -189,3 +189,96 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
         self.nodes.insert_element_at(high_index, low_element);
     }
 }
+
+#[cfg(test)]
+mod qr_list_tests {
+    use wasm_bindgen_test::*;
+
+    use crate::prelude::*;
+
+    use crate::component::{Component, RcComp};
+    use crate::dom::{Element, Node};
+    use crate::queue_render::vec::QrVec;
+    use crate::render::html::ListItemRender;
+    use crate::render::ListElementCreation;
+
+    pub struct State {
+        vec: QrVec<u32>,
+    }
+
+    impl ListItemRender<State> for u32 {
+        const ROOT_ELEMENT_TAG: &'static str = "span";
+        fn render(&self, item: crate::Element<State>) {
+            item.update_render(*self);
+        }
+    }
+
+    impl Component for State {
+        type Routes = ();
+        fn render(&self, element: crate::Element<Self>) {
+            element
+                .div(|d| {
+                    d.id("qr_clone")
+                        .qr_list(&self.vec, ListElementCreation::Clone);
+                })
+                .div(|d| {
+                    d.id("qr_new").qr_list(&self.vec, ListElementCreation::New);
+                });
+        }
+    }
+
+    impl Application for State {
+        fn init(_comp: &crate::Comp<Self>) -> Self {
+            Self {
+                vec: QrVec::with_values(vec![1, 5, 3, 3]),
+            }
+        }
+    }
+
+    fn get_text(node: Option<&Node>) -> Option<String> {
+        match node.expect_throw("Should not empty") {
+            Node::Element(e) => {
+                return e.ws_element().ws_node().text_content();
+            }
+            n => panic!("Expected an Node::Element, found {:?}", n),
+        }
+    }
+
+    fn qr_list_test(
+        rc: &RcComp<State>,
+        do_change: impl FnOnce(&QrVec<u32>),
+    ) -> (Option<String>, Option<String>) {
+        do_change(&rc.comp_instance().state().vec);
+        crate::queue_render::execute_render_queue();
+        let comp_instance = rc.comp_instance();
+        let root = comp_instance.root_element();
+        assert_eq!(2, root.nodes().count());
+
+        let render_clone = get_text(root.nodes().nodes_vec().get(0));
+        let render_new = get_text(root.nodes().nodes_vec().get(1));
+        (render_clone, render_new)
+    }
+
+    macro_rules! both_eq {
+        ($x:literal, $expr:expr) => {
+            let r = $expr;
+            assert_eq!(Some($x), r.0.as_deref());
+            assert_eq!(Some($x), r.1.as_deref());
+        };
+    }
+
+    #[wasm_bindgen_test]
+    fn qr_list() {
+        let root = Element::new_ns(crate::render::html::HtmlTag("div"));
+        let rc =
+            crate::application::mount_to_element::<State>(root.ws_element().clone().into_inner());
+
+        both_eq! { "1533", qr_list_test(&rc, |_| {}) }
+        both_eq! { "15331", qr_list_test(&rc, |vec| vec.push(1)) }
+        both_eq! { "1331", qr_list_test(&rc, |vec| { vec.remove_at(1); }) }
+        both_eq! { "133", qr_list_test(&rc, |vec| { vec.pop(); }) }
+        both_eq! { "3133", qr_list_test(&rc, |vec| { vec.insert_at(0, 3).expect_throw("insert at 0"); }) }
+        both_eq! { "37133", qr_list_test(&rc, |vec| { vec.insert_at(1, 7).expect_throw("insert at 1"); }) }
+        both_eq! { "37133", qr_list_test(&rc, |vec| { vec.insert_at(5, 5).expect_throw("insert at 5"); }) }
+    }
+}

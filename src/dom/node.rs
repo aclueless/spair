@@ -23,6 +23,24 @@ pub enum Node {
     QrNode(QrNode),
 }
 
+impl std::fmt::Debug for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        let name = match self {
+            Self::Element(_) => "Node::Element",
+            Self::Text(_) => "Node::Text",
+            Self::GroupedNodes(_) => "Node::GroupedNodes",
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList(_) => "Node::KeyedList",
+            // This is actually never reachable?
+            Self::RefComponent(_) => "Node::RefComponent",
+            Self::OwnedComponent(_) => "Node::OwnedComponent",
+            #[cfg(feature = "queue-render")]
+            Self::QrNode(_) => "Node::QrNode",
+        };
+        f.write_fmt(format_args!("[{}]", name))
+    }
+}
+
 pub struct RefComponent {
     _comp: Box<dyn std::any::Any>,
     root_node: web_sys::Node,
