@@ -3,6 +3,8 @@ use std::{cell::RefCell, collections::VecDeque};
 pub mod base;
 pub mod dom;
 pub mod html;
+#[cfg(feature = "svg")]
+pub mod svg;
 pub mod value;
 pub mod vec;
 

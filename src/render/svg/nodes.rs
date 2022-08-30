@@ -1,3 +1,6 @@
+#[cfg(feature = "queue-render")]
+use wasm_bindgen::UnwrapThrowExt;
+
 use super::{
     SvgAttributesOnly, SvgElementRender, SvgRender, SvgStaticAttributes, SvgStaticAttributesOnly,
     SvgStaticRender, SvgTag,
@@ -6,6 +9,9 @@ use crate::{
     component::{Child, ChildComp, Comp, Component},
     render::base::{ElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut},
 };
+
+#[cfg(feature = "queue-render")]
+use crate::queue_render::value::Value;
 
 pub trait RenderSvgElement<C, O>: Sized
 where
@@ -36,6 +42,27 @@ pub trait SemsHandMade<C: Component>: Sized {
         let mi = render.get_match_if_render();
         let mi = SvgMatchIfRender(mi);
         f(mi);
+        this
+    }
+
+    #[cfg(feature = "queue-render")]
+    fn qr_match_if<T: 'static>(
+        self,
+        value: &Value<T>,
+        f: impl Fn(&T, SvgMatchIfRender<C>) + 'static,
+    ) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_render_mut();
+        if let Some(mi) = render.create_qr_match_if(move |t, mi| {
+            let mi = SvgMatchIfRender(mi);
+            f(t, mi);
+        }) {
+            value
+                .content()
+                .try_borrow_mut()
+                .expect_throw("render::svg::nodes::SemsHandMade::qr_match_if")
+                .add_render(Box::new(mi));
+        }
         this
     }
 
@@ -466,6 +493,6 @@ impl<'a, C: Component> SvgMatchIfRender<'a, C> {
     }
 
     pub fn comp(&self) -> Comp<C> {
-        self.0.comp().clone()
+        self.0.comp()
     }
 }
