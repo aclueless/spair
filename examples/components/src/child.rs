@@ -43,17 +43,17 @@ impl spair::Component for ChildState {
         let comp = element.comp();
         element
             .static_nodes()
-            .div(|d| d.static_render(self.props.title).done())
+            .div(|d| d.r_static(self.props.title).done())
             .p(|p| {
-                p.static_render(
+                p.r_static(
                     "This counter is in a child-component, \
                     the parent component will be notified every \
                     time the value is divisible by five.",
                 );
             })
-            .static_render(super::Button("-", comp.handler_mut(ChildState::decrement)))
-            .update_render(self.value)
-            .static_render(super::Button("+", comp.handler_mut(ChildState::increment)));
+            .r_static(super::Button("-", comp.handler_mut(ChildState::decrement)))
+            .r_update(self.value)
+            .r_static(super::Button("+", comp.handler_mut(ChildState::increment)));
     }
 }
 

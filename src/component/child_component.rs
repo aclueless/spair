@@ -90,6 +90,8 @@ impl<C: Component> Drop for ChildComp<C> {
     }
 }
 
+type GetValue<P, T> = Box<dyn Fn(&P) -> T>;
+
 pub struct Child<P, C, T>
 where
     P: Component,
@@ -98,7 +100,7 @@ where
 {
     child: ChildComp<C>,
     last_value: Option<T>,
-    fn_get_value: Option<Box<dyn Fn(&P) -> T>>,
+    fn_get_value: Option<GetValue<P, T>>,
     child_callback: Option<crate::CallbackArg<T>>,
 }
 

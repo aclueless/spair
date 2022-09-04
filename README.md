@@ -193,3 +193,4 @@ If you set an attribute in static-mode it will never be updated. It is easy to m
 [`ListItem`]: https://docs.rs/spair/latest/spair/trait.ListItem.html
 [`.match_if()`]: https://docs.rs/spair/latest/spair/dom/nodes/trait.DomBuilder.html#method.match_if
 
+

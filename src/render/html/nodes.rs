@@ -348,17 +348,17 @@ pub trait MethodsForHtmlElementContent<'n, C: Component>:
         self.into()
     }
 
-    fn update_render(self, render: impl Render<C>) -> NodesOwned<'n, C> {
+    fn r_update(self, render: impl Render<C>) -> NodesOwned<'n, C> {
         let n: NodesOwned<C> = self.into();
-        n.update_render(render)
+        n.r_update(render)
     }
 
-    fn static_render(self, render: impl StaticRender<C>) -> NodesOwned<'n, C> {
+    fn r_static(self, render: impl StaticRender<C>) -> NodesOwned<'n, C> {
         let n: NodesOwned<C> = self.into();
-        n.static_render(render)
+        n.r_static(render)
     }
 
-    fn render_fn(self, func: impl FnOnce(Nodes<C>)) -> NodesOwned<'n, C> {
+    fn r_fn(self, func: impl FnOnce(Nodes<C>)) -> NodesOwned<'n, C> {
         let mut n: NodesOwned<C> = self.into();
         let nodes = Nodes::new(&mut n.0);
         func(nodes);
@@ -390,21 +390,21 @@ impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
         StaticNodes::new(self.0)
     }
 
-    pub fn update_render(self, render: impl Render<C>) -> Self {
+    pub fn r_update(self, render: impl Render<C>) -> Self {
         let n = Nodes::new(self.0);
         render.render(n);
         //self.nodes_render_mut().set_update_mode();
         self
     }
 
-    pub fn static_render(mut self, render: impl StaticRender<C>) -> Self {
+    pub fn r_static(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(self.0);
         render.render(n);
         self.nodes_render_mut().set_update_mode();
         self
     }
 
-    pub fn render_fn(self, func: impl FnOnce(Nodes<C>)) -> Self {
+    pub fn r_fn(self, func: impl FnOnce(Nodes<C>)) -> Self {
         let n = Nodes::new(self.0);
         func(n);
         self
@@ -430,10 +430,10 @@ impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
         Nodes::new(self.0)
     }
 
-    // No .update_render() on a `StaticNodes`
-    // pub fn update_render(mut self, render: impl Render<C>) -> Self {}
+    // No .r_update() on a `StaticNodes`
+    // pub fn r_update(mut self, render: impl Render<C>) -> Self {}
 
-    pub fn static_render(self, render: impl StaticRender<C>) -> Self {
+    pub fn r_static(self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(self.0);
         render.render(n);
         //self.nodes_render_mut().set_static_mode();
@@ -448,21 +448,21 @@ impl<'n, C: Component> NodesOwned<'n, C> {
         StaticNodesOwned::new(self.0)
     }
 
-    pub fn update_render(mut self, render: impl Render<C>) -> Self {
+    pub fn r_update(mut self, render: impl Render<C>) -> Self {
         let n = Nodes::new(&mut self.0);
         render.render(n);
         //self.nodes_render_mut().set_update_mode();
         self
     }
 
-    pub fn static_render(mut self, render: impl StaticRender<C>) -> Self {
+    pub fn r_static(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(&mut self.0);
         render.render(n);
         self.nodes_render_mut().set_update_mode();
         self
     }
 
-    pub fn render_fn(mut self, func: impl FnOnce(Nodes<C>)) -> Self {
+    pub fn r_fn(mut self, func: impl FnOnce(Nodes<C>)) -> Self {
         let n = Nodes::new(&mut self.0);
         func(n);
         self
@@ -476,14 +476,14 @@ impl<'n, C: Component> StaticNodesOwned<'n, C> {
         NodesOwned::new(self.0)
     }
 
-    pub fn update_render(mut self, render: impl Render<C>) -> Self {
+    pub fn r_update(mut self, render: impl Render<C>) -> Self {
         let n = Nodes::new(&mut self.0);
         render.render(n);
         self.nodes_render_mut().set_static_mode();
         self
     }
 
-    pub fn static_render(mut self, render: impl StaticRender<C>) -> Self {
+    pub fn r_static(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(&mut self.0);
         render.render(n);
         //self.nodes_render_mut().set_update_mode();

@@ -812,7 +812,7 @@ mod keyed_list_with_render_tests {
 
     fn render(item: &&&str, span: crate::Element<Unit>) {
         use crate::render::html::MethodsForHtmlElementContent;
-        span.update_render(**item);
+        span.r_update(**item);
     }
 
     fn get_key<'k>(item: &'k &&'static str) -> &'static str {

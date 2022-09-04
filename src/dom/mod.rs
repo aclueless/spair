@@ -86,14 +86,14 @@ pub trait MaybeAChildNode {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum ElementStatus {
     JustCreated,
     Existing,
     JustCloned,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ElementType {
     Select,
     Input,

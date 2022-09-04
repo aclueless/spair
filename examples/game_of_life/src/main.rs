@@ -125,7 +125,7 @@ impl spair::Component for App {
                                 i.alt("The app logo").src("favicon.ico").class("app-logo");
                             })
                             .h1(|h| {
-                                h.class("app-title").update_render("Game of Life");
+                                h.class("app-title").r_update("Game of Life");
                             });
                     })
                     .section(|s| {
@@ -140,17 +140,11 @@ impl spair::Component for App {
                             })
                             .div(|d| {
                                 d.class("game-buttons")
-                                    .render_fn(|ns| {
-                                        button(ns, "Random", comp.handler_mut(App::random))
-                                    })
-                                    .render_fn(|ns| button(ns, "Step", comp.handler_mut(App::step)))
-                                    .render_fn(|ns| {
-                                        button(ns, "Start", comp.handler_mut(App::start))
-                                    })
-                                    .render_fn(|ns| button(ns, "Stop", comp.handler_mut(App::stop)))
-                                    .render_fn(|ns| {
-                                        button(ns, "Reset", comp.handler_mut(App::reset))
-                                    });
+                                    .r_fn(|ns| button(ns, "Random", comp.handler_mut(App::random)))
+                                    .r_fn(|ns| button(ns, "Step", comp.handler_mut(App::step)))
+                                    .r_fn(|ns| button(ns, "Start", comp.handler_mut(App::start)))
+                                    .r_fn(|ns| button(ns, "Stop", comp.handler_mut(App::stop)))
+                                    .r_fn(|ns| button(ns, "Reset", comp.handler_mut(App::reset)));
                             });
                     });
             })
@@ -158,12 +152,12 @@ impl spair::Component for App {
                 f.class("app-footer")
                     .strong(|s| {
                         s.class("footer-text")
-                            .update_render("Game of Life - a port from Yew's implementation");
+                            .r_update("Game of Life - a port from Yew's implementation");
                     })
                     .a(|a| {
                         a.href_str("https://github.com/yewstack/yew")
                             .target(spair::Target::_Blank)
-                            .update_render("source");
+                            .r_update("source");
                     });
             });
         });
@@ -172,7 +166,7 @@ impl spair::Component for App {
 
 fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
     nodes.button(|b| {
-        b.class("game-button").on_click(h).update_render(name);
+        b.class("game-button").on_click(h).r_update(name);
     });
 }
 

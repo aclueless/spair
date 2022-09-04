@@ -134,9 +134,9 @@ impl spair::Component for App {
     type Routes = ();
     fn render(&self, element: spair::Element<Self>) {
         element
-            .h1(|h| h.class("title").update_render("Boids").done())
+            .h1(|h| h.class("title").r_update("Boids").done())
             .component_ref(&self.simulation)
-            .update_render(Panel);
+            .r_update(Panel);
     }
 }
 struct Panel;
@@ -145,20 +145,20 @@ impl spair::Render<App> for Panel {
         let comp = nodes.comp();
         let state = nodes.state();
         nodes.div(|d| {
-            d.class("panel").update_render(SettingsPanel).div(|d| {
+            d.class("panel").r_update(SettingsPanel).div(|d| {
                 d.class("panel__buttons")
                     .button(|b| {
                         let pause_text = if state.paused { "Resume" } else { "Pause" };
                         b.on_click(comp.handler_mut(App::toggle_pause))
-                            .update_render(pause_text);
+                            .r_update(pause_text);
                     })
                     .button(|b| {
                         b.on_click(comp.handler_mut(App::reset_settings))
-                            .update_render("Use Defaults");
+                            .r_update("Use Defaults");
                     })
                     .button(|b| {
                         b.on_click(comp.handler_mut(App::restart_simulation))
-                            .update_render("Restart");
+                            .r_update("Restart");
                     });
             });
         });

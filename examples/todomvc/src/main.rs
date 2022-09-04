@@ -169,11 +169,11 @@ impl spair::Component for App {
             .section(|s| {
                 s.static_attributes()
                     .class("todoapp")
-                    .update_render(Header)
-                    .update_render(Main)
-                    .update_render(Footer);
+                    .r_update(Header)
+                    .r_update(Main)
+                    .r_update(Footer);
             })
-            .update_render(Info);
+            .r_update(Info);
     }
 }
 
@@ -186,7 +186,7 @@ impl spair::Render<App> for Header {
             h.static_attributes()
                 .class("header")
                 .static_nodes()
-                .h1(|h| h.update_render("Spair Todos").done())
+                .h1(|h| h.r_update("Spair Todos").done())
                 .update_nodes()
                 .input(|i| {
                     i.value(&state.new_todo_title)
@@ -235,7 +235,7 @@ impl spair::Render<App> for Main {
                     l.static_attributes()
                         .r#for("toggle-all")
                         .static_nodes()
-                        .static_render("Mark all as complete");
+                        .r_static("Mark all as complete");
                 })
                 .update_nodes()
                 .ul(|u| {
@@ -273,8 +273,8 @@ impl spair::Render<App> for Footer {
                 .span(|s| {
                     s.static_attributes()
                         .class("todo-count")
-                        .strong(|s| s.update_render(item_left).done())
-                        .update_render(if item_left == 1 {
+                        .strong(|s| s.r_update(item_left).done())
+                        .r_update(if item_left == 1 {
                             " item left"
                         } else {
                             " items left"
@@ -283,15 +283,15 @@ impl spair::Render<App> for Footer {
                 .ul(|u| {
                     u.static_attributes()
                         .class("filters")
-                        .update_render(FilterView {
+                        .r_update(FilterView {
                             current_filter: state.filter,
                             view: Filter::All,
                         })
-                        .update_render(FilterView {
+                        .r_update(FilterView {
                             current_filter: state.filter,
                             view: Filter::Active,
                         })
-                        .update_render(FilterView {
+                        .r_update(FilterView {
                             current_filter: state.filter,
                             view: Filter::Completed,
                         });
@@ -301,7 +301,7 @@ impl spair::Render<App> for Footer {
                         .static_attributes()
                         .class("clear-completed")
                         .on_click(comp.handler_mut(App::clear_completed))
-                        .static_render("Clear completed");
+                        .r_static("Clear completed");
                 });
         });
     }
@@ -320,7 +320,7 @@ impl spair::Render<App> for FilterView {
                     .static_attributes()
                     .href(&self.view)
                     .static_nodes()
-                    .static_render(self.view.as_str());
+                    .r_static(self.view.as_str());
             });
         });
     }
@@ -333,13 +333,13 @@ impl spair::Render<App> for Info {
             f.static_attributes()
                 .class("info")
                 .static_nodes()
-                .p(|p| p.static_render("Double-click to edit a todo").done())
-                .p(|p| p.static_render("Created by 'aclueless'").done())
+                .p(|p| p.r_static("Double-click to edit a todo").done())
+                .p(|p| p.r_static("Created by 'aclueless'").done())
                 .p(|p| {
-                    p.static_render("Part of ").a(|a| {
+                    p.r_static("Part of ").a(|a| {
                         a.static_attributes()
                             .href_str("http://todomvc.com")
-                            .static_render("TodoMVC");
+                            .r_static("TodoMVC");
                     });
                 });
         });
@@ -374,7 +374,7 @@ impl spair::ListItemRender<App> for TodoItem {
                     })
                     .label(|l| {
                         l.on_double_click(comp.handler_mut(move |state| state.start_editing(id)))
-                            .update_render(&self.title);
+                            .r_update(&self.title);
                     })
                     .button(|b| {
                         b.on_click(comp.handler_mut(move |state| state.remove(id)))
@@ -384,7 +384,7 @@ impl spair::ListItemRender<App> for TodoItem {
             })
             .match_if(|mi| match is_editing_me {
                 true => spair::set_arm!(mi)
-                    .update_render(EditingInput(&self.title))
+                    .r_update(EditingInput(&self.title))
                     .done(),
                 false => spair::set_arm!(mi).done(),
             });

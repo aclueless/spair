@@ -88,16 +88,16 @@ impl spair::Component for State {
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
-            .static_render("You are running `examples\\future`")
+            .r_static("You are running `examples\\future`")
             .line_break()
             .match_if(|mi| match self.branch.as_ref() {
                 Some(branch) => spair::set_arm!(mi)
-                    .update_render(branch)
+                    .r_update(branch)
                     .button(|b| {
                         b.static_attributes()
                             .on_click(comp.handler_mut(State::reset))
                             .static_nodes()
-                            .static_render("Reset");
+                            .r_static("Reset");
                     })
                     .done(),
                 None => spair::set_arm!(mi)
@@ -105,11 +105,11 @@ impl spair::Component for State {
                         b.static_attributes()
                             .on_click(comp.handler_mut(State::start_fetching))
                             .static_nodes()
-                            .static_render("Click to fetch wasm-bindgen latest commit info");
+                            .r_static("Click to fetch wasm-bindgen latest commit info");
                     })
                     .done(),
             })
-            .p(|p| p.update_render(&self.message).done());
+            .p(|p| p.r_update(&self.message).done());
     }
 }
 
@@ -117,23 +117,23 @@ impl spair::Render<State> for &Branch {
     fn render(self, nodes: spair::Nodes<State>) {
         nodes
             .p(|p| {
-                p.static_render("The latest commit to the wasm-bindgen ")
-                    .update_render(&self.name)
-                    .static_render(" branch is:");
+                p.r_static("The latest commit to the wasm-bindgen ")
+                    .r_update(&self.name)
+                    .r_static(" branch is:");
             })
-            .update_render(&self.commit);
+            .r_update(&self.commit);
     }
 }
 
 impl spair::Render<State> for &Commit {
     fn render(self, nodes: spair::Nodes<State>) {
         nodes.p(|p| {
-            p.update_render(&self.sha)
-                .static_render(", authored by ")
-                .update_render(&self.commit.author.name)
-                .static_render(" (")
-                .update_render(&self.commit.author.email)
-                .static_render(")");
+            p.r_update(&self.sha)
+                .r_static(", authored by ")
+                .r_update(&self.commit.author.name)
+                .r_static(" (")
+                .r_update(&self.commit.author.email)
+                .r_static(")");
         });
     }
 }

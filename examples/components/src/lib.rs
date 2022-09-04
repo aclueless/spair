@@ -38,20 +38,20 @@ impl spair::Component for State {
         element
             .static_nodes()
             .p(|p| {
-                p.static_nodes().static_render("root component");
+                p.static_nodes().r_static("root component");
             })
             .update_nodes()
             .p(|p| {
-                p.static_render("The value that received from child-components: ")
+                p.r_static("The value that received from child-components: ")
                     .match_if(|mi| match self.value_sent_from_child {
-                        Some(value) => spair::set_arm!(mi).update_render(value).done(),
-                        None => spair::set_arm!(mi).update_render("[Not read yet]").done(),
+                        Some(value) => spair::set_arm!(mi).r_update(value).done(),
+                        None => spair::set_arm!(mi).r_update("[Not read yet]").done(),
                     });
             })
-            .static_render(Button("-", comp.handler_mut(State::decrement)))
-            .update_render(self.value)
-            .static_render(Button("+", comp.handler_mut(State::increment)))
-            .static_render(Button(
+            .r_static(Button("-", comp.handler_mut(State::decrement)))
+            .r_update(self.value)
+            .r_static(Button("+", comp.handler_mut(State::increment)))
+            .r_static(Button(
                 "Send value to the child-component-ref",
                 comp.handler_mut(State::send_value_to_child),
             ))
@@ -69,14 +69,14 @@ impl spair::Component for State {
                 )
             })
             .horizontal_line()
-            .static_render(
+            .r_static(
                 "Only split your app into child components if you really need to
                 do that. You can use `spair::Render` to split your code into
                 smaller pieces.",
             )
             .line_break()
             .line_break()
-            .static_render(
+            .r_static(
                 "You can manage a child component in your parent-component's
                 state by yourself or let `spair` manages it. If you mangage it,
                 `spair` expect a `ref` of it, so the method named `.component_ref`.
@@ -85,7 +85,7 @@ impl spair::Component for State {
             )
             .line_break()
             .line_break()
-            .static_render(
+            .r_static(
                 "With, `.component_ref`, you have to mangage the component by yourself,
                 but it's easier for you to decide when to update the child component.
                 On the contrary, it's harder for you to stop propagating change to
@@ -93,7 +93,7 @@ impl spair::Component for State {
             )
             .line_break()
             .line_break()
-            .static_render(
+            .r_static(
                 "If you change the value in the main component. The child-component-owned
                 will be update immediately. But with the child-component-ref, it only
                 update if you request it.",
@@ -108,7 +108,7 @@ impl<C: spair::Component, H: spair::Click> spair::StaticRender<C> for Button<H> 
             b.static_attributes()
                 .on_click(self.1)
                 .static_nodes()
-                .static_render(self.0);
+                .r_static(self.0);
         });
     }
 }
