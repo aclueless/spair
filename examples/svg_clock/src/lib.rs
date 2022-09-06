@@ -70,7 +70,7 @@ impl spair::Component for Clock {
                             let dr = degree.to_radians();
                             let dx = dr.sin() * length;
                             let dy = -dr.cos() * length;
-                            g.r_update(Stick {
+                            g.rupdate(Stick {
                                 width: 2,
                                 y1: 29,
                                 y2: 32,
@@ -82,11 +82,11 @@ impl spair::Component for Clock {
                                     .text_anchor("middle")
                                     .dominant_baseline("middle")
                                     .transform(format!("translate({} {})", dx, dy))
-                                    .r_update(n / 5)
+                                    .rupdate(n / 5)
                                     .done()
                             });
                         } else {
-                            g.r_update(Stick {
+                            g.rupdate(Stick {
                                 width: 1,
                                 y1: 30,
                                 y2: 32,
@@ -97,17 +97,17 @@ impl spair::Component for Clock {
                 })
                 .update_nodes()
                 .g(|g| {
-                    g.r_update(Hand {
+                    g.rupdate(Hand {
                         width: 4,
                         y2: 55,
                         angle: hours_angle,
                     })
-                    .r_update(Hand {
+                    .rupdate(Hand {
                         width: 2,
                         y2: 40,
                         angle: minutes_angle,
                     })
-                    .r_update(Hand {
+                    .rupdate(Hand {
                         width: 1,
                         y2: 30,
                         angle: seconds_angle,

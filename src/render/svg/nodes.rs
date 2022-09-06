@@ -335,21 +335,21 @@ impl<'h, 'n: 'h, C: Component> SvgNodes<'h, 'n, C> {
         SvgStaticNodes::new(self.0)
     }
 
-    pub fn r_update(self, render: impl SvgRender<C>) -> Self {
+    pub fn rupdate(self, render: impl SvgRender<C>) -> Self {
         let n = SvgNodes::new(self.0);
         render.render(n);
         //self.nodes_render_mut().set_update_mode();
         self
     }
 
-    pub fn r_static(mut self, render: impl SvgStaticRender<C>) -> Self {
+    pub fn rstatic(mut self, render: impl SvgStaticRender<C>) -> Self {
         let n = SvgStaticNodes::new(self.0);
         render.render(n);
         self.nodes_render_mut().set_update_mode();
         self
     }
 
-    pub fn r_fn(self, func: impl FnOnce(SvgNodes<C>)) -> Self {
+    pub fn rfn(self, func: impl FnOnce(SvgNodes<C>)) -> Self {
         let n = SvgNodes::new(self.0);
         func(n);
         self
@@ -375,10 +375,10 @@ impl<'h, 'n: 'h, C: Component> SvgStaticNodes<'h, 'n, C> {
         SvgNodes::new(self.0)
     }
 
-    // No .r_update() on a `SvgStaticNodes`
-    // pub fn r_update(mut self, render: impl SvgRender<C>) -> Self {}
+    // No .rupdate() on a `SvgStaticNodes`
+    // pub fn rupdate(mut self, render: impl SvgRender<C>) -> Self {}
 
-    pub fn r_static(self, render: impl SvgStaticRender<C>) -> Self {
+    pub fn rstatic(self, render: impl SvgStaticRender<C>) -> Self {
         let n = SvgStaticNodes::new(self.0);
         render.render(n);
         //self.nodes_render_mut().set_static_mode();
@@ -393,21 +393,21 @@ impl<'n, C: Component> SvgNodesOwned<'n, C> {
         SvgStaticNodesOwned::new(self.0)
     }
 
-    pub fn r_update(mut self, render: impl SvgRender<C>) -> Self {
+    pub fn rupdate(mut self, render: impl SvgRender<C>) -> Self {
         let n = SvgNodes::new(&mut self.0);
         render.render(n);
         //self.nodes_render_mut().set_update_mode();
         self
     }
 
-    pub fn r_static(mut self, render: impl SvgStaticRender<C>) -> Self {
+    pub fn rstatic(mut self, render: impl SvgStaticRender<C>) -> Self {
         let n = SvgStaticNodes::new(&mut self.0);
         render.render(n);
         self.nodes_render_mut().set_update_mode();
         self
     }
 
-    pub fn r_fn(mut self, func: impl FnOnce(SvgNodes<C>)) -> Self {
+    pub fn rfn(mut self, func: impl FnOnce(SvgNodes<C>)) -> Self {
         let n = SvgNodes::new(&mut self.0);
         func(n);
         self
@@ -421,14 +421,14 @@ impl<'n, C: Component> SvgStaticNodesOwned<'n, C> {
         SvgNodesOwned::new(self.0)
     }
 
-    pub fn r_update(mut self, render: impl SvgRender<C>) -> Self {
+    pub fn rupdate(mut self, render: impl SvgRender<C>) -> Self {
         let n = SvgNodes::new(&mut self.0);
         render.render(n);
         self.nodes_render_mut().set_static_mode();
         self
     }
 
-    pub fn r_static(mut self, render: impl SvgStaticRender<C>) -> Self {
+    pub fn rstatic(mut self, render: impl SvgStaticRender<C>) -> Self {
         let n = SvgStaticNodes::new(&mut self.0);
         render.render(n);
         //self.nodes_render_mut().set_update_mode();
@@ -447,17 +447,17 @@ pub trait MethodsForSvgElementContent<'n, C: Component>:
         self.into()
     }
 
-    fn r_update(self, render: impl SvgRender<C>) -> SvgNodesOwned<'n, C> {
+    fn rupdate(self, render: impl SvgRender<C>) -> SvgNodesOwned<'n, C> {
         let n: SvgNodesOwned<C> = self.into();
-        n.r_update(render)
+        n.rupdate(render)
     }
 
-    fn r_static(self, render: impl SvgStaticRender<C>) -> SvgNodesOwned<'n, C> {
+    fn rstatic(self, render: impl SvgStaticRender<C>) -> SvgNodesOwned<'n, C> {
         let n: SvgNodesOwned<C> = self.into();
-        n.r_static(render)
+        n.rstatic(render)
     }
 
-    fn r_fn(self, func: impl FnOnce(SvgNodes<C>)) -> SvgNodesOwned<'n, C> {
+    fn rfn(self, func: impl FnOnce(SvgNodes<C>)) -> SvgNodesOwned<'n, C> {
         let mut n: SvgNodesOwned<C> = self.into();
         let nodes = SvgNodes::new(&mut n.0);
         func(nodes);

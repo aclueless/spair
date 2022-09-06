@@ -22,13 +22,13 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
-                    .r_static("The initial value is ")
-                    .r_static(self.value);
+                    .rstatic("The initial value is ")
+                    .rstatic(self.value);
             })
-            .r_static(Button("-", comp.handler_mut(State::decrement)))
+            .rstatic(Button("-", comp.handler_mut(State::decrement)))
             .update_nodes()
-            .r_update(self.value)
-            .r_static(Button("+", comp.handler_mut(State::increment)));
+            .rupdate(self.value)
+            .rstatic(Button("+", comp.handler_mut(State::increment)));
     }
 }
 
@@ -39,7 +39,7 @@ impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
             b.static_attributes()
                 .on_click(self.1)
                 .static_nodes()
-                .r_static(self.0);
+                .rstatic(self.0);
         });
     }
 }

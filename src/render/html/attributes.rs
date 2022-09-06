@@ -138,6 +138,8 @@ make_traits_for_property_values! {
 pub trait HamsHandMade<C: Component>:
     Sized + ElementRenderMut<C> + HamsForDistinctNames<C>
 {
+    fn done(self) {}
+
     /// Only execute `input.set_checked` if the value changed. But it's safer
     /// to use `.checked()` instead.
     fn checked_if_changed(mut self, value: bool) -> Self {

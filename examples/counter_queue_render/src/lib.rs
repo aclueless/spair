@@ -34,28 +34,28 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
-                    .r_static("The initial value is ")
-                    .r_static(self.value.get())
+                    .rstatic("The initial value is ")
+                    .rstatic(self.value.get())
                     .line_break()
-                    .r_static("The rate is ")
-                    .r_static(self.rate)
+                    .rstatic("The rate is ")
+                    .rstatic(self.rate)
                     ;
             })
-            .r_static("Value: ")
-            .r_update(&self.value)
+            .rstatic("Value: ")
+            .rupdate(&self.value)
             .line_break()
-            .r_static("Value / self.rate = ")
+            .rstatic("Value / self.rate = ")
             // Unfortunately, Rust fail inference types for this closure
-            .r_update(self.value.map(|state: &Self, value: &i32| value / state.rate))
+            .rupdate(self.value.map(|state: &Self, value: &i32| value / state.rate))
             .line_break()
-            .r_static("Value * self.rate = ")
-            .r_update(self.value.map(|state: &Self, value: &i32| value * state.rate))
+            .rstatic("Value * self.rate = ")
+            .rupdate(self.value.map(|state: &Self, value: &i32| value * state.rate))
             .line_break()
-            .r_static(Button("-", comp.handler_mut(State::decrement)))
-            .r_static(Button("+", comp.handler_mut(State::increment)))
+            .rstatic(Button("-", comp.handler_mut(State::decrement)))
+            .rstatic(Button("+", comp.handler_mut(State::increment)))
             .line_break()
-            .r_static("This value will be never updated if the update method return `spair::ShouldRender::No`: ")
-            .r_update(self.value.get())
+            .rstatic("This value will be never updated if the update method return `spair::ShouldRender::No`: ")
+            .rupdate(self.value.get())
             ;
     }
 }
@@ -67,7 +67,7 @@ impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
             b.static_attributes()
                 .on_click(self.1)
                 .static_nodes()
-                .r_static(self.0);
+                .rstatic(self.0);
         });
     }
 }

@@ -208,7 +208,7 @@ mod qr_list_tests {
     impl ListItemRender<State> for u32 {
         const ROOT_ELEMENT_TAG: &'static str = "span";
         fn render(&self, item: crate::Element<State>) {
-            item.r_update(*self);
+            item.rupdate(*self);
         }
     }
 
