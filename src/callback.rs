@@ -90,15 +90,16 @@ where
     C: Component,
     A: 'static,
 {
-    /// If you are sure that the callback will not cause cyclic-read
-    /// (when the callback may cause the parent component to read data from current child)
-    /// then you can use this method to activate the callback. Otherwise, using `queue` is
-    /// should be prefered.
+    /// This method executes the callback immediately. But it may fail if the related
+    /// component is already in progress of updating or rendering (it means that
+    /// the component is being borrowed).
     pub fn call(&self, a: A) {
         self.comp.execute_callback(a, self);
     }
 
-    /// It is safer to queue the callback using this method rather than calling it directly
+    /// This method puts the callback in update queue. The queue will be executed if
+    /// there is a component that is currently being update. But if no component is be
+    /// update, the update queue will not be execute until an event occurs.
     pub fn queue(&self, a: A) {
         let clone = CallbackFn {
             comp: self.comp.clone(),
@@ -143,15 +144,16 @@ where
     F: 'static + FnOnce(&mut C) -> Cl,
     Cl: 'static + Into<Checklist<C>>,
 {
-    /// If you are sure that the callback will not cause cyclic-read
-    /// (when the callback may cause the parent component to read data from current child)
-    /// then you can use this method to activate the callback. Otherwise, using `queue` is
-    /// should be prefered.
+    /// This method executes the callback immediately. But it may fail if the related
+    /// component is already in progress of updating or rendering (it means that
+    /// the component is being borrowed).
     pub fn call(self) {
         self.comp.clone().execute_callback((), self);
     }
 
-    /// It is safer to queue the callback using this method rather than calling it directly
+    /// This method puts the callback in update queue. The queue will be executed if
+    /// there is a component that is currently being update. But if no component is be
+    /// update, the update queue will not be execute until an event occurs.
     pub fn queue(self) {
         crate::component::update_component(move || self.call());
     }
@@ -190,15 +192,16 @@ where
     F: 'static + FnOnce(&mut C, A) -> Cl,
     Cl: 'static + Into<Checklist<C>>,
 {
-    /// If you are sure that the callback will not cause cyclic-read
-    /// (when the callback may cause the parent component to read data from current child)
-    /// then you can use this method to activate the callback. Otherwise, using `queue` is
-    /// should be prefered.
+    /// This method executes the callback immediately. But it may fail if the related
+    /// component is already in progress of updating or rendering (it means that
+    /// the component is being borrowed).
     pub fn call(self, a: A) {
         self.comp.clone().execute_callback(a, self);
     }
 
-    /// It is safer to queue the callback using this method rather than calling it directly
+    /// This method puts the callback in update queue. The queue will be executed if
+    /// there is a component that is currently being update. But if no component is be
+    /// update, the update queue will not be execute until an event occurs.
     pub fn queue(self, a: A) {
         crate::component::update_component(move || self.call(a));
     }
@@ -221,17 +224,23 @@ where
 }
 
 pub trait Callback {
-    /// If you are sure that the callback will not cause cyclic-read
-    /// (when the callback may cause the parent component to read data from current child)
-    /// then you can use this method to activate the callback. Otherwise, using `queue` is
-    /// should be prefered.
+    /// `.emit` should be prefered. Only use this method if `.emit` fails to work (in
+    /// this case, there may be a bug somewhere).
+    /// This method executes the callback immediately. But it may fail if the related
+    /// component is already in progress of updating or rendering (it means that
+    /// the component is being borrowed).
     fn call(&self);
 
-    /// It is safer to queue the callback using this method rather than calling it directly
+    /// `.emit` should be prefered. Only use this method if `.emit` fails to work (in
+    /// this case, there may be a bug somewhere).
+    /// This method puts the callback in update queue. The queue will be executed if
+    /// there is a component that is currently being update. But if no component is be
+    /// update, the update queue will not be execute until an event occurs.
     fn queue(&self);
 
     /// Queue the callback if there is no executing on progress. Otherwise, the callback
-    /// will be add to update queue.
+    /// will be add to update queue. If this fails (maybe because of a bug) to work,
+    /// you can try `.call` or `.queue`.
     fn emit(&self);
 }
 
@@ -257,13 +266,19 @@ where
 }
 
 pub trait CallbackArg<A> {
-    /// If you are sure that the callback will not cause cyclic-read
-    /// (when the callback may cause the parent component to read data from current child)
-    /// then you can use this method to activate the callback. Otherwise, using `queue` is
-    /// should be prefered.
+    /// This method executes the callback immediately. But it may fail if the related
+    /// component is already in progress of updating or rendering (it means that
+    /// the component is being borrowed).
     fn call(&self, a: A);
-    /// It is safer to queue the callback using this method rather than calling it directly
+
+    /// This method puts the callback in update queue. The queue will be executed if
+    /// there is a component that is currently being update. But if no component is be
+    /// update, the update queue will not be execute until an event occurs.
     fn queue(&self, a: A);
+
+    /// Queue the callback if there is no executing on progress. Otherwise, the callback
+    /// will be add to update queue. If this fails (maybe because of a bug) to work,
+    /// you can try `.call` or `.queue`.
     fn emit(&self, a: A);
 }
 
@@ -290,28 +305,36 @@ where
 }
 
 pub trait CallbackOnce {
-    /// If you are sure that the callback will not cause cyclic-read
-    /// (when the callback may cause the parent component to read data from current child)
-    /// then you can use this method to activate the callback. Otherwise, using `queue` is
-    /// should be prefered.
+    /// This method executes the callback immediately. But it may fail if the related
+    /// component is already in progress of updating or rendering (it means that
+    /// the component is being borrowed).
     fn call(self);
 
-    /// It is safer to queue the callback using this method rather than calling it directly
+    /// This method puts the callback in update queue. The queue will be executed if
+    /// there is a component that is currently being update. But if no component is be
+    /// update, the update queue will not be execute until an event occurs.
     fn queue(self);
 
+    /// Queue the callback if there is no executing on progress. Otherwise, the callback
+    /// will be add to update queue. If this fails (maybe because of a bug) to work,
+    /// you can try `.call` or `.queue`.
     fn emit(self);
 }
 
 pub trait CallbackOnceArg<A> {
-    /// If you are sure that the callback will not cause cyclic-read
-    /// (when the callback may cause the parent component to read data from current child)
-    /// then you can use this method to activate the callback. Otherwise, using `queue` is
-    /// should be prefered.
+    /// This method executes the callback immediately. But it may fail if the related
+    /// component is already in progress of updating or rendering (it means that
+    /// the component is being borrowed).
     fn call(self, a: A);
 
-    /// It is safer to queue the callback using this method rather than calling it directly
+    /// This method puts the callback in update queue. The queue will be executed if
+    /// there is a component that is currently being update. But if no component is be
+    /// update, the update queue will not be execute until an event occurs.
     fn queue(self, a: A);
 
+    /// Queue the callback if there is no executing on progress. Otherwise, the callback
+    /// will be add to update queue. If this fails (maybe because of a bug) to work,
+    /// you can try `.call` or `.queue`.
     fn emit(self, a: A);
 }
 
