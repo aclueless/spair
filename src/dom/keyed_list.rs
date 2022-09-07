@@ -178,7 +178,7 @@ impl KeyedList {
         )
     }
 
-    // TODO better name?
+    // better name?
     pub fn pre_render(&mut self, count: usize) {
         self.old_elements_map.reserve(count);
         if count < self.buffer.len() {
