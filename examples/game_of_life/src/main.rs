@@ -212,7 +212,7 @@ fn wrap(coord: isize, range: isize) -> usize {
 impl spair::Application for App {
     fn init(comp: &spair::Comp<Self>) -> Self {
         let callback = comp.callback_mut(App::tick);
-        let interval = Interval::new(200, move || callback.call());
+        let interval = Interval::new(200, move || callback.emit());
 
         let (cellules_width, cellules_height) = (53, 40);
 

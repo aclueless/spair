@@ -23,10 +23,11 @@ impl App {
     }
 
     fn update_simulation_settings(&self) {
+        self.settings.store();
         self.simulation
             .comp()
             .callback_arg_mut(Simulation::update_params)
-            .queue((self.settings.clone(), self.generation, self.paused));
+            .emit((self.settings.clone(), self.generation, self.paused));
     }
 
     fn restart_simulation(&mut self) {

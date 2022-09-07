@@ -229,7 +229,12 @@ pub trait Callback {
 
     /// It is safer to queue the callback using this method rather than calling it directly
     fn queue(&self);
+
+    /// Queue the callback if there is no executing on progress. Otherwise, the callback
+    /// will be add to update queue.
+    fn emit(&self);
 }
+
 impl<C> Callback for CallbackFn<C, ()>
 where
     C: Component,
@@ -241,10 +246,25 @@ where
     fn queue(&self) {
         self.queue(());
     }
+
+    fn emit(&self) {
+        if crate::component::update_queue_will_be_execute() {
+            self.queue(());
+        } else {
+            self.call(());
+        }
+    }
 }
+
 pub trait CallbackArg<A> {
+    /// If you are sure that the callback will not cause cyclic-read
+    /// (when the callback may cause the parent component to read data from current child)
+    /// then you can use this method to activate the callback. Otherwise, using `queue` is
+    /// should be prefered.
     fn call(&self, a: A);
+    /// It is safer to queue the callback using this method rather than calling it directly
     fn queue(&self, a: A);
+    fn emit(&self, a: A);
 }
 
 impl<C, A> CallbackArg<A> for CallbackFn<C, A>
@@ -252,17 +272,20 @@ where
     C: Component,
     A: 'static,
 {
-    /// If you are sure that the callback will not cause cyclic-read
-    /// (when the callback may cause the parent component to read data from current child)
-    /// then you can use this method to activate the callback. Otherwise, using `queue` is
-    /// should be prefered.
     fn call(&self, a: A) {
         self.call(a);
     }
 
-    /// It is safer to queue the callback using this method rather than calling it directly
     fn queue(&self, a: A) {
         self.queue(a);
+    }
+
+    fn emit(&self, a: A) {
+        if crate::component::update_queue_will_be_execute() {
+            self.queue(a);
+        } else {
+            self.call(a);
+        }
     }
 }
 
@@ -275,6 +298,8 @@ pub trait CallbackOnce {
 
     /// It is safer to queue the callback using this method rather than calling it directly
     fn queue(self);
+
+    fn emit(self);
 }
 
 pub trait CallbackOnceArg<A> {
@@ -286,6 +311,8 @@ pub trait CallbackOnceArg<A> {
 
     /// It is safer to queue the callback using this method rather than calling it directly
     fn queue(self, a: A);
+
+    fn emit(self, a: A);
 }
 
 impl<C, Cl, F> CallbackOnce for CallbackFnOnce<C, Cl, F>
@@ -300,6 +327,14 @@ where
 
     fn queue(self) {
         self.queue();
+    }
+
+    fn emit(self) {
+        if crate::component::update_queue_will_be_execute() {
+            self.queue();
+        } else {
+            self.call();
+        }
     }
 }
 
@@ -316,5 +351,13 @@ where
 
     fn queue(self, a: A) {
         self.queue(a);
+    }
+
+    fn emit(self, a: A) {
+        if crate::component::update_queue_will_be_execute() {
+            self.queue(a);
+        } else {
+            self.call(a);
+        }
     }
 }

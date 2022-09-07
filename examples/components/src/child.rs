@@ -7,6 +7,7 @@ pub struct ChildState {
 
 pub struct ChildProps {
     pub title: &'static str,
+    pub description: &'static str,
     pub callback_arg: spair::CallbackArg<i32>,
 }
 
@@ -31,7 +32,7 @@ impl ChildState {
 
     fn update_parent_component(&self) {
         if self.value % 5 == 0 {
-            self.props.callback_arg.queue(self.value);
+            self.props.callback_arg.emit(self.value);
         }
     }
 }
@@ -44,16 +45,19 @@ impl spair::Component for ChildState {
         element
             .static_nodes()
             .div(|d| d.rstatic(self.props.title).done())
-            .p(|p| {
-                p.rstatic(
-                    "This counter is in a child-component, \
-                    the parent component will be notified every \
-                    time the value is divisible by five.",
-                );
-            })
+            .line_break()
+            .rstatic(
+                "This counter is in a child-component, \
+                the parent component will be notified every \
+                time the value is divisible by five.",
+            )
+            .line_break()
             .rstatic(super::Button("-", comp.handler_mut(ChildState::decrement)))
             .rupdate(self.value)
-            .rstatic(super::Button("+", comp.handler_mut(ChildState::increment)));
+            .rstatic(super::Button("+", comp.handler_mut(ChildState::increment)))
+            .line_break()
+            .line_break()
+            .rstatic(self.props.description);
     }
 }
 

@@ -27,7 +27,7 @@ impl State {
         self.child_comp
             .comp()
             .callback_once_arg_mut(ChildState::set_value)
-            .call(value);
+            .emit(value);
     }
 }
 
@@ -37,17 +37,23 @@ impl spair::Component for State {
         let comp = element.comp();
         element
             .static_nodes()
-            .p(|p| {
-                p.static_nodes().rstatic("root component");
-            })
+            .rstatic(
+                "Using Spair, you don't usually use components. If you only need
+                to split your code to smaller spieces, then use `spair::Render`.
+                Only split your app into child components if you really need to
+                do that.",
+            )
+            .horizontal_line()
+            .rstatic("root component")
             .update_nodes()
-            .p(|p| {
-                p.rstatic("The value that received from child-components: ")
+            .div(|d| {
+                d.rstatic("The value that received from child-components: ")
                     .match_if(|mi| match self.value_sent_from_child {
                         Some(value) => spair::set_arm!(mi).rupdate(value).done(),
-                        None => spair::set_arm!(mi).rupdate("[Not read yet]").done(),
+                        None => spair::set_arm!(mi).rupdate("[not yet]").done(),
                     });
             })
+            .line_break()
             .rstatic(Button("-", comp.handler_mut(State::decrement)))
             .rupdate(self.value)
             .rstatic(Button("+", comp.handler_mut(State::increment)))
@@ -62,42 +68,17 @@ impl spair::Component for State {
                 let props = ChildProps {
                     title: "child component owned",
                     callback_arg: parent_comp.callback_arg_mut(State::child_value),
+                    description: "With `.component_owned`, the child component is created
+                    and updated in render-phase. Spair have to store the component in it's
+                    DOM tree, hence the method name is `.component_owned`. The update
+                    method is ran on every execution of render, so it's harder for you
+                    to control the update of the child component.",
                 };
                 ChildState::with_props(props).with_updater(
                     |parent_state: &Self| parent_state.value,
                     ChildState::set_value,
                 )
-            })
-            .horizontal_line()
-            .rstatic(
-                "Only split your app into child components if you really need to
-                do that. You can use `spair::Render` to split your code into
-                smaller pieces.",
-            )
-            .line_break()
-            .line_break()
-            .rstatic(
-                "You can manage a child component in your parent-component's
-                state by yourself or let `spair` manages it. If you mangage it,
-                `spair` expect a `ref` of it, so the method named `.component_ref`.
-                Otherwise, `spair` will own and manage the component, so the
-                method named `.component_owned`.",
-            )
-            .line_break()
-            .line_break()
-            .rstatic(
-                "With, `.component_ref`, you have to mangage the component by yourself,
-                but it's easier for you to decide when to update the child component.
-                On the contrary, it's harder for you to stop propagating change to
-                child components when `spair` owned them.",
-            )
-            .line_break()
-            .line_break()
-            .rstatic(
-                "If you change the value in the main component. The child-component-owned
-                will be update immediately. But with the child-component-ref, it only
-                update if you request it.",
-            );
+            });
     }
 }
 
@@ -121,6 +102,11 @@ impl spair::Application for State {
             child_comp: ChildState::with_props(ChildProps {
                 title: "child component ref",
                 callback_arg: comp.callback_arg_mut(State::child_value),
+                description: "With `.component_ref`, you have to manage the child
+                component (in the parent component's state) by yourself. Spair's
+                DOM tree only access to a ref of the child component, hence the
+                method name is `component_ref`. It's easier for you to decide when
+                to update the child component.",
             }),
         }
     }

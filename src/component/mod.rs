@@ -43,6 +43,10 @@ fn i_have_to_execute_update_queue() -> bool {
     })
 }
 
+pub fn update_queue_will_be_execute() -> bool {
+    UPDATE_QUEUE.with(|uq| uq.will_be_executed.get())
+}
+
 pub fn update_component(fn_update: impl FnOnce() + 'static) {
     UPDATE_QUEUE.with(|uq| uq.add(Box::new(fn_update)));
 }
