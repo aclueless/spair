@@ -55,7 +55,6 @@ macro_rules! create_events {
                 closure: Closure<dyn Fn(web_sys::$EventType)>,
             }
             impl $EventListener {
-                // TODO: remove duplicated code here
                 fn new(event_name: &'static str, event_target: &web_sys::EventTarget, closure: Closure<dyn Fn(web_sys::$EventType)>) -> Self {
                     event_target.add_event_listener_with_callback(
                         event_name,

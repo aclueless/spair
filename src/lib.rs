@@ -45,8 +45,10 @@ pub use utils::*;
 pub use http;
 pub use web_sys;
 
-pub use wasm_bindgen::JsValue;
-pub use wasm_bindgen_futures::JsFuture;
+pub mod wasm {
+    pub use wasm_bindgen::*;
+    pub use wasm_bindgen_futures::JsFuture;
+}
 
 pub mod prelude {
     pub use crate::application::Application;

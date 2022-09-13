@@ -63,22 +63,23 @@ impl State {
                 .headers()
                 .set("Accept", "application/vnd.github.v3+json")?;
             let window = spair::window();
-            let resp_value = spair::JsFuture::from(window.fetch_with_request(&request)).await?;
+            let resp_value =
+                spair::wasm::JsFuture::from(window.fetch_with_request(&request)).await?;
             let resp: Response = resp_value.dyn_into().unwrap_throw();
-            let json = spair::JsFuture::from(resp.json()?).await?;
+            let json = spair::wasm::JsFuture::from(resp.json()?).await?;
             let branch_info: Branch = json.into_serde().unwrap_throw();
 
             Ok(branch_info)
         })
         .callback(
-            |state: &mut Self, r: Result<Branch, spair::JsValue>| match r {
+            |state: &mut Self, r: Result<Branch, spair::wasm::JsValue>| match r {
                 Ok(rok) => state.set_data(rok),
                 Err(rerr) => state.fetch_error(rerr),
             },
         )
     }
 
-    fn fetch_error(&mut self, e: spair::JsValue) {
+    fn fetch_error(&mut self, e: spair::wasm::JsValue) {
         self.message = e.as_string().unwrap_or_else(|| format!("{:?}", e));
     }
 }

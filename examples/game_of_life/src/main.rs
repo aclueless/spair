@@ -192,6 +192,7 @@ impl<'a> spair::ListItemRender<App> for Row<'a> {
                 let index = offset + index;
                 div.class("game-cellule")
                     .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
+                    .static_attributes()
                     .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
             },
         );

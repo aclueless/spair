@@ -3,13 +3,13 @@
 ![Crates.io](https://img.shields.io/crates/v/spair)
 ![Build](https://github.com/aclueless/spair/workflows/Rust/badge.svg)
 
-A framework for **S**ingle **P**age **A**pplication **i**n **R**ust.
+An incremental and fine-grained render frontend framework for **S**ingle **P**age **A**pplication **i**n **R**ust.
 
 This project is in its early stage, frequent breaking changes are expected.
 
 ## Features
 
-* Incremtental DOM
+* Incremtental render
     * The render method create the DOM tree on the first run, then update it on subsequence runs.
 * Queue render for fine-grained render.
     * Must be enabled in Cargo.toml, like: `spair = { version="x.y.z", features = ["queue-render"] }`
@@ -18,15 +18,15 @@ This project is in its early stage, frequent breaking changes are expected.
 * Component state can be accessed in every part of render code.
     * Spair's components tend to be big, [`Render`] is used for code splitting.
     * You can access the component state in every [`Render`] without having to pass it around.
-    * Component state can also be accessed from queue render.
+    * Component state can also be accessed from queue render, too.
 * No macro is required for constructing DOM.
     * But Spair is quite verbose because of this.
     * (But a macro can be built on top of Spair)
 * Basic router
-* fetch - as a command
+* fetch command
     * JSON, RON
-* async - as a command
-    * Can be used for fetching unsupported format.
+* async command
+    * Can be used for fetching instead of the built-in fetch command.
 * svg
 
 ### Not support, do you want to contribute?
@@ -49,7 +49,7 @@ You can enabled a feature in your Cargo.toml like this:
 |`svg`               | Support svg element       |
 |`queue-render`      | Support fined-grained render (*)|
 
-(*) Lists render by queue render are always keyed.
+(*) Lists render by queue-render are always keyed.
 
 ## Run examples
 
