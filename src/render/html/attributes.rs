@@ -12,7 +12,7 @@ use crate::{
 #[cfg(feature = "queue-render")]
 use crate::{
     dom::WsElement,
-    queue_render::value::{MapValue, Value},
+    queue_render::value::{MapValue, QrVal},
 };
 
 macro_rules! make_traits_for_property_values {
@@ -64,7 +64,7 @@ macro_rules! make_traits_for_property_values {
         $ws_method_for_qr:ident $qr_method_name:ident $qrm_method_name:ident
     ) => {
         #[cfg(feature = "queue-render")]
-        impl<C: Component> $TraitName<C> for &Value<$attribute_type> {
+        impl<C: Component> $TraitName<C> for &QrVal<$attribute_type> {
             fn render(self, element: &mut $RenderType<C>) {
                 element.$qr_method_name(WsElement::$ws_method_for_qr, self);
             }

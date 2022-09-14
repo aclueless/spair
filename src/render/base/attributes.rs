@@ -2,7 +2,7 @@ use super::{ElementRender, ElementRenderMut};
 use crate::component::Component;
 
 #[cfg(feature = "queue-render")]
-use crate::queue_render::value::{MapValue, Value};
+use crate::queue_render::value::{MapValue, QrVal};
 
 make_traits_for_attribute_values! {
     BoolAttributeValue
@@ -48,7 +48,7 @@ impl<C: Component> Class<C> for String {
 }
 
 #[cfg(feature = "queue-render")]
-impl<C: Component> Class<C> for &Value<String> {
+impl<C: Component> Class<C> for &QrVal<String> {
     fn render(self, element: &mut ElementRender<C>) {
         element.qr_class(self);
     }
@@ -58,5 +58,12 @@ impl<C: Component> Class<C> for &Value<String> {
 impl<C: Component, T: 'static> Class<C> for MapValue<C, T, String> {
     fn render(self, element: &mut ElementRender<C>) {
         element.qrm_class(self);
+    }
+}
+
+#[cfg(feature = "queue-render")]
+impl<C: Component, T: 'static> Class<C> for MapValue<C, T, &'static str> {
+    fn render(self, element: &mut ElementRender<C>) {
+        element.qrm_str_class(self);
     }
 }

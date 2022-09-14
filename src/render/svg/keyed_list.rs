@@ -45,7 +45,7 @@ pub trait SemsForKeyedList<'a, C: Component>:
         self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render)
     }
 
-    fn klwr_clone<I, II, G, K, R>(
+    fn keyed_lwr_clone<I, II, G, K, R>(
         self,
         items: II,
         tag: &'static str,

@@ -2,7 +2,7 @@ use spair::prelude::*;
 
 struct State {
     rate: i32,
-    value: spair::Value<i32>,
+    value: spair::QrVal<i32>,
 }
 
 impl State {

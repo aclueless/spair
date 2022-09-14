@@ -226,6 +226,15 @@ impl QueueRender<String> for QrClass {
     }
 }
 
+impl<'a> QueueRender<&'a str> for QrClass {
+    fn render(&mut self, t: &&str) {
+        self.update_str(Some(t));
+    }
+    fn unmounted(&self) -> bool {
+        self.unmounted.get()
+    }
+}
+
 impl QueueRender<Option<String>> for QrClass {
     fn render(&mut self, t: &Option<String>) {
         self.update_str(t.as_deref());
@@ -256,6 +265,16 @@ impl<C: Component, T, U> QrClassMap<C, T, U> {
             .expect_throw("QrClassMap::map::rc_comp.try_borrow().");
         let state = comp.state();
         (self.fn_map)(state, value)
+    }
+}
+
+impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, &'static str> {
+    fn render(&mut self, t: &T) {
+        let u = self.map(t);
+        self.qr.update_str(Some(u));
+    }
+    fn unmounted(&self) -> bool {
+        self.qr.unmounted.get()
     }
 }
 

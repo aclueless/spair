@@ -1,7 +1,7 @@
 use crate::{
     component::Component,
     dom::WsElement,
-    queue_render::value::{MapValue, Value},
+    queue_render::value::{MapValue, QrVal},
     render::{base::ElementRenderMut, html::HtmlElementRender},
 };
 
@@ -13,7 +13,7 @@ impl<'a, C: Component> HtmlElementRender<'a, C> {
     pub fn qr_property<T: 'static>(
         &self,
         fn_update: impl Fn(&WsElement, &T) + 'static,
-        value: &Value<T>,
+        value: &QrVal<T>,
     ) {
         self.element_render().qr_property(fn_update, value)
     }

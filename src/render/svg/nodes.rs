@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[cfg(feature = "queue-render")]
-use crate::queue_render::value::Value;
+use crate::queue_render::value::QrVal;
 
 pub trait RenderSvgElement<C, O>: Sized
 where
@@ -48,7 +48,7 @@ pub trait SemsHandMade<C: Component>: Sized {
     #[cfg(feature = "queue-render")]
     fn qr_match_if<T: 'static>(
         self,
-        value: &Value<T>,
+        value: &QrVal<T>,
         f: impl Fn(&T, SvgMatchIfRender<C>) + 'static,
     ) -> Self::Output {
         let mut this: Self::Output = self.into();

@@ -1,14 +1,14 @@
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
-pub struct Value<T>(Rc<RefCell<ValueContent<T>>>);
+pub struct QrVal<T>(Rc<RefCell<ValueContent<T>>>);
 pub struct MapValue<C, T, U> {
-    value: Value<T>,
+    value: QrVal<T>,
     fn_map: Box<dyn Fn(&C, &T) -> U>,
 }
 
 impl<C, T, U> MapValue<C, T, U> {
-    pub fn into_parts(self) -> (Value<T>, Box<dyn Fn(&C, &T) -> U>) {
+    pub fn into_parts(self) -> (QrVal<T>, Box<dyn Fn(&C, &T) -> U>) {
         (self.value, self.fn_map)
     }
 }
@@ -45,9 +45,9 @@ impl<T> ValueContent<T> {
     }
 }
 
-impl<T> From<T> for Value<T> {
+impl<T> From<T> for QrVal<T> {
     fn from(t: T) -> Self {
-        Value(Rc::new(RefCell::new(ValueContent {
+        QrVal(Rc::new(RefCell::new(ValueContent {
             value: t,
             a_render_is_queued: false,
             renders: Vec::new(),
@@ -55,13 +55,13 @@ impl<T> From<T> for Value<T> {
     }
 }
 
-impl<T: 'static> Value<T> {
+impl<T: 'static> QrVal<T> {
     pub(crate) fn content(&self) -> &Rc<RefCell<ValueContent<T>>> {
         &self.0
     }
 }
 
-impl<T: 'static + PartialEq + Copy> Value<T> {
+impl<T: 'static + PartialEq + Copy> QrVal<T> {
     pub fn get(&self) -> T {
         self.0
             .try_borrow()
@@ -70,7 +70,7 @@ impl<T: 'static + PartialEq + Copy> Value<T> {
     }
 }
 
-impl<T: 'static + PartialEq> Value<T> {
+impl<T: 'static + PartialEq> QrVal<T> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }

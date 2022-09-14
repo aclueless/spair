@@ -1,7 +1,7 @@
 use crate::{
     component::Component,
     dom::{ElementStatus, WsElement},
-    queue_render::value::{MapValue, QueueRender, Value},
+    queue_render::value::{MapValue, QrVal, QueueRender},
     render::base::ElementRender,
 };
 
@@ -11,7 +11,7 @@ use super::{
 };
 
 impl<'a, C: Component> ElementRender<'a, C> {
-    pub fn qr_attribute<T: 'static + AttributeRender>(&self, name: &'static str, value: &Value<T>) {
+    pub fn qr_attribute<T: 'static + AttributeRender>(&self, name: &'static str, value: &QrVal<T>) {
         if self.status() == ElementStatus::Existing {
             return;
         }
@@ -57,7 +57,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
     pub fn qr_property<T: 'static>(
         &self,
         fn_update: impl Fn(&WsElement, &T) + 'static,
-        value: &Value<T>,
+        value: &QrVal<T>,
     ) {
         if self.status() == ElementStatus::Existing {
             return;
@@ -99,7 +99,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         };
     }
 
-    pub fn qr_class(&self, value: &Value<String>) {
+    pub fn qr_class(&self, value: &QrVal<String>) {
         if self.status() == ElementStatus::Existing {
             return;
         }
@@ -117,6 +117,26 @@ impl<'a, C: Component> ElementRender<'a, C> {
     }
 
     pub fn qrm_class<T: 'static>(&self, value: MapValue<C, T, String>) {
+        if self.status() == ElementStatus::Existing {
+            return;
+        }
+        let element = self.element().ws_element().clone();
+        let unmounted = self.element().unmounted();
+        let mut q = QrClass::new(element, unmounted);
+
+        let state = self.state();
+        let (value, fn_map) = value.into_parts();
+        match value.content().try_borrow_mut() {
+            Ok(mut this) => {
+                let u = (fn_map)(state, this.value());
+                q.render(&u);
+                this.add_render(Box::new(QrClassMap::new(q, self.comp(), fn_map)));
+            }
+            Err(e) => log::error!("{}", e),
+        };
+    }
+
+    pub fn qrm_str_class<T: 'static>(&self, value: MapValue<C, T, &'static str>) {
         if self.status() == ElementStatus::Existing {
             return;
         }

@@ -184,7 +184,7 @@ impl<'a> spair::ListItemRender<App> for Row<'a> {
     fn render(&self, element: spair::Element<App>) {
         let comp = element.comp();
         let offset = self.0 * element.state().cellules_width;
-        element.class("game-row").klwr_clone(
+        element.class("game-row").keyed_lwr_clone(
             self.1.iter().enumerate(),
             "div",
             |&(index, _)| index as u32,

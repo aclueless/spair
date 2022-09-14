@@ -22,7 +22,7 @@ pub use component::{AsChildComp, Checklist, Child, ChildComp, Comp, Component, S
 pub use dom::Keyed;
 pub use dom::TagName;
 #[cfg(feature = "queue-render")]
-pub use queue_render::{value::Value, vec::QrVec};
+pub use queue_render::{value::QrVal, vec::QrVec};
 pub use render::html::HtmlTag;
 #[cfg(feature = "svg")]
 pub use render::svg::{

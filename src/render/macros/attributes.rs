@@ -257,7 +257,7 @@ macro_rules! make_traits_for_attribute_values {
         $attribute_type:ty, $queue_render_method_name:ident $queue_render_method_name_map:ident
     ) => {
         #[cfg(feature = "queue-render")]
-        impl<C: Component> $AttributeTrait<C> for &Value<$attribute_type> {
+        impl<C: Component> $AttributeTrait<C> for &QrVal<$attribute_type> {
             fn render(self, name: &'static str, mut element: impl ElementRenderMut<C>) {
                 element.element_render_mut().$queue_render_method_name(name, self);
             }

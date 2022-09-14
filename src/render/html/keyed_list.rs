@@ -36,7 +36,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         self.make_nodes_extensions()
     }
 
-    fn klwr_clone<I, II, G, K, R>(
+    fn keyed_lwr_clone<I, II, G, K, R>(
         self,
         items: II,
         tag: &'static str,

@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     queue_render::{
         dom::{QrTextNode, QrTextNodeMap},
-        value::{MapValue, Value},
+        value::{MapValue, QrVal},
     },
     render::{
         base::NodesRenderMut,
@@ -16,7 +16,7 @@ impl<'n, 'h, C: Component> Nodes<'n, 'h, C> {
     }
 }
 
-impl<C, T> Render<C> for &Value<T>
+impl<C, T> Render<C> for &QrVal<T>
 where
     C: Component,
     T: 'static + ToString,
