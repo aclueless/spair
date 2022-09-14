@@ -110,6 +110,7 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
             self.element_tag,
             index,
             &self.parent,
+            ElementStatus::JustCreated,
             self.end_flag_node.as_ref(),
             self.use_template,
         );

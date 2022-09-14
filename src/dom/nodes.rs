@@ -124,12 +124,13 @@ impl Nodes {
         tag: E,
         index: usize,
         parent: &web_sys::Node,
+        parent_status: ElementStatus,
         next_sibling: Option<&web_sys::Node>,
         use_template: bool,
     ) -> ElementStatus {
         let item_count = self.0.len();
         if index < item_count {
-            ElementStatus::Existing
+            parent_status
         } else if !use_template || item_count == 0 {
             self.create_new_element_ns(tag, parent, next_sibling);
             ElementStatus::JustCreated

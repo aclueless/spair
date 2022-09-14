@@ -1,7 +1,7 @@
 use super::ElementRender;
 use crate::{
     component::{Comp, Component},
-    dom::{ElementTag, Nodes},
+    dom::{ElementStatus, ElementTag, Nodes},
 };
 
 #[must_use = "Caller should set selected option for <select> element"]
@@ -10,6 +10,7 @@ pub struct RememberSettingSelectedOption;
 pub struct ListRender<'a> {
     use_template: bool,
     parent: &'a web_sys::Node,
+    parent_status: ElementStatus,
     // This is None if it is a whole-list, the list is the only content of the parent node.
     // This is Some() if it is a partial-list, the parent contains the list and some other
     // nodes before or after the list.
@@ -21,12 +22,14 @@ impl<'a> ListRender<'a> {
     pub fn new(
         list: &'a mut Nodes,
         parent: &'a web_sys::Node,
+        parent_status: ElementStatus,
         end_of_list_flag: Option<&'a web_sys::Node>,
         use_template: bool,
     ) -> Self {
         Self {
             use_template,
             parent,
+            parent_status,
             end_of_list_flag,
             list,
         }
@@ -64,6 +67,7 @@ impl<'a> ListRender<'a> {
                 tag,
                 index,
                 self.parent,
+                self.parent_status,
                 self.end_of_list_flag,
                 self.use_template,
             );

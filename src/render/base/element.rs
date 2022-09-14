@@ -274,7 +274,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
 
     pub fn list_render(&mut self, mode: ListElementCreation) -> (&Comp<C>, &C, ListRender) {
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
-        let lr = ListRender::new(nodes, parent, None, mode.use_template());
+        let lr = ListRender::new(nodes, parent, self.status, None, mode.use_template());
         (self.comp, self.state, lr)
     }
 
