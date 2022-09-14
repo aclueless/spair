@@ -127,6 +127,9 @@ pub struct KeyedList {
 impl Clone for KeyedList {
     fn clone(&self) -> Self {
         // No clone for keyed list
+        // If cloning is applied to keyed-list, make sure that if the parent status
+        // is ElementStatus::Cloned, then every element in the list should also
+        // have status=ElementStatus::Cloned
         Self {
             active: Vec::new(),
             buffer: Vec::new(),
