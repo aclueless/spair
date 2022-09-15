@@ -1,4 +1,4 @@
-use super::{ListItemRender, Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
+use super::{ElementRender, Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
 use crate::{
     component::Component,
     render::{
@@ -18,7 +18,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     ) -> Self
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(&I, crate::Element<'r, C>),
+        for<'r> R: Fn(I, crate::Element<'r, C>),
     {
         let tag = HtmlTag(tag);
 
@@ -28,7 +28,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
             state,
             items,
             tag,
-            |item: &I, er: BaseElementRender<C>| render(item, er.into()),
+            |item: I, er: BaseElementRender<C>| render(item, er.into()),
         );
         self
     }
@@ -36,30 +36,25 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
     fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> Self
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(&I, crate::Element<'r, C>),
+        for<'r> R: Fn(I, crate::Element<'r, C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
 
     fn list<I, II>(self, items: II, mode: ListElementCreation) -> Self
     where
-        I: ListItemRender<C>,
+        I: ElementRender<C>,
         II: Iterator<Item = I>,
     {
-        self.list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::render)
+        self.list_with_render(items, mode, I::ELEMENT_TAG, I::render)
     }
 
     fn list_clone<I, II>(self, items: II) -> Self
     where
-        I: ListItemRender<C>,
+        I: ElementRender<C>,
         II: Iterator<Item = I>,
     {
-        self.list_with_render(
-            items,
-            ListElementCreation::Clone,
-            I::ROOT_ELEMENT_TAG,
-            I::render,
-        )
+        self.list_with_render(items, ListElementCreation::Clone, I::ELEMENT_TAG, I::render)
     }
 }
 

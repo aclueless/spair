@@ -199,15 +199,15 @@ mod qr_list_tests {
     use crate::component::{Component, RcComp};
     use crate::dom::{Element, Node};
     use crate::queue_render::vec::QrVec;
-    use crate::render::html::ListItemRender;
+    use crate::render::html::ElementRender;
     use crate::render::ListElementCreation;
 
     pub struct State {
         vec: QrVec<u32>,
     }
 
-    impl ListItemRender<State> for u32 {
-        const ROOT_ELEMENT_TAG: &'static str = "span";
+    impl ElementRender<State> for u32 {
+        const ELEMENT_TAG: &'static str = "span";
         fn render(&self, item: crate::Element<State>) {
             item.rupdate(*self);
         }

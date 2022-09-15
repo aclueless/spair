@@ -31,7 +31,7 @@ pub use render::svg::{
 pub use render::{
     html::predefined_attribute_types::*,
     html::HtmlElementRender as Element,
-    html::{ListItemRender, Nodes, Render, StaticNodes, StaticRender},
+    html::{ElementRender, Nodes, Render, StaticNodes, StaticRender},
     ListElementCreation,
 };
 

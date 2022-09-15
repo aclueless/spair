@@ -69,14 +69,37 @@ impl<C: Component> Render<C> for String {
     }
 }
 
-pub trait ListItemRender<C: Component> {
-    const ROOT_ELEMENT_TAG: &'static str;
-    fn render(&self, item: crate::Element<C>);
+pub trait ElementRender<C: Component> {
+    const ELEMENT_TAG: &'static str;
+    fn render(self, item: crate::Element<C>);
 }
 
-impl<C: Component, T: ListItemRender<C>> ListItemRender<C> for &T {
-    const ROOT_ELEMENT_TAG: &'static str = T::ROOT_ELEMENT_TAG;
-    fn render(&self, item: crate::Element<C>) {
-        (*self).render(item);
+/// A simple wrapper to render an ElementRender's item with `.rupdate()`
+pub struct Rer<T>(T);
+impl<C: Component, T: ElementRender<C>> Render<C> for Rer<T> {
+    fn render(self, nodes: Nodes<C>) {
+        use super::RenderHtmlElement;
+        nodes.render_element(T::ELEMENT_TAG, |er| self.0.render(er));
     }
 }
+
+// Rust prevent implementation directly on T with this error:
+// error[E0119]: conflicting implementations of trait `render::html::render::Render<_>` for type `&str`
+//    --> src/render/html/render.rs:100:1
+//     |
+// 54  | impl<C: Component> Render<C> for &str {
+//     | ------------------------------------- first implementation here
+// ...
+// 100 | impl<C: Component, T: ElementRender<C>> Render<C> for T {
+//     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ conflicting implementation for `&str`
+//     |
+//     = note: downstream crates may implement trait `render::html::render::ElementRender<_>` for type `&str`
+// TODO: Ultimate goal: Request rust lift the restriction, because the downstream crates should not
+//       impl `render::html::render::ElementRender<_>` for type `&str`
+// TODO: Near future todo: Make a proc macro #[derive(RenderWithElementRender)]
+// impl<C: Component, T: ElementRender<C>> Render<C> for T {
+//     fn render(self, nodes: Nodes<C>) {
+//         use super::RenderHtmlElement;
+//         nodes.render_element(T::ELEMENT_TAG, |er| self.render(er));
+//     }
+// }

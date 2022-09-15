@@ -59,7 +59,7 @@ impl<'a> ListRender<'a> {
         C: Component,
         E: ElementTag,
         II: Iterator<Item = I>,
-        for<'r> R: Fn(&I, BaseElementRender<'r, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         let mut index = 0;
         for item in items {
@@ -73,7 +73,7 @@ impl<'a> ListRender<'a> {
             );
             let element = self.list.get_element_mut(index);
             let r = BaseElementRender::new(comp, state, element, status);
-            render(&item, r);
+            render(item, r);
             index += 1;
         }
         self.clear_after(index);
