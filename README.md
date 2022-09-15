@@ -228,9 +228,15 @@ attributes/properties, you have to explicitly switch to nodes-mode using
 ## Common errors
 Using Spair, you may encounter common mistakes listed in this section.
 They are really annoying. How these problems can be avoided?
-### `static_attributes()`
-If you set an attribute in static-mode it will never be updated. It is
-easy to misplace an update-mode attribute under static-mode.
+### `static_attributes()`, `static_nodes()`
+If you set attributes or add nodes in static-mode it will never be updated. It is
+easy to misplace an update-mode item under static-mode. For example, you have
+an app and have already converted all things that are you considered static to
+static-mode. Now, after a while, You decide to add something that you want it
+to be updated on change. But you placed it under a branch of the DOM tree without
+noticing that the branch is under static-mode. Finally, you give the new version
+of the app a test, at first, you may scratch head and check back and forth many
+times because it is renderd, but never update its value.
 
 [Rust]: https://www.rust-lang.org/
 [Trunk]: https://trunkrs.dev/
