@@ -1,4 +1,4 @@
-use super::{ElementRender, ListRender};
+use super::{BaseElementRender, ListRender};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
     dom::{
@@ -23,8 +23,8 @@ pub struct NodesRender<'a, C: Component> {
     nodes: &'a mut Nodes,
 }
 
-impl<'a, C: Component> From<ElementRender<'a, C>> for NodesRender<'a, C> {
-    fn from(er: ElementRender<'a, C>) -> Self {
+impl<'a, C: Component> From<BaseElementRender<'a, C>> for NodesRender<'a, C> {
+    fn from(er: BaseElementRender<'a, C>) -> Self {
         let (comp, state, parent_status, element) = er.into_parts();
         let (parent, nodes) = element.ws_node_and_nodes_mut();
         Self {
@@ -90,7 +90,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
         self.index += 1;
     }
 
-    pub fn get_element_render<E: ElementTag>(&mut self, tag: E) -> ElementRender<C> {
+    pub fn get_element_render<E: ElementTag>(&mut self, tag: E) -> BaseElementRender<C> {
         let status = self.nodes.check_or_create_element(
             tag,
             self.index,
@@ -101,7 +101,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
         let element = self.nodes.get_element_mut(self.index);
         // Don't do this here, because .get_element_render() is not always called
         // self.index += 1;
-        ElementRender::new(self.comp, self.state, element, status)
+        BaseElementRender::new(self.comp, self.state, element, status)
     }
 
     pub fn get_match_if_render(&mut self) -> MatchIfRender<C> {

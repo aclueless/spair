@@ -1,4 +1,4 @@
-use super::ElementRender;
+use super::BaseElementRender;
 use crate::{
     component::{Comp, Component},
     dom::{ElementStatus, ElementTag, Nodes},
@@ -59,7 +59,7 @@ impl<'a> ListRender<'a> {
         C: Component,
         E: ElementTag,
         II: Iterator<Item = I>,
-        for<'r> R: Fn(&I, ElementRender<'r, C>),
+        for<'r> R: Fn(&I, BaseElementRender<'r, C>),
     {
         let mut index = 0;
         for item in items {
@@ -72,7 +72,7 @@ impl<'a> ListRender<'a> {
                 self.use_template,
             );
             let element = self.list.get_element_mut(index);
-            let r = ElementRender::new(comp, state, element, status);
+            let r = BaseElementRender::new(comp, state, element, status);
             render(&item, r);
             index += 1;
         }

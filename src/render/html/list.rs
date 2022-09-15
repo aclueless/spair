@@ -2,7 +2,7 @@ use super::ListItemRender;
 use crate::{
     component::Component,
     render::{
-        base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        base::{BaseElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
         html::{
             AttributesOnly, HtmlElementRender, HtmlTag, StaticAttributes, StaticAttributesOnly,
         },
@@ -26,10 +26,13 @@ pub trait HemsForList<'a, C: Component>:
     {
         let tag = HtmlTag(tag);
         let (comp, state, mut r) = self.element_render_mut().list_render(mode);
-        let _do_we_have_to_care_about_this_returned_value_ =
-            r.render(comp, state, items, tag, |item: &I, er: ElementRender<C>| {
-                render(item, er.into())
-            });
+        let _do_we_have_to_care_about_this_returned_value_ = r.render(
+            comp,
+            state,
+            items,
+            tag,
+            |item: &I, er: BaseElementRender<C>| render(item, er.into()),
+        );
 
         self.make_nodes_extensions()
     }

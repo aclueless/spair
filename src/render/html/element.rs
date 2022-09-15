@@ -2,7 +2,7 @@ use super::{AttributesOnly, StaticAttributes, StaticAttributesOnly};
 use crate::{
     component::{Comp, Component},
     dom::{AttributeValueList, ElementType, WsElement},
-    render::base::{ElementRender, ElementRenderMut, MethodsForEvents},
+    render::base::{BaseElementRender, ElementRenderMut, MethodsForEvents},
 };
 use wasm_bindgen::JsCast;
 
@@ -68,16 +68,16 @@ pub trait HtmlElementRenderMut<C: Component> {
 /// struct (respectively via HamsForDistinctNames and HemsForDistinctNames). Some HTML attributes
 /// and HTML elements that their names appear in both will not be call directly on this struct.
 pub struct HtmlElementRender<'er, C: Component> {
-    element_render: ElementRender<'er, C>,
+    element_render: BaseElementRender<'er, C>,
     select_element_value_manager: Option<SelectElementValueManager>,
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for HtmlElementRender<'er, C> {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         &self.element_render
     }
 
-    fn element_render_mut(&mut self) -> &'er mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &'er mut BaseElementRender<C> {
         &mut self.element_render
     }
 }
@@ -88,8 +88,8 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for HtmlElementRender<'er, C> {
     }
 }
 
-impl<'er, C: Component> From<ElementRender<'er, C>> for HtmlElementRender<'er, C> {
-    fn from(element_render: ElementRender<'er, C>) -> Self {
+impl<'er, C: Component> From<BaseElementRender<'er, C>> for HtmlElementRender<'er, C> {
+    fn from(element_render: BaseElementRender<'er, C>) -> Self {
         let select_element_value_manager: Option<SelectElementValueManager> =
             match element_render.element().element_type() {
                 ElementType::Select => Some(element_render.element().ws_element().unchecked_ref()),
@@ -103,7 +103,9 @@ impl<'er, C: Component> From<ElementRender<'er, C>> for HtmlElementRender<'er, C
     }
 }
 impl<'er, C: Component> HtmlElementRender<'er, C> {
-    pub(super) fn into_parts(self) -> (ElementRender<'er, C>, Option<SelectElementValueManager>) {
+    pub(super) fn into_parts(
+        self,
+    ) -> (BaseElementRender<'er, C>, Option<SelectElementValueManager>) {
         (self.element_render, self.select_element_value_manager)
     }
 

@@ -1,7 +1,7 @@
 use super::SvgElementRender;
 use crate::{
     component::Component,
-    render::base::{ElementRender, ElementRenderMut, F64AttributeValue, StringAttributeValue},
+    render::base::{BaseElementRender, ElementRenderMut, F64AttributeValue, StringAttributeValue},
 };
 
 #[cfg(feature = "queue-render")]
@@ -338,15 +338,15 @@ make_trait_for_attribute_methods! {
         str          zoom_and_pan "zoomAndPan"
 }
 
-pub struct SvgAttributesOnly<'er, C: Component>(ElementRender<'er, C>);
-pub struct SvgStaticAttributesOnly<'er, C: Component>(ElementRender<'er, C>);
-pub struct SvgStaticAttributes<'er, C: Component>(ElementRender<'er, C>);
+pub struct SvgAttributesOnly<'er, C: Component>(BaseElementRender<'er, C>);
+pub struct SvgStaticAttributesOnly<'er, C: Component>(BaseElementRender<'er, C>);
+pub struct SvgStaticAttributes<'er, C: Component>(BaseElementRender<'er, C>);
 
 impl<'er, C: Component> SvgAttributesOnly<'er, C> {
-    pub(super) fn new(er: ElementRender<'er, C>) -> Self {
+    pub(super) fn new(er: BaseElementRender<'er, C>) -> Self {
         Self(er)
     }
-    pub(super) fn into_inner(self) -> ElementRender<'er, C> {
+    pub(super) fn into_inner(self) -> BaseElementRender<'er, C> {
         self.0
     }
 
@@ -356,21 +356,21 @@ impl<'er, C: Component> SvgAttributesOnly<'er, C> {
 }
 
 impl<'er, C: Component> SvgStaticAttributesOnly<'er, C> {
-    pub(super) fn new(mut er: ElementRender<'er, C>) -> Self {
+    pub(super) fn new(mut er: BaseElementRender<'er, C>) -> Self {
         er.set_static_mode();
         Self(er)
     }
-    pub(super) fn into_inner(self) -> ElementRender<'er, C> {
+    pub(super) fn into_inner(self) -> BaseElementRender<'er, C> {
         self.0
     }
 }
 
 impl<'er, C: Component> SvgStaticAttributes<'er, C> {
-    pub(super) fn new(mut er: ElementRender<'er, C>) -> Self {
+    pub(super) fn new(mut er: BaseElementRender<'er, C>) -> Self {
         er.set_static_mode();
         Self(er)
     }
-    pub(super) fn into_inner(self) -> ElementRender<'er, C> {
+    pub(super) fn into_inner(self) -> BaseElementRender<'er, C> {
         self.0
     }
     pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'er, C> {
@@ -379,28 +379,28 @@ impl<'er, C: Component> SvgStaticAttributes<'er, C> {
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for SvgAttributesOnly<'er, C> {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &'er mut BaseElementRender<C> {
         &mut self.0
     }
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributesOnly<'er, C> {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &'er mut BaseElementRender<C> {
         &mut self.0
     }
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributes<'er, C> {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &'er mut BaseElementRender<C> {
         &mut self.0
     }
 }

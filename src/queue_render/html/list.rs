@@ -5,7 +5,7 @@ use crate::{queue_render::vec::QrVec, render::html::ListItemRender};
 use crate::{
     component::Component,
     render::{
-        base::{ElementRender, NodesRenderMut},
+        base::{BaseElementRender, NodesRenderMut},
         html::{
             AttributesOnly, HtmlElementRender, HtmlTag, NodesOwned, StaticAttributes,
             StaticAttributesOnly,
@@ -30,7 +30,7 @@ pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
             true,
             mode,
             HtmlTag(tag),
-            move |item: &I, er: ElementRender<C>| render(item, er.into()),
+            move |item: &I, er: BaseElementRender<C>| render(item, er.into()),
         ) {
             None => return,
             Some(render) => render,

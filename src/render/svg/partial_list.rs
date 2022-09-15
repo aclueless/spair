@@ -4,7 +4,7 @@ use super::{
 use crate::{
     component::Component,
     render::{
-        base::{ElementRender, NodesRenderMut},
+        base::{BaseElementRender, NodesRenderMut},
         ListElementCreation,
     },
 };
@@ -27,7 +27,7 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
             state,
             items,
             SvgTag(tag),
-            |item: &I, er: ElementRender<C>| render(item, er.into()),
+            |item: &I, er: BaseElementRender<C>| render(item, er.into()),
         );
         self
     }

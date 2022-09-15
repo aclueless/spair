@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     dom::{Key, Keyed},
     render::{
-        base::{ElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        base::{BaseElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
         svg::{
             SvgAttributesOnly, SvgElementRender, SvgStaticAttributes, SvgStaticAttributesOnly,
             SvgTag,
@@ -28,7 +28,7 @@ pub trait SemsForKeyedList<'a, C: Component>:
         K: Into<Key> + PartialEq<Key>,
         for<'r> R: Fn(&I, SvgElementRender<'r, C>),
     {
-        let fn_render = |item: &I, element: ElementRender<C>| {
+        let fn_render = |item: &I, element: BaseElementRender<C>| {
             fn_render(item, element.into());
         };
         let _select_element_value_will_be_set_on_dropping_of_the_manager = self

@@ -15,8 +15,8 @@ use crate::{
 };
 
 pub trait ElementRenderMut<C: Component> {
-    fn element_render(&self) -> &ElementRender<C>;
-    fn element_render_mut(&mut self) -> &mut ElementRender<C>;
+    fn element_render(&self) -> &BaseElementRender<C>;
+    fn element_render_mut(&mut self) -> &mut BaseElementRender<C>;
 }
 
 impl<C, T> ElementRenderMut<C> for &mut T
@@ -24,15 +24,15 @@ where
     C: Component,
     T: ElementRenderMut<C>,
 {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         (**self).element_render()
     }
-    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &mut BaseElementRender<C> {
         (**self).element_render_mut()
     }
 }
 
-pub struct ElementRender<'a, C: Component> {
+pub struct BaseElementRender<'a, C: Component> {
     comp: &'a Comp<C>,
     state: &'a C,
 
@@ -42,7 +42,7 @@ pub struct ElementRender<'a, C: Component> {
     element: &'a mut Element,
 }
 
-impl<'a, C: Component> ElementRender<'a, C> {
+impl<'a, C: Component> BaseElementRender<'a, C> {
     pub fn new(
         comp: &'a crate::component::Comp<C>,
         state: &'a C,
@@ -292,7 +292,7 @@ impl<'a, C: Component> ElementRender<'a, C> {
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size

@@ -487,8 +487,12 @@ impl<C: Component> CompInstance<C> {
         } else {
             ElementStatus::Existing
         };
-        let er =
-            crate::render::base::ElementRender::new(comp, state, &mut self.root_element, status);
+        let er = crate::render::base::BaseElementRender::new(
+            comp,
+            state,
+            &mut self.root_element,
+            status,
+        );
         state.render(er.into());
     }
 

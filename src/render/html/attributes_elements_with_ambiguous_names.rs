@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     component::Component,
-    render::base::{ElementRenderMut, NodesRenderMut, StringAttributeValue, U32AttributeValue},
+    render::base::{NodesRenderMut, StringAttributeValue, U32AttributeValue},
 };
 
 #[cfg(test)]

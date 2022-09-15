@@ -1,4 +1,4 @@
-use super::{ElementRender, ElementRenderMut};
+use super::BaseElementRender;
 use crate::component::Component;
 
 #[cfg(feature = "queue-render")]
@@ -32,38 +32,38 @@ make_traits_for_attribute_values! {
 }
 
 pub trait Class<C: Component> {
-    fn render(self, element: &mut ElementRender<C>);
+    fn render(self, element: &mut BaseElementRender<C>);
 }
 
 impl<C: Component> Class<C> for &str {
-    fn render(self, element: &mut ElementRender<C>) {
+    fn render(self, element: &mut BaseElementRender<C>) {
         element.class(self);
     }
 }
 
 impl<C: Component> Class<C> for String {
-    fn render(self, element: &mut ElementRender<C>) {
+    fn render(self, element: &mut BaseElementRender<C>) {
         element.class(&self);
     }
 }
 
 #[cfg(feature = "queue-render")]
 impl<C: Component> Class<C> for &QrVal<String> {
-    fn render(self, element: &mut ElementRender<C>) {
+    fn render(self, element: &mut BaseElementRender<C>) {
         element.qr_class(self);
     }
 }
 
 #[cfg(feature = "queue-render")]
 impl<C: Component, T: 'static> Class<C> for MapValue<C, T, String> {
-    fn render(self, element: &mut ElementRender<C>) {
+    fn render(self, element: &mut BaseElementRender<C>) {
         element.qrm_class(self);
     }
 }
 
 #[cfg(feature = "queue-render")]
 impl<C: Component, T: 'static> Class<C> for MapValue<C, T, &'static str> {
-    fn render(self, element: &mut ElementRender<C>) {
+    fn render(self, element: &mut BaseElementRender<C>) {
         element.qrm_str_class(self);
     }
 }

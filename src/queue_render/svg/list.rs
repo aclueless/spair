@@ -5,7 +5,7 @@ use crate::{queue_render::vec::QrVec, render::svg::SvgListItemRender};
 use crate::{
     component::Component,
     render::{
-        base::{ElementRender, NodesRenderMut},
+        base::{BaseElementRender, NodesRenderMut},
         svg::{
             SvgAttributesOnly, SvgElementRender, SvgNodesOwned, SvgStaticAttributes,
             SvgStaticAttributesOnly, SvgTag,
@@ -30,7 +30,7 @@ pub trait SemsForQrList<'a, C: Component>: Sized + Into<SvgNodesOwned<'a, C>> {
             true,
             mode,
             SvgTag(tag),
-            move |item: &I, er: ElementRender<C>| render(item, er.into()),
+            move |item: &I, er: BaseElementRender<C>| render(item, er.into()),
         ) {
             None => return,
             Some(render) => render,

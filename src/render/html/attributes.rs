@@ -3,7 +3,7 @@ use crate::{
     component::Component,
     dom::AttributeValueList,
     render::base::{
-        AttributeMinMax, BoolAttributeValue, Class, ElementRender, ElementRenderMut,
+        AttributeMinMax, BaseElementRender, BoolAttributeValue, Class, ElementRenderMut,
         F64AttributeValue, I32AttributeValue, MethodsForEvents, StringAttributeValue,
         U32AttributeValue,
     },
@@ -123,7 +123,7 @@ pub trait MethodsForSelectedValueSelectedIndex<C: Component>:
 }
 
 make_traits_for_property_values! {
-    ElementRender
+    BaseElementRender
     PropertyChecked {
         bool, checked checked_ref qr_property qrm_property,
     }
@@ -380,10 +380,10 @@ impl<'er, C: Component> StaticAttributes<'er, C> {
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for AttributesOnly<'er, C> {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         self.0.element_render()
     }
-    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &mut BaseElementRender<C> {
         self.0.element_render_mut()
     }
 }
@@ -394,10 +394,10 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for AttributesOnly<'er, C> {
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for StaticAttributesOnly<'er, C> {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         self.0.element_render()
     }
-    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &mut BaseElementRender<C> {
         self.0.element_render_mut()
     }
 }
@@ -408,10 +408,10 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for StaticAttributesOnly<'er, C>
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for StaticAttributes<'er, C> {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         self.0.element_render()
     }
-    fn element_render_mut(&mut self) -> &mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &mut BaseElementRender<C> {
         self.0.element_render_mut()
     }
 }

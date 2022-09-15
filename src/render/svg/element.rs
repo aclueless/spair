@@ -2,28 +2,28 @@ use super::{SvgAttributesOnly, SvgStaticAttributes, SvgStaticAttributesOnly};
 use crate::{
     component::{Comp, Component},
     dom::WsElement,
-    render::base::{ElementRender, ElementRenderMut},
+    render::base::{BaseElementRender, ElementRenderMut},
 };
 
-pub struct SvgElementRender<'er, C: Component>(ElementRender<'er, C>);
+pub struct SvgElementRender<'er, C: Component>(BaseElementRender<'er, C>);
 
-impl<'er, C: Component> From<ElementRender<'er, C>> for SvgElementRender<'er, C> {
-    fn from(element_render: ElementRender<'er, C>) -> Self {
+impl<'er, C: Component> From<BaseElementRender<'er, C>> for SvgElementRender<'er, C> {
+    fn from(element_render: BaseElementRender<'er, C>) -> Self {
         Self(element_render)
     }
 }
 
 impl<'er, C: Component> ElementRenderMut<C> for SvgElementRender<'er, C> {
-    fn element_render(&self) -> &ElementRender<C> {
+    fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut ElementRender<C> {
+    fn element_render_mut(&mut self) -> &'er mut BaseElementRender<C> {
         &mut self.0
     }
 }
 
 impl<'er, C: Component> SvgElementRender<'er, C> {
-    pub(super) fn into_inner(self) -> ElementRender<'er, C> {
+    pub(super) fn into_inner(self) -> BaseElementRender<'er, C> {
         self.0
     }
 

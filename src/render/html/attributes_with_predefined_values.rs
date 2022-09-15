@@ -1,8 +1,5 @@
 use super::{AttributesOnly, HtmlElementRender, StaticAttributes, StaticAttributesOnly};
-use crate::{
-    component::Component,
-    render::base::{ElementRender, ElementRenderMut},
-};
+use crate::component::Component;
 
 #[cfg(test)]
 use crate::render::html::TestHtmlMethods;

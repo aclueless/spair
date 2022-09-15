@@ -12,7 +12,7 @@ macro_rules! make_trait_for_attribute_methods {
             names: $($method_name)+
         }
 
-        pub trait $TraitName<C: Component>: Sized + ElementRenderMut<C>
+        pub trait $TraitName<C: Component>: Sized + crate::render::base::ElementRenderMut<C>
         {$(
             make_trait_for_attribute_methods! {
                 @each
@@ -97,7 +97,7 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
                 names: $($attribute_method_name)*
             })+
         );
-        pub trait $TraitName<C: Component>: Sized + ElementRenderMut<C> {
+        pub trait $TraitName<C: Component>: Sized + crate::render::base::ElementRenderMut<C> {
             $(
             $(
                 make_trait_for_attributes_with_predefined_values!(
@@ -185,11 +185,11 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
         }
 
         pub trait $AttributeValueTrait<C: Component> {
-            fn render(self, attribute_name: &str, element: &mut ElementRender<C>);
+            fn render(self, attribute_name: &str, element: &mut crate::render::base::BaseElementRender<C>);
         }
 
         impl<C: Component> $AttributeValueTrait<C> for $AttributeValueType {
-            fn render(self, attribute_name: &str, element: &mut ElementRender<C>) {
+            fn render(self, attribute_name: &str, element: &mut crate::render::base::BaseElementRender<C>) {
                 element.set_str_attribute(attribute_name, self.as_str());
             }
         }
@@ -229,11 +229,11 @@ macro_rules! make_traits_for_attribute_values {
     ) => {
         $(
             pub trait $AttributeTrait<C: Component> {
-                fn render(self, name: &'static str, element: impl ElementRenderMut<C>);
+                fn render(self, name: &'static str, element: impl crate::render::base::ElementRenderMut<C>);
             }
             $(
                 impl<C: Component> $AttributeTrait<C> for $attribute_type {
-                    fn render(self, name: &'static str, mut element: impl ElementRenderMut<C>) {
+                    fn render(self, name: &'static str, mut element: impl crate::render::base::ElementRenderMut<C>) {
                         element.element_render_mut().$method_name(name, self);
                     }
                 }
@@ -258,13 +258,13 @@ macro_rules! make_traits_for_attribute_values {
     ) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $AttributeTrait<C> for &QrVal<$attribute_type> {
-            fn render(self, name: &'static str, mut element: impl ElementRenderMut<C>) {
+            fn render(self, name: &'static str, mut element: impl crate::render::base::ElementRenderMut<C>) {
                 element.element_render_mut().$queue_render_method_name(name, self);
             }
         }
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $AttributeTrait<C> for MapValue<C, T, $attribute_type> {
-            fn render(self, name: &'static str, mut element: impl ElementRenderMut<C>) {
+            fn render(self, name: &'static str, mut element: impl crate::render::base::ElementRenderMut<C>) {
                 element.element_render_mut().$queue_render_method_name_map(name, self);
             }
         }

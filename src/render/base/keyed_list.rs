@@ -1,6 +1,6 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use super::ElementRender;
+use super::BaseElementRender;
 use crate::{
     component::{Comp, Component},
     dom::{
@@ -82,9 +82,9 @@ where
         (self.fn_get_key)(item_state)
     }
 
-    fn render<I>(&self, item_state: &I, r: ElementRender<C>)
+    fn render<I>(&self, item_state: &I, r: BaseElementRender<C>)
     where
-        for<'r> R: Fn(&I, ElementRender<'r, C>),
+        for<'r> R: Fn(&I, BaseElementRender<'r, C>),
     {
         (self.fn_render)(item_state, r)
     }
@@ -97,12 +97,12 @@ where
         next_sibling: Option<&web_sys::Element>,
         fn_insert: impl FnOnce(&Element, Option<&web_sys::Element>),
     ) where
-        for<'r> R: Fn(I, ElementRender<'r, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         let mut old_item = old_item.unwrap_throw().1.take();
         fn_insert(&old_item.as_ref().unwrap_throw().element, next_sibling);
 
-        let er = ElementRender::new(
+        let er = BaseElementRender::new(
             self.comp,
             self.state,
             &mut old_item.as_mut().unwrap_throw().element,
@@ -145,7 +145,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
     {
         // No items? Just clear the current list.
         if self.list_context.new_item_count == 0 {
@@ -155,7 +155,7 @@ where
 
         let mut items_state_iter = items_state_iter.peekable_double_ended();
         if self.list_context.require_init_template {
-            let er = ElementRender::new(
+            let er = BaseElementRender::new(
                 self.render_context.comp,
                 self.render_context.state,
                 self.list_context.template.as_mut().unwrap(),
@@ -187,7 +187,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
     {
         let mut count = 0;
         loop {
@@ -223,7 +223,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
     {
         let mut count = 0;
         loop {
@@ -262,7 +262,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
     {
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
@@ -306,7 +306,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
     {
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
@@ -342,7 +342,7 @@ where
     ) where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
     {
         if items_state_iter.peek().is_none() {
             self.remove_remain_items();
@@ -382,7 +382,7 @@ where
                 None => self.create_element_for_new_item(),
             };
 
-            let er = ElementRender::new(
+            let er = BaseElementRender::new(
                 self.render_context.comp,
                 self.render_context.state,
                 &mut element,
@@ -455,12 +455,12 @@ where
     ) where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, ElementRender<'er, C>),
+        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
     {
         for item_state in items_state_iter {
             let (mut element, status) = self.create_element_for_new_item();
 
-            let er = ElementRender::new(
+            let er = BaseElementRender::new(
                 self.render_context.comp,
                 self.render_context.state,
                 &mut element,
@@ -666,7 +666,7 @@ mod keyed_list_with_render_tests {
     use crate::dom::{Element, Node};
     use crate::render::ListElementCreation;
     use crate::render::{
-        base::ElementRender,
+        base::BaseElementRender,
         html::{HemsForKeyedList, HtmlElementRender, HtmlTag},
     };
 
@@ -773,7 +773,7 @@ mod keyed_list_with_render_tests {
         }
 
         fn create_render(&mut self) -> HtmlElementRender<Unit> {
-            ElementRender::new(
+            BaseElementRender::new(
                 &self.comp,
                 &Unit,
                 &mut self.root,
