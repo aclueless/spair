@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     dom::{Key, Keyed},
     render::{
-        base::{BaseElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        base::{BaseElementRender, BaseElementRenderMut, MakeNodesExtensions, NodesExtensions},
         svg::{
             SvgAttributesOnly, SvgElementRender, SvgStaticAttributes, SvgStaticAttributesOnly,
             SvgTag,
@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub trait SemsForKeyedList<'a, C: Component>:
-    Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>
+    Sized + BaseElementRenderMut<C> + MakeNodesExtensions<'a>
 {
     fn keyed_list_with_render<I, II, G, K, R>(
         mut self,

@@ -2,7 +2,7 @@ use super::{AttributesOnly, StaticAttributes, StaticAttributesOnly};
 use crate::{
     component::{Comp, Component},
     dom::{AttributeValueList, ElementType, WsElement},
-    render::base::{BaseElementRender, ElementRenderMut, MethodsForEvents},
+    render::base::{BaseElementRender, BaseElementRenderMut, MethodsForEvents},
 };
 use wasm_bindgen::JsCast;
 
@@ -72,7 +72,7 @@ pub struct HtmlElementRender<'er, C: Component> {
     select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-impl<'er, C: Component> ElementRenderMut<C> for HtmlElementRender<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for HtmlElementRender<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         &self.element_render
     }

@@ -1,7 +1,9 @@
 use super::SvgElementRender;
 use crate::{
     component::Component,
-    render::base::{BaseElementRender, ElementRenderMut, F64AttributeValue, StringAttributeValue},
+    render::base::{
+        BaseElementRender, BaseElementRenderMut, F64AttributeValue, StringAttributeValue,
+    },
 };
 
 #[cfg(feature = "queue-render")]
@@ -16,7 +18,7 @@ make_traits_for_attribute_values! {
     }
 }
 
-pub trait SamsHandMade<C: Component>: Sized + ElementRenderMut<C> {
+pub trait SamsHandMade<C: Component>: Sized + BaseElementRenderMut<C> {
     fn class(mut self, class_name: &str) -> Self {
         self.element_render_mut().class(class_name);
         self
@@ -378,7 +380,7 @@ impl<'er, C: Component> SvgStaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> ElementRenderMut<C> for SvgAttributesOnly<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for SvgAttributesOnly<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }
@@ -387,7 +389,7 @@ impl<'er, C: Component> ElementRenderMut<C> for SvgAttributesOnly<'er, C> {
     }
 }
 
-impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributesOnly<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for SvgStaticAttributesOnly<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }
@@ -396,7 +398,7 @@ impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributesOnly<'er, C> 
     }
 }
 
-impl<'er, C: Component> ElementRenderMut<C> for SvgStaticAttributes<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for SvgStaticAttributes<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }

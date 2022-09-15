@@ -14,15 +14,15 @@ use crate::{
     },
 };
 
-pub trait ElementRenderMut<C: Component> {
+pub trait BaseElementRenderMut<C: Component> {
     fn element_render(&self) -> &BaseElementRender<C>;
     fn element_render_mut(&mut self) -> &mut BaseElementRender<C>;
 }
 
-impl<C, T> ElementRenderMut<C> for &mut T
+impl<C, T> BaseElementRenderMut<C> for &mut T
 where
     C: Component,
-    T: ElementRenderMut<C>,
+    T: BaseElementRenderMut<C>,
 {
     fn element_render(&self) -> &BaseElementRender<C> {
         (**self).element_render()

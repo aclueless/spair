@@ -2,7 +2,7 @@ use super::{SvgAttributesOnly, SvgStaticAttributes, SvgStaticAttributesOnly};
 use crate::{
     component::{Comp, Component},
     dom::WsElement,
-    render::base::{BaseElementRender, ElementRenderMut},
+    render::base::{BaseElementRender, BaseElementRenderMut},
 };
 
 pub struct SvgElementRender<'er, C: Component>(BaseElementRender<'er, C>);
@@ -13,7 +13,7 @@ impl<'er, C: Component> From<BaseElementRender<'er, C>> for SvgElementRender<'er
     }
 }
 
-impl<'er, C: Component> ElementRenderMut<C> for SvgElementRender<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for SvgElementRender<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }

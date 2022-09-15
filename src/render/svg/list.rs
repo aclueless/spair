@@ -2,7 +2,7 @@ use super::SvgListItemRender;
 use crate::{
     component::Component,
     render::{
-        base::{BaseElementRender, ElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        base::{BaseElementRender, BaseElementRenderMut, MakeNodesExtensions, NodesExtensions},
         svg::{
             SvgAttributesOnly, SvgElementRender, SvgStaticAttributes, SvgStaticAttributesOnly,
             SvgTag,
@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub trait SemsForList<'a, C: Component>:
-    Sized + ElementRenderMut<C> + MakeNodesExtensions<'a>
+    Sized + BaseElementRenderMut<C> + MakeNodesExtensions<'a>
 {
     fn list_with_render<I, II, R>(
         mut self,

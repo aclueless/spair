@@ -3,7 +3,7 @@ use crate::{
     component::Component,
     dom::AttributeValueList,
     render::base::{
-        AttributeMinMax, BaseElementRender, BoolAttributeValue, Class, ElementRenderMut,
+        AttributeMinMax, BaseElementRender, BaseElementRenderMut, BoolAttributeValue, Class,
         F64AttributeValue, I32AttributeValue, MethodsForEvents, StringAttributeValue,
         U32AttributeValue,
     },
@@ -136,7 +136,7 @@ make_traits_for_property_values! {
 }
 
 pub trait HamsHandMade<C: Component>:
-    Sized + ElementRenderMut<C> + HamsForDistinctNames<C>
+    Sized + BaseElementRenderMut<C> + HamsForDistinctNames<C>
 {
     fn done(self) {}
 
@@ -379,7 +379,7 @@ impl<'er, C: Component> StaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> ElementRenderMut<C> for AttributesOnly<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for AttributesOnly<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         self.0.element_render()
     }
@@ -393,7 +393,7 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for AttributesOnly<'er, C> {
     }
 }
 
-impl<'er, C: Component> ElementRenderMut<C> for StaticAttributesOnly<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for StaticAttributesOnly<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         self.0.element_render()
     }
@@ -407,7 +407,7 @@ impl<'er, C: Component> HtmlElementRenderMut<C> for StaticAttributesOnly<'er, C>
     }
 }
 
-impl<'er, C: Component> ElementRenderMut<C> for StaticAttributes<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for StaticAttributes<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         self.0.element_render()
     }
