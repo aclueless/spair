@@ -25,7 +25,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, HtmlElementUpdater<'r, C>),
+        R: Fn(I, HtmlElementUpdater<C>),
     {
         let fn_render = |item: I, element: ElementUpdater<C>| {
             fn_render(item, element.into());
@@ -47,7 +47,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, HtmlElementUpdater<'r, C>),
+        R: Fn(I, HtmlElementUpdater<C>),
     {
         self.keyed_list_with_render(
             items,
