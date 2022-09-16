@@ -15,7 +15,7 @@ use crate::{
 #[cfg(feature = "queue-render")]
 use crate::queue_render::value::QrVal;
 
-pub struct HtmlNodesRender<'n, C: Component> {
+pub struct HtmlNodesUpdater<'n, C: Component> {
     nodes_render: NodesRender<'n, C>,
     // Just keep this value until the completion of the build of the whole node list
     // After done building the node list, this value will be dropped. The Drop::drop method
@@ -23,7 +23,7 @@ pub struct HtmlNodesRender<'n, C: Component> {
     _select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-impl<'n, C: Component> NodesRenderMut<C> for HtmlNodesRender<'n, C> {
+impl<'n, C: Component> NodesRenderMut<C> for HtmlNodesUpdater<'n, C> {
     fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
         &mut self.nodes_render
     }
@@ -198,34 +198,34 @@ make_trait_for_element_methods! {
         wbr //should be specialized?
 }
 
-pub struct NodesOwned<'n, C: Component>(HtmlNodesRender<'n, C>);
-pub struct StaticNodesOwned<'n, C: Component>(HtmlNodesRender<'n, C>);
-pub struct Nodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodesRender<'n, C>);
-pub struct StaticNodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodesRender<'n, C>);
+pub struct NodesOwned<'n, C: Component>(HtmlNodesUpdater<'n, C>);
+pub struct StaticNodesOwned<'n, C: Component>(HtmlNodesUpdater<'n, C>);
+pub struct Nodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodesUpdater<'n, C>);
+pub struct StaticNodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodesUpdater<'n, C>);
 
 impl<'n, C: Component> NodesOwned<'n, C> {
-    fn new(mut r: HtmlNodesRender<'n, C>) -> Self {
+    fn new(mut r: HtmlNodesUpdater<'n, C>) -> Self {
         r.nodes_render.set_update_mode();
         Self(r)
     }
 }
 
 impl<'n, C: Component> StaticNodesOwned<'n, C> {
-    fn new(mut r: HtmlNodesRender<'n, C>) -> Self {
+    fn new(mut r: HtmlNodesUpdater<'n, C>) -> Self {
         r.nodes_render.set_static_mode();
         Self(r)
     }
 }
 
 impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
-    fn new(r: &'h mut HtmlNodesRender<'n, C>) -> Self {
+    fn new(r: &'h mut HtmlNodesUpdater<'n, C>) -> Self {
         r.nodes_render.set_update_mode();
         Self(r)
     }
 }
 
 impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
-    fn new(r: &'h mut HtmlNodesRender<'n, C>) -> Self {
+    fn new(r: &'h mut HtmlNodesUpdater<'n, C>) -> Self {
         r.nodes_render.set_static_mode();
         Self(r)
     }
@@ -279,7 +279,7 @@ impl<'h, 'n: 'h, C: Component> From<StaticNodes<'h, 'n, C>> for Nodes<'h, 'n, C>
     }
 }
 
-impl<'n, C: Component> From<HtmlElementUpdater<'n, C>> for HtmlNodesRender<'n, C> {
+impl<'n, C: Component> From<HtmlElementUpdater<'n, C>> for HtmlNodesUpdater<'n, C> {
     fn from(r: HtmlElementUpdater<'n, C>) -> Self {
         let (r, m) = r.into_parts();
         Self {
@@ -545,7 +545,7 @@ pub struct HtmlMatchIfRender<'a, C: Component>(MatchIfRender<'a, C>);
 
 impl<'a, C: Component> HtmlMatchIfRender<'a, C> {
     pub fn render_on_arm_index(self, index: u32) -> NodesOwned<'a, C> {
-        NodesOwned(HtmlNodesRender {
+        NodesOwned(HtmlNodesUpdater {
             nodes_render: self.0.render_on_arm_index(index),
             _select_element_value_manager: None, // How about a match_if inside a <select> element?
         })

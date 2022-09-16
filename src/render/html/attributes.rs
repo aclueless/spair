@@ -102,7 +102,7 @@ make_traits_for_property_values! {
 /// of the select will not work. This trait provide methods to work
 /// with attribute value to help handle the issue. But this trait alone
 /// can not sovle the issue. We also need HtmlElementUpdater and
-/// HtmlNodesRender.
+/// HtmlNodesUpdater.
 pub trait MethodsForSelectedValueSelectedIndex<C: Component>:
     Sized + HtmlElementUpdaterMut<C>
 {
