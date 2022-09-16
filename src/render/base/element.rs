@@ -300,10 +300,10 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
 
         let use_template = mode.use_template();
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
-        let mut keyed_list_render = KeyedListUpdater::new(
+        let mut keyed_list_updater = KeyedListUpdater::new(
             KeyedListContext::new(nodes.keyed_list(), tag, items.len(), parent, use_template),
             KeyedListUpdaterContext::new(self.comp, self.state, fn_get_key, fn_render),
         );
-        keyed_list_render.update(items.into_iter())
+        keyed_list_updater.update(items.into_iter())
     }
 }
