@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     dom::WsElement,
     queue_render::value::{MapValue, QrVal},
-    render::{base::BaseElementRenderMut, html::HtmlElementUpdater},
+    render::{base::ElementUpdaterMut, html::HtmlElementUpdater},
 };
 
 // These methods don't have to be implemented on HtmlElementUpdater because

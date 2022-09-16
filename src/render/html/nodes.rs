@@ -9,7 +9,7 @@ use super::{
 use crate::render::svg::{SvgElementUpdater, SvgTag};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
-    render::base::{BaseElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut},
+    render::base::{ElementUpdaterMut, MatchIfRender, NodesRender, NodesRenderMut},
 };
 
 #[cfg(feature = "queue-render")]
@@ -338,7 +338,7 @@ impl<'n, C: Component> From<StaticAttributes<'n, C>> for StaticNodesOwned<'n, C>
 }
 
 pub trait MethodsForHtmlElementContent<'n, C: Component>:
-    BaseElementRenderMut<C> + Into<NodesOwned<'n, C>> + Into<StaticNodesOwned<'n, C>>
+    ElementUpdaterMut<C> + Into<NodesOwned<'n, C>> + Into<StaticNodesOwned<'n, C>>
 {
     fn update_nodes(self) -> NodesOwned<'n, C> {
         self.into()

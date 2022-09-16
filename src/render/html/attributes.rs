@@ -3,7 +3,7 @@ use crate::{
     component::Component,
     dom::AttributeValueList,
     render::base::{
-        AttributeMinMax, BaseElementRender, BaseElementRenderMut, BoolAttributeValue, Class,
+        AttributeMinMax, BoolAttributeValue, Class, ElementUpdater, ElementUpdaterMut,
         F64AttributeValue, I32AttributeValue, MethodsForEvents, StringAttributeValue,
         U32AttributeValue,
     },
@@ -123,7 +123,7 @@ pub trait MethodsForSelectedValueSelectedIndex<C: Component>:
 }
 
 make_traits_for_property_values! {
-    BaseElementRender
+    ElementUpdater
     PropertyChecked {
         bool, checked checked_ref qr_property qrm_property,
     }
@@ -136,7 +136,7 @@ make_traits_for_property_values! {
 }
 
 pub trait HamsHandMade<C: Component>:
-    Sized + BaseElementRenderMut<C> + HamsForDistinctNames<C>
+    Sized + ElementUpdaterMut<C> + HamsForDistinctNames<C>
 {
     fn done(self) {}
 
@@ -379,11 +379,11 @@ impl<'er, C: Component> StaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> BaseElementRenderMut<C> for AttributesOnly<'er, C> {
-    fn element_render(&self) -> &BaseElementRender<C> {
+impl<'er, C: Component> ElementUpdaterMut<C> for AttributesOnly<'er, C> {
+    fn element_render(&self) -> &ElementUpdater<C> {
         self.0.element_render()
     }
-    fn element_render_mut(&mut self) -> &mut BaseElementRender<C> {
+    fn element_render_mut(&mut self) -> &mut ElementUpdater<C> {
         self.0.element_render_mut()
     }
 }
@@ -393,11 +393,11 @@ impl<'er, C: Component> HtmlElementUpdaterMut<C> for AttributesOnly<'er, C> {
     }
 }
 
-impl<'er, C: Component> BaseElementRenderMut<C> for StaticAttributesOnly<'er, C> {
-    fn element_render(&self) -> &BaseElementRender<C> {
+impl<'er, C: Component> ElementUpdaterMut<C> for StaticAttributesOnly<'er, C> {
+    fn element_render(&self) -> &ElementUpdater<C> {
         self.0.element_render()
     }
-    fn element_render_mut(&mut self) -> &mut BaseElementRender<C> {
+    fn element_render_mut(&mut self) -> &mut ElementUpdater<C> {
         self.0.element_render_mut()
     }
 }
@@ -407,11 +407,11 @@ impl<'er, C: Component> HtmlElementUpdaterMut<C> for StaticAttributesOnly<'er, C
     }
 }
 
-impl<'er, C: Component> BaseElementRenderMut<C> for StaticAttributes<'er, C> {
-    fn element_render(&self) -> &BaseElementRender<C> {
+impl<'er, C: Component> ElementUpdaterMut<C> for StaticAttributes<'er, C> {
+    fn element_render(&self) -> &ElementUpdater<C> {
         self.0.element_render()
     }
-    fn element_render_mut(&mut self) -> &mut BaseElementRender<C> {
+    fn element_render_mut(&mut self) -> &mut ElementUpdater<C> {
         self.0.element_render_mut()
     }
 }

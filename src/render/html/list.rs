@@ -2,7 +2,7 @@ use super::ElementRender;
 use crate::{
     component::Component,
     render::{
-        base::{BaseElementRender, BaseElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        base::{ElementUpdater, ElementUpdaterMut, MakeNodesExtensions, NodesExtensions},
         html::{
             AttributesOnly, HtmlElementUpdater, HtmlTag, StaticAttributes, StaticAttributesOnly,
         },
@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub trait HemsForList<'a, C: Component>:
-    Sized + BaseElementRenderMut<C> + MakeNodesExtensions<'a>
+    Sized + ElementUpdaterMut<C> + MakeNodesExtensions<'a>
 {
     fn list_with_render<I, II, R>(
         mut self,
@@ -26,13 +26,10 @@ pub trait HemsForList<'a, C: Component>:
     {
         let tag = HtmlTag(tag);
         let (comp, state, mut r) = self.element_render_mut().list_render(mode);
-        let _do_we_have_to_care_about_this_returned_value_ = r.render(
-            comp,
-            state,
-            items,
-            tag,
-            |item: I, er: BaseElementRender<C>| render(item, er.into()),
-        );
+        let _do_we_have_to_care_about_this_returned_value_ =
+            r.render(comp, state, items, tag, |item: I, er: ElementUpdater<C>| {
+                render(item, er.into())
+            });
 
         self.make_nodes_extensions()
     }

@@ -14,25 +14,25 @@ use crate::{
     },
 };
 
-pub trait BaseElementRenderMut<C: Component> {
-    fn element_render(&self) -> &BaseElementRender<C>;
-    fn element_render_mut(&mut self) -> &mut BaseElementRender<C>;
+pub trait ElementUpdaterMut<C: Component> {
+    fn element_render(&self) -> &ElementUpdater<C>;
+    fn element_render_mut(&mut self) -> &mut ElementUpdater<C>;
 }
 
-impl<C, T> BaseElementRenderMut<C> for &mut T
+impl<C, T> ElementUpdaterMut<C> for &mut T
 where
     C: Component,
-    T: BaseElementRenderMut<C>,
+    T: ElementUpdaterMut<C>,
 {
-    fn element_render(&self) -> &BaseElementRender<C> {
+    fn element_render(&self) -> &ElementUpdater<C> {
         (**self).element_render()
     }
-    fn element_render_mut(&mut self) -> &mut BaseElementRender<C> {
+    fn element_render_mut(&mut self) -> &mut ElementUpdater<C> {
         (**self).element_render_mut()
     }
 }
 
-pub struct BaseElementRender<'a, C: Component> {
+pub struct ElementUpdater<'a, C: Component> {
     comp: &'a Comp<C>,
     state: &'a C,
 
@@ -42,7 +42,7 @@ pub struct BaseElementRender<'a, C: Component> {
     element: &'a mut Element,
 }
 
-impl<'a, C: Component> BaseElementRender<'a, C> {
+impl<'a, C: Component> ElementUpdater<'a, C> {
     pub fn new(
         comp: &'a crate::component::Comp<C>,
         state: &'a C,
@@ -292,7 +292,7 @@ impl<'a, C: Component> BaseElementRender<'a, C> {
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(I, BaseElementRender<'er, C>),
+        for<'er> R: Fn(I, ElementUpdater<'er, C>),
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size

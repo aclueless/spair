@@ -10,7 +10,7 @@ use crate::{
         value::QueueRender,
     },
     render::{
-        base::{BaseElementRender, MatchIfRender, NodesRender},
+        base::{ElementUpdater, MatchIfRender, NodesRender},
         ListElementCreation,
     },
 };
@@ -55,8 +55,8 @@ impl<'a, C: Component> NodesRender<'a, C> {
     ) -> Option<QrListRender<C, E, I>>
     where
         I: Clone,
-        //for<'i, 'r> R: 'static + Fn(&'i I, BaseElementRender<'r, C>),
-        R: 'static + Fn(I, BaseElementRender<C>),
+        //for<'i, 'r> R: 'static + Fn(&'i I, ElementUpdater<'r, C>),
+        R: 'static + Fn(I, ElementUpdater<C>),
     {
         let list = if self.new_node() {
             let end_flag_node = if full_list {

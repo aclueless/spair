@@ -1,4 +1,4 @@
-use super::BaseElementRenderMut;
+use super::ElementUpdaterMut;
 use crate::component::Component;
 
 macro_rules! create_methods_for_events {
@@ -18,7 +18,7 @@ macro_rules! create_methods_for_events {
     }
 }
 
-pub trait MethodsForEvents<C: Component>: Sized + BaseElementRenderMut<C> {
+pub trait MethodsForEvents<C: Component>: Sized + ElementUpdaterMut<C> {
     create_methods_for_events! {
         on_focus Focus,
         on_blur Blur,

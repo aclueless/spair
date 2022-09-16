@@ -8,7 +8,7 @@ use crate::{
         dom::QrListRepresentative,
         vec::{Diff, ListRender},
     },
-    render::base::BaseElementRender,
+    render::base::ElementUpdater,
 };
 
 pub struct QrListRender<C: Component, E, I> {
@@ -18,7 +18,7 @@ pub struct QrListRender<C: Component, E, I> {
     end_flag_node: Option<web_sys::Node>,
     element_tag: E,
     use_template: bool,
-    fn_render: Box<dyn Fn(I, BaseElementRender<C>)>,
+    fn_render: Box<dyn Fn(I, ElementUpdater<C>)>,
     unmounted: Rc<Cell<bool>>,
 }
 
@@ -38,7 +38,7 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
         comp: Comp<C>,
         parent: web_sys::Node,
         end_flag_node: Option<web_sys::Node>,
-        fn_render: impl Fn(I, BaseElementRender<C>) + 'static,
+        fn_render: impl Fn(I, ElementUpdater<C>) + 'static,
         use_template: bool,
     ) -> Self {
         Self {
@@ -115,7 +115,7 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
             self.use_template,
         );
         let element = self.nodes.get_element_mut(index);
-        let render = BaseElementRender::new(&self.comp, state, element, status);
+        let render = ElementUpdater::new(&self.comp, state, element, status);
         (self.fn_render)(item, render);
     }
 
@@ -138,7 +138,7 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
             let element = Element::new_ns(self.element_tag);
             (element, ElementStatus::JustCreated)
         };
-        let render = BaseElementRender::new(&self.comp, state, &mut new_element, status);
+        let render = ElementUpdater::new(&self.comp, state, &mut new_element, status);
         (self.fn_render)(item, render);
         new_element.insert_before_a_sibling(&self.parent, next_sibling);
         self.nodes.insert_element_at(index, new_element);
@@ -151,7 +151,7 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
 
     fn re_render(&mut self, state: &C, index: usize, item: I) {
         let element = self.nodes.get_element_mut(index);
-        let render = BaseElementRender::new(&self.comp, state, element, ElementStatus::Existing);
+        let render = ElementUpdater::new(&self.comp, state, element, ElementStatus::Existing);
         (self.fn_render)(item, render);
     }
 

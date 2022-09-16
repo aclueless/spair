@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     dom::{Key, Keyed},
     render::{
-        base::{BaseElementRender, BaseElementRenderMut, MakeNodesExtensions, NodesExtensions},
+        base::{ElementUpdater, ElementUpdaterMut, MakeNodesExtensions, NodesExtensions},
         html::{
             AttributesOnly, HtmlElementUpdater, HtmlTag, StaticAttributes, StaticAttributesOnly,
         },
@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub trait HemsForKeyedList<'a, C: Component>:
-    Sized + BaseElementRenderMut<C> + MakeNodesExtensions<'a>
+    Sized + ElementUpdaterMut<C> + MakeNodesExtensions<'a>
 {
     fn keyed_list_with_render<I, II, G, K, R>(
         mut self,
@@ -27,7 +27,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         K: Into<Key> + PartialEq<Key>,
         for<'r> R: Fn(I, HtmlElementUpdater<'r, C>),
     {
-        let fn_render = |item: I, element: BaseElementRender<C>| {
+        let fn_render = |item: I, element: ElementUpdater<C>| {
             fn_render(item, element.into());
         };
         let _select_element_value_will_be_set_on_dropping_of_the_manager = self

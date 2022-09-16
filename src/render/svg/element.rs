@@ -2,28 +2,28 @@ use super::{SvgAttributesOnly, SvgStaticAttributes, SvgStaticAttributesOnly};
 use crate::{
     component::{Comp, Component},
     dom::WsElement,
-    render::base::{BaseElementRender, BaseElementRenderMut},
+    render::base::{ElementUpdater, ElementUpdaterMut},
 };
 
-pub struct SvgElementUpdater<'er, C: Component>(BaseElementRender<'er, C>);
+pub struct SvgElementUpdater<'er, C: Component>(ElementUpdater<'er, C>);
 
-impl<'er, C: Component> From<BaseElementRender<'er, C>> for SvgElementUpdater<'er, C> {
-    fn from(element_render: BaseElementRender<'er, C>) -> Self {
+impl<'er, C: Component> From<ElementUpdater<'er, C>> for SvgElementUpdater<'er, C> {
+    fn from(element_render: ElementUpdater<'er, C>) -> Self {
         Self(element_render)
     }
 }
 
-impl<'er, C: Component> BaseElementRenderMut<C> for SvgElementUpdater<'er, C> {
-    fn element_render(&self) -> &BaseElementRender<C> {
+impl<'er, C: Component> ElementUpdaterMut<C> for SvgElementUpdater<'er, C> {
+    fn element_render(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut BaseElementRender<C> {
+    fn element_render_mut(&mut self) -> &'er mut ElementUpdater<C> {
         &mut self.0
     }
 }
 
 impl<'er, C: Component> SvgElementUpdater<'er, C> {
-    pub(super) fn into_inner(self) -> BaseElementRender<'er, C> {
+    pub(super) fn into_inner(self) -> ElementUpdater<'er, C> {
         self.0
     }
 

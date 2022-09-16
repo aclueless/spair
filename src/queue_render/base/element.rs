@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     dom::{ElementStatus, WsElement},
     queue_render::value::{MapValue, QrVal, QueueRender},
-    render::base::BaseElementRender,
+    render::base::ElementUpdater,
 };
 
 use super::{
@@ -10,7 +10,7 @@ use super::{
     QrPropertyMap,
 };
 
-impl<'a, C: Component> BaseElementRender<'a, C> {
+impl<'a, C: Component> ElementUpdater<'a, C> {
     pub fn qr_attribute<T: 'static + AttributeRender>(&self, name: &'static str, value: &QrVal<T>) {
         if self.status() == ElementStatus::Existing {
             return;

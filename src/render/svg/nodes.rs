@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     component::{Child, ChildComp, Comp, Component},
-    render::base::{BaseElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut},
+    render::base::{ElementUpdaterMut, MatchIfRender, NodesRender, NodesRenderMut},
 };
 
 #[cfg(feature = "queue-render")]
@@ -437,7 +437,7 @@ impl<'n, C: Component> SvgStaticNodesOwned<'n, C> {
 }
 
 pub trait MethodsForSvgElementContent<'n, C: Component>:
-    BaseElementRenderMut<C> + Into<SvgNodesOwned<'n, C>> + Into<SvgStaticNodesOwned<'n, C>>
+    ElementUpdaterMut<C> + Into<SvgNodesOwned<'n, C>> + Into<SvgStaticNodesOwned<'n, C>>
 {
     fn update_nodes(self) -> SvgNodesOwned<'n, C> {
         self.into()
