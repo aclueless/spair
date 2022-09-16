@@ -16,7 +16,7 @@ use crate::{
 use crate::queue_render::value::QrVal;
 
 pub struct HtmlNodesUpdater<'n, C: Component> {
-    nodes_render: NodesUpdater<'n, C>,
+    nodes_updater: NodesUpdater<'n, C>,
     // Just keep this value until the completion of the build of the whole node list
     // After done building the node list, this value will be dropped. The Drop::drop method
     // will execute setting value for the <select> element
@@ -25,7 +25,7 @@ pub struct HtmlNodesUpdater<'n, C: Component> {
 
 impl<'n, C: Component> NodesUpdaterMut<C> for HtmlNodesUpdater<'n, C> {
     fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
-        &mut self.nodes_render
+        &mut self.nodes_updater
     }
 }
 
@@ -205,53 +205,53 @@ pub struct StaticNodes<'h, 'n: 'h, C: Component>(&'h mut HtmlNodesUpdater<'n, C>
 
 impl<'n, C: Component> NodesOwned<'n, C> {
     fn new(mut r: HtmlNodesUpdater<'n, C>) -> Self {
-        r.nodes_render.set_update_mode();
+        r.nodes_updater.set_update_mode();
         Self(r)
     }
 }
 
 impl<'n, C: Component> StaticNodesOwned<'n, C> {
     fn new(mut r: HtmlNodesUpdater<'n, C>) -> Self {
-        r.nodes_render.set_static_mode();
+        r.nodes_updater.set_static_mode();
         Self(r)
     }
 }
 
 impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
     fn new(r: &'h mut HtmlNodesUpdater<'n, C>) -> Self {
-        r.nodes_render.set_update_mode();
+        r.nodes_updater.set_update_mode();
         Self(r)
     }
 }
 
 impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
     fn new(r: &'h mut HtmlNodesUpdater<'n, C>) -> Self {
-        r.nodes_render.set_static_mode();
+        r.nodes_updater.set_static_mode();
         Self(r)
     }
 }
 
 impl<'n, C: Component> NodesUpdaterMut<C> for NodesOwned<'n, C> {
     fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
-        &mut self.0.nodes_render
+        &mut self.0.nodes_updater
     }
 }
 
 impl<'n, C: Component> NodesUpdaterMut<C> for StaticNodesOwned<'n, C> {
     fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
-        &mut self.0.nodes_render
+        &mut self.0.nodes_updater
     }
 }
 
 impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for Nodes<'h, 'n, C> {
     fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
-        &mut self.0.nodes_render
+        &mut self.0.nodes_updater
     }
 }
 
 impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for StaticNodes<'h, 'n, C> {
     fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
-        &mut self.0.nodes_render
+        &mut self.0.nodes_updater
     }
 }
 
@@ -283,7 +283,7 @@ impl<'n, C: Component> From<HtmlElementUpdater<'n, C>> for HtmlNodesUpdater<'n, 
     fn from(r: HtmlElementUpdater<'n, C>) -> Self {
         let (r, m) = r.into_parts();
         Self {
-            nodes_render: From::from(r),
+            nodes_updater: From::from(r),
             _select_element_value_manager: m,
         }
     }
@@ -373,17 +373,17 @@ impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for StaticAttributes<
 
 impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
     pub(super) fn update_text(self, text: &str) {
-        self.0.nodes_render.update_text(text);
+        self.0.nodes_updater.update_text(text);
     }
 
     pub fn done(self) {}
 
     pub fn state(&self) -> &'n C {
-        self.0.nodes_render.state()
+        self.0.nodes_updater.state()
     }
 
     pub fn comp(&self) -> Comp<C> {
-        self.0.nodes_render.comp()
+        self.0.nodes_updater.comp()
     }
 
     pub fn static_nodes(self) -> StaticNodes<'h, 'n, C> {
@@ -413,17 +413,17 @@ impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
 
 impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
     pub(super) fn static_text(self, text: &str) {
-        self.0.nodes_render.static_text(text);
+        self.0.nodes_updater.static_text(text);
     }
 
     pub fn done(self) {}
 
     pub fn state(&self) -> &'n C {
-        self.0.nodes_render.state()
+        self.0.nodes_updater.state()
     }
 
     pub fn comp(&self) -> Comp<C> {
-        self.0.nodes_render.comp()
+        self.0.nodes_updater.comp()
     }
 
     pub fn update_nodes(self) -> Nodes<'h, 'n, C> {
@@ -546,7 +546,7 @@ pub struct HtmlMatchIfUpdater<'a, C: Component>(MatchIfUpdater<'a, C>);
 impl<'a, C: Component> HtmlMatchIfUpdater<'a, C> {
     pub fn render_on_arm_index(self, index: u32) -> NodesOwned<'a, C> {
         NodesOwned(HtmlNodesUpdater {
-            nodes_render: self.0.render_on_arm_index(index),
+            nodes_updater: self.0.render_on_arm_index(index),
             _select_element_value_manager: None, // How about a match_if inside a <select> element?
         })
     }
