@@ -97,7 +97,7 @@ make_trait_for_element_methods! {
     TestStructs: (TestSvgMethods)
     TraitName: SemsForDistinctNames
     UpdateElementTraitName: RenderSvgElement
-    ElementRenderType: SvgElementUpdater
+    ElementUpdaterType: SvgElementUpdater
     elements:
         // https://developer.mozilla.org/en-US/docs/Web/SVG/Element
         a

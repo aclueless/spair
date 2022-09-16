@@ -78,7 +78,7 @@ macro_rules! make_trait_for_element_methods {
         TestStructs: ($($TestStructName:ident)*)
         TraitName: $TraitName:ident
         UpdateElementTraitName: $UpdateElementTraitName:ident
-        ElementRenderType: $ElementRenderType:ident
+        ElementUpdaterType: $ElementUpdaterType:ident
         elements: $(
             $method_name:ident $($element_name:literal)?
         )+
@@ -91,12 +91,12 @@ macro_rules! make_trait_for_element_methods {
         pub trait $TraitName<C: Component>: Sized + $UpdateElementTraitName<C, Self::Output> {
             type Output: From<Self> + NodesUpdaterMut<C>;
             $(
-            // fn $tag(self, element_render: impl FnOnce($ElementRenderType<C>)) -> Self::Output {
+            // fn $tag(self, element_render: impl FnOnce($ElementUpdaterType<C>)) -> Self::Output {
             //     self.render_element(stringify!($tag), element_render)
             // }
                 make_trait_for_element_methods!(
                     @each_element
-                    $ElementRenderType
+                    $ElementUpdaterType
                     $method_name
                     $($element_name)?
                 );
@@ -105,23 +105,23 @@ macro_rules! make_trait_for_element_methods {
     };
     (
         @each_element
-        $ElementRenderType:ident
+        $ElementUpdaterType:ident
         $method_name:ident
     ) => {
         make_trait_for_element_methods!(
             @each_element
-            $ElementRenderType
+            $ElementUpdaterType
             $method_name
             stringify!($method_name)
         );
     };
     (
         @each_element
-        $ElementRenderType:ident
+        $ElementUpdaterType:ident
         $method_name:ident
         $element_name:expr
     ) => {
-        fn $method_name(self, element_render: impl FnOnce($ElementRenderType<C>)) -> Self::Output {
+        fn $method_name(self, element_render: impl FnOnce($ElementUpdaterType<C>)) -> Self::Output {
             self.render_element($element_name, element_render)
         }
     };
@@ -134,7 +134,7 @@ macro_rules! make_trait_for_same_name_attribute_and_element_methods {
         for_elements {
             TraitName: $ElementTraitName:ident
             UpdateElementTraitName: $UpdateElementTraitName:ident
-            ElementRenderType: $ElementRenderType:ident
+            ElementUpdaterType: $ElementUpdaterType:ident
         }
         for_attributes {
             //TraitDefinitionTokens: ($($TraitDefinitionTokens:tt)+)
@@ -157,7 +157,7 @@ macro_rules! make_trait_for_same_name_attribute_and_element_methods {
             TestStructs: ()
             TraitName: $ElementTraitName
             UpdateElementTraitName: $UpdateElementTraitName
-            ElementRenderType: $ElementRenderType
+            ElementUpdaterType: $ElementUpdaterType
             elements: $($method_name $($element_name)?)+
         }
         make_trait_for_attribute_methods! {

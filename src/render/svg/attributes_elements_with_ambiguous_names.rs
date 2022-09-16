@@ -16,7 +16,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
     for_elements {
         TraitName: SemsForAmbiguousNames
         UpdateElementTraitName: RenderSvgElement
-        ElementRenderType: SvgElementUpdater
+        ElementUpdaterType: SvgElementUpdater
     }
     for_attributes {
         TraitName: SamsForAmbiguousNames

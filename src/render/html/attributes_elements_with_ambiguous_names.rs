@@ -16,7 +16,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
     for_elements {
         TraitName: HemsForAmbiguousNames
         UpdateElementTraitName: RenderHtmlElement
-        ElementRenderType: HtmlElementUpdater
+        ElementUpdaterType: HtmlElementUpdater
     }
     for_attributes {
         TraitName: HamsForAmbiguousNames

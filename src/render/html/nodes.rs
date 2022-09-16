@@ -146,7 +146,7 @@ make_trait_for_element_methods! {
     TestStructs: (TestHtmlMethods)
     TraitName: HemsForDistinctNames
     UpdateElementTraitName: RenderHtmlElement
-    ElementRenderType: HtmlElementUpdater
+    ElementUpdaterType: HtmlElementUpdater
     elements:
         a
 
