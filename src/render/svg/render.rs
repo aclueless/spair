@@ -59,12 +59,3 @@ pub trait SvgElementRender<C: Component> {
     const ELEMENT_TAG: &'static str;
     fn render(self, item: crate::SvgElement<C>);
 }
-
-/// A simple wrapper to render an ElementRender's item with `.rupdate()`
-pub struct SvgRer<T>(T);
-impl<C: Component, T: SvgElementRender<C>> SvgRender<C> for SvgRer<T> {
-    fn render(self, nodes: SvgNodes<C>) {
-        use super::UpdateSvgElement;
-        nodes.render_element(T::ELEMENT_TAG, |er| self.0.render(er));
-    }
-}

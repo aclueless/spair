@@ -46,7 +46,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         tn
     }
 
-    pub fn create_qr_list_render<E: ElementTag, I, R>(
+    pub fn create_qr_list_render<E, I, R>(
         &mut self,
         full_list: bool,
         mode: ListElementCreation,
@@ -54,8 +54,8 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         fn_render: R,
     ) -> Option<QrListRender<C, E, I>>
     where
+        E: ElementTag,
         I: Clone,
-        //for<'i, 'r> R: 'static + Fn(&'i I, ElementUpdater<'r, C>),
         R: 'static + Fn(I, ElementUpdater<C>),
     {
         let list = if self.new_node() {
@@ -113,7 +113,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
 
     pub fn create_qr_match_if<T, R>(&mut self, fn_render: R) -> Option<QrMatchIfUpdater<C, T>>
     where
-        for<'t, 'r> R: 'static + Fn(&'t T, MatchIfUpdater<'r, C>),
+        R: 'static + Fn(&T, MatchIfUpdater<C>),
     {
         let group = if self.new_node() {
             let r = QrMatchIfUpdater {

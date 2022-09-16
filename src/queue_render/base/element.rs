@@ -6,12 +6,16 @@ use crate::{
 };
 
 use super::{
-    AttributeRender, QrClass, QrClassMap, QrNormalAttribute, QrNormalAttributeMap, QrProperty,
+    AttributeUpdater, QrClass, QrClassMap, QrNormalAttribute, QrNormalAttributeMap, QrProperty,
     QrPropertyMap,
 };
 
 impl<'a, C: Component> ElementUpdater<'a, C> {
-    pub fn qr_attribute<T: 'static + AttributeRender>(&self, name: &'static str, value: &QrVal<T>) {
+    pub fn qr_attribute<T: 'static + AttributeUpdater>(
+        &self,
+        name: &'static str,
+        value: &QrVal<T>,
+    ) {
         if self.status() == ElementStatus::Existing {
             return;
         }
@@ -28,7 +32,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         }
     }
 
-    pub fn qrm_attribute<T: 'static, U: 'static + AttributeRender>(
+    pub fn qrm_attribute<T: 'static, U: 'static + AttributeUpdater>(
         &self,
         name: &'static str,
         value: MapValue<C, T, U>,

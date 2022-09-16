@@ -7,36 +7,36 @@ use crate::{
     queue_render::value::QueueRender,
 };
 
-pub trait AttributeRender {
-    fn render(&self, name: &str, ws: &WsElement);
+pub trait AttributeUpdater {
+    fn update(&self, name: &str, ws: &WsElement);
 }
 
-impl AttributeRender for i32 {
-    fn render(&self, name: &str, ws: &WsElement) {
+impl AttributeUpdater for i32 {
+    fn update(&self, name: &str, ws: &WsElement) {
         ws.set_attribute(name, *self);
     }
 }
 
-impl AttributeRender for u32 {
-    fn render(&self, name: &str, ws: &WsElement) {
+impl AttributeUpdater for u32 {
+    fn update(&self, name: &str, ws: &WsElement) {
         ws.set_attribute(name, *self);
     }
 }
 
-impl AttributeRender for f64 {
-    fn render(&self, name: &str, ws: &WsElement) {
+impl AttributeUpdater for f64 {
+    fn update(&self, name: &str, ws: &WsElement) {
         ws.set_attribute(name, *self);
     }
 }
 
-impl AttributeRender for bool {
-    fn render(&self, name: &str, ws: &WsElement) {
+impl AttributeUpdater for bool {
+    fn update(&self, name: &str, ws: &WsElement) {
         ws.set_bool_attribute(name, *self);
     }
 }
 
-impl AttributeRender for String {
-    fn render(&self, name: &str, ws: &WsElement) {
+impl AttributeUpdater for String {
+    fn update(&self, name: &str, ws: &WsElement) {
         ws.set_str_attribute(name, self);
     }
 }
@@ -61,10 +61,11 @@ impl QrNormalAttribute {
     }
 }
 
-impl<T: AttributeRender> QueueRender<T> for QrNormalAttribute {
+impl<T: AttributeUpdater> QueueRender<T> for QrNormalAttribute {
     fn render(&mut self, t: &T) {
-        t.render(self.attribute_name, &self.ws_element);
+        t.update(self.attribute_name, &self.ws_element);
     }
+
     fn unmounted(&self) -> bool {
         self.unmounted.get()
     }
@@ -98,10 +99,10 @@ impl<C: Component, T, U> QrNormalAttributeMap<C, T, U> {
     }
 }
 
-impl<C: Component, T, U: AttributeRender> QueueRender<T> for QrNormalAttributeMap<C, T, U> {
+impl<C: Component, T, U: AttributeUpdater> QueueRender<T> for QrNormalAttributeMap<C, T, U> {
     fn render(&mut self, t: &T) {
         let u = self.map(t);
-        u.render(self.qra.attribute_name, &self.qra.ws_element)
+        u.update(self.qra.attribute_name, &self.qra.ws_element)
     }
     fn unmounted(&self) -> bool {
         self.qra.unmounted.get()
