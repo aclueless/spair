@@ -145,7 +145,7 @@ use crate::render::html::TestHtmlMethods;
 make_trait_for_element_methods! {
     TestStructs: (TestHtmlMethods)
     TraitName: HemsForDistinctNames
-    RenderElementTraitName: RenderHtmlElement
+    UpdateElementTraitName: RenderHtmlElement
     ElementRenderType: HtmlElementUpdater
     elements:
         a

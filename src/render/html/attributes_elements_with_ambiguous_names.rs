@@ -15,7 +15,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
     DeprecatedTraitName: HemsHamsAmbiguous
     for_elements {
         TraitName: HemsForAmbiguousNames
-        RenderElementTraitName: RenderHtmlElement
+        UpdateElementTraitName: RenderHtmlElement
         ElementRenderType: HtmlElementUpdater
     }
     for_attributes {

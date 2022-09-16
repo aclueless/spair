@@ -96,7 +96,7 @@ use crate::render::svg::TestSvgMethods;
 make_trait_for_element_methods! {
     TestStructs: (TestSvgMethods)
     TraitName: SemsForDistinctNames
-    RenderElementTraitName: RenderSvgElement
+    UpdateElementTraitName: RenderSvgElement
     ElementRenderType: SvgElementUpdater
     elements:
         // https://developer.mozilla.org/en-US/docs/Web/SVG/Element

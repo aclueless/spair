@@ -77,7 +77,7 @@ macro_rules! make_trait_for_element_methods {
     (
         TestStructs: ($($TestStructName:ident)*)
         TraitName: $TraitName:ident
-        RenderElementTraitName: $RenderElementTraitName:ident
+        UpdateElementTraitName: $UpdateElementTraitName:ident
         ElementRenderType: $ElementRenderType:ident
         elements: $(
             $method_name:ident $($element_name:literal)?
@@ -88,7 +88,7 @@ macro_rules! make_trait_for_element_methods {
             names: $($method_name)+
         }
 
-        pub trait $TraitName<C: Component>: Sized + $RenderElementTraitName<C, Self::Output> {
+        pub trait $TraitName<C: Component>: Sized + $UpdateElementTraitName<C, Self::Output> {
             type Output: From<Self> + NodesUpdaterMut<C>;
             $(
             // fn $tag(self, element_render: impl FnOnce($ElementRenderType<C>)) -> Self::Output {
@@ -133,7 +133,7 @@ macro_rules! make_trait_for_same_name_attribute_and_element_methods {
         DeprecatedTraitName: $DeprecatedTraitName:ident
         for_elements {
             TraitName: $ElementTraitName:ident
-            RenderElementTraitName: $RenderElementTraitName:ident
+            UpdateElementTraitName: $UpdateElementTraitName:ident
             ElementRenderType: $ElementRenderType:ident
         }
         for_attributes {
@@ -156,7 +156,7 @@ macro_rules! make_trait_for_same_name_attribute_and_element_methods {
         make_trait_for_element_methods! {
             TestStructs: ()
             TraitName: $ElementTraitName
-            RenderElementTraitName: $RenderElementTraitName
+            UpdateElementTraitName: $UpdateElementTraitName
             ElementRenderType: $ElementRenderType
             elements: $($method_name $($element_name)?)+
         }

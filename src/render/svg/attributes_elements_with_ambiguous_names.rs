@@ -15,7 +15,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
     DeprecatedTraitName: SemsSamsAmbiguous
     for_elements {
         TraitName: SemsForAmbiguousNames
-        RenderElementTraitName: RenderSvgElement
+        UpdateElementTraitName: RenderSvgElement
         ElementRenderType: SvgElementUpdater
     }
     for_attributes {
