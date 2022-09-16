@@ -22,7 +22,7 @@ pub trait HemsForList<'a, C: Component>:
     ) -> NodesExtensions<'a>
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, crate::Element<'r, C>),
+        R: Fn(I, crate::Element<C>),
     {
         let tag = HtmlTag(tag);
         let (comp, state, mut r) = self.element_updater_mut().list_updater(mode);
@@ -37,7 +37,7 @@ pub trait HemsForList<'a, C: Component>:
     fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> NodesExtensions<'a>
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, crate::Element<'r, C>),
+        R: Fn(I, crate::Element<C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
