@@ -86,7 +86,7 @@ where
 
     fn render<I>(&self, item_state: I, r: ElementUpdater<C>)
     where
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         (self.fn_render)(item_state, r)
     }
@@ -99,7 +99,7 @@ where
         next_sibling: Option<&web_sys::Element>,
         fn_insert: impl FnOnce(&Element, Option<&web_sys::Element>),
     ) where
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         let mut old_item = old_item.unwrap_throw().1.take();
         fn_insert(&old_item.as_ref().unwrap_throw().element, next_sibling);
@@ -148,7 +148,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         // No items? Just clear the current list.
         if self.list_context.new_item_count == 0 {
@@ -195,7 +195,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         let mut count = 0;
         loop {
@@ -231,7 +231,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         let mut count = 0;
         loop {
@@ -270,7 +270,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
@@ -314,7 +314,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
@@ -350,7 +350,7 @@ where
     ) where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         if items_state_iter.peek().is_none() {
             self.remove_remain_items();
@@ -461,7 +461,7 @@ where
     ) where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         for item_state in items_state_iter {
             let ke = self.render_an_item(item_state);
@@ -473,7 +473,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         let (mut element, status) = self.create_element_for_new_item();
 
