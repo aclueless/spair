@@ -27,7 +27,7 @@ pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
         R: 'static + Fn(I, crate::Element<C>),
     {
         let mut nodes_render: NodesOwned<C> = self.into();
-        let qr_list_render = match nodes_render.nodes_render_mut().create_qr_list_render(
+        let qr_list_render = match nodes_render.nodes_updater_mut().create_qr_list_render(
             true,
             mode,
             HtmlTag(tag),

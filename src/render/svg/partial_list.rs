@@ -21,7 +21,9 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
         II: Iterator<Item = I>,
         for<'r> R: Fn(I, crate::SvgElement<'r, C>),
     {
-        let (comp, state, mut r) = self.nodes_render_mut().get_list_render(mode.use_template());
+        let (comp, state, mut r) = self
+            .nodes_updater_mut()
+            .get_list_render(mode.use_template());
         let _do_we_have_to_care_about_this_returned_value_ = r.render(
             comp,
             state,

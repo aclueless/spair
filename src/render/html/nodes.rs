@@ -24,7 +24,7 @@ pub struct HtmlNodesUpdater<'n, C: Component> {
 }
 
 impl<'n, C: Component> NodesUpdaterMut<C> for HtmlNodesUpdater<'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
+    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.nodes_render
     }
 }
@@ -34,7 +34,7 @@ pub trait HemsHandMade<C: Component>: Sized {
 
     fn line_break(self) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.nodes_render_mut();
+        let render = this.nodes_updater_mut();
         if render.require_render() {
             render.get_element_updater(HtmlTag("br"));
         }
@@ -44,7 +44,7 @@ pub trait HemsHandMade<C: Component>: Sized {
 
     fn horizontal_line(self) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.nodes_render_mut();
+        let render = this.nodes_updater_mut();
         if render.require_render() {
             render.get_element_updater(HtmlTag("hr"));
         }
@@ -54,7 +54,7 @@ pub trait HemsHandMade<C: Component>: Sized {
 
     fn match_if(self, f: impl FnOnce(HtmlMatchIfUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.nodes_render_mut();
+        let render = this.nodes_updater_mut();
         let mi = render.get_match_if_render();
         let mi = HtmlMatchIfUpdater(mi);
         f(mi);
@@ -68,7 +68,7 @@ pub trait HemsHandMade<C: Component>: Sized {
         f: impl Fn(&T, HtmlMatchIfUpdater<C>) + 'static,
     ) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.nodes_render_mut();
+        let render = this.nodes_updater_mut();
         if let Some(mi) = render.create_qr_match_if(move |t, mi| {
             let mi = HtmlMatchIfUpdater(mi);
             f(t, mi);
@@ -85,7 +85,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     #[cfg(feature = "svg")]
     fn svg(self, f: impl FnOnce(SvgElementUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.nodes_render_mut();
+        let render = this.nodes_updater_mut();
         if render.require_render() {
             let r = render.get_element_updater(SvgTag("svg"));
             f(r.into())
@@ -96,7 +96,7 @@ pub trait HemsHandMade<C: Component>: Sized {
 
     fn component_ref<CC: Component>(self, child: &ChildComp<CC>) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.nodes_render_mut();
+        let render = this.nodes_updater_mut();
         if render.require_render() {
             render.component_ref(child);
         }
@@ -109,7 +109,7 @@ pub trait HemsHandMade<C: Component>: Sized {
         create_child_comp: impl FnOnce(&C, &Comp<C>) -> Child<C, CC, T>,
     ) -> Self::Output {
         let mut this: Self::Output = self.into();
-        let render = this.nodes_render_mut();
+        let render = this.nodes_updater_mut();
         if render.require_render() {
             render.component_owned(create_child_comp);
         }
@@ -129,7 +129,7 @@ where
         element_updater: impl FnOnce(HtmlElementUpdater<C>),
     ) -> O {
         let mut this: O = self.into();
-        let render = this.nodes_render_mut();
+        let render = this.nodes_updater_mut();
         if render.require_render() {
             let e = render.get_element_updater(HtmlTag(tag)).into();
             element_updater(e);
@@ -232,25 +232,25 @@ impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
 }
 
 impl<'n, C: Component> NodesUpdaterMut<C> for NodesOwned<'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
+    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0.nodes_render
     }
 }
 
 impl<'n, C: Component> NodesUpdaterMut<C> for StaticNodesOwned<'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
+    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0.nodes_render
     }
 }
 
 impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for Nodes<'h, 'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
+    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0.nodes_render
     }
 }
 
 impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for StaticNodes<'h, 'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
+    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0.nodes_render
     }
 }
@@ -393,14 +393,14 @@ impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
     pub fn rupdate(self, render: impl Render<C>) -> Self {
         let n = Nodes::new(self.0);
         render.render(n);
-        //self.nodes_render_mut().set_update_mode();
+        //self.nodes_updater_mut().set_update_mode();
         self
     }
 
     pub fn rstatic(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(self.0);
         render.render(n);
-        self.nodes_render_mut().set_update_mode();
+        self.nodes_updater_mut().set_update_mode();
         self
     }
 
@@ -436,7 +436,7 @@ impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
     pub fn rstatic(self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(self.0);
         render.render(n);
-        //self.nodes_render_mut().set_static_mode();
+        //self.nodes_updater_mut().set_static_mode();
         self
     }
 }
@@ -451,14 +451,14 @@ impl<'n, C: Component> NodesOwned<'n, C> {
     pub fn rupdate(mut self, render: impl Render<C>) -> Self {
         let n = Nodes::new(&mut self.0);
         render.render(n);
-        //self.nodes_render_mut().set_update_mode();
+        //self.nodes_updater_mut().set_update_mode();
         self
     }
 
     pub fn rstatic(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(&mut self.0);
         render.render(n);
-        self.nodes_render_mut().set_update_mode();
+        self.nodes_updater_mut().set_update_mode();
         self
     }
 
@@ -479,14 +479,14 @@ impl<'n, C: Component> StaticNodesOwned<'n, C> {
     pub fn rupdate(mut self, render: impl Render<C>) -> Self {
         let n = Nodes::new(&mut self.0);
         render.render(n);
-        self.nodes_render_mut().set_static_mode();
+        self.nodes_updater_mut().set_static_mode();
         self
     }
 
     pub fn rstatic(mut self, render: impl StaticRender<C>) -> Self {
         let n = StaticNodes::new(&mut self.0);
         render.render(n);
-        //self.nodes_render_mut().set_update_mode();
+        //self.nodes_updater_mut().set_update_mode();
         self
     }
 }

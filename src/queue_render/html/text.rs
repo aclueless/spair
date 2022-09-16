@@ -12,7 +12,7 @@ use crate::{
 
 impl<'n, 'h, C: Component> Nodes<'n, 'h, C> {
     pub fn create_qr_text_node(mut self) -> Option<QrTextNode> {
-        self.nodes_render_mut().create_qr_text_node()
+        self.nodes_updater_mut().create_qr_text_node()
     }
 }
 

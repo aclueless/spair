@@ -27,7 +27,7 @@ pub trait SemsForQrList<'a, C: Component>: Sized + Into<SvgNodesOwned<'a, C>> {
         R: 'static + Fn(I, crate::SvgElement<C>),
     {
         let mut nodes_render: SvgNodesOwned<C> = self.into();
-        let qr_list_render = match nodes_render.nodes_render_mut().create_qr_list_render(
+        let qr_list_render = match nodes_render.nodes_updater_mut().create_qr_list_render(
             true,
             mode,
             SvgTag(tag),
