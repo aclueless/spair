@@ -53,7 +53,7 @@ impl<'a, E: ElementTag> KeyedListContext<'a, E> {
     }
 }
 
-pub struct KeyedListRender<'a, C: Component, E, G, R> {
+pub struct KeyedListUpdater<'a, C: Component, E, G, R> {
     list_context: KeyedListContext<'a, E>,
     render_context: RenderContext<'a, C, G, R>,
 }
@@ -116,7 +116,7 @@ where
     }
 }
 
-impl<'a, C, E, G, R> KeyedListRender<'a, C, E, G, R>
+impl<'a, C, E, G, R> KeyedListUpdater<'a, C, E, G, R>
 where
     C: Component,
     E: ElementTag,
@@ -203,7 +203,7 @@ where
                     let item = item
                         .1
                         .as_ref()
-                        .expect_throw("render::base::keyed_list::KeyedListRender::update_same_key_items_from_start");
+                        .expect_throw("render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_start");
                     if !self.render_context.get_key(&item_state).eq(&item.key) {
                         return count;
                     }
@@ -240,7 +240,7 @@ where
             ) {
                 (Some(item_state), Some(item)) => {
                     let item = item.1.as_ref().expect_throw(
-                        "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
+                        "render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_end",
                     );
 
                     if !self.render_context.get_key(item_state).eq(&item.key) {
@@ -274,7 +274,7 @@ where
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
                 let item = item.1.as_ref().expect_throw(
-                    "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
+                    "render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_end",
                 );
                 if !self.render_context.get_key(item_state).eq(&item.key) {
                     return 0;
@@ -318,7 +318,7 @@ where
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
                 let item = item.1.as_ref().expect_throw(
-                    "render::base::keyed_list::KeyedListRender::update_same_key_items_from_end",
+                    "render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_end",
                 );
                 if !self.render_context.get_key(item_state).eq(&item.key) {
                     return 0;
@@ -409,7 +409,7 @@ where
 
             self.list_context.next_sibling = Some(element.ws_element().clone().into_inner());
             *self.list_context.new.next_back().expect_throw(
-                "render::base::keyed_list::KeyedListRender::update_other_items_in_the_middle",
+                "render::base::keyed_list::KeyedListUpdater::update_other_items_in_the_middle",
             ) = Some(KeyedElement::new(key, element));
         }
     }
@@ -418,7 +418,7 @@ where
         self.list_context.old_elements_map.clear();
         while let Some((index, item)) = self.list_context.old.next() {
             let KeyedElement { key, element } = item.take().expect_throw(
-                "render::base::keyed_list::KeyedListRender::construct_old_elements_map_from_remaining_old_elements",
+                "render::base::keyed_list::KeyedListUpdater::construct_old_elements_map_from_remaining_old_elements",
             );
             self.list_context
                 .old_elements_map
@@ -440,7 +440,7 @@ where
         self.list_context.parent.set_text_content(None);
         while let Some((_, item)) = self.list_context.old.next() {
             item.take()
-                .expect_throw("render::base::keyed_list::KeyedListRender::remove_all_old_items");
+                .expect_throw("render::base::keyed_list::KeyedListUpdater::remove_all_old_items");
         }
     }
 
@@ -448,7 +448,7 @@ where
         let parent = self.list_context.parent;
         while let Some((_, item)) = self.list_context.old.next() {
             item.take()
-                .expect_throw("render::base::keyed_list::KeyedListRender::remove_remain_items")
+                .expect_throw("render::base::keyed_list::KeyedListUpdater::remove_remain_items")
                 .element
                 .remove_from(parent);
         }
@@ -500,7 +500,7 @@ where
             .list_context
             .new
             .next()
-            .expect_throw("render::base::keyed_list::KeyedListRender::inser_remain_items") =
+            .expect_throw("render::base::keyed_list::KeyedListUpdater::inser_remain_items") =
             Some(ke);
     }
 }

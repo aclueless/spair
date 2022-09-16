@@ -10,7 +10,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use crate::{
     dom::{ElementTag, Key},
     render::base::{
-        KeyedListContext, KeyedListRender, RememberSettingSelectedOption, RenderContext,
+        KeyedListContext, KeyedListUpdater, RememberSettingSelectedOption, RenderContext,
     },
 };
 
@@ -250,7 +250,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
             self.element
                 .ws_html_element()
                 .focus()
-                .expect_throw("render::base::element::ElementRender::focus");
+                .expect_throw("render::base::element::ElementUpdater::focus");
         }
     }
 
@@ -300,7 +300,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
 
         let use_template = mode.use_template();
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
-        let mut keyed_list_render = KeyedListRender::new(
+        let mut keyed_list_render = KeyedListUpdater::new(
             KeyedListContext::new(nodes.keyed_list(), tag, items.len(), parent, use_template),
             RenderContext::new(self.comp, self.state, fn_get_key, fn_render),
         );

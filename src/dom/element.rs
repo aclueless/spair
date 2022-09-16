@@ -357,7 +357,7 @@ impl WsElement {
         if value {
             self.html_element()
                 .focus()
-                .expect_throw("render::base::element::ElementRender::focus");
+                .expect_throw("render::base::element::ElementUpdater::focus");
         }
     }
 
