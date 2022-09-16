@@ -1,6 +1,6 @@
 use super::{
-    RenderSvgElement, SvgAttributesOnly, SvgElementUpdater, SvgNodes, SvgNodesOwned,
-    SvgStaticAttributes, SvgStaticAttributesOnly, SvgStaticNodes, SvgStaticNodesOwned,
+    SvgAttributesOnly, SvgElementUpdater, SvgNodes, SvgNodesOwned, SvgStaticAttributes,
+    SvgStaticAttributesOnly, SvgStaticNodes, SvgStaticNodesOwned, UpdateSvgElement,
 };
 use crate::{
     component::Component,
@@ -15,7 +15,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
     DeprecatedTraitName: SemsSamsAmbiguous
     for_elements {
         TraitName: SemsForAmbiguousNames
-        UpdateElementTraitName: RenderSvgElement
+        UpdateElementTraitName: UpdateSvgElement
         ElementUpdaterType: SvgElementUpdater
     }
     for_attributes {

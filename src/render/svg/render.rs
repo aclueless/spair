@@ -64,7 +64,7 @@ pub trait SvgElementRender<C: Component> {
 pub struct SvgRer<T>(T);
 impl<C: Component, T: SvgElementRender<C>> SvgRender<C> for SvgRer<T> {
     fn render(self, nodes: SvgNodes<C>) {
-        use super::RenderSvgElement;
+        use super::UpdateSvgElement;
         nodes.render_element(T::ELEMENT_TAG, |er| self.0.render(er));
     }
 }

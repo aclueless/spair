@@ -13,7 +13,7 @@ use crate::{
 #[cfg(feature = "queue-render")]
 use crate::queue_render::value::QrVal;
 
-pub trait RenderSvgElement<C, O>: Sized
+pub trait UpdateSvgElement<C, O>: Sized
 where
     C: Component,
     O: From<Self> + NodesUpdaterMut<C>,
@@ -96,7 +96,7 @@ use crate::render::svg::TestSvgMethods;
 make_trait_for_element_methods! {
     TestStructs: (TestSvgMethods)
     TraitName: SemsForDistinctNames
-    UpdateElementTraitName: RenderSvgElement
+    UpdateElementTraitName: UpdateSvgElement
     ElementUpdaterType: SvgElementUpdater
     elements:
         // https://developer.mozilla.org/en-US/docs/Web/SVG/Element
@@ -270,16 +270,16 @@ impl<'n, C: Component> From<SvgStaticAttributes<'n, C>> for SvgNodesOwned<'n, C>
     }
 }
 
-impl<'n, C: Component> RenderSvgElement<C, SvgNodesOwned<'n, C>> for SvgElementUpdater<'n, C> {}
-impl<'n, C: Component> RenderSvgElement<C, SvgNodesOwned<'n, C>> for SvgStaticAttributes<'n, C> {}
+impl<'n, C: Component> UpdateSvgElement<C, SvgNodesOwned<'n, C>> for SvgElementUpdater<'n, C> {}
+impl<'n, C: Component> UpdateSvgElement<C, SvgNodesOwned<'n, C>> for SvgStaticAttributes<'n, C> {}
 
-impl<'h, 'n: 'h, C: Component> RenderSvgElement<C, SvgNodes<'h, 'n, C>> for SvgNodes<'h, 'n, C> {}
-impl<'h, 'n: 'h, C: Component> RenderSvgElement<C, SvgStaticNodes<'h, 'n, C>>
+impl<'h, 'n: 'h, C: Component> UpdateSvgElement<C, SvgNodes<'h, 'n, C>> for SvgNodes<'h, 'n, C> {}
+impl<'h, 'n: 'h, C: Component> UpdateSvgElement<C, SvgStaticNodes<'h, 'n, C>>
     for SvgStaticNodes<'h, 'n, C>
 {
 }
-impl<'n, C: Component> RenderSvgElement<C, SvgNodesOwned<'n, C>> for SvgNodesOwned<'n, C> {}
-impl<'n, C: Component> RenderSvgElement<C, SvgStaticNodesOwned<'n, C>>
+impl<'n, C: Component> UpdateSvgElement<C, SvgNodesOwned<'n, C>> for SvgNodesOwned<'n, C> {}
+impl<'n, C: Component> UpdateSvgElement<C, SvgStaticNodesOwned<'n, C>>
     for SvgStaticNodesOwned<'n, C>
 {
 }
