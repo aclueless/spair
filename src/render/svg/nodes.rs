@@ -2,8 +2,8 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{
-    SvgAttributesOnly, SvgElementUpdater, SvgRender, SvgStaticAttributes, SvgStaticAttributesOnly,
-    SvgStaticRender, SvgTag,
+    SvgAttributesOnly, SvgElementRender, SvgElementUpdater, SvgRender, SvgStaticAttributes,
+    SvgStaticAttributesOnly, SvgStaticRender, SvgTag,
 };
 use crate::{
     component::{Child, ChildComp, Comp, Component},
@@ -349,6 +349,10 @@ impl<'h, 'n: 'h, C: Component> SvgNodes<'h, 'n, C> {
         self
     }
 
+    pub fn relement<R: SvgElementRender<C>>(self, render: R) -> Self {
+        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
+    }
+
     pub fn rfn(self, func: impl FnOnce(SvgNodes<C>)) -> Self {
         let n = SvgNodes::new(self.0);
         func(n);
@@ -384,6 +388,10 @@ impl<'h, 'n: 'h, C: Component> SvgStaticNodes<'h, 'n, C> {
         //self.nodes_updater_mut().set_static_mode();
         self
     }
+
+    pub fn relement<R: SvgElementRender<C>>(self, render: R) -> Self {
+        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
+    }
 }
 
 impl<'n, C: Component> SvgNodesOwned<'n, C> {
@@ -405,6 +413,10 @@ impl<'n, C: Component> SvgNodesOwned<'n, C> {
         render.render(n);
         self.nodes_updater_mut().set_update_mode();
         self
+    }
+
+    pub fn relement<R: SvgElementRender<C>>(self, render: R) -> Self {
+        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
     }
 
     pub fn rfn(mut self, func: impl FnOnce(SvgNodes<C>)) -> Self {
@@ -434,6 +446,10 @@ impl<'n, C: Component> SvgStaticNodesOwned<'n, C> {
         //self.nodes_updater_mut().set_update_mode();
         self
     }
+
+    pub fn relement<R: SvgElementRender<C>>(self, render: R) -> Self {
+        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
+    }
 }
 
 pub trait MethodsForSvgElementContent<'n, C: Component>:
@@ -455,6 +471,11 @@ pub trait MethodsForSvgElementContent<'n, C: Component>:
     fn rstatic(self, render: impl SvgStaticRender<C>) -> SvgNodesOwned<'n, C> {
         let n: SvgNodesOwned<C> = self.into();
         n.rstatic(render)
+    }
+
+    fn relement<R: SvgElementRender<C>>(self, render: R) -> SvgNodesOwned<'n, C> {
+        let n: SvgNodesOwned<C> = self.into();
+        n.render_element(R::ELEMENT_TAG, |e| render.render(e))
     }
 
     fn rfn(self, func: impl FnOnce(SvgNodes<C>)) -> SvgNodesOwned<'n, C> {
