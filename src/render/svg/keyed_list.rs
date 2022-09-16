@@ -26,7 +26,7 @@ pub trait SemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, SvgElementUpdater<'r, C>),
+        R: Fn(I, SvgElementUpdater<C>),
     {
         let fn_render = |item: I, element: ElementUpdater<C>| {
             fn_render(item, element.into());
@@ -48,7 +48,7 @@ pub trait SemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, SvgElementUpdater<'r, C>),
+        R: Fn(I, SvgElementUpdater<C>),
     {
         self.keyed_list_with_render(
             items,
