@@ -192,7 +192,7 @@ impl KeyedList {
     }
 
     // better name?
-    pub fn pre_render(&mut self, count: usize) {
+    pub fn pre_update(&mut self, count: usize) {
         self.old_elements_map.reserve(count);
         if count < self.buffer.len() {
             self.buffer.truncate(count);

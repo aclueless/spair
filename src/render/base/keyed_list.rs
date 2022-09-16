@@ -31,7 +31,7 @@ impl<'a, E: ElementTag> KeyedListContext<'a, E> {
         parent: &'a web_sys::Node,
         use_template: bool,
     ) -> Self {
-        list.pre_render(new_item_count);
+        list.pre_update(new_item_count);
 
         let require_init_template = match use_template {
             true => list.require_init_template(|| Element::new_ns(root_item_tag)),
