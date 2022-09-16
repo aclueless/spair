@@ -1,7 +1,7 @@
 use crate::{
     component::Component,
     dom::{ElementStatus, WsElement},
-    queue_render::value::{MapValue, QrVal, QueueRender},
+    queue_render::value::{QrVal, QrValMap, QueueRender},
     render::base::ElementUpdater,
 };
 
@@ -35,7 +35,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     pub fn qrm_attribute<T: 'static, U: 'static + AttributeUpdater>(
         &self,
         name: &'static str,
-        value: MapValue<C, T, U>,
+        value: QrValMap<C, T, U>,
     ) {
         if self.status() == ElementStatus::Existing {
             return;
@@ -82,7 +82,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     pub fn qrm_property<T: 'static, U: 'static>(
         &self,
         fn_update: impl Fn(&WsElement, &U) + 'static,
-        value: MapValue<C, T, U>,
+        value: QrValMap<C, T, U>,
     ) {
         if self.status() == ElementStatus::Existing {
             return;
@@ -120,7 +120,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         }
     }
 
-    pub fn qrm_class<T: 'static>(&self, value: MapValue<C, T, String>) {
+    pub fn qrm_class<T: 'static>(&self, value: QrValMap<C, T, String>) {
         if self.status() == ElementStatus::Existing {
             return;
         }
@@ -140,7 +140,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         };
     }
 
-    pub fn qrm_str_class<T: 'static>(&self, value: MapValue<C, T, &'static str>) {
+    pub fn qrm_str_class<T: 'static>(&self, value: QrValMap<C, T, &'static str>) {
         if self.status() == ElementStatus::Existing {
             return;
         }

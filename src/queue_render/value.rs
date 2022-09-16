@@ -2,12 +2,12 @@ use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
 pub struct QrVal<T>(Rc<RefCell<ValueContent<T>>>);
-pub struct MapValue<C, T, U> {
+pub struct QrValMap<C, T, U> {
     value: QrVal<T>,
     fn_map: Box<dyn Fn(&C, &T) -> U>,
 }
 
-impl<C, T, U> MapValue<C, T, U> {
+impl<C, T, U> QrValMap<C, T, U> {
     pub fn into_parts(self) -> (QrVal<T>, Box<dyn Fn(&C, &T) -> U>) {
         (self.value, self.fn_map)
     }
@@ -123,11 +123,11 @@ impl<T: 'static + PartialEq> QrVal<T> {
         }
     }
 
-    pub fn map<C, U, F>(&self, fn_map: F) -> MapValue<C, T, U>
+    pub fn map<C, U, F>(&self, fn_map: F) -> QrValMap<C, T, U>
     where
         F: 'static + Fn(&C, &T) -> U,
     {
-        MapValue {
+        QrValMap {
             value: self.clone(),
             fn_map: Box::new(fn_map),
         }

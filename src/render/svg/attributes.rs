@@ -5,7 +5,7 @@ use crate::{
 };
 
 #[cfg(feature = "queue-render")]
-use crate::queue_render::value::{MapValue, QrVal};
+use crate::queue_render::value::{QrVal, QrValMap};
 
 make_traits_for_attribute_values! {
     LengthPercentage {

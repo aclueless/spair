@@ -263,7 +263,7 @@ macro_rules! make_traits_for_attribute_values {
             }
         }
         #[cfg(feature = "queue-render")]
-        impl<C: Component, T: 'static> $AttributeTrait<C> for MapValue<C, T, $attribute_type> {
+        impl<C: Component, T: 'static> $AttributeTrait<C> for QrValMap<C, T, $attribute_type> {
             fn render(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<C>) {
                 element.element_updater_mut().$queue_render_method_name_map(name, self);
             }
