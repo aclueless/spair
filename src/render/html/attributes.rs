@@ -107,17 +107,17 @@ pub trait MethodsForSelectedValueSelectedIndex<C: Component>:
     Sized + HtmlElementUpdaterMut<C>
 {
     fn value(mut self, value: impl PropertyValue<C>) -> Self {
-        value.render(self.html_element_render_mut());
+        value.render(self.html_element_updater_mut());
         self
     }
 
     fn selected_value(mut self, value: impl PropertyValue<C>) -> Self {
-        value.render(self.html_element_render_mut());
+        value.render(self.html_element_updater_mut());
         self
     }
 
     fn selected_index(mut self, value: impl PropertyIndex<C>) -> Self {
-        value.render(self.html_element_render_mut());
+        value.render(self.html_element_updater_mut());
         self
     }
 }
@@ -144,7 +144,7 @@ pub trait HamsHandMade<C: Component>:
     /// to use `.checked()` instead.
     fn checked_if_changed(mut self, value: bool) -> Self {
         if self
-            .element_render_mut()
+            .element_updater_mut()
             .must_render_attribute(value, AttributeValueList::check_bool_attribute)
         {
             self.checked(value)
@@ -172,34 +172,34 @@ pub trait HamsHandMade<C: Component>:
     /// `checked_if_changed` can be used to reduce interaction with DOM if
     /// it does not bug you.
     fn checked(mut self, value: impl PropertyChecked<C>) -> Self {
-        value.render(self.element_render_mut());
+        value.render(self.element_updater_mut());
         self
     }
 
     fn class(mut self, value: impl Class<C>) -> Self {
-        value.render(self.element_render_mut());
+        value.render(self.element_updater_mut());
         self
     }
 
     fn class_if(mut self, class_on: bool, class_name: &str) -> Self {
-        self.element_render_mut().class_if(class_on, class_name);
+        self.element_updater_mut().class_if(class_on, class_name);
         self
     }
 
     /// Set the `first_class` if `first` is true, otherwise, set the `second_class`
     fn class_or(mut self, first: bool, first_class: &str, second_class: &str) -> Self {
-        self.element_render_mut()
+        self.element_updater_mut()
             .class_or(first, first_class, second_class);
         self
     }
 
     fn enabled(mut self, value: impl AttributeEnabled<C>) -> Self {
-        value.render(self.element_render_mut());
+        value.render(self.element_updater_mut());
         self
     }
 
     fn focus(mut self, value: impl ActionFocus<C>) -> Self {
-        value.render(self.element_render_mut());
+        value.render(self.element_updater_mut());
         self
     }
 
@@ -207,18 +207,18 @@ pub trait HamsHandMade<C: Component>:
     /// It is possible to make this method accept either a Route or a str, but I intentionally make
     /// them two separate methods. The purpose is to remind users to use a Route when it's possible.
     fn href(mut self, route: &C::Routes) -> Self {
-        self.element_render_mut().href(route);
+        self.element_updater_mut().href(route);
         self
     }
 
     fn id(mut self, id: &str) -> Self {
-        self.element_render_mut().id(id);
+        self.element_updater_mut().id(id);
         self
     }
 
     fn scroll_to_top_if(self, need_to_scroll: bool) -> Self {
         if need_to_scroll {
-            self.element_render()
+            self.element_updater()
                 .element()
                 .ws_element()
                 .scroll_to_view_with_bool(true);
@@ -228,7 +228,7 @@ pub trait HamsHandMade<C: Component>:
 
     fn scroll_to_bottom_if(self, need_to_scroll: bool) -> Self {
         if need_to_scroll {
-            self.element_render()
+            self.element_updater()
                 .element()
                 .ws_element()
                 .scroll_to_view_with_bool(false);
@@ -358,7 +358,7 @@ impl<'er, C: Component> AttributesOnly<'er, C> {
 
 impl<'er, C: Component> StaticAttributesOnly<'er, C> {
     pub(super) fn new(mut er: HtmlElementUpdater<'er, C>) -> Self {
-        er.element_render_mut().set_static_mode();
+        er.element_updater_mut().set_static_mode();
         Self(er)
     }
     pub(super) fn into_inner(self) -> HtmlElementUpdater<'er, C> {
@@ -368,7 +368,7 @@ impl<'er, C: Component> StaticAttributesOnly<'er, C> {
 
 impl<'er, C: Component> StaticAttributes<'er, C> {
     pub(super) fn new(mut er: HtmlElementUpdater<'er, C>) -> Self {
-        er.element_render_mut().set_static_mode();
+        er.element_updater_mut().set_static_mode();
         Self(er)
     }
     pub(super) fn into_inner(self) -> HtmlElementUpdater<'er, C> {
@@ -380,43 +380,43 @@ impl<'er, C: Component> StaticAttributes<'er, C> {
 }
 
 impl<'er, C: Component> ElementUpdaterMut<C> for AttributesOnly<'er, C> {
-    fn element_render(&self) -> &ElementUpdater<C> {
-        self.0.element_render()
+    fn element_updater(&self) -> &ElementUpdater<C> {
+        self.0.element_updater()
     }
-    fn element_render_mut(&mut self) -> &mut ElementUpdater<C> {
-        self.0.element_render_mut()
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C> {
+        self.0.element_updater_mut()
     }
 }
 impl<'er, C: Component> HtmlElementUpdaterMut<C> for AttributesOnly<'er, C> {
-    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
+    fn html_element_updater_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
         &mut self.0
     }
 }
 
 impl<'er, C: Component> ElementUpdaterMut<C> for StaticAttributesOnly<'er, C> {
-    fn element_render(&self) -> &ElementUpdater<C> {
-        self.0.element_render()
+    fn element_updater(&self) -> &ElementUpdater<C> {
+        self.0.element_updater()
     }
-    fn element_render_mut(&mut self) -> &mut ElementUpdater<C> {
-        self.0.element_render_mut()
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C> {
+        self.0.element_updater_mut()
     }
 }
 impl<'er, C: Component> HtmlElementUpdaterMut<C> for StaticAttributesOnly<'er, C> {
-    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
+    fn html_element_updater_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
         &mut self.0
     }
 }
 
 impl<'er, C: Component> ElementUpdaterMut<C> for StaticAttributes<'er, C> {
-    fn element_render(&self) -> &ElementUpdater<C> {
-        self.0.element_render()
+    fn element_updater(&self) -> &ElementUpdater<C> {
+        self.0.element_updater()
     }
-    fn element_render_mut(&mut self) -> &mut ElementUpdater<C> {
-        self.0.element_render_mut()
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C> {
+        self.0.element_updater_mut()
     }
 }
 impl<'er, C: Component> HtmlElementUpdaterMut<C> for StaticAttributes<'er, C> {
-    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
+    fn html_element_updater_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
         &mut self.0
     }
 }

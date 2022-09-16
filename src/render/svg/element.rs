@@ -8,16 +8,16 @@ use crate::{
 pub struct SvgElementUpdater<'er, C: Component>(ElementUpdater<'er, C>);
 
 impl<'er, C: Component> From<ElementUpdater<'er, C>> for SvgElementUpdater<'er, C> {
-    fn from(element_render: ElementUpdater<'er, C>) -> Self {
-        Self(element_render)
+    fn from(element_updater: ElementUpdater<'er, C>) -> Self {
+        Self(element_updater)
     }
 }
 
 impl<'er, C: Component> ElementUpdaterMut<C> for SvgElementUpdater<'er, C> {
-    fn element_render(&self) -> &ElementUpdater<C> {
+    fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
         &mut self.0
     }
 }

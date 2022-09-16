@@ -25,7 +25,7 @@ pub trait SemsForList<'a, C: Component>:
         II: Iterator<Item = I>,
         for<'r> R: Fn(I, crate::SvgElement<'r, C>),
     {
-        let (comp, state, mut r) = self.element_render_mut().list_render(mode);
+        let (comp, state, mut r) = self.element_updater_mut().list_render(mode);
         let _do_we_have_to_care_about_this_returned_value_ = r.render(
             comp,
             state,

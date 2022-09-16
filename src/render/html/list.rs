@@ -25,7 +25,7 @@ pub trait HemsForList<'a, C: Component>:
         for<'r> R: Fn(I, crate::Element<'r, C>),
     {
         let tag = HtmlTag(tag);
-        let (comp, state, mut r) = self.element_render_mut().list_render(mode);
+        let (comp, state, mut r) = self.element_updater_mut().list_render(mode);
         let _do_we_have_to_care_about_this_returned_value_ =
             r.render(comp, state, items, tag, |item: I, er: ElementUpdater<C>| {
                 render(item, er.into())

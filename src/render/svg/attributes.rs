@@ -18,24 +18,24 @@ make_traits_for_attribute_values! {
 
 pub trait SamsHandMade<C: Component>: Sized + ElementUpdaterMut<C> {
     fn class(mut self, class_name: &str) -> Self {
-        self.element_render_mut().class(class_name);
+        self.element_updater_mut().class(class_name);
         self
     }
 
     fn class_if(mut self, class_on: bool, class_name: &str) -> Self {
-        self.element_render_mut().class_if(class_on, class_name);
+        self.element_updater_mut().class_if(class_on, class_name);
         self
     }
 
     /// Set the `first_class` if `first` is true, otherwise, set the `second_class`
     fn class_or(mut self, first: bool, first_class: &str, second_class: &str) -> Self {
-        self.element_render_mut()
+        self.element_updater_mut()
             .class_or(first, first_class, second_class);
         self
     }
 
     fn focus(mut self, value: bool) -> Self {
-        self.element_render_mut().focus(value);
+        self.element_updater_mut().focus(value);
         self
     }
 
@@ -43,18 +43,18 @@ pub trait SamsHandMade<C: Component>: Sized + ElementUpdaterMut<C> {
     /// It is possible to make this method accept both a Route and a str, but I intentionally make
     /// them two separate methods. The purpose is to remind users to use a Route when it's possible.
     fn href(mut self, route: &C::Routes) -> Self {
-        self.element_render_mut().href(route);
+        self.element_updater_mut().href(route);
         self
     }
 
     fn id(mut self, id: &str) -> Self {
-        self.element_render_mut().id(id);
+        self.element_updater_mut().id(id);
         self
     }
 
     fn scroll_to_top_if(self, need_to_scroll: bool) -> Self {
         if need_to_scroll {
-            self.element_render()
+            self.element_updater()
                 .element()
                 .ws_element()
                 .scroll_to_view_with_bool(true);
@@ -64,7 +64,7 @@ pub trait SamsHandMade<C: Component>: Sized + ElementUpdaterMut<C> {
 
     fn scroll_to_bottom_if(self, need_to_scroll: bool) -> Self {
         if need_to_scroll {
-            self.element_render()
+            self.element_updater()
                 .element()
                 .ws_element()
                 .scroll_to_view_with_bool(false);
@@ -379,28 +379,28 @@ impl<'er, C: Component> SvgStaticAttributes<'er, C> {
 }
 
 impl<'er, C: Component> ElementUpdaterMut<C> for SvgAttributesOnly<'er, C> {
-    fn element_render(&self) -> &ElementUpdater<C> {
+    fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
         &mut self.0
     }
 }
 
 impl<'er, C: Component> ElementUpdaterMut<C> for SvgStaticAttributesOnly<'er, C> {
-    fn element_render(&self) -> &ElementUpdater<C> {
+    fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
         &mut self.0
     }
 }
 
 impl<'er, C: Component> ElementUpdaterMut<C> for SvgStaticAttributes<'er, C> {
-    fn element_render(&self) -> &ElementUpdater<C> {
+    fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_render_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
         &mut self.0
     }
 }

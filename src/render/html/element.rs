@@ -59,7 +59,7 @@ impl Drop for SelectElementValueManager {
 }
 
 pub trait HtmlElementUpdaterMut<C: Component> {
-    fn html_element_render_mut(&mut self) -> &mut HtmlElementUpdater<C>;
+    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<C>;
 }
 
 /// This struct helps rendering the element's attributes and its child nodes.
@@ -68,56 +68,56 @@ pub trait HtmlElementUpdaterMut<C: Component> {
 /// struct (respectively via HamsForDistinctNames and HemsForDistinctNames). Some HTML attributes
 /// and HTML elements that their names appear in both will not be call directly on this struct.
 pub struct HtmlElementUpdater<'er, C: Component> {
-    element_render: ElementUpdater<'er, C>,
+    element_updater: ElementUpdater<'er, C>,
     select_element_value_manager: Option<SelectElementValueManager>,
 }
 
 impl<'er, C: Component> ElementUpdaterMut<C> for HtmlElementUpdater<'er, C> {
-    fn element_render(&self) -> &ElementUpdater<C> {
-        &self.element_render
+    fn element_updater(&self) -> &ElementUpdater<C> {
+        &self.element_updater
     }
 
-    fn element_render_mut(&mut self) -> &'er mut ElementUpdater<C> {
-        &mut self.element_render
+    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
+        &mut self.element_updater
     }
 }
 
 impl<'er, C: Component> HtmlElementUpdaterMut<C> for HtmlElementUpdater<'er, C> {
-    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
+    fn html_element_updater_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
         self
     }
 }
 
 impl<'er, C: Component> From<ElementUpdater<'er, C>> for HtmlElementUpdater<'er, C> {
-    fn from(element_render: ElementUpdater<'er, C>) -> Self {
+    fn from(element_updater: ElementUpdater<'er, C>) -> Self {
         let select_element_value_manager: Option<SelectElementValueManager> =
-            match element_render.element().element_type() {
-                ElementType::Select => Some(element_render.element().ws_element().unchecked_ref()),
+            match element_updater.element().element_type() {
+                ElementType::Select => Some(element_updater.element().ws_element().unchecked_ref()),
                 _ => None,
             }
             .map(SelectElementValueManager::new);
         Self {
-            element_render,
+            element_updater,
             select_element_value_manager,
         }
     }
 }
 impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     pub(super) fn into_parts(self) -> (ElementUpdater<'er, C>, Option<SelectElementValueManager>) {
-        (self.element_render, self.select_element_value_manager)
+        (self.element_updater, self.select_element_value_manager)
     }
 
     pub fn state(&self) -> &'er C {
-        self.element_render.state()
+        self.element_updater.state()
     }
 
     pub fn comp(&self) -> Comp<C> {
-        self.element_render.comp()
+        self.element_updater.comp()
     }
 
     #[cfg(feature = "svg")]
     pub fn as_svg_element(self) -> crate::render::svg::SvgElementUpdater<'er, C> {
-        self.element_render.into()
+        self.element_updater.into()
     }
 
     pub fn attributes_only(self) -> AttributesOnly<'er, C> {
@@ -133,7 +133,7 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     }
 
     pub fn ws_element(&self) -> &WsElement {
-        self.element_render.element().ws_element()
+        self.element_updater.element().ws_element()
     }
 
     fn set_selected_value_string(&mut self, value: Option<String>) {
@@ -164,7 +164,7 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
 
     pub(super) fn selected_value_str(&mut self, value: &str) {
         if !self
-            .element_render
+            .element_updater
             .must_render_attribute(value, AttributeValueList::check_str_attribute)
         {
             return;
@@ -173,7 +173,7 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     }
     pub(super) fn selected_value_string(&mut self, value: String) {
         if !self
-            .element_render
+            .element_updater
             .must_render_attribute(value.as_str(), AttributeValueList::check_str_attribute)
         {
             return;
@@ -181,10 +181,10 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
         self.set_value(&value);
     }
     pub(super) fn selected_value_optional_str(&mut self, value: Option<&str>) {
-        match self.element_render.element_mut().element_type() {
+        match self.element_updater.element_mut().element_type() {
             ElementType::Select => {
                 if !self
-                    .element_render
+                    .element_updater
                     .must_render_attribute(value, AttributeValueList::check_optional_str_attribute)
                 {
                     return;
@@ -199,10 +199,10 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     }
 
     fn selected_index(&mut self, value: i32) {
-        match self.element_render.element_mut().element_type() {
+        match self.element_updater.element_mut().element_type() {
             ElementType::Select => {
                 if !self
-                    .element_render
+                    .element_updater
                     .must_render_attribute(value, AttributeValueList::check_i32_attribute)
                 {
                     return;

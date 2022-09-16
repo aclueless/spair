@@ -36,7 +36,7 @@ pub trait HemsHandMade<C: Component>: Sized {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            render.get_element_render(HtmlTag("br"));
+            render.get_element_updater(HtmlTag("br"));
         }
         render.next_index();
         this
@@ -46,7 +46,7 @@ pub trait HemsHandMade<C: Component>: Sized {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            render.get_element_render(HtmlTag("hr"));
+            render.get_element_updater(HtmlTag("hr"));
         }
         render.next_index();
         this
@@ -87,7 +87,7 @@ pub trait HemsHandMade<C: Component>: Sized {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            let r = render.get_element_render(SvgTag("svg"));
+            let r = render.get_element_updater(SvgTag("svg"));
             f(r.into())
         }
         render.next_index();
@@ -126,13 +126,13 @@ where
     fn render_element(
         self,
         tag: &'static str,
-        element_render: impl FnOnce(HtmlElementUpdater<C>),
+        element_updater: impl FnOnce(HtmlElementUpdater<C>),
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            let e = render.get_element_render(HtmlTag(tag)).into();
-            element_render(e);
+            let e = render.get_element_updater(HtmlTag(tag)).into();
+            element_updater(e);
         }
         render.next_index();
         this

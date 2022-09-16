@@ -21,13 +21,13 @@ where
     fn render_element(
         self,
         tag: &'static str,
-        element_render: impl FnOnce(SvgElementUpdater<C>),
+        element_updater: impl FnOnce(SvgElementUpdater<C>),
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {
-            let e = render.get_element_render(SvgTag(tag)).into();
-            element_render(e);
+            let e = render.get_element_updater(SvgTag(tag)).into();
+            element_updater(e);
         }
         render.next_index();
         this

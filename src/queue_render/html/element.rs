@@ -15,7 +15,7 @@ impl<'a, C: Component> HtmlElementUpdater<'a, C> {
         fn_update: impl Fn(&WsElement, &T) + 'static,
         value: &QrVal<T>,
     ) {
-        self.element_render().qr_property(fn_update, value)
+        self.element_updater().qr_property(fn_update, value)
     }
 
     pub fn qrm_property<T: 'static, U: 'static>(
@@ -23,6 +23,6 @@ impl<'a, C: Component> HtmlElementUpdater<'a, C> {
         fn_update: impl Fn(&WsElement, &U) + 'static,
         value: MapValue<C, T, U>,
     ) {
-        self.element_render().qrm_property(fn_update, value)
+        self.element_updater().qrm_property(fn_update, value)
     }
 }

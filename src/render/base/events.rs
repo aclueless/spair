@@ -7,7 +7,7 @@ macro_rules! create_methods_for_events {
             fn $method_name<F>(mut self, f: F) -> Self
             where F: crate::events::$EventName
             {
-                let er = self.element_render_mut();
+                let er = self.element_updater_mut();
                 if er.require_set_listener() {
                     let listener = crate::events::$EventName::on(f, er.element().ws_element().ws_event_target());
                     er.store_listener(listener);

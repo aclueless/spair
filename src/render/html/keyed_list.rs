@@ -31,7 +31,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
             fn_render(item, element.into());
         };
         let _select_element_value_will_be_set_on_dropping_of_the_manager = self
-            .element_render_mut()
+            .element_updater_mut()
             .keyed_list_with_render(items, mode, HtmlTag(tag), fn_get_key, fn_render);
         self.make_nodes_extensions()
     }

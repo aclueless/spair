@@ -91,8 +91,8 @@ macro_rules! make_trait_for_element_methods {
         pub trait $TraitName<C: Component>: Sized + $UpdateElementTraitName<C, Self::Output> {
             type Output: From<Self> + NodesUpdaterMut<C>;
             $(
-            // fn $tag(self, element_render: impl FnOnce($ElementUpdaterType<C>)) -> Self::Output {
-            //     self.render_element(stringify!($tag), element_render)
+            // fn $tag(self, element_updater: impl FnOnce($ElementUpdaterType<C>)) -> Self::Output {
+            //     self.render_element(stringify!($tag), element_updater)
             // }
                 make_trait_for_element_methods!(
                     @each_element
@@ -121,8 +121,8 @@ macro_rules! make_trait_for_element_methods {
         $method_name:ident
         $element_name:expr
     ) => {
-        fn $method_name(self, element_render: impl FnOnce($ElementUpdaterType<C>)) -> Self::Output {
-            self.render_element($element_name, element_render)
+        fn $method_name(self, element_updater: impl FnOnce($ElementUpdaterType<C>)) -> Self::Output {
+            self.render_element($element_name, element_updater)
         }
     };
 }

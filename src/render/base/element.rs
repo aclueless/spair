@@ -15,8 +15,8 @@ use crate::{
 };
 
 pub trait ElementUpdaterMut<C: Component> {
-    fn element_render(&self) -> &ElementUpdater<C>;
-    fn element_render_mut(&mut self) -> &mut ElementUpdater<C>;
+    fn element_updater(&self) -> &ElementUpdater<C>;
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C>;
 }
 
 impl<C, T> ElementUpdaterMut<C> for &mut T
@@ -24,11 +24,11 @@ where
     C: Component,
     T: ElementUpdaterMut<C>,
 {
-    fn element_render(&self) -> &ElementUpdater<C> {
-        (**self).element_render()
+    fn element_updater(&self) -> &ElementUpdater<C> {
+        (**self).element_updater()
     }
-    fn element_render_mut(&mut self) -> &mut ElementUpdater<C> {
-        (**self).element_render_mut()
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C> {
+        (**self).element_updater_mut()
     }
 }
 
