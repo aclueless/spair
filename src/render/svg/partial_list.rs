@@ -19,7 +19,7 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
     ) -> Self
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, crate::SvgElement<'r, C>),
+        R: Fn(I, crate::SvgElement<C>),
     {
         let (comp, state, mut r) = self
             .nodes_updater_mut()
@@ -37,7 +37,7 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
     fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> Self
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, crate::SvgElement<'r, C>),
+        R: Fn(I, crate::SvgElement<C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
