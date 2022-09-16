@@ -9,7 +9,7 @@ use super::{
 use crate::render::svg::{SvgElementUpdater, SvgTag};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
-    render::base::{ElementUpdaterMut, MatchIfRender, NodesUpdater, NodesUpdaterMut},
+    render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut},
 };
 
 #[cfg(feature = "queue-render")]
@@ -52,11 +52,11 @@ pub trait HemsHandMade<C: Component>: Sized {
         this
     }
 
-    fn match_if(self, f: impl FnOnce(HtmlMatchIfRender<C>)) -> Self::Output {
+    fn match_if(self, f: impl FnOnce(HtmlMatchIfUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         let mi = render.get_match_if_render();
-        let mi = HtmlMatchIfRender(mi);
+        let mi = HtmlMatchIfUpdater(mi);
         f(mi);
         this
     }
@@ -65,12 +65,12 @@ pub trait HemsHandMade<C: Component>: Sized {
     fn qr_match_if<T: 'static>(
         self,
         value: &QrVal<T>,
-        f: impl Fn(&T, HtmlMatchIfRender<C>) + 'static,
+        f: impl Fn(&T, HtmlMatchIfUpdater<C>) + 'static,
     ) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if let Some(mi) = render.create_qr_match_if(move |t, mi| {
-            let mi = HtmlMatchIfRender(mi);
+            let mi = HtmlMatchIfUpdater(mi);
             f(t, mi);
         }) {
             value
@@ -541,9 +541,9 @@ impl<'er, C: Component> HemsForDistinctNames<C> for StaticAttributes<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
 
-pub struct HtmlMatchIfRender<'a, C: Component>(MatchIfRender<'a, C>);
+pub struct HtmlMatchIfUpdater<'a, C: Component>(MatchIfUpdater<'a, C>);
 
-impl<'a, C: Component> HtmlMatchIfRender<'a, C> {
+impl<'a, C: Component> HtmlMatchIfUpdater<'a, C> {
     pub fn render_on_arm_index(self, index: u32) -> NodesOwned<'a, C> {
         NodesOwned(HtmlNodesUpdater {
             nodes_render: self.0.render_on_arm_index(index),

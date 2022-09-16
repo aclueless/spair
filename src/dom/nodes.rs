@@ -49,7 +49,7 @@ impl Nodes {
     }
 
     // The following methods, from here until '================' are especically
-    // use for QrListRender, but the list only store elements: Vec<Element>.
+    // use for QrListUpdater, but the list only store elements: Vec<Element>.
     // TODO: Should we have an Vec<Element> for List and QrList
     // This method is use for QrList, so the items are always Element
     pub fn pop_element(&mut self) -> Option<Element> {
@@ -79,7 +79,7 @@ impl Nodes {
     }
 
     // '================'
-    // end of QrListRender only methods
+    // end of QrListUpdater only methods
 
     pub fn get_element_mut(&mut self, index: usize) -> &mut Element {
         match self

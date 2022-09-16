@@ -104,12 +104,12 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         ElementUpdater::new(self.comp, self.state, element, status)
     }
 
-    pub fn get_match_if_render(&mut self) -> MatchIfRender<C> {
+    pub fn get_match_if_render(&mut self) -> MatchIfUpdater<C> {
         let grouped_nodes = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);
         self.index += 1;
-        MatchIfRender {
+        MatchIfUpdater {
             comp: self.comp,
             state: self.state,
             parent: self.parent,
@@ -198,7 +198,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     }
 }
 
-pub struct MatchIfRender<'a, C: Component> {
+pub struct MatchIfUpdater<'a, C: Component> {
     comp: &'a Comp<C>,
     state: &'a C,
 
@@ -206,7 +206,7 @@ pub struct MatchIfRender<'a, C: Component> {
     grouped_nodes: &'a mut GroupedNodes,
 }
 
-impl<'a, C: Component> MatchIfRender<'a, C> {
+impl<'a, C: Component> MatchIfUpdater<'a, C> {
     pub fn new(
         comp: &'a Comp<C>,
         state: &'a C,

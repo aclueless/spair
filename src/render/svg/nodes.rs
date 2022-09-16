@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     component::{Child, ChildComp, Comp, Component},
-    render::base::{ElementUpdaterMut, MatchIfRender, NodesUpdater, NodesUpdaterMut},
+    render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut},
 };
 
 #[cfg(feature = "queue-render")]
@@ -36,11 +36,11 @@ where
 
 pub trait SemsHandMade<C: Component>: Sized {
     type Output: From<Self> + NodesUpdaterMut<C>;
-    fn match_if(self, f: impl FnOnce(SvgMatchIfRender<C>)) -> Self::Output {
+    fn match_if(self, f: impl FnOnce(SvgMatchIfUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         let mi = render.get_match_if_render();
-        let mi = SvgMatchIfRender(mi);
+        let mi = SvgMatchIfUpdater(mi);
         f(mi);
         this
     }
@@ -49,12 +49,12 @@ pub trait SemsHandMade<C: Component>: Sized {
     fn qr_match_if<T: 'static>(
         self,
         value: &QrVal<T>,
-        f: impl Fn(&T, SvgMatchIfRender<C>) + 'static,
+        f: impl Fn(&T, SvgMatchIfUpdater<C>) + 'static,
     ) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if let Some(mi) = render.create_qr_match_if(move |t, mi| {
-            let mi = SvgMatchIfRender(mi);
+            let mi = SvgMatchIfUpdater(mi);
             f(t, mi);
         }) {
             value
@@ -500,9 +500,9 @@ impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgAttributesOnly<
 impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgStaticAttributesOnly<'n, C> {}
 impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgStaticAttributes<'n, C> {}
 
-pub struct SvgMatchIfRender<'a, C: Component>(MatchIfRender<'a, C>);
+pub struct SvgMatchIfUpdater<'a, C: Component>(MatchIfUpdater<'a, C>);
 
-impl<'a, C: Component> SvgMatchIfRender<'a, C> {
+impl<'a, C: Component> SvgMatchIfUpdater<'a, C> {
     pub fn render_on_arm_index(self, index: u32) -> SvgNodesOwned<'a, C> {
         SvgNodesOwned::new(self.0.render_on_arm_index(index))
     }

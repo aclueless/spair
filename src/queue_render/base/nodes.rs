@@ -10,7 +10,7 @@ use crate::{
         value::QueueRender,
     },
     render::{
-        base::{ElementUpdater, MatchIfRender, NodesUpdater},
+        base::{ElementUpdater, MatchIfUpdater, NodesUpdater},
         ListElementCreation,
     },
 };
@@ -111,12 +111,12 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         list
     }
 
-    pub fn create_qr_match_if<T, R>(&mut self, fn_render: R) -> Option<QrMatchIfRender<C, T>>
+    pub fn create_qr_match_if<T, R>(&mut self, fn_render: R) -> Option<QrMatchIfUpdater<C, T>>
     where
-        for<'t, 'r> R: 'static + Fn(&'t T, MatchIfRender<'r, C>),
+        for<'t, 'r> R: 'static + Fn(&'t T, MatchIfUpdater<'r, C>),
     {
         let group = if self.new_node() {
-            let r = QrMatchIfRender {
+            let r = QrMatchIfUpdater {
                 comp: self.comp(),
                 parent: self.parent().clone(),
                 nodes: GroupedNodes::new(),
@@ -138,7 +138,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
                 QrNode::Group(_) => None,
                 QrNode::ClonedWsNode(wsn) => match wsn.take() {
                     Some(wsn) => {
-                        let r = QrMatchIfRender {
+                        let r = QrMatchIfUpdater {
                             comp,
                             parent,
                             nodes: GroupedNodes::with_flag(wsn),
@@ -160,28 +160,28 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     }
 }
 
-pub struct QrMatchIfRender<C: Component, T> {
+pub struct QrMatchIfUpdater<C: Component, T> {
     comp: Comp<C>,
     parent: web_sys::Node,
     nodes: GroupedNodes,
-    fn_render: Box<dyn Fn(&T, MatchIfRender<C>)>,
+    fn_render: Box<dyn Fn(&T, MatchIfUpdater<C>)>,
     unmounted: Rc<Cell<bool>>,
 }
 
-impl<C: Component, T> QrMatchIfRender<C, T> {
+impl<C: Component, T> QrMatchIfUpdater<C, T> {
     pub fn make_representative(&self) -> QrGroupRepresentative {
         QrGroupRepresentative::new(self.nodes.end_flag_node().clone(), self.unmounted.clone())
     }
 }
 
-impl<C: Component, T> QueueRender<T> for QrMatchIfRender<C, T> {
+impl<C: Component, T> QueueRender<T> for QrMatchIfUpdater<C, T> {
     fn render(&mut self, t: &T) {
         let rc_comp = self.comp.upgrade();
         let comp = rc_comp
             .try_borrow()
             .expect_throw("QrListRender::render::rc_comp.try_borrow().");
         let state = comp.state();
-        let mi = MatchIfRender::new(&self.comp, state, &self.parent, &mut self.nodes);
+        let mi = MatchIfUpdater::new(&self.comp, state, &self.parent, &mut self.nodes);
         (self.fn_render)(t, mi);
     }
 
