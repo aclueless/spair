@@ -104,7 +104,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         ElementUpdater::new(self.comp, self.state, element, status)
     }
 
-    pub fn get_match_if_render(&mut self) -> MatchIfUpdater<C> {
+    pub fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {
         let grouped_nodes = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);
@@ -117,7 +117,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         }
     }
 
-    pub fn get_list_render(&mut self, use_template: bool) -> (&Comp<C>, &C, ListUpdater) {
+    pub fn get_list_updater(&mut self, use_template: bool) -> (&Comp<C>, &C, ListUpdater) {
         let gn = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);

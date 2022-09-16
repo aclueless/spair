@@ -55,7 +55,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     fn match_if(self, f: impl FnOnce(HtmlMatchIfUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        let mi = render.get_match_if_render();
+        let mi = render.get_match_if_updater();
         let mi = HtmlMatchIfUpdater(mi);
         f(mi);
         this

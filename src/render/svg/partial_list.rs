@@ -23,7 +23,7 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
     {
         let (comp, state, mut r) = self
             .nodes_updater_mut()
-            .get_list_render(mode.use_template());
+            .get_list_updater(mode.use_template());
         let _do_we_have_to_care_about_this_returned_value_ = r.render(
             comp,
             state,
