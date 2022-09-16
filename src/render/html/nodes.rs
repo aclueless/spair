@@ -2,7 +2,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{
-    AttributesOnly, HtmlElementUpdater, HtmlTag, Render, SelectElementValueManager,
+    AttributesOnly, ElementRender, HtmlElementUpdater, HtmlTag, Render, SelectElementValueManager,
     StaticAttributes, StaticAttributesOnly, StaticRender,
 };
 #[cfg(feature = "svg")]
@@ -356,6 +356,11 @@ pub trait MethodsForHtmlElementContent<'n, C: Component>:
     fn rstatic(self, render: impl StaticRender<C>) -> NodesOwned<'n, C> {
         let n: NodesOwned<C> = self.into();
         n.rstatic(render)
+    }
+
+    fn relement<R: ElementRender<C>>(self, render: R) -> NodesOwned<'n, C> {
+        let n: NodesOwned<C> = self.into();
+        n.render_element(R::ELEMENT_TAG, R::render)
     }
 
     fn rfn(self, func: impl FnOnce(Nodes<C>)) -> NodesOwned<'n, C> {
