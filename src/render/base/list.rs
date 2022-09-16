@@ -59,7 +59,7 @@ impl<'a> ListUpdater<'a> {
         C: Component,
         E: ElementTag,
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, ElementUpdater<'r, C>),
+        R: Fn(I, ElementUpdater<C>),
     {
         let mut index = 0;
         for item in items {
