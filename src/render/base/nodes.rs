@@ -1,4 +1,4 @@
-use super::{ElementUpdater, ListRender};
+use super::{ElementUpdater, ListUpdater};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
     dom::{
@@ -117,13 +117,13 @@ impl<'a, C: Component> NodesRender<'a, C> {
         }
     }
 
-    pub fn get_list_render(&mut self, use_template: bool) -> (&Comp<C>, &C, ListRender) {
+    pub fn get_list_render(&mut self, use_template: bool) -> (&Comp<C>, &C, ListUpdater) {
         let gn = self
             .nodes
             .grouped_nodes(self.index, self.parent, self.next_sibling);
         self.index += 1;
         let (list, next_sibling) = gn.nodes_mut_and_end_flag_node();
-        let lr = ListRender::new(
+        let lr = ListUpdater::new(
             list,
             self.parent,
             self.parent_status,

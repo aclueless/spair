@@ -1,4 +1,4 @@
-use super::ListRender;
+use super::ListUpdater;
 use crate::{
     component::{Comp, Component},
     dom::{AttributeValueList, Element, ElementStatus},
@@ -272,9 +272,9 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         self.element.ws_element().set_id(id);
     }
 
-    pub fn list_render(&mut self, mode: ListElementCreation) -> (&Comp<C>, &C, ListRender) {
+    pub fn list_render(&mut self, mode: ListElementCreation) -> (&Comp<C>, &C, ListUpdater) {
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
-        let lr = ListRender::new(nodes, parent, self.status, None, mode.use_template());
+        let lr = ListUpdater::new(nodes, parent, self.status, None, mode.use_template());
         (self.comp, self.state, lr)
     }
 

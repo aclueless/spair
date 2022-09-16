@@ -7,7 +7,7 @@ use crate::{
 #[must_use = "Caller should set selected option for <select> element"]
 pub struct RememberSettingSelectedOption;
 
-pub struct ListRender<'a> {
+pub struct ListUpdater<'a> {
     use_template: bool,
     parent: &'a web_sys::Node,
     parent_status: ElementStatus,
@@ -18,7 +18,7 @@ pub struct ListRender<'a> {
     list: &'a mut Nodes,
 }
 
-impl<'a> ListRender<'a> {
+impl<'a> ListUpdater<'a> {
     pub fn new(
         list: &'a mut Nodes,
         parent: &'a web_sys::Node,
