@@ -58,8 +58,8 @@ impl Drop for SelectElementValueManager {
     }
 }
 
-pub trait HtmlElementRenderMut<C: Component> {
-    fn html_element_render_mut(&mut self) -> &mut HtmlElementRender<C>;
+pub trait HtmlElementUpdaterMut<C: Component> {
+    fn html_element_render_mut(&mut self) -> &mut HtmlElementUpdater<C>;
 }
 
 /// This struct helps rendering the element's attributes and its child nodes.
@@ -67,12 +67,12 @@ pub trait HtmlElementRenderMut<C: Component> {
 /// Most of HTML attributes and HTML elements can be rendered using methods attached to this
 /// struct (respectively via HamsForDistinctNames and HemsForDistinctNames). Some HTML attributes
 /// and HTML elements that their names appear in both will not be call directly on this struct.
-pub struct HtmlElementRender<'er, C: Component> {
+pub struct HtmlElementUpdater<'er, C: Component> {
     element_render: BaseElementRender<'er, C>,
     select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-impl<'er, C: Component> BaseElementRenderMut<C> for HtmlElementRender<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for HtmlElementUpdater<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         &self.element_render
     }
@@ -82,13 +82,13 @@ impl<'er, C: Component> BaseElementRenderMut<C> for HtmlElementRender<'er, C> {
     }
 }
 
-impl<'er, C: Component> HtmlElementRenderMut<C> for HtmlElementRender<'er, C> {
-    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementRender<C> {
+impl<'er, C: Component> HtmlElementUpdaterMut<C> for HtmlElementUpdater<'er, C> {
+    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
         self
     }
 }
 
-impl<'er, C: Component> From<BaseElementRender<'er, C>> for HtmlElementRender<'er, C> {
+impl<'er, C: Component> From<BaseElementRender<'er, C>> for HtmlElementUpdater<'er, C> {
     fn from(element_render: BaseElementRender<'er, C>) -> Self {
         let select_element_value_manager: Option<SelectElementValueManager> =
             match element_render.element().element_type() {
@@ -102,7 +102,7 @@ impl<'er, C: Component> From<BaseElementRender<'er, C>> for HtmlElementRender<'e
         }
     }
 }
-impl<'er, C: Component> HtmlElementRender<'er, C> {
+impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     pub(super) fn into_parts(
         self,
     ) -> (BaseElementRender<'er, C>, Option<SelectElementValueManager>) {
@@ -223,4 +223,4 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     }
 }
 
-impl<'er, C: Component> MethodsForEvents<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> MethodsForEvents<C> for HtmlElementUpdater<'er, C> {}

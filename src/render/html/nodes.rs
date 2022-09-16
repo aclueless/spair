@@ -2,7 +2,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{
-    AttributesOnly, HtmlElementRender, HtmlTag, Render, SelectElementValueManager,
+    AttributesOnly, HtmlElementUpdater, HtmlTag, Render, SelectElementValueManager,
     StaticAttributes, StaticAttributesOnly, StaticRender,
 };
 #[cfg(feature = "svg")]
@@ -126,7 +126,7 @@ where
     fn render_element(
         self,
         tag: &'static str,
-        element_render: impl FnOnce(HtmlElementRender<C>),
+        element_render: impl FnOnce(HtmlElementUpdater<C>),
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_render_mut();
@@ -146,7 +146,7 @@ make_trait_for_element_methods! {
     TestStructs: (TestHtmlMethods)
     TraitName: HemsForDistinctNames
     RenderElementTraitName: RenderHtmlElement
-    ElementRenderType: HtmlElementRender
+    ElementRenderType: HtmlElementUpdater
     elements:
         a
 
@@ -279,8 +279,8 @@ impl<'h, 'n: 'h, C: Component> From<StaticNodes<'h, 'n, C>> for Nodes<'h, 'n, C>
     }
 }
 
-impl<'n, C: Component> From<HtmlElementRender<'n, C>> for HtmlNodesRender<'n, C> {
-    fn from(r: HtmlElementRender<'n, C>) -> Self {
+impl<'n, C: Component> From<HtmlElementUpdater<'n, C>> for HtmlNodesRender<'n, C> {
+    fn from(r: HtmlElementUpdater<'n, C>) -> Self {
         let (r, m) = r.into_parts();
         Self {
             nodes_render: From::from(r),
@@ -289,14 +289,14 @@ impl<'n, C: Component> From<HtmlElementRender<'n, C>> for HtmlNodesRender<'n, C>
     }
 }
 
-impl<'n, C: Component> From<HtmlElementRender<'n, C>> for NodesOwned<'n, C> {
-    fn from(r: HtmlElementRender<'n, C>) -> Self {
+impl<'n, C: Component> From<HtmlElementUpdater<'n, C>> for NodesOwned<'n, C> {
+    fn from(r: HtmlElementUpdater<'n, C>) -> Self {
         Self::new(From::from(r))
     }
 }
 
-impl<'n, C: Component> From<HtmlElementRender<'n, C>> for StaticNodesOwned<'n, C> {
-    fn from(r: HtmlElementRender<'n, C>) -> Self {
+impl<'n, C: Component> From<HtmlElementUpdater<'n, C>> for StaticNodesOwned<'n, C> {
+    fn from(r: HtmlElementUpdater<'n, C>) -> Self {
         Self::new(From::from(r))
     }
 }
@@ -366,7 +366,7 @@ pub trait MethodsForHtmlElementContent<'n, C: Component>:
     }
 }
 
-impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for HtmlElementRender<'n, C> {}
+impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for HtmlElementUpdater<'n, C> {}
 impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for AttributesOnly<'n, C> {}
 impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for StaticAttributesOnly<'n, C> {}
 impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for StaticAttributes<'n, C> {}
@@ -525,11 +525,11 @@ impl<'n, C: Component> HemsForDistinctNames<C> for StaticNodesOwned<'n, C> {
     type Output = Self;
 }
 
-impl<'er, C: Component> RenderHtmlElement<C, NodesOwned<'er, C>> for HtmlElementRender<'er, C> {}
-impl<'er, C: Component> HemsHandMade<C> for HtmlElementRender<'er, C> {
+impl<'er, C: Component> RenderHtmlElement<C, NodesOwned<'er, C>> for HtmlElementUpdater<'er, C> {}
+impl<'er, C: Component> HemsHandMade<C> for HtmlElementUpdater<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
-impl<'er, C: Component> HemsForDistinctNames<C> for HtmlElementRender<'er, C> {
+impl<'er, C: Component> HemsForDistinctNames<C> for HtmlElementUpdater<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
 

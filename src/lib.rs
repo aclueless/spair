@@ -30,7 +30,7 @@ pub use render::svg::{
 };
 pub use render::{
     html::predefined_attribute_types::*,
-    html::HtmlElementRender as Element,
+    html::HtmlElementUpdater as Element,
     html::{ElementRender, Nodes, Render, StaticNodes, StaticRender},
     ListElementCreation,
 };
@@ -148,7 +148,7 @@ impl<T: wasm_bindgen::JsCast> WsRef<T> {
 
     pub fn set<C: component::Component>(
         &self,
-        element: &crate::render::html::HtmlElementRender<C>,
+        element: &crate::render::html::HtmlElementUpdater<C>,
     ) {
         let e = element.ws_element().unchecked_into::<T>();
         *self.0.borrow_mut() = Some(e);

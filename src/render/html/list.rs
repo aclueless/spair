@@ -4,7 +4,7 @@ use crate::{
     render::{
         base::{BaseElementRender, BaseElementRenderMut, MakeNodesExtensions, NodesExtensions},
         html::{
-            AttributesOnly, HtmlElementRender, HtmlTag, StaticAttributes, StaticAttributesOnly,
+            AttributesOnly, HtmlElementUpdater, HtmlTag, StaticAttributes, StaticAttributesOnly,
         },
         ListElementCreation,
     },
@@ -62,7 +62,7 @@ pub trait HemsForList<'a, C: Component>:
     }
 }
 
-impl<'a, C: Component> MakeNodesExtensions<'a> for HtmlElementRender<'a, C> {
+impl<'a, C: Component> MakeNodesExtensions<'a> for HtmlElementUpdater<'a, C> {
     fn make_nodes_extensions(self) -> NodesExtensions<'a> {
         let e = self.into_parts().0.into_parts().3;
         NodesExtensions::new(e.nodes_mut())
@@ -90,7 +90,7 @@ impl<'a, C: Component> MakeNodesExtensions<'a> for StaticAttributesOnly<'a, C> {
     }
 }
 
-impl<'a, C: Component> HemsForList<'a, C> for HtmlElementRender<'a, C> {}
+impl<'a, C: Component> HemsForList<'a, C> for HtmlElementUpdater<'a, C> {}
 impl<'a, C: Component> HemsForList<'a, C> for AttributesOnly<'a, C> {}
 impl<'a, C: Component> HemsForList<'a, C> for StaticAttributes<'a, C> {}
 impl<'a, C: Component> HemsForList<'a, C> for StaticAttributesOnly<'a, C> {}

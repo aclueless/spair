@@ -2,14 +2,14 @@ use crate::{
     component::Component,
     dom::WsElement,
     queue_render::value::{MapValue, QrVal},
-    render::{base::BaseElementRenderMut, html::HtmlElementRender},
+    render::{base::BaseElementRenderMut, html::HtmlElementUpdater},
 };
 
-// These methods don't have to be implemented on HtmlElementRender because
+// These methods don't have to be implemented on HtmlElementUpdater because
 // they are for queue-render. But their equivalent methods (for incremental
-// render) need to be on HtmlElementRender, so these methods need to be on
-// HtmlElementRender, too.
-impl<'a, C: Component> HtmlElementRender<'a, C> {
+// render) need to be on HtmlElementUpdater, so these methods need to be on
+// HtmlElementUpdater, too.
+impl<'a, C: Component> HtmlElementUpdater<'a, C> {
     pub fn qr_property<T: 'static>(
         &self,
         fn_update: impl Fn(&WsElement, &T) + 'static,

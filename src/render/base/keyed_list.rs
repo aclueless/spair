@@ -684,7 +684,7 @@ mod keyed_list_with_render_tests {
     use crate::render::ListElementCreation;
     use crate::render::{
         base::BaseElementRender,
-        html::{HemsForKeyedList, HtmlElementRender, HtmlTag},
+        html::{HemsForKeyedList, HtmlElementUpdater, HtmlTag},
     };
 
     impl super::ItemWithLis<&()> {
@@ -789,7 +789,7 @@ mod keyed_list_with_render_tests {
             Self { root, _rc, comp }
         }
 
-        fn create_render(&mut self) -> HtmlElementRender<Unit> {
+        fn create_render(&mut self) -> HtmlElementUpdater<Unit> {
             BaseElementRender::new(
                 &self.comp,
                 &Unit,

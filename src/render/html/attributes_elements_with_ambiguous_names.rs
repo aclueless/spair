@@ -1,5 +1,5 @@
 use super::{
-    AttributesOnly, HtmlElementRender, Nodes, NodesOwned, RenderHtmlElement, StaticAttributes,
+    AttributesOnly, HtmlElementUpdater, Nodes, NodesOwned, RenderHtmlElement, StaticAttributes,
     StaticAttributesOnly, StaticNodes, StaticNodesOwned,
 };
 use crate::{
@@ -16,7 +16,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
     for_elements {
         TraitName: HemsForAmbiguousNames
         RenderElementTraitName: RenderHtmlElement
-        ElementRenderType: HtmlElementRender
+        ElementRenderType: HtmlElementUpdater
     }
     for_attributes {
         TraitName: HamsForAmbiguousNames
@@ -32,7 +32,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
         u32     span
 }
 
-impl<'er, C: Component> HemsHamsAmbiguous for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HemsHamsAmbiguous for HtmlElementUpdater<'er, C> {}
 impl<'er, C: Component> HemsHamsAmbiguous for StaticAttributes<'er, C> {}
 
 impl<'er, C: Component> HamsForAmbiguousNames<C> for AttributesOnly<'er, C> {}

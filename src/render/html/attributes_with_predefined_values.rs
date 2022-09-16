@@ -1,4 +1,4 @@
-use super::{AttributesOnly, HtmlElementRender, StaticAttributes, StaticAttributesOnly};
+use super::{AttributesOnly, HtmlElementUpdater, StaticAttributes, StaticAttributesOnly};
 use crate::component::Component;
 
 #[cfg(test)]
@@ -234,7 +234,7 @@ TraitName: HamsWithPredefinedValues
 }
 }
 
-impl<'er, C: Component> HamsWithPredefinedValues<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> HamsWithPredefinedValues<C> for HtmlElementUpdater<'er, C> {}
 impl<'er, C: Component> HamsWithPredefinedValues<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HamsWithPredefinedValues<C> for AttributesOnly<'er, C> {}
 impl<'er, C: Component> HamsWithPredefinedValues<C> for StaticAttributesOnly<'er, C> {}

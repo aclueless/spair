@@ -4,7 +4,7 @@ use crate::{
     render::{
         base::{BaseElementRender, BaseElementRenderMut, MakeNodesExtensions, NodesExtensions},
         html::{
-            AttributesOnly, HtmlElementRender, HtmlTag, StaticAttributes, StaticAttributesOnly,
+            AttributesOnly, HtmlElementUpdater, HtmlTag, StaticAttributes, StaticAttributesOnly,
         },
         ListElementCreation,
     },
@@ -25,7 +25,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, HtmlElementRender<'r, C>),
+        for<'r> R: Fn(I, HtmlElementUpdater<'r, C>),
     {
         let fn_render = |item: I, element: BaseElementRender<C>| {
             fn_render(item, element.into());
@@ -47,7 +47,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(I, HtmlElementRender<'r, C>),
+        for<'r> R: Fn(I, HtmlElementUpdater<'r, C>),
     {
         self.keyed_list_with_render(
             items,
@@ -81,7 +81,7 @@ pub trait HemsForKeyedList<'a, C: Component>:
     }
 }
 
-impl<'a, C: Component> HemsForKeyedList<'a, C> for HtmlElementRender<'a, C> {}
+impl<'a, C: Component> HemsForKeyedList<'a, C> for HtmlElementUpdater<'a, C> {}
 impl<'a, C: Component> HemsForKeyedList<'a, C> for AttributesOnly<'a, C> {}
 impl<'a, C: Component> HemsForKeyedList<'a, C> for StaticAttributes<'a, C> {}
 impl<'a, C: Component> HemsForKeyedList<'a, C> for StaticAttributesOnly<'a, C> {}

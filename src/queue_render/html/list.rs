@@ -7,7 +7,7 @@ use crate::{
     render::{
         base::{BaseElementRender, NodesRenderMut},
         html::{
-            AttributesOnly, HtmlElementRender, HtmlTag, NodesOwned, StaticAttributes,
+            AttributesOnly, HtmlElementUpdater, HtmlTag, NodesOwned, StaticAttributes,
             StaticAttributesOnly,
         },
         ListElementCreation,
@@ -69,7 +69,7 @@ pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
     }
 }
 
-impl<'a, C: Component> HemsForQrList<'a, C> for HtmlElementRender<'a, C> {}
+impl<'a, C: Component> HemsForQrList<'a, C> for HtmlElementUpdater<'a, C> {}
 impl<'a, C: Component> HemsForQrList<'a, C> for AttributesOnly<'a, C> {}
 impl<'a, C: Component> HemsForQrList<'a, C> for StaticAttributes<'a, C> {}
 impl<'a, C: Component> HemsForQrList<'a, C> for StaticAttributesOnly<'a, C> {}

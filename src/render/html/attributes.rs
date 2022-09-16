@@ -1,4 +1,4 @@
-use super::{HtmlElementRender, HtmlElementRenderMut};
+use super::{HtmlElementUpdater, HtmlElementUpdaterMut};
 use crate::{
     component::Component,
     dom::AttributeValueList,
@@ -79,7 +79,7 @@ macro_rules! make_traits_for_property_values {
 }
 
 make_traits_for_property_values! {
-    HtmlElementRender
+    HtmlElementUpdater
     PropertyValue {
         &str,           selected_value_str              NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
         Option<&str>,   selected_value_optional_str     NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
@@ -101,10 +101,10 @@ make_traits_for_property_values! {
 /// the value property before adding the children (`option` elements)
 /// of the select will not work. This trait provide methods to work
 /// with attribute value to help handle the issue. But this trait alone
-/// can not sovle the issue. We also need HtmlElementRender and
+/// can not sovle the issue. We also need HtmlElementUpdater and
 /// HtmlNodesRender.
 pub trait MethodsForSelectedValueSelectedIndex<C: Component>:
-    Sized + HtmlElementRenderMut<C>
+    Sized + HtmlElementUpdaterMut<C>
 {
     fn value(mut self, value: impl PropertyValue<C>) -> Self {
         value.render(self.html_element_render_mut());
@@ -339,15 +339,15 @@ make_trait_for_attribute_methods! {
         u32     width
 }
 
-pub struct AttributesOnly<'er, C: Component>(HtmlElementRender<'er, C>);
-pub struct StaticAttributesOnly<'er, C: Component>(HtmlElementRender<'er, C>);
-pub struct StaticAttributes<'er, C: Component>(HtmlElementRender<'er, C>);
+pub struct AttributesOnly<'er, C: Component>(HtmlElementUpdater<'er, C>);
+pub struct StaticAttributesOnly<'er, C: Component>(HtmlElementUpdater<'er, C>);
+pub struct StaticAttributes<'er, C: Component>(HtmlElementUpdater<'er, C>);
 
 impl<'er, C: Component> AttributesOnly<'er, C> {
-    pub(super) fn new(er: HtmlElementRender<'er, C>) -> Self {
+    pub(super) fn new(er: HtmlElementUpdater<'er, C>) -> Self {
         Self(er)
     }
-    pub(super) fn into_inner(self) -> HtmlElementRender<'er, C> {
+    pub(super) fn into_inner(self) -> HtmlElementUpdater<'er, C> {
         self.0
     }
 
@@ -357,21 +357,21 @@ impl<'er, C: Component> AttributesOnly<'er, C> {
 }
 
 impl<'er, C: Component> StaticAttributesOnly<'er, C> {
-    pub(super) fn new(mut er: HtmlElementRender<'er, C>) -> Self {
+    pub(super) fn new(mut er: HtmlElementUpdater<'er, C>) -> Self {
         er.element_render_mut().set_static_mode();
         Self(er)
     }
-    pub(super) fn into_inner(self) -> HtmlElementRender<'er, C> {
+    pub(super) fn into_inner(self) -> HtmlElementUpdater<'er, C> {
         self.0
     }
 }
 
 impl<'er, C: Component> StaticAttributes<'er, C> {
-    pub(super) fn new(mut er: HtmlElementRender<'er, C>) -> Self {
+    pub(super) fn new(mut er: HtmlElementUpdater<'er, C>) -> Self {
         er.element_render_mut().set_static_mode();
         Self(er)
     }
-    pub(super) fn into_inner(self) -> HtmlElementRender<'er, C> {
+    pub(super) fn into_inner(self) -> HtmlElementUpdater<'er, C> {
         self.0
     }
     pub fn static_attributes_only(self) -> StaticAttributesOnly<'er, C> {
@@ -387,8 +387,8 @@ impl<'er, C: Component> BaseElementRenderMut<C> for AttributesOnly<'er, C> {
         self.0.element_render_mut()
     }
 }
-impl<'er, C: Component> HtmlElementRenderMut<C> for AttributesOnly<'er, C> {
-    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementRender<C> {
+impl<'er, C: Component> HtmlElementUpdaterMut<C> for AttributesOnly<'er, C> {
+    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
         &mut self.0
     }
 }
@@ -401,8 +401,8 @@ impl<'er, C: Component> BaseElementRenderMut<C> for StaticAttributesOnly<'er, C>
         self.0.element_render_mut()
     }
 }
-impl<'er, C: Component> HtmlElementRenderMut<C> for StaticAttributesOnly<'er, C> {
-    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementRender<C> {
+impl<'er, C: Component> HtmlElementUpdaterMut<C> for StaticAttributesOnly<'er, C> {
+    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
         &mut self.0
     }
 }
@@ -415,15 +415,15 @@ impl<'er, C: Component> BaseElementRenderMut<C> for StaticAttributes<'er, C> {
         self.0.element_render_mut()
     }
 }
-impl<'er, C: Component> HtmlElementRenderMut<C> for StaticAttributes<'er, C> {
-    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementRender<C> {
+impl<'er, C: Component> HtmlElementUpdaterMut<C> for StaticAttributes<'er, C> {
+    fn html_element_render_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for HtmlElementRender<'er, C> {}
-impl<'er, C: Component> HamsHandMade<C> for HtmlElementRender<'er, C> {}
-impl<'er, C: Component> HamsForDistinctNames<C> for HtmlElementRender<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for HtmlElementUpdater<'er, C> {}
+impl<'er, C: Component> HamsHandMade<C> for HtmlElementUpdater<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<C> for HtmlElementUpdater<'er, C> {}
 
 impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HamsHandMade<C> for StaticAttributes<'er, C> {}
