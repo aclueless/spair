@@ -6,7 +6,7 @@ use super::{
     StaticAttributes, StaticAttributesOnly, StaticRender,
 };
 #[cfg(feature = "svg")]
-use crate::render::svg::{SvgElementRender, SvgTag};
+use crate::render::svg::{SvgElementUpdater, SvgTag};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
     render::base::{BaseElementRenderMut, MatchIfRender, NodesRender, NodesRenderMut},
@@ -83,7 +83,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     }
 
     #[cfg(feature = "svg")]
-    fn svg(self, f: impl FnOnce(SvgElementRender<C>)) -> Self::Output {
+    fn svg(self, f: impl FnOnce(SvgElementUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
         if render.require_render() {

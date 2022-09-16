@@ -126,9 +126,9 @@ impl Boid {
     }
 }
 
-impl spair::SvgListItemRender<crate::simulation::Simulation> for Boid {
-    const ROOT_ELEMENT_TAG: &'static str = "polygon";
-    fn render(&self, item: spair::Svg<crate::simulation::Simulation>) {
+impl spair::SvgElementRender<crate::simulation::Simulation> for &Boid {
+    const ELEMENT_TAG: &'static str = "polygon";
+    fn render(self, item: spair::SvgElement<crate::simulation::Simulation>) {
         let color = format!("hsl({:.3}rad, 100%, 50%)", self.hue);
 
         let mut points = String::new();

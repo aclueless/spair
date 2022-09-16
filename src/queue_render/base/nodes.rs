@@ -54,7 +54,9 @@ impl<'a, C: Component> NodesRender<'a, C> {
         fn_render: R,
     ) -> Option<QrListRender<C, E, I>>
     where
-        for<'i, 'r> R: 'static + Fn(&'i I, BaseElementRender<'r, C>),
+        I: Clone,
+        //for<'i, 'r> R: 'static + Fn(&'i I, BaseElementRender<'r, C>),
+        R: 'static + Fn(I, BaseElementRender<C>),
     {
         let list = if self.new_node() {
             let end_flag_node = if full_list {

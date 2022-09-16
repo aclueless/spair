@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
-pub trait ListRender<I> {
-    fn render(&mut self, items: &[I], diffs: &[Diff<I>]);
+pub trait ListRender<I: Clone> {
+    fn render(&mut self, items: &[I], diffs: Vec<Diff<I>>);
     fn unmounted(&self) -> bool;
 }
 
@@ -10,21 +10,21 @@ pub trait ListRender<I> {
 /// it is impossible for you to make use of QrVec as a list of items
 /// and render the items into multi-rows of <div>s.
 
-pub struct QrVec<I>(Rc<RefCell<QrVecContent<I>>>);
+pub struct QrVec<I: Clone>(Rc<RefCell<QrVecContent<I>>>);
 
-impl<I> Clone for QrVec<I> {
+impl<I: Clone> Clone for QrVec<I> {
     fn clone(&self) -> Self {
-        Self(self.0.clone())
+        Self(Rc::clone(&self.0))
     }
 }
 
-impl<I> QrVec<I> {
+impl<I: Clone> QrVec<I> {
     pub(crate) fn content(&self) -> &Rc<RefCell<QrVecContent<I>>> {
         &self.0
     }
 }
 
-pub struct QrVecContent<I> {
+pub struct QrVecContent<I: Clone> {
     values: Vec<I>,
     a_render_is_queued: bool,
     diffs: Vec<Diff<I>>,
@@ -32,16 +32,24 @@ pub struct QrVecContent<I> {
     renders: Vec<Box<dyn ListRender<I>>>,
 }
 
-impl<I> QrVecContent<I> {
+impl<I: Clone> QrVecContent<I> {
     pub fn add_render(&mut self, r: Box<dyn ListRender<I>>) {
         self.renders.push(r);
     }
 
     fn render(&mut self) {
-        for r in self.renders.iter_mut() {
-            r.render(&self.values, &self.diffs);
+        if self.renders.is_empty() {
+            return;
         }
-        self.diffs.clear();
+        let before_last = self.renders.len() - 1;
+        for r in self.renders[..before_last].iter_mut() {
+            r.render(&self.values, self.diffs.clone());
+        }
+        if let Some(r) = self.renders.last_mut() {
+            let mut diffs = Vec::new();
+            std::mem::swap(&mut diffs, &mut self.diffs);
+            r.render(&self.values, diffs);
+        }
         self.a_render_is_queued = false;
     }
 
@@ -55,7 +63,8 @@ impl<I> QrVecContent<I> {
 }
 
 // To support multi-changes, we have to store a copy of the item for some change here.
-pub enum Diff<I> {
+#[derive(Debug, Clone)]
+pub enum Diff<I: Clone> {
     New,
     Push(I),
     Pop,
@@ -67,7 +76,7 @@ pub enum Diff<I> {
     Clear,
 }
 
-impl<I: 'static> QrVec<I> {
+impl<I: 'static + Clone> QrVec<I> {
     pub(crate) fn check_and_queue_a_render(&self) {
         {
             let mut this = self

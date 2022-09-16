@@ -115,12 +115,17 @@ impl KeyedElement {
     }
 }
 
+pub struct ListItemTemplate {
+    pub rendered: bool,
+    pub element: Element,
+}
+
 #[derive(Default)]
 pub struct KeyedList {
     active: Vec<Option<KeyedElement>>,
     // The primary reason for the double buffer here is for easy implementation.
     buffer: Vec<Option<KeyedElement>>,
-    template: Option<Element>,
+    template: Option<ListItemTemplate>,
     old_elements_map: HashMap<Key, OldElement>,
 }
 
@@ -157,18 +162,23 @@ impl KeyedList {
             .and_then(|i| i.as_ref().map(|ke| &ke.element))
     }
 
-    pub fn set_template(&mut self, f: impl FnOnce() -> Element) -> bool {
-        let require_init_template = self.template.is_none();
-        if require_init_template {
-            self.template = Some(f());
+    pub fn require_init_template(&mut self, f: impl FnOnce() -> Element) -> bool {
+        match self.template.as_mut() {
+            None => {
+                self.template = Some(ListItemTemplate {
+                    rendered: false,
+                    element: f(),
+                });
+                true
+            }
+            Some(t) => !t.rendered,
         }
-        require_init_template
     }
 
     pub fn items_mut(
         &mut self,
     ) -> (
-        Option<&mut Element>,
+        Option<&mut ListItemTemplate>,
         &mut Vec<Option<KeyedElement>>,
         &mut Vec<Option<KeyedElement>>,
         &mut HashMap<Key, OldElement>,

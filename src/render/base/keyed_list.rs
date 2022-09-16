@@ -4,7 +4,8 @@ use super::BaseElementRender;
 use crate::{
     component::{Comp, Component},
     dom::{
-        AChildNode, Element, ElementStatus, ElementTag, Key, KeyedElement, KeyedList, OldElement,
+        AChildNode, Element, ElementStatus, ElementTag, Key, KeyedElement, KeyedList,
+        ListItemTemplate, OldElement,
     },
 };
 
@@ -18,7 +19,7 @@ pub struct KeyedListContext<'a, E> {
     old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
     new_item_count: usize,
     next_sibling: Option<web_sys::Element>,
-    template: Option<&'a mut Element>,
+    template: Option<&'a mut ListItemTemplate>,
     require_init_template: bool,
 }
 
@@ -32,10 +33,11 @@ impl<'a, E: ElementTag> KeyedListContext<'a, E> {
     ) -> Self {
         list.pre_render(new_item_count);
 
-        let mut require_init_template = false;
-        if use_template {
-            require_init_template = list.set_template(|| Element::new_ns(root_item_tag));
-        }
+        let require_init_template = match use_template {
+            true => list.require_init_template(|| Element::new_ns(root_item_tag)),
+            false => false,
+        };
+
         let (template, old, new, old_elements_map) = list.items_mut();
         KeyedListContext {
             parent,
@@ -82,9 +84,9 @@ where
         (self.fn_get_key)(item_state)
     }
 
-    fn render<I>(&self, item_state: &I, r: BaseElementRender<C>)
+    fn render<I>(&self, item_state: I, r: BaseElementRender<C>)
     where
-        for<'r> R: Fn(&I, BaseElementRender<'r, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         (self.fn_render)(item_state, r)
     }
@@ -130,7 +132,7 @@ where
     }
     fn create_element_for_new_item(&self) -> (Element, ElementStatus) {
         match &self.list_context.template {
-            Some(template) => (Clone::clone(*template), ElementStatus::JustCloned),
+            Some(template) => (Clone::clone(&template.element), ElementStatus::JustCloned),
             None => (
                 Element::new_ns(self.list_context.root_item_tag),
                 ElementStatus::JustCreated,
@@ -145,7 +147,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         // No items? Just clear the current list.
         if self.list_context.new_item_count == 0 {
@@ -155,16 +157,21 @@ where
 
         let mut items_state_iter = items_state_iter.peekable_double_ended();
         if self.list_context.require_init_template {
-            let er = BaseElementRender::new(
-                self.render_context.comp,
-                self.render_context.state,
-                self.list_context.template.as_mut().unwrap(),
-                ElementStatus::JustCreated,
-            );
+            // If the template is not available yet, it means that no item has ever been rendered.
+            // The current render is the first render to the list. Then we just take the first
+            // item off the list, render it, clone the rendered element. Put one element into
+            // the list, store the other as a template
 
-            // Render the template with the first item's state
-            self.render_context
-                .render(&items_state_iter.peek().unwrap_throw(), er);
+            let ke = self.render_an_item(
+                items_state_iter
+                    .next()
+                    .expect_throw("Only non empty can reach here"),
+            );
+            if let Some(template) = self.list_context.template.as_mut() {
+                template.rendered = true;
+                template.element = ke.element.clone();
+            }
+            self.store_keyed_rendered_item(ke);
         }
         loop {
             let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
@@ -187,7 +194,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         let mut count = 0;
         loop {
@@ -205,7 +212,7 @@ where
             }
             count += 1;
             self.render_context.update_existing_item(
-                &items_state_iter.next().unwrap_throw(),
+                items_state_iter.next().unwrap_throw(),
                 self.list_context.old.next(),
                 self.list_context.new.next(),
                 None,
@@ -223,7 +230,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         let mut count = 0;
         loop {
@@ -245,7 +252,7 @@ where
             };
             count += 1;
             self.render_context.update_existing_item(
-                &items_state_iter.next_back().unwrap_throw(),
+                items_state_iter.next_back().unwrap_throw(),
                 self.list_context.old.next_back(),
                 self.list_context.new.next_back(),
                 None,
@@ -262,7 +269,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
@@ -283,7 +290,7 @@ where
         });
         let parent = self.list_context.parent;
         self.render_context.update_existing_item(
-            &items_state_iter.next().unwrap_throw(),
+            items_state_iter.next().unwrap_throw(),
             moved,
             self.list_context.new.next(),
             next_sibling,
@@ -306,7 +313,7 @@ where
     where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
@@ -321,7 +328,7 @@ where
             _ => return 0,
         };
         self.render_context.update_existing_item(
-            &items_state_iter.next_back().unwrap_throw(),
+            items_state_iter.next_back().unwrap_throw(),
             self.list_context.old.next(),
             self.list_context.new.next_back(),
             self.list_context.next_sibling.as_ref(),
@@ -342,7 +349,7 @@ where
     ) where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         if items_state_iter.peek().is_none() {
             self.remove_remain_items();
@@ -389,7 +396,8 @@ where
                 status,
             );
 
-            self.render_context.render(&item_state, er);
+            let key = self.render_context.get_key(&item_state).into();
+            self.render_context.render(item_state, er);
             if !lis {
                 let next_sibling = self
                     .list_context
@@ -402,10 +410,7 @@ where
             self.list_context.next_sibling = Some(element.ws_element().clone().into_inner());
             *self.list_context.new.next_back().expect_throw(
                 "render::base::keyed_list::KeyedListRender::update_other_items_in_the_middle",
-            ) = Some(KeyedElement::new(
-                self.render_context.get_key(&item_state).into(),
-                element,
-            ));
+            ) = Some(KeyedElement::new(key, element));
         }
     }
 
@@ -455,36 +460,48 @@ where
     ) where
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'er> R: Fn(&I, BaseElementRender<'er, C>),
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
     {
         for item_state in items_state_iter {
-            let (mut element, status) = self.create_element_for_new_item();
-
-            let er = BaseElementRender::new(
-                self.render_context.comp,
-                self.render_context.state,
-                &mut element,
-                status,
-            );
-
-            self.render_context.render(&item_state, er);
-            element.insert_before_a_sibling(
-                self.list_context.parent,
-                self.list_context
-                    .next_sibling
-                    .as_ref()
-                    .map(|element| element.unchecked_ref()),
-            );
-            *self
-                .list_context
-                .new
-                .next()
-                .expect_throw("render::base::keyed_list::KeyedListRender::inser_remain_items") =
-                Some(KeyedElement::new(
-                    self.render_context.get_key(&item_state).into(),
-                    element,
-                ));
+            let ke = self.render_an_item(item_state);
+            self.store_keyed_rendered_item(ke);
         }
+    }
+
+    fn render_an_item<I, K>(&mut self, item_state: I) -> KeyedElement
+    where
+        G: Fn(&I) -> K,
+        K: Into<Key> + PartialEq<Key>,
+        for<'r> R: Fn(I, BaseElementRender<'r, C>),
+    {
+        let (mut element, status) = self.create_element_for_new_item();
+
+        let er = BaseElementRender::new(
+            self.render_context.comp,
+            self.render_context.state,
+            &mut element,
+            status,
+        );
+
+        let key = self.render_context.get_key(&item_state).into();
+        self.render_context.render(item_state, er);
+        element.insert_before_a_sibling(
+            self.list_context.parent,
+            self.list_context
+                .next_sibling
+                .as_ref()
+                .map(|element| element.unchecked_ref()),
+        );
+        KeyedElement::new(key, element)
+    }
+
+    fn store_keyed_rendered_item(&mut self, ke: KeyedElement) {
+        *self
+            .list_context
+            .new
+            .next()
+            .expect_throw("render::base::keyed_list::KeyedListRender::inser_remain_items") =
+            Some(ke);
     }
 }
 
@@ -810,9 +827,9 @@ mod keyed_list_with_render_tests {
         }
     }
 
-    fn render(item: &&&str, span: crate::Element<Unit>) {
+    fn render(item: &&str, span: crate::Element<Unit>) {
         use crate::render::html::MethodsForHtmlElementContent;
-        span.rupdate(**item);
+        span.rupdate(*item);
     }
 
     fn get_key<'k>(item: &'k &&'static str) -> &'static str {

@@ -26,7 +26,7 @@ pub use queue_render::{value::QrVal, vec::QrVec};
 pub use render::html::HtmlTag;
 #[cfg(feature = "svg")]
 pub use render::svg::{
-    SvgElementRender as Svg, SvgListItemRender, SvgNodes, SvgRender, SvgStaticNodes, SvgTag,
+    SvgElementRender, SvgElementUpdater as SvgElement, SvgNodes, SvgRender, SvgStaticNodes, SvgTag,
 };
 pub use render::{
     html::predefined_attribute_types::*,

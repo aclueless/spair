@@ -18,12 +18,12 @@ pub struct QrListRender<C: Component, E, I> {
     end_flag_node: Option<web_sys::Node>,
     element_tag: E,
     use_template: bool,
-    fn_render: Box<dyn Fn(&I, BaseElementRender<C>)>,
+    fn_render: Box<dyn Fn(I, BaseElementRender<C>)>,
     unmounted: Rc<Cell<bool>>,
 }
 
-impl<C: Component, E: ElementTag, I> ListRender<I> for QrListRender<C, E, I> {
-    fn render(&mut self, items: &[I], diffs: &[Diff<I>]) {
+impl<C: Component, E: ElementTag, I: Clone> ListRender<I> for QrListRender<C, E, I> {
+    fn render(&mut self, items: &[I], diffs: Vec<Diff<I>>) {
         self.render_list(items, diffs);
     }
 
@@ -32,13 +32,13 @@ impl<C: Component, E: ElementTag, I> ListRender<I> for QrListRender<C, E, I> {
     }
 }
 
-impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
+impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
     pub fn new(
         element_tag: E,
         comp: Comp<C>,
         parent: web_sys::Node,
         end_flag_node: Option<web_sys::Node>,
-        fn_render: impl Fn(&I, BaseElementRender<C>) + 'static,
+        fn_render: impl Fn(I, BaseElementRender<C>) + 'static,
         use_template: bool,
     ) -> Self {
         Self {
@@ -56,34 +56,34 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
         QrListRepresentative::new(self.end_flag_node.clone(), self.unmounted.clone())
     }
 
-    pub fn render_list(&mut self, items: &[I], diffs: &[Diff<I>]) {
+    pub fn render_list(&mut self, items: &[I], diffs: Vec<Diff<I>>) {
         let rc_comp = self.comp.upgrade();
         let comp = rc_comp
             .try_borrow()
             .expect_throw("QrListRender::render::rc_comp.try_borrow().");
         let state = comp.state();
         if diffs.iter().any(|d| matches!(d, Diff::New)) {
-            self.render_change(state, items, &Diff::New);
+            self.render_change(state, items, Diff::New);
         } else {
-            for d in diffs.iter() {
+            for d in diffs {
                 self.render_change(state, items, d);
             }
         }
     }
 
-    fn render_change(&mut self, state: &C, items: &[I], diff: &Diff<I>) {
+    fn render_change(&mut self, state: &C, items: &[I], diff: Diff<I>) {
         match diff {
-            Diff::New => self.all_new(state, items),
+            Diff::New => self.all_new(state, items.to_vec()),
             Diff::Push(item) => self.push(state, item),
             Diff::Pop => self.pop(),
-            Diff::Insert { index, value } => self.insert(state, *index, value),
-            Diff::RemoveAtIndex(index) => self.remove(*index),
-            Diff::ReplaceAt { index, new_value } => self.re_render(state, *index, new_value),
+            Diff::Insert { index, value } => self.insert(state, index, value),
+            Diff::RemoveAtIndex(index) => self.remove(index),
+            Diff::ReplaceAt { index, new_value } => self.re_render(state, index, new_value),
             Diff::Move {
                 old_index,
                 new_index,
-            } => self.move_item(*old_index, *new_index),
-            Diff::Swap { index_1, index_2 } => self.swap(*index_1, *index_2),
+            } => self.move_item(old_index, new_index),
+            Diff::Swap { index_1, index_2 } => self.swap(index_1, index_2),
             Diff::Clear => self.clear(),
         }
     }
@@ -97,14 +97,14 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
         }
     }
 
-    fn all_new(&mut self, state: &C, items: &[I]) {
+    fn all_new(&mut self, state: &C, items: Vec<I>) {
         self.clear();
         for item in items {
             self.push(state, item);
         }
     }
 
-    fn push(&mut self, state: &C, item: &I) {
+    fn push(&mut self, state: &C, item: I) {
         let index = self.nodes.count();
         let status = self.nodes.check_or_create_element_for_list(
             self.element_tag,
@@ -125,7 +125,7 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
         }
     }
 
-    fn insert(&mut self, state: &C, index: usize, item: &I) {
+    fn insert(&mut self, state: &C, index: usize, item: I) {
         // An insert at the end of the list is handled by QrVec as a push
         let existing_element = self.nodes.get_element(index);
         let next_sibling = existing_element.map(|e| e.ws_node());
@@ -149,7 +149,7 @@ impl<C: Component, E: ElementTag, I> QrListRender<C, E, I> {
         element.remove_from(&self.parent);
     }
 
-    fn re_render(&mut self, state: &C, index: usize, item: &I) {
+    fn re_render(&mut self, state: &C, index: usize, item: I) {
         let element = self.nodes.get_element_mut(index);
         let render = BaseElementRender::new(&self.comp, state, element, ElementStatus::Existing);
         (self.fn_render)(item, render);
@@ -208,8 +208,8 @@ mod qr_list_tests {
 
     impl ElementRender<State> for u32 {
         const ELEMENT_TAG: &'static str = "span";
-        fn render(&self, item: crate::Element<State>) {
-            item.rupdate(*self);
+        fn render(self, item: crate::Element<State>) {
+            item.rupdate(self);
         }
     }
 

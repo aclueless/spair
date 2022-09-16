@@ -1,4 +1,4 @@
-use super::SvgElementRender;
+use super::SvgElementUpdater;
 use crate::{
     component::Component,
     render::base::{
@@ -407,8 +407,8 @@ impl<'er, C: Component> BaseElementRenderMut<C> for SvgStaticAttributes<'er, C> 
     }
 }
 
-impl<'er, C: Component> SamsHandMade<C> for SvgElementRender<'er, C> {}
-impl<'er, C: Component> SamsForDistinctNames<C> for SvgElementRender<'er, C> {}
+impl<'er, C: Component> SamsHandMade<C> for SvgElementUpdater<'er, C> {}
+impl<'er, C: Component> SamsForDistinctNames<C> for SvgElementUpdater<'er, C> {}
 
 impl<'er, C: Component> SamsForDistinctNames<C> for SvgStaticAttributes<'er, C> {}
 impl<'er, C: Component> SamsHandMade<C> for SvgStaticAttributes<'er, C> {}

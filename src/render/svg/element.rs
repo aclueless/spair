@@ -5,15 +5,15 @@ use crate::{
     render::base::{BaseElementRender, BaseElementRenderMut},
 };
 
-pub struct SvgElementRender<'er, C: Component>(BaseElementRender<'er, C>);
+pub struct SvgElementUpdater<'er, C: Component>(BaseElementRender<'er, C>);
 
-impl<'er, C: Component> From<BaseElementRender<'er, C>> for SvgElementRender<'er, C> {
+impl<'er, C: Component> From<BaseElementRender<'er, C>> for SvgElementUpdater<'er, C> {
     fn from(element_render: BaseElementRender<'er, C>) -> Self {
         Self(element_render)
     }
 }
 
-impl<'er, C: Component> BaseElementRenderMut<C> for SvgElementRender<'er, C> {
+impl<'er, C: Component> BaseElementRenderMut<C> for SvgElementUpdater<'er, C> {
     fn element_render(&self) -> &BaseElementRender<C> {
         &self.0
     }
@@ -22,7 +22,7 @@ impl<'er, C: Component> BaseElementRenderMut<C> for SvgElementRender<'er, C> {
     }
 }
 
-impl<'er, C: Component> SvgElementRender<'er, C> {
+impl<'er, C: Component> SvgElementUpdater<'er, C> {
     pub(super) fn into_inner(self) -> BaseElementRender<'er, C> {
         self.0
     }

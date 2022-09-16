@@ -353,9 +353,9 @@ impl<'k> spair::Keyed<'k> for TodoItem {
     }
 }
 
-impl spair::ListItemRender<App> for TodoItem {
-    const ROOT_ELEMENT_TAG: &'static str = "li";
-    fn render(&self, li: spair::Element<App>) {
+impl spair::ElementRender<App> for &TodoItem {
+    const ELEMENT_TAG: &'static str = "li";
+    fn render(self, li: spair::Element<App>) {
         let comp = li.comp();
         let state = li.state();
         let id = self.id;

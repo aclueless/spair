@@ -4,7 +4,7 @@ use crate::{
     render::{
         base::{BaseElementRender, BaseElementRenderMut, MakeNodesExtensions, NodesExtensions},
         svg::{
-            SvgAttributesOnly, SvgElementRender, SvgStaticAttributes, SvgStaticAttributesOnly,
+            SvgAttributesOnly, SvgElementUpdater, SvgStaticAttributes, SvgStaticAttributesOnly,
             SvgTag,
         },
         ListElementCreation,
@@ -26,23 +26,15 @@ pub trait SemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(&I, SvgElementRender<'r, C>),
+        for<'r> R: Fn(I, SvgElementUpdater<'r, C>),
     {
-        let fn_render = |item: &I, element: BaseElementRender<C>| {
+        let fn_render = |item: I, element: BaseElementRender<C>| {
             fn_render(item, element.into());
         };
         let _select_element_value_will_be_set_on_dropping_of_the_manager = self
             .element_render_mut()
             .keyed_list_with_render(items, mode, SvgTag(tag), fn_get_key, fn_render);
         self.make_nodes_extensions()
-    }
-
-    fn keyed_list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
-    where
-        for<'k> I: Keyed<'k> + super::SvgListItemRender<C>,
-        II: IntoIterator<Item = I>,
-    {
-        self.keyed_list_with_render(items, mode, I::ROOT_ELEMENT_TAG, I::key, I::render)
     }
 
     fn keyed_lwr_clone<I, II, G, K, R>(
@@ -56,7 +48,7 @@ pub trait SemsForKeyedList<'a, C: Component>:
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> K,
         K: Into<Key> + PartialEq<Key>,
-        for<'r> R: Fn(&I, SvgElementRender<'r, C>),
+        for<'r> R: Fn(I, SvgElementUpdater<'r, C>),
     {
         self.keyed_list_with_render(
             items,
@@ -67,22 +59,30 @@ pub trait SemsForKeyedList<'a, C: Component>:
         )
     }
 
+    fn keyed_list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
+    where
+        for<'k> I: Keyed<'k> + super::SvgElementRender<C>,
+        II: IntoIterator<Item = I>,
+    {
+        self.keyed_list_with_render(items, mode, I::ELEMENT_TAG, I::key, I::render)
+    }
+
     fn keyed_list_clone<I, II>(self, items: II) -> NodesExtensions<'a>
     where
-        for<'k> I: Keyed<'k> + super::SvgListItemRender<C>,
+        for<'k> I: Keyed<'k> + super::SvgElementRender<C>,
         II: IntoIterator<Item = I>,
     {
         self.keyed_list_with_render(
             items,
             ListElementCreation::Clone,
-            I::ROOT_ELEMENT_TAG,
+            I::ELEMENT_TAG,
             I::key,
             I::render,
         )
     }
 }
 
-impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgElementRender<'a, C> {}
+impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgElementUpdater<'a, C> {}
 impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgAttributesOnly<'a, C> {}
 impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgStaticAttributes<'a, C> {}
 impl<'a, C: Component> SemsForKeyedList<'a, C> for SvgStaticAttributesOnly<'a, C> {}

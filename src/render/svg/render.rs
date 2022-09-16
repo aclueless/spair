@@ -1,4 +1,4 @@
-use super::{SvgElementRender, SvgNodes, SvgStaticNodes};
+use super::{SvgNodes, SvgStaticNodes};
 use crate::component::Component;
 
 pub trait SvgRender<C: Component> {
@@ -55,14 +55,16 @@ impl<C: Component> SvgStaticRender<C> for &String {
     }
 }
 
-pub trait SvgListItemRender<C: Component> {
-    const ROOT_ELEMENT_TAG: &'static str;
-    fn render(&self, item: SvgElementRender<C>);
+pub trait SvgElementRender<C: Component> {
+    const ELEMENT_TAG: &'static str;
+    fn render(self, item: crate::SvgElement<C>);
 }
 
-impl<C: Component, T: SvgListItemRender<C>> SvgListItemRender<C> for &T {
-    const ROOT_ELEMENT_TAG: &'static str = T::ROOT_ELEMENT_TAG;
-    fn render(&self, item: SvgElementRender<C>) {
-        (*self).render(item);
+/// A simple wrapper to render an ElementRender's item with `.rupdate()`
+pub struct SvgRer<T>(T);
+impl<C: Component, T: SvgElementRender<C>> SvgRender<C> for SvgRer<T> {
+    fn render(self, nodes: SvgNodes<C>) {
+        use super::RenderSvgElement;
+        nodes.render_element(T::ELEMENT_TAG, |er| self.0.render(er));
     }
 }

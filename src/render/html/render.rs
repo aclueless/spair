@@ -74,14 +74,14 @@ pub trait ElementRender<C: Component> {
     fn render(self, item: crate::Element<C>);
 }
 
-/// A simple wrapper to render an ElementRender's item with `.rupdate()`
-pub struct Rer<T>(T);
-impl<C: Component, T: ElementRender<C>> Render<C> for Rer<T> {
-    fn render(self, nodes: Nodes<C>) {
-        use super::RenderHtmlElement;
-        nodes.render_element(T::ELEMENT_TAG, |er| self.0.render(er));
-    }
-}
+// A simple wrapper to render an ElementRender's item with `.rupdate()`
+// pub struct Rer<T>(T);
+// impl<C: Component, T: ElementRender<C>> Render<C> for Rer<T> {
+//     fn render(self, nodes: Nodes<C>) {
+//         use super::RenderHtmlElement;
+//         nodes.render_element(T::ELEMENT_TAG, |er| self.0.render(er));
+//     }
+// }
 
 // Rust prevent implementation directly on T with this error:
 // error[E0119]: conflicting implementations of trait `render::html::render::Render<_>` for type `&str`
@@ -103,3 +103,5 @@ impl<C: Component, T: ElementRender<C>> Render<C> for Rer<T> {
 //         nodes.render_element(T::ELEMENT_TAG, |er| self.render(er));
 //     }
 // }
+
+// Similarly to Svg renders

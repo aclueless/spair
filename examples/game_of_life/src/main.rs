@@ -170,7 +170,6 @@ fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
     });
 }
 
-#[derive(Clone, Copy)]
 struct Row<'a>(usize, &'a [Cellule]);
 impl<'k, 'a> spair::Keyed<'k> for Row<'a> {
     type Key = u32;
@@ -179,16 +178,16 @@ impl<'k, 'a> spair::Keyed<'k> for Row<'a> {
     }
 }
 
-impl<'a> spair::ListItemRender<App> for Row<'a> {
-    const ROOT_ELEMENT_TAG: &'static str = "div";
-    fn render(&self, element: spair::Element<App>) {
+impl<'a> spair::ElementRender<App> for Row<'a> {
+    const ELEMENT_TAG: &'static str = "div";
+    fn render(self, element: spair::Element<App>) {
         let comp = element.comp();
         let offset = self.0 * element.state().cellules_width;
         element.class("game-row").keyed_lwr_clone(
             self.1.iter().enumerate(),
             "div",
             |&(index, _)| index as u32,
-            |&(index, cellule), div| {
+            |(index, cellule), div| {
                 let index = offset + index;
                 div.class("game-cellule")
                     .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")

@@ -1,5 +1,5 @@
 use super::{
-    RenderSvgElement, SvgAttributesOnly, SvgElementRender, SvgNodes, SvgNodesOwned,
+    RenderSvgElement, SvgAttributesOnly, SvgElementUpdater, SvgNodes, SvgNodesOwned,
     SvgStaticAttributes, SvgStaticAttributesOnly, SvgStaticNodes, SvgStaticNodesOwned,
 };
 use crate::{
@@ -16,7 +16,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
     for_elements {
         TraitName: SemsForAmbiguousNames
         RenderElementTraitName: RenderSvgElement
-        ElementRenderType: SvgElementRender
+        ElementRenderType: SvgElementUpdater
     }
     for_attributes {
         TraitName: SamsForAmbiguousNames
@@ -29,7 +29,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
         str     path
 }
 
-impl<'er, C: Component> SemsSamsAmbiguous for SvgElementRender<'er, C> {}
+impl<'er, C: Component> SemsSamsAmbiguous for SvgElementUpdater<'er, C> {}
 impl<'er, C: Component> SemsSamsAmbiguous for SvgStaticAttributes<'er, C> {}
 
 impl<'er, C: Component> SamsForAmbiguousNames<C> for SvgAttributesOnly<'er, C> {}

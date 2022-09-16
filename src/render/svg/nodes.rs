@@ -2,7 +2,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{
-    SvgAttributesOnly, SvgElementRender, SvgRender, SvgStaticAttributes, SvgStaticAttributesOnly,
+    SvgAttributesOnly, SvgElementUpdater, SvgRender, SvgStaticAttributes, SvgStaticAttributesOnly,
     SvgStaticRender, SvgTag,
 };
 use crate::{
@@ -21,7 +21,7 @@ where
     fn render_element(
         self,
         tag: &'static str,
-        element_render: impl FnOnce(SvgElementRender<C>),
+        element_render: impl FnOnce(SvgElementUpdater<C>),
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_render_mut();
@@ -97,7 +97,7 @@ make_trait_for_element_methods! {
     TestStructs: (TestSvgMethods)
     TraitName: SemsForDistinctNames
     RenderElementTraitName: RenderSvgElement
-    ElementRenderType: SvgElementRender
+    ElementRenderType: SvgElementUpdater
     elements:
         // https://developer.mozilla.org/en-US/docs/Web/SVG/Element
         a
@@ -257,8 +257,8 @@ impl<'h, 'n: 'h, C: Component> NodesRenderMut<C> for SvgStaticNodes<'h, 'n, C> {
     }
 }
 
-impl<'n, C: Component> From<SvgElementRender<'n, C>> for SvgNodesOwned<'n, C> {
-    fn from(r: SvgElementRender<'n, C>) -> Self {
+impl<'n, C: Component> From<SvgElementUpdater<'n, C>> for SvgNodesOwned<'n, C> {
+    fn from(r: SvgElementUpdater<'n, C>) -> Self {
         let r = r.into_inner();
         Self(From::from(r))
     }
@@ -270,7 +270,7 @@ impl<'n, C: Component> From<SvgStaticAttributes<'n, C>> for SvgNodesOwned<'n, C>
     }
 }
 
-impl<'n, C: Component> RenderSvgElement<C, SvgNodesOwned<'n, C>> for SvgElementRender<'n, C> {}
+impl<'n, C: Component> RenderSvgElement<C, SvgNodesOwned<'n, C>> for SvgElementUpdater<'n, C> {}
 impl<'n, C: Component> RenderSvgElement<C, SvgNodesOwned<'n, C>> for SvgStaticAttributes<'n, C> {}
 
 impl<'h, 'n: 'h, C: Component> RenderSvgElement<C, SvgNodes<'h, 'n, C>> for SvgNodes<'h, 'n, C> {}
@@ -312,7 +312,7 @@ impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticNodesOwned<'n, C> {
 impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticAttributes<'n, C> {
     type Output = SvgNodesOwned<'n, C>;
 }
-impl<'n, C: Component> SemsForDistinctNames<C> for SvgElementRender<'n, C> {
+impl<'n, C: Component> SemsForDistinctNames<C> for SvgElementUpdater<'n, C> {
     type Output = SvgNodesOwned<'n, C>;
 }
 
@@ -465,8 +465,8 @@ pub trait MethodsForSvgElementContent<'n, C: Component>:
     }
 }
 
-impl<'n, C: Component> From<SvgElementRender<'n, C>> for SvgStaticNodesOwned<'n, C> {
-    fn from(r: SvgElementRender<'n, C>) -> Self {
+impl<'n, C: Component> From<SvgElementUpdater<'n, C>> for SvgStaticNodesOwned<'n, C> {
+    fn from(r: SvgElementUpdater<'n, C>) -> Self {
         SvgStaticNodesOwned::new(From::from(r.into_inner()))
     }
 }
@@ -495,7 +495,7 @@ impl<'n, C: Component> From<SvgStaticAttributes<'n, C>> for SvgStaticNodesOwned<
         SvgStaticNodesOwned::new(From::from(r.into_inner()))
     }
 }
-impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgElementRender<'n, C> {}
+impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgElementUpdater<'n, C> {}
 impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgAttributesOnly<'n, C> {}
 impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgStaticAttributesOnly<'n, C> {}
 impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgStaticAttributes<'n, C> {}

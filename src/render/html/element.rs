@@ -118,7 +118,7 @@ impl<'er, C: Component> HtmlElementRender<'er, C> {
     }
 
     #[cfg(feature = "svg")]
-    pub fn as_svg_element(self) -> crate::render::svg::SvgElementRender<'er, C> {
+    pub fn as_svg_element(self) -> crate::render::svg::SvgElementUpdater<'er, C> {
         self.element_render.into()
     }
 
