@@ -18,7 +18,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
     ) -> Self
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, crate::Element<'r, C>),
+        R: Fn(I, crate::Element<C>),
     {
         let tag = HtmlTag(tag);
 
@@ -35,7 +35,7 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
     fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> Self
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, crate::Element<'r, C>),
+        R: Fn(I, crate::Element<C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
