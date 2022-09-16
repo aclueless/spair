@@ -133,7 +133,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         self.index += 1;
     }
 
-    pub fn must_render_attribute<T>(
+    pub fn must_update_attribute<T>(
         &mut self,
         value: T,
         check: impl FnOnce(&mut AttributeValueList, usize, T) -> bool,
@@ -148,42 +148,42 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     pub fn set_bool_attribute(&mut self, name: &str, value: bool) {
-        if !self.must_render_attribute(value, AttributeValueList::check_bool_attribute) {
+        if !self.must_update_attribute(value, AttributeValueList::check_bool_attribute) {
             return;
         }
         self.element.ws_element().set_bool_attribute(name, value);
     }
 
     pub fn set_str_attribute(&mut self, name: &str, value: &str) {
-        if !self.must_render_attribute(value, AttributeValueList::check_str_attribute) {
+        if !self.must_update_attribute(value, AttributeValueList::check_str_attribute) {
             return;
         }
         self.element.ws_element().set_str_attribute(name, value);
     }
 
     pub fn set_string_attribute(&mut self, name: &str, value: String) {
-        if !self.must_render_attribute(value.as_str(), AttributeValueList::check_str_attribute) {
+        if !self.must_update_attribute(value.as_str(), AttributeValueList::check_str_attribute) {
             return;
         }
         self.element.ws_element().set_str_attribute(name, &value);
     }
 
     pub fn set_i32_attribute(&mut self, name: &str, value: i32) {
-        if !self.must_render_attribute(value, AttributeValueList::check_i32_attribute) {
+        if !self.must_update_attribute(value, AttributeValueList::check_i32_attribute) {
             return;
         }
         self.element.ws_element().set_attribute(name, value);
     }
 
     pub fn set_u32_attribute(&mut self, name: &str, value: u32) {
-        if !self.must_render_attribute(value, AttributeValueList::check_u32_attribute) {
+        if !self.must_update_attribute(value, AttributeValueList::check_u32_attribute) {
             return;
         }
         self.element.ws_element().set_attribute(name, value);
     }
 
     pub fn set_f64_attribute(&mut self, name: &str, value: f64) {
-        if !self.must_render_attribute(value, AttributeValueList::check_f64_attribute) {
+        if !self.must_update_attribute(value, AttributeValueList::check_f64_attribute) {
             return;
         }
         self.element.ws_element().set_attribute(name, value);
@@ -219,7 +219,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
 
     /// Make sure that value of `class_name` does not change between calls.
     pub fn class_if(&mut self, class_on: bool, class_name: &str) {
-        if !self.must_render_attribute(class_on, AttributeValueList::check_bool_attribute) {
+        if !self.must_update_attribute(class_on, AttributeValueList::check_bool_attribute) {
             return;
         }
         if class_on {
@@ -230,7 +230,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     pub fn class_or(&mut self, first: bool, first_class: &str, second_class: &str) {
-        if !self.must_render_attribute(first, AttributeValueList::check_bool_attribute) {
+        if !self.must_update_attribute(first, AttributeValueList::check_bool_attribute) {
             return;
         }
         if first {
@@ -243,7 +243,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     pub fn focus(&mut self, value: bool) {
-        if !self.must_render_attribute(value, AttributeValueList::check_bool_attribute) {
+        if !self.must_update_attribute(value, AttributeValueList::check_bool_attribute) {
             return;
         }
         if value {
@@ -259,14 +259,14 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         // Is that possible? It may avoid calling `route.url()` if the route does not change.
         use crate::routing::Routes;
         let url = route.url();
-        if !self.must_render_attribute(url.as_str(), AttributeValueList::check_str_attribute) {
+        if !self.must_update_attribute(url.as_str(), AttributeValueList::check_str_attribute) {
             return;
         }
         self.element.ws_element().set_str_attribute("href", &url);
     }
 
     pub fn id(&mut self, id: &str) {
-        if !self.must_render_attribute(id, AttributeValueList::check_str_attribute) {
+        if !self.must_update_attribute(id, AttributeValueList::check_str_attribute) {
             return;
         }
         self.element.ws_element().set_id(id);

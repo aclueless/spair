@@ -165,7 +165,7 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     pub(super) fn selected_value_str(&mut self, value: &str) {
         if !self
             .element_updater
-            .must_render_attribute(value, AttributeValueList::check_str_attribute)
+            .must_update_attribute(value, AttributeValueList::check_str_attribute)
         {
             return;
         }
@@ -174,7 +174,7 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     pub(super) fn selected_value_string(&mut self, value: String) {
         if !self
             .element_updater
-            .must_render_attribute(value.as_str(), AttributeValueList::check_str_attribute)
+            .must_update_attribute(value.as_str(), AttributeValueList::check_str_attribute)
         {
             return;
         }
@@ -185,7 +185,7 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
             ElementType::Select => {
                 if !self
                     .element_updater
-                    .must_render_attribute(value, AttributeValueList::check_optional_str_attribute)
+                    .must_update_attribute(value, AttributeValueList::check_optional_str_attribute)
                 {
                     return;
                 }
@@ -203,7 +203,7 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
             ElementType::Select => {
                 if !self
                     .element_updater
-                    .must_render_attribute(value, AttributeValueList::check_i32_attribute)
+                    .must_update_attribute(value, AttributeValueList::check_i32_attribute)
                 {
                     return;
                 }

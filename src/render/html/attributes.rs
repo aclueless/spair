@@ -145,7 +145,7 @@ pub trait HamsHandMade<C: Component>:
     fn checked_if_changed(mut self, value: bool) -> Self {
         if self
             .element_updater_mut()
-            .must_render_attribute(value, AttributeValueList::check_bool_attribute)
+            .must_update_attribute(value, AttributeValueList::check_bool_attribute)
         {
             self.checked(value)
         } else {
