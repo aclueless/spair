@@ -205,7 +205,7 @@ where
                         .1
                         .as_ref()
                         .expect_throw("render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_start");
-                    if !self.render_context.get_key(&item_state).eq(&item.key) {
+                    if !self.render_context.get_key(item_state).eq(&item.key) {
                         return count;
                     }
                 }
@@ -790,7 +790,7 @@ mod keyed_list_with_render_tests {
             Self { root, _rc, comp }
         }
 
-        fn create_render(&mut self) -> HtmlElementUpdater<Unit> {
+        fn create_updater(&mut self) -> HtmlElementUpdater<Unit> {
             ElementUpdater::new(
                 &self.comp,
                 &Unit,
@@ -852,14 +852,14 @@ mod keyed_list_with_render_tests {
 
         let empty: Vec<&'static str> = Vec::new();
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&empty, mode, "span", get_key, render);
         assert_eq!(Some(""), pa.collect_text_from_root().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
@@ -867,14 +867,14 @@ mod keyed_list_with_render_tests {
         // Random shuffle + addition
         let data = vec!["f", "b", "d", "l", "g", "i", "m", "j", "a", "h", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(Some("fbdlgimjahk"), pa.collect_text_from_root().as_deref());
         assert_eq!(data, pa.collect_from_keyed_list());
 
         // Empty the list
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&empty, mode, "span", get_key, render);
         assert_eq!(Some(""), pa.collect_text_from_root().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
@@ -882,7 +882,7 @@ mod keyed_list_with_render_tests {
         // Add back
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
@@ -890,7 +890,7 @@ mod keyed_list_with_render_tests {
         // Forward
         let data = vec!["a", "i", "b", "c", "d", "e", "f", "g", "h", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("aibcdefghjk"), pa.collect_text_from_root().as_deref());
@@ -898,7 +898,7 @@ mod keyed_list_with_render_tests {
         // Backward
         let data = vec!["a", "i", "c", "d", "e", "f", "g", "h", "b", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("aicdefghbjk"), pa.collect_text_from_root().as_deref());
@@ -906,7 +906,7 @@ mod keyed_list_with_render_tests {
         // Swap
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
@@ -914,7 +914,7 @@ mod keyed_list_with_render_tests {
         // Remove middle
         let data = vec!["a", "b", "c", "d", "i", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdijk"), pa.collect_text_from_root().as_deref());
@@ -922,7 +922,7 @@ mod keyed_list_with_render_tests {
         // Insert middle
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
@@ -930,7 +930,7 @@ mod keyed_list_with_render_tests {
         // Remove start
         let data = vec!["d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("defghijk"), pa.collect_text_from_root().as_deref());
@@ -938,7 +938,7 @@ mod keyed_list_with_render_tests {
         // Insert start
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
@@ -946,7 +946,7 @@ mod keyed_list_with_render_tests {
         // Remove end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefgh"), pa.collect_text_from_root().as_deref());
@@ -954,7 +954,7 @@ mod keyed_list_with_render_tests {
         // Append end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
         let _ = pa
-            .create_render()
+            .create_updater()
             .keyed_list_with_render(&data, mode, "span", get_key, render);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
