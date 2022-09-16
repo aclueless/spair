@@ -5,7 +5,7 @@ use crate::{queue_render::vec::QrVec, render::html::ElementRender};
 use crate::{
     component::Component,
     render::{
-        base::{ElementUpdater, NodesRenderMut},
+        base::{ElementUpdater, NodesUpdaterMut},
         html::{
             AttributesOnly, HtmlElementUpdater, HtmlTag, NodesOwned, StaticAttributes,
             StaticAttributesOnly,

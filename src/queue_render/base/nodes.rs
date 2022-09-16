@@ -10,12 +10,12 @@ use crate::{
         value::QueueRender,
     },
     render::{
-        base::{ElementUpdater, MatchIfRender, NodesRender},
+        base::{ElementUpdater, MatchIfRender, NodesUpdater},
         ListElementCreation,
     },
 };
 
-impl<'a, C: Component> NodesRender<'a, C> {
+impl<'a, C: Component> NodesUpdater<'a, C> {
     // This method is called by incremental-dom, so it will return a new QrTextNode
     // on: New, or on Clone. If the node is an existing active node, it returns None.
     pub fn create_qr_text_node(&mut self) -> Option<QrTextNode> {

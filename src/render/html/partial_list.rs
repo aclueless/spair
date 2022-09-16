@@ -2,13 +2,13 @@ use super::{ElementRender, Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
 use crate::{
     component::Component,
     render::{
-        base::{ElementUpdater, NodesRenderMut},
+        base::{ElementUpdater, NodesUpdaterMut},
         html::HtmlTag,
         ListElementCreation,
     },
 };
 
-pub trait HemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
+pub trait HemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
     fn list_with_render<I, II, R>(
         mut self,
         items: II,

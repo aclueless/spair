@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     component::{Child, ChildComp, Comp, Component},
-    render::base::{ElementUpdaterMut, MatchIfRender, NodesRender, NodesRenderMut},
+    render::base::{ElementUpdaterMut, MatchIfRender, NodesUpdater, NodesUpdaterMut},
 };
 
 #[cfg(feature = "queue-render")]
@@ -16,7 +16,7 @@ use crate::queue_render::value::QrVal;
 pub trait RenderSvgElement<C, O>: Sized
 where
     C: Component,
-    O: From<Self> + NodesRenderMut<C>,
+    O: From<Self> + NodesUpdaterMut<C>,
 {
     fn render_element(
         self,
@@ -35,7 +35,7 @@ where
 }
 
 pub trait SemsHandMade<C: Component>: Sized {
-    type Output: From<Self> + NodesRenderMut<C>;
+    type Output: From<Self> + NodesUpdaterMut<C>;
     fn match_if(self, f: impl FnOnce(SvgMatchIfRender<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_render_mut();
@@ -176,34 +176,34 @@ make_trait_for_element_methods! {
         view
 }
 
-pub struct SvgNodesOwned<'n, C: Component>(NodesRender<'n, C>);
-pub struct SvgStaticNodesOwned<'n, C: Component>(NodesRender<'n, C>);
-pub struct SvgNodes<'h, 'n: 'h, C: Component>(&'h mut NodesRender<'n, C>);
-pub struct SvgStaticNodes<'h, 'n: 'h, C: Component>(&'h mut NodesRender<'n, C>);
+pub struct SvgNodesOwned<'n, C: Component>(NodesUpdater<'n, C>);
+pub struct SvgStaticNodesOwned<'n, C: Component>(NodesUpdater<'n, C>);
+pub struct SvgNodes<'h, 'n: 'h, C: Component>(&'h mut NodesUpdater<'n, C>);
+pub struct SvgStaticNodes<'h, 'n: 'h, C: Component>(&'h mut NodesUpdater<'n, C>);
 
 impl<'n, C: Component> SvgNodesOwned<'n, C> {
-    fn new(mut r: NodesRender<'n, C>) -> Self {
+    fn new(mut r: NodesUpdater<'n, C>) -> Self {
         r.set_update_mode();
         Self(r)
     }
 }
 
 impl<'n, C: Component> SvgStaticNodesOwned<'n, C> {
-    fn new(mut r: NodesRender<'n, C>) -> Self {
+    fn new(mut r: NodesUpdater<'n, C>) -> Self {
         r.set_static_mode();
         Self(r)
     }
 }
 
 impl<'h, 'n: 'h, C: Component> SvgNodes<'h, 'n, C> {
-    fn new(r: &'h mut NodesRender<'n, C>) -> Self {
+    fn new(r: &'h mut NodesUpdater<'n, C>) -> Self {
         r.set_update_mode();
         Self(r)
     }
 }
 
 impl<'h, 'n: 'h, C: Component> SvgStaticNodes<'h, 'n, C> {
-    fn new(r: &'h mut NodesRender<'n, C>) -> Self {
+    fn new(r: &'h mut NodesUpdater<'n, C>) -> Self {
         r.set_static_mode();
         Self(r)
     }
@@ -233,26 +233,26 @@ impl<'h, 'n: 'h, C: Component> From<SvgStaticNodes<'h, 'n, C>> for SvgNodes<'h, 
     }
 }
 
-impl<'n, C: Component> NodesRenderMut<C> for SvgNodesOwned<'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'n, C: Component> NodesUpdaterMut<C> for SvgNodesOwned<'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0
     }
 }
 
-impl<'n, C: Component> NodesRenderMut<C> for SvgStaticNodesOwned<'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'n, C: Component> NodesUpdaterMut<C> for SvgStaticNodesOwned<'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodesRenderMut<C> for SvgNodes<'h, 'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for SvgNodes<'h, 'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodesRenderMut<C> for SvgStaticNodes<'h, 'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for SvgStaticNodes<'h, 'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0
     }
 }

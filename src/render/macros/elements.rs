@@ -89,7 +89,7 @@ macro_rules! make_trait_for_element_methods {
         }
 
         pub trait $TraitName<C: Component>: Sized + $RenderElementTraitName<C, Self::Output> {
-            type Output: From<Self> + NodesRenderMut<C>;
+            type Output: From<Self> + NodesUpdaterMut<C>;
             $(
             // fn $tag(self, element_render: impl FnOnce($ElementRenderType<C>)) -> Self::Output {
             //     self.render_element(stringify!($tag), element_render)

@@ -9,28 +9,28 @@ use super::{
 use crate::render::svg::{SvgElementUpdater, SvgTag};
 use crate::{
     component::{Child, ChildComp, Comp, Component},
-    render::base::{ElementUpdaterMut, MatchIfRender, NodesRender, NodesRenderMut},
+    render::base::{ElementUpdaterMut, MatchIfRender, NodesUpdater, NodesUpdaterMut},
 };
 
 #[cfg(feature = "queue-render")]
 use crate::queue_render::value::QrVal;
 
 pub struct HtmlNodesUpdater<'n, C: Component> {
-    nodes_render: NodesRender<'n, C>,
+    nodes_render: NodesUpdater<'n, C>,
     // Just keep this value until the completion of the build of the whole node list
     // After done building the node list, this value will be dropped. The Drop::drop method
     // will execute setting value for the <select> element
     _select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-impl<'n, C: Component> NodesRenderMut<C> for HtmlNodesUpdater<'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'n, C: Component> NodesUpdaterMut<C> for HtmlNodesUpdater<'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.nodes_render
     }
 }
 
 pub trait HemsHandMade<C: Component>: Sized {
-    type Output: From<Self> + NodesRenderMut<C>;
+    type Output: From<Self> + NodesUpdaterMut<C>;
 
     fn line_break(self) -> Self::Output {
         let mut this: Self::Output = self.into();
@@ -121,7 +121,7 @@ pub trait HemsHandMade<C: Component>: Sized {
 pub trait RenderHtmlElement<C, O>: Sized
 where
     C: Component,
-    O: From<Self> + NodesRenderMut<C>,
+    O: From<Self> + NodesUpdaterMut<C>,
 {
     fn render_element(
         self,
@@ -231,26 +231,26 @@ impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
     }
 }
 
-impl<'n, C: Component> NodesRenderMut<C> for NodesOwned<'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'n, C: Component> NodesUpdaterMut<C> for NodesOwned<'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0.nodes_render
     }
 }
 
-impl<'n, C: Component> NodesRenderMut<C> for StaticNodesOwned<'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'n, C: Component> NodesUpdaterMut<C> for StaticNodesOwned<'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0.nodes_render
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodesRenderMut<C> for Nodes<'h, 'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for Nodes<'h, 'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0.nodes_render
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodesRenderMut<C> for StaticNodes<'h, 'n, C> {
-    fn nodes_render_mut(&mut self) -> &'n mut NodesRender<C> {
+impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for StaticNodes<'h, 'n, C> {
+    fn nodes_render_mut(&mut self) -> &'n mut NodesUpdater<C> {
         &mut self.0.nodes_render
     }
 }

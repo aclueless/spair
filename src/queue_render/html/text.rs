@@ -5,7 +5,7 @@ use crate::{
         value::{MapValue, QrVal},
     },
     render::{
-        base::NodesRenderMut,
+        base::NodesUpdaterMut,
         html::{Nodes, Render},
     },
 };

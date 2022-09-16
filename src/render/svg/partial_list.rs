@@ -4,12 +4,12 @@ use super::{
 use crate::{
     component::Component,
     render::{
-        base::{ElementUpdater, NodesRenderMut},
+        base::{ElementUpdater, NodesUpdaterMut},
         ListElementCreation,
     },
 };
 
-pub trait SemsForPartialList<'a, C: Component>: Sized + NodesRenderMut<C> {
+pub trait SemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
     fn list_with_render<I, II, R>(
         mut self,
         items: II,

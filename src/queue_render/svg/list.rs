@@ -5,7 +5,7 @@ use crate::{queue_render::vec::QrVec, render::svg::SvgElementRender};
 use crate::{
     component::Component,
     render::{
-        base::{ElementUpdater, NodesRenderMut},
+        base::{ElementUpdater, NodesUpdaterMut},
         svg::{
             SvgAttributesOnly, SvgElementUpdater, SvgNodesOwned, SvgStaticAttributes,
             SvgStaticAttributesOnly, SvgTag,

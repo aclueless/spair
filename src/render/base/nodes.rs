@@ -7,11 +7,11 @@ use crate::{
 };
 use wasm_bindgen::UnwrapThrowExt;
 
-pub trait NodesRenderMut<C: Component> {
-    fn nodes_render_mut(&mut self) -> &mut NodesRender<C>;
+pub trait NodesUpdaterMut<C: Component> {
+    fn nodes_render_mut(&mut self) -> &mut NodesUpdater<C>;
 }
 
-pub struct NodesRender<'a, C: Component> {
+pub struct NodesUpdater<'a, C: Component> {
     comp: &'a Comp<C>,
     state: &'a C,
 
@@ -23,7 +23,7 @@ pub struct NodesRender<'a, C: Component> {
     nodes: &'a mut Nodes,
 }
 
-impl<'a, C: Component> From<ElementUpdater<'a, C>> for NodesRender<'a, C> {
+impl<'a, C: Component> From<ElementUpdater<'a, C>> for NodesUpdater<'a, C> {
     fn from(er: ElementUpdater<'a, C>) -> Self {
         let (comp, state, parent_status, element) = er.into_parts();
         let (parent, nodes) = element.ws_node_and_nodes_mut();
@@ -41,7 +41,7 @@ impl<'a, C: Component> From<ElementUpdater<'a, C>> for NodesRender<'a, C> {
     }
 }
 
-impl<'a, C: Component> NodesRender<'a, C> {
+impl<'a, C: Component> NodesUpdater<'a, C> {
     pub fn state(&self) -> &'a C {
         self.state
     }
@@ -173,7 +173,7 @@ impl<'a, C: Component> NodesRender<'a, C> {
         let just_created = owned_component.just_created();
         let any = owned_component
             .get_any_component_mut()
-            .expect_throw("render::base::nodes::NodesRender::component get_any_component");
+            .expect_throw("render::base::nodes::NodesUpdater::component get_any_component");
         match any.downcast_mut::<Child<C, CC, T>>() {
             Some(child) => {
                 let have_a_queue_update = child.update(state);
@@ -230,11 +230,11 @@ impl<'a, C: Component> MatchIfRender<'a, C> {
         self.comp.clone()
     }
 
-    pub fn render_on_arm_index(self, index: u32) -> NodesRender<'a, C> {
+    pub fn render_on_arm_index(self, index: u32) -> NodesUpdater<'a, C> {
         let status = self.grouped_nodes.set_active_index(index, self.parent);
         let (nodes, next_sibling) = self.grouped_nodes.nodes_mut_and_end_flag_node();
 
-        NodesRender {
+        NodesUpdater {
             comp: self.comp,
             state: self.state,
 
