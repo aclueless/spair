@@ -78,7 +78,7 @@ pub trait ElementRender<C: Component> {
 // pub struct Rer<T>(T);
 // impl<C: Component, T: ElementRender<C>> Render<C> for Rer<T> {
 //     fn render(self, nodes: Nodes<C>) {
-//         use super::RenderHtmlElement;
+//         use super::UpdateHtmlElement;
 //         nodes.render_element(T::ELEMENT_TAG, |er| self.0.render(er));
 //     }
 // }
@@ -99,7 +99,7 @@ pub trait ElementRender<C: Component> {
 // TODO: Near future todo: Make a proc macro #[derive(RenderWithElementRender)]
 // impl<C: Component, T: ElementRender<C>> Render<C> for T {
 //     fn render(self, nodes: Nodes<C>) {
-//         use super::RenderHtmlElement;
+//         use super::UpdateHtmlElement;
 //         nodes.render_element(T::ELEMENT_TAG, |er| self.render(er));
 //     }
 // }

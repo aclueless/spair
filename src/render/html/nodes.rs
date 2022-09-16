@@ -118,7 +118,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     }
 }
 
-pub trait RenderHtmlElement<C, O>: Sized
+pub trait UpdateHtmlElement<C, O>: Sized
 where
     C: Component,
     O: From<Self> + NodesUpdaterMut<C>,
@@ -145,7 +145,7 @@ use crate::render::html::TestHtmlMethods;
 make_trait_for_element_methods! {
     TestStructs: (TestHtmlMethods)
     TraitName: HemsForDistinctNames
-    UpdateElementTraitName: RenderHtmlElement
+    UpdateElementTraitName: UpdateHtmlElement
     ElementUpdaterType: HtmlElementUpdater
     elements:
         a
@@ -491,13 +491,13 @@ impl<'n, C: Component> StaticNodesOwned<'n, C> {
     }
 }
 
-impl<'h, 'n: 'h, C: Component> RenderHtmlElement<C, Nodes<'h, 'n, C>> for Nodes<'h, 'n, C> {}
-impl<'h, 'n: 'h, C: Component> RenderHtmlElement<C, StaticNodes<'h, 'n, C>>
+impl<'h, 'n: 'h, C: Component> UpdateHtmlElement<C, Nodes<'h, 'n, C>> for Nodes<'h, 'n, C> {}
+impl<'h, 'n: 'h, C: Component> UpdateHtmlElement<C, StaticNodes<'h, 'n, C>>
     for StaticNodes<'h, 'n, C>
 {
 }
-impl<'n, C: Component> RenderHtmlElement<C, NodesOwned<'n, C>> for NodesOwned<'n, C> {}
-impl<'n, C: Component> RenderHtmlElement<C, StaticNodesOwned<'n, C>> for StaticNodesOwned<'n, C> {}
+impl<'n, C: Component> UpdateHtmlElement<C, NodesOwned<'n, C>> for NodesOwned<'n, C> {}
+impl<'n, C: Component> UpdateHtmlElement<C, StaticNodesOwned<'n, C>> for StaticNodesOwned<'n, C> {}
 
 impl<'h, 'n: 'h, C: Component> HemsHandMade<C> for Nodes<'h, 'n, C> {
     type Output = Self;
@@ -525,7 +525,7 @@ impl<'n, C: Component> HemsForDistinctNames<C> for StaticNodesOwned<'n, C> {
     type Output = Self;
 }
 
-impl<'er, C: Component> RenderHtmlElement<C, NodesOwned<'er, C>> for HtmlElementUpdater<'er, C> {}
+impl<'er, C: Component> UpdateHtmlElement<C, NodesOwned<'er, C>> for HtmlElementUpdater<'er, C> {}
 impl<'er, C: Component> HemsHandMade<C> for HtmlElementUpdater<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
@@ -533,7 +533,7 @@ impl<'er, C: Component> HemsForDistinctNames<C> for HtmlElementUpdater<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
 
-impl<'er, C: Component> RenderHtmlElement<C, NodesOwned<'er, C>> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> UpdateHtmlElement<C, NodesOwned<'er, C>> for StaticAttributes<'er, C> {}
 impl<'er, C: Component> HemsHandMade<C> for StaticAttributes<'er, C> {
     type Output = NodesOwned<'er, C>;
 }

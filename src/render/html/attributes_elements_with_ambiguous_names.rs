@@ -1,6 +1,6 @@
 use super::{
-    AttributesOnly, HtmlElementUpdater, Nodes, NodesOwned, RenderHtmlElement, StaticAttributes,
-    StaticAttributesOnly, StaticNodes, StaticNodesOwned,
+    AttributesOnly, HtmlElementUpdater, Nodes, NodesOwned, StaticAttributes, StaticAttributesOnly,
+    StaticNodes, StaticNodesOwned, UpdateHtmlElement,
 };
 use crate::{
     component::Component,
@@ -15,7 +15,7 @@ make_trait_for_same_name_attribute_and_element_methods! {
     DeprecatedTraitName: HemsHamsAmbiguous
     for_elements {
         TraitName: HemsForAmbiguousNames
-        UpdateElementTraitName: RenderHtmlElement
+        UpdateElementTraitName: UpdateHtmlElement
         ElementUpdaterType: HtmlElementUpdater
     }
     for_attributes {
