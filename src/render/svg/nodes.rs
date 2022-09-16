@@ -25,7 +25,7 @@ where
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             let e = render.get_element_updater(SvgTag(tag)).into();
             element_updater(e);
         }
@@ -69,7 +69,7 @@ pub trait SemsHandMade<C: Component>: Sized {
     fn component_ref<CC: Component>(self, child: &ChildComp<CC>) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             render.component_ref(child);
         }
         render.next_index();
@@ -82,7 +82,7 @@ pub trait SemsHandMade<C: Component>: Sized {
     ) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             render.component_owned(create_child_comp);
         }
         render.next_index();

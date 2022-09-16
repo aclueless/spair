@@ -35,7 +35,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     fn line_break(self) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             render.get_element_updater(HtmlTag("br"));
         }
         render.next_index();
@@ -45,7 +45,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     fn horizontal_line(self) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             render.get_element_updater(HtmlTag("hr"));
         }
         render.next_index();
@@ -86,7 +86,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     fn svg(self, f: impl FnOnce(SvgElementUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             let r = render.get_element_updater(SvgTag("svg"));
             f(r.into())
         }
@@ -97,7 +97,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     fn component_ref<CC: Component>(self, child: &ChildComp<CC>) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             render.component_ref(child);
         }
         render.next_index();
@@ -110,7 +110,7 @@ pub trait HemsHandMade<C: Component>: Sized {
     ) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             render.component_owned(create_child_comp);
         }
         render.next_index();
@@ -130,7 +130,7 @@ where
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_render() {
+        if render.require_update() {
             let e = render.get_element_updater(HtmlTag(tag)).into();
             element_updater(e);
         }

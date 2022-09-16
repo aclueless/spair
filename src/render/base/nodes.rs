@@ -66,7 +66,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         self.update_mode = true;
     }
 
-    pub fn require_render(&self) -> bool {
+    pub fn require_update(&self) -> bool {
         if self.update_mode {
             true
         } else {
