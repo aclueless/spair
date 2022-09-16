@@ -23,7 +23,7 @@ pub trait SemsForList<'a, C: Component>:
     ) -> NodesExtensions<'a>
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, crate::SvgElement<'r, C>),
+        R: Fn(I, crate::SvgElement<C>),
     {
         let (comp, state, mut r) = self.element_updater_mut().list_updater(mode);
         let _do_we_have_to_care_about_this_returned_value_ = r.render(
@@ -39,7 +39,7 @@ pub trait SemsForList<'a, C: Component>:
     fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> NodesExtensions<'a>
     where
         II: Iterator<Item = I>,
-        for<'r> R: Fn(I, crate::SvgElement<'r, C>),
+        R: Fn(I, crate::SvgElement<C>),
     {
         self.list_with_render(items, ListElementCreation::Clone, tag, render)
     }
