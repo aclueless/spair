@@ -17,7 +17,7 @@ use crate::{
 
 macro_rules! make_traits_for_property_values {
     (
-        $RenderType:ident
+        $UpdaterType:ident
         $(
             $TraitName:ident {
                 $(
@@ -30,17 +30,17 @@ macro_rules! make_traits_for_property_values {
     ) => {
         $(
             pub trait $TraitName<C: Component> {
-                fn render(self, element: &mut $RenderType<C>);
+                fn render(self, element: &mut $UpdaterType<C>);
             }
             $(
                 impl<C: Component> $TraitName<C> for $attribute_type {
-                    fn render(self, element: &mut $RenderType<C>) {
+                    fn render(self, element: &mut $UpdaterType<C>) {
                         element.$method_name(self);
                     }
                 }
                 make_traits_for_property_values! {
                     @each_queue_render
-                    $RenderType
+                    $UpdaterType
                     $TraitName
                     $attribute_type,
                     $ws_method_for_qr $qr_method_name $qrm_method_name
@@ -50,7 +50,7 @@ macro_rules! make_traits_for_property_values {
     };
     (
         @each_queue_render
-        $RenderType:ident
+        $UpdaterType:ident
         $TraitName:ident
         $attribute_type:ty,
         NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER
@@ -58,20 +58,20 @@ macro_rules! make_traits_for_property_values {
     };
     (
         @each_queue_render
-        $RenderType:ident
+        $UpdaterType:ident
         $TraitName:ident
         $attribute_type:ty,
         $ws_method_for_qr:ident $qr_method_name:ident $qrm_method_name:ident
     ) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $TraitName<C> for &QrVal<$attribute_type> {
-            fn render(self, element: &mut $RenderType<C>) {
+            fn render(self, element: &mut $UpdaterType<C>) {
                 element.$qr_method_name(WsElement::$ws_method_for_qr, self);
             }
         }
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $TraitName<C> for MapValue<C, T, $attribute_type> {
-            fn render(self, element: &mut $RenderType<C>) {
+            fn render(self, element: &mut $UpdaterType<C>) {
                 element.$qrm_method_name(WsElement::$ws_method_for_qr, self);
             }
         }
