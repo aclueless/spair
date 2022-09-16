@@ -360,7 +360,7 @@ pub trait MethodsForHtmlElementContent<'n, C: Component>:
 
     fn relement<R: ElementRender<C>>(self, render: R) -> NodesOwned<'n, C> {
         let n: NodesOwned<C> = self.into();
-        n.render_element(R::ELEMENT_TAG, R::render)
+        n.render_element(R::ELEMENT_TAG, |e| render.render(e))
     }
 
     fn rfn(self, func: impl FnOnce(Nodes<C>)) -> NodesOwned<'n, C> {
@@ -409,6 +409,10 @@ impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
         self
     }
 
+    pub fn relement<R: ElementRender<C>>(self, render: R) -> Self {
+        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
+    }
+
     pub fn rfn(self, func: impl FnOnce(Nodes<C>)) -> Self {
         let n = Nodes::new(self.0);
         func(n);
@@ -435,7 +439,7 @@ impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
         Nodes::new(self.0)
     }
 
-    // No .rupdate() on a `StaticNodes`
+    // No .rupdate() on a `StaticNodes`???
     // pub fn rupdate(mut self, render: impl Render<C>) -> Self {}
 
     pub fn rstatic(self, render: impl StaticRender<C>) -> Self {
@@ -467,6 +471,10 @@ impl<'n, C: Component> NodesOwned<'n, C> {
         self
     }
 
+    pub fn relement<R: ElementRender<C>>(self, render: R) -> Self {
+        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
+    }
+
     pub fn rfn(mut self, func: impl FnOnce(Nodes<C>)) -> Self {
         let n = Nodes::new(&mut self.0);
         func(n);
@@ -493,6 +501,10 @@ impl<'n, C: Component> StaticNodesOwned<'n, C> {
         render.render(n);
         //self.nodes_updater_mut().set_update_mode();
         self
+    }
+
+    pub fn relement<R: ElementRender<C>>(self, render: R) -> Self {
+        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
     }
 }
 
