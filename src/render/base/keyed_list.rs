@@ -55,17 +55,17 @@ impl<'a, E: ElementTag> KeyedListContext<'a, E> {
 
 pub struct KeyedListUpdater<'a, C: Component, E, G, R> {
     list_context: KeyedListContext<'a, E>,
-    render_context: RenderContext<'a, C, G, R>,
+    render_context: KeyedListUpdaterContext<'a, C, G, R>,
 }
 
-pub struct RenderContext<'a, C: Component, G, R> {
+pub struct KeyedListUpdaterContext<'a, C: Component, G, R> {
     comp: &'a Comp<C>,
     state: &'a C,
     fn_get_key: G,
     fn_render: R,
 }
 
-impl<'a, C, G, R> RenderContext<'a, C, G, R>
+impl<'a, C, G, R> KeyedListUpdaterContext<'a, C, G, R>
 where
     C: Component,
 {
@@ -111,8 +111,9 @@ where
             ElementStatus::Existing,
         );
         (self.fn_render)(item_state, er);
-        *new_item.expect_throw("render::base::keyed_list::RenderContext::update_existing_item") =
-            old_item;
+        *new_item.expect_throw(
+            "render::base::keyed_list::KeyedListUpdaterContext::update_existing_item",
+        ) = old_item;
     }
 }
 
@@ -123,7 +124,7 @@ where
 {
     pub fn new(
         list_context: KeyedListContext<'a, E>,
-        render_context: RenderContext<'a, C, G, R>,
+        render_context: KeyedListUpdaterContext<'a, C, G, R>,
     ) -> Self {
         Self {
             list_context,

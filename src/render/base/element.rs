@@ -10,7 +10,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use crate::{
     dom::{ElementTag, Key},
     render::base::{
-        KeyedListContext, KeyedListUpdater, RememberSettingSelectedOption, RenderContext,
+        KeyedListContext, KeyedListUpdater, KeyedListUpdaterContext, RememberSettingSelectedOption,
     },
 };
 
@@ -302,7 +302,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
         let mut keyed_list_render = KeyedListUpdater::new(
             KeyedListContext::new(nodes.keyed_list(), tag, items.len(), parent, use_template),
-            RenderContext::new(self.comp, self.state, fn_get_key, fn_render),
+            KeyedListUpdaterContext::new(self.comp, self.state, fn_get_key, fn_render),
         );
         keyed_list_render.update(items.into_iter())
     }
