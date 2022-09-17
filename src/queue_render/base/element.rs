@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::{
-    AttributeUpdater, QrClass, QrClassMap, QrNormalAttribute, QrNormalAttributeMap, QrProperty,
-    QrPropertyMap,
+    AttributeUpdater, QrClass, QrClassMapWithState, QrNormalAttribute,
+    QrNormalAttributeMapWithState, QrProperty, QrPropertyMapWithState,
 };
 
 impl<'a, C: Component> ElementUpdater<'a, C> {
@@ -52,7 +52,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
             Ok(mut this) => {
                 let u = (fn_map)(state, this.value());
                 q.render(&u);
-                let q = QrNormalAttributeMap::new(q, self.comp(), fn_map);
+                let q = QrNormalAttributeMapWithState::new(q, self.comp(), fn_map);
                 this.add_render(Box::new(q));
             }
             Err(e) => log::error!("{}", e),
@@ -99,7 +99,11 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
             Ok(mut this) => {
                 let u = (fn_map)(state, this.value());
                 q.render(&u);
-                this.add_render(Box::new(QrPropertyMap::new(q, self.comp(), fn_map)));
+                this.add_render(Box::new(QrPropertyMapWithState::new(
+                    q,
+                    self.comp(),
+                    fn_map,
+                )));
             }
             Err(e) => log::error!("{}", e),
         };
@@ -136,7 +140,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
             Ok(mut this) => {
                 let u = (fn_map)(state, this.value());
                 q.render(&u);
-                this.add_render(Box::new(QrClassMap::new(q, self.comp(), fn_map)));
+                this.add_render(Box::new(QrClassMapWithState::new(q, self.comp(), fn_map)));
             }
             Err(e) => log::error!("{}", e),
         };
@@ -156,7 +160,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
             Ok(mut this) => {
                 let u = (fn_map)(state, this.value());
                 q.render(&u);
-                this.add_render(Box::new(QrClassMap::new(q, self.comp(), fn_map)));
+                this.add_render(Box::new(QrClassMapWithState::new(q, self.comp(), fn_map)));
             }
             Err(e) => log::error!("{}", e),
         };

@@ -71,7 +71,7 @@ impl<T: AttributeUpdater> QueueRender<T> for QrNormalAttribute {
     }
 }
 
-pub struct QrNormalAttributeMap<C, T, U>
+pub struct QrNormalAttributeMapWithState<C, T, U>
 where
     C: Component,
 {
@@ -80,7 +80,7 @@ where
     fn_map: Box<dyn Fn(&C, &T) -> U>,
 }
 
-impl<C: Component, T, U> QrNormalAttributeMap<C, T, U> {
+impl<C: Component, T, U> QrNormalAttributeMapWithState<C, T, U> {
     pub fn new(
         qra: QrNormalAttribute,
         comp: Comp<C>,
@@ -93,13 +93,15 @@ impl<C: Component, T, U> QrNormalAttributeMap<C, T, U> {
         let rc_comp = self.comp.upgrade();
         let comp = rc_comp
             .try_borrow()
-            .expect_throw("QrNormalAttributeMap::map::rc_comp.try_borrow().");
+            .expect_throw("QrNormalAttributeMapWithState::map::rc_comp.try_borrow().");
         let state = comp.state();
         (self.fn_map)(state, value)
     }
 }
 
-impl<C: Component, T, U: AttributeUpdater> QueueRender<T> for QrNormalAttributeMap<C, T, U> {
+impl<C: Component, T, U: AttributeUpdater> QueueRender<T>
+    for QrNormalAttributeMapWithState<C, T, U>
+{
     fn render(&mut self, t: &T) {
         let u = self.map(t);
         u.update(self.qra.attribute_name, &self.qra.ws_element)
@@ -138,7 +140,7 @@ impl<T> QueueRender<T> for QrProperty<T> {
     }
 }
 
-pub struct QrPropertyMap<C, T, U>
+pub struct QrPropertyMapWithState<C, T, U>
 where
     C: Component,
 {
@@ -147,7 +149,7 @@ where
     fn_map: Box<dyn Fn(&C, &T) -> U>,
 }
 
-impl<C: Component, T, U> QrPropertyMap<C, T, U> {
+impl<C: Component, T, U> QrPropertyMapWithState<C, T, U> {
     pub fn new(
         qr_property: QrProperty<U>,
         comp: Comp<C>,
@@ -164,13 +166,13 @@ impl<C: Component, T, U> QrPropertyMap<C, T, U> {
         let rc_comp = self.comp.upgrade();
         let comp = rc_comp
             .try_borrow()
-            .expect_throw("QrPropertyMap::map::rc_comp.try_borrow().");
+            .expect_throw("QrPropertyMapWithState::map::rc_comp.try_borrow().");
         let state = comp.state();
         (self.fn_map)(state, value)
     }
 }
 
-impl<C: Component, T, U> QueueRender<T> for QrPropertyMap<C, T, U> {
+impl<C: Component, T, U> QueueRender<T> for QrPropertyMapWithState<C, T, U> {
     fn render(&mut self, t: &T) {
         let u = self.map(t);
         (self.qr_property.fn_update)(&self.qr_property.ws_element, &u);
@@ -245,7 +247,7 @@ impl QueueRender<Option<String>> for QrClass {
     }
 }
 
-pub struct QrClassMap<C, T, U>
+pub struct QrClassMapWithState<C, T, U>
 where
     C: Component,
 {
@@ -254,7 +256,7 @@ where
     fn_map: Box<dyn Fn(&C, &T) -> U>,
 }
 
-impl<C: Component, T, U> QrClassMap<C, T, U> {
+impl<C: Component, T, U> QrClassMapWithState<C, T, U> {
     pub fn new(qr: QrClass, comp: Comp<C>, fn_map: Box<dyn Fn(&C, &T) -> U + 'static>) -> Self {
         Self { qr, comp, fn_map }
     }
@@ -263,13 +265,13 @@ impl<C: Component, T, U> QrClassMap<C, T, U> {
         let rc_comp = self.comp.upgrade();
         let comp = rc_comp
             .try_borrow()
-            .expect_throw("QrClassMap::map::rc_comp.try_borrow().");
+            .expect_throw("QrClassMapWithState::map::rc_comp.try_borrow().");
         let state = comp.state();
         (self.fn_map)(state, value)
     }
 }
 
-impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, &'static str> {
+impl<C: Component, T> QueueRender<T> for QrClassMapWithState<C, T, &'static str> {
     fn render(&mut self, t: &T) {
         let u = self.map(t);
         self.qr.update_str(Some(u));
@@ -279,7 +281,7 @@ impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, &'static str> {
     }
 }
 
-impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, String> {
+impl<C: Component, T> QueueRender<T> for QrClassMapWithState<C, T, String> {
     fn render(&mut self, t: &T) {
         let u = self.map(t);
         self.qr.update_string(Some(u));
@@ -289,7 +291,7 @@ impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, String> {
     }
 }
 
-impl<C: Component, T> QueueRender<T> for QrClassMap<C, T, Option<String>> {
+impl<C: Component, T> QueueRender<T> for QrClassMapWithState<C, T, Option<String>> {
     fn render(&mut self, t: &T) {
         let t = self.map(t);
         self.qr.update_str(t.as_deref());
