@@ -106,7 +106,7 @@ pub trait Component: 'static + Sized {
     }
 
     /// This method will be called before executing an update method
-    fn reset(&mut self) {}
+    fn before_update(&mut self) {}
 
     fn render(&self, element: crate::Element<Self>);
 }
@@ -323,7 +323,7 @@ impl<C: Component> Comp<C> {
                 .state
                 .as_mut()
                 .expect_throw("Mutable reference to state for updating");
-            C::reset(state);
+            C::before_update(state);
             let (should_render, commands) = callback.execute(state, arg).into_parts();
             this.extra_update(should_render, commands, self);
         }
