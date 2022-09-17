@@ -4,7 +4,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use crate::{
     component::{Comp, Component},
     dom::WsElement,
-    queue_render::value::QueueRender,
+    queue_render::val::QueueRender,
 };
 
 pub trait AttributeUpdater {

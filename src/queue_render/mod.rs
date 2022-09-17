@@ -5,7 +5,7 @@ pub mod dom;
 pub mod html;
 #[cfg(feature = "svg")]
 pub mod svg;
-pub mod value;
+pub mod val;
 pub mod vec;
 
 struct RenderQueue {

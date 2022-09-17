@@ -13,7 +13,7 @@ use crate::{
 };
 
 #[cfg(feature = "queue-render")]
-use crate::queue_render::value::QrVal;
+use crate::queue_render::val::QrVal;
 
 pub struct HtmlNodesUpdater<'n, C: Component> {
     nodes_updater: NodesUpdater<'n, C>,

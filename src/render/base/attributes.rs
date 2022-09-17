@@ -2,7 +2,7 @@ use super::ElementUpdater;
 use crate::component::Component;
 
 #[cfg(feature = "queue-render")]
-use crate::queue_render::value::{QrVal, QrValMapWithState};
+use crate::queue_render::val::{QrVal, QrValMapWithState};
 
 make_traits_for_attribute_values! {
     BoolAttributeValue

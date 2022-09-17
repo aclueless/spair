@@ -12,7 +12,7 @@ use crate::{
 #[cfg(feature = "queue-render")]
 use crate::{
     dom::WsElement,
-    queue_render::value::{QrVal, QrValMapWithState},
+    queue_render::val::{QrVal, QrValMapWithState},
 };
 
 macro_rules! make_traits_for_property_values {

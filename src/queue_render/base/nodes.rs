@@ -7,7 +7,7 @@ use crate::{
     queue_render::{
         base::QrListRender,
         dom::{QrGroupRepresentative, QrNode, QrTextNode},
-        value::QueueRender,
+        val::QueueRender,
     },
     render::{
         base::{ElementUpdater, MatchIfUpdater, NodesUpdater},

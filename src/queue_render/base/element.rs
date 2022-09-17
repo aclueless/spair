@@ -1,7 +1,7 @@
 use crate::{
     component::Component,
     dom::{ElementStatus, WsElement},
-    queue_render::value::{QrVal, QrValMapWithState, QueueRender},
+    queue_render::val::{QrVal, QrValMapWithState, QueueRender},
     render::base::ElementUpdater,
 };
 
