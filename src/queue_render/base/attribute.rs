@@ -247,6 +247,51 @@ impl QueueRender<Option<String>> for QrClass {
     }
 }
 
+pub struct QrClassMap<T, U> {
+    qr: QrClass,
+    fn_map: Box<dyn Fn(&T) -> U>,
+}
+
+impl<T, U> QrClassMap<T, U> {
+    pub fn new(qr: QrClass, fn_map: Box<dyn Fn(&T) -> U + 'static>) -> Self {
+        Self { qr, fn_map }
+    }
+
+    fn map(&self, value: &T) -> U {
+        (self.fn_map)(value)
+    }
+}
+
+impl<T> QueueRender<T> for QrClassMap<T, &'static str> {
+    fn render(&mut self, t: &T) {
+        let u = self.map(t);
+        self.qr.update_str(Some(u));
+    }
+    fn unmounted(&self) -> bool {
+        self.qr.unmounted.get()
+    }
+}
+
+impl<T> QueueRender<T> for QrClassMap<T, String> {
+    fn render(&mut self, t: &T) {
+        let u = self.map(t);
+        self.qr.update_string(Some(u));
+    }
+    fn unmounted(&self) -> bool {
+        self.qr.unmounted.get()
+    }
+}
+
+impl<T> QueueRender<T> for QrClassMap<T, Option<String>> {
+    fn render(&mut self, t: &T) {
+        let t = self.map(t);
+        self.qr.update_str(t.as_deref());
+    }
+    fn unmounted(&self) -> bool {
+        self.qr.unmounted.get()
+    }
+}
+
 pub struct QrClassMapWithState<C, T, U>
 where
     C: Component,

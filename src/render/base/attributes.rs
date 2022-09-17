@@ -2,7 +2,7 @@ use super::ElementUpdater;
 use crate::component::Component;
 
 #[cfg(feature = "queue-render")]
-use crate::queue_render::val::{QrVal, QrValMapWithState};
+use crate::queue_render::val::{QrVal, QrValMap, QrValMapWithState};
 
 make_traits_for_attribute_values! {
     BoolAttributeValue
@@ -51,6 +51,20 @@ impl<C: Component> Class<C> for String {
 impl<C: Component> Class<C> for &QrVal<String> {
     fn render(self, element: &mut ElementUpdater<C>) {
         element.qr_class(self);
+    }
+}
+
+#[cfg(feature = "queue-render")]
+impl<C: Component, T: 'static> Class<C> for QrValMap<T, String> {
+    fn render(self, element: &mut ElementUpdater<C>) {
+        element.qrm_class(self);
+    }
+}
+
+#[cfg(feature = "queue-render")]
+impl<C: Component, T: 'static> Class<C> for QrValMap<T, &'static str> {
+    fn render(self, element: &mut ElementUpdater<C>) {
+        element.qrm_str_class(self);
     }
 }
 

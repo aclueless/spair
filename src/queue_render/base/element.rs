@@ -1,12 +1,12 @@
 use crate::{
     component::Component,
     dom::{ElementStatus, WsElement},
-    queue_render::val::{QrVal, QrValMapWithState, QueueRender},
+    queue_render::val::{QrVal, QrValMap, QrValMapWithState, QueueRender},
     render::base::ElementUpdater,
 };
 
 use super::{
-    AttributeUpdater, QrClass, QrClassMapWithState, QrNormalAttribute,
+    AttributeUpdater, QrClass, QrClassMap, QrClassMapWithState, QrNormalAttribute,
     QrNormalAttributeMapWithState, QrProperty, QrPropertyMapWithState,
 };
 
@@ -126,6 +126,44 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         }
     }
 
+    pub fn qrm_class<T: 'static>(&self, value: QrValMap<T, String>) {
+        if self.status() == ElementStatus::Existing {
+            return;
+        }
+        let element = self.element().ws_element().clone();
+        let unmounted = self.element().unmounted();
+        let mut q = QrClass::new(element, unmounted);
+
+        let (value, fn_map) = value.into_parts();
+        match value.content().try_borrow_mut() {
+            Ok(mut this) => {
+                let u = (fn_map)(this.value());
+                q.render(&u);
+                this.add_render(Box::new(QrClassMap::new(q, fn_map)));
+            }
+            Err(e) => log::error!("{}", e),
+        };
+    }
+
+    pub fn qrm_str_class<T: 'static>(&self, value: QrValMap<T, &'static str>) {
+        if self.status() == ElementStatus::Existing {
+            return;
+        }
+        let element = self.element().ws_element().clone();
+        let unmounted = self.element().unmounted();
+        let mut q = QrClass::new(element, unmounted);
+
+        let (value, fn_map) = value.into_parts();
+        match value.content().try_borrow_mut() {
+            Ok(mut this) => {
+                let u = (fn_map)(this.value());
+                q.render(&u);
+                this.add_render(Box::new(QrClassMap::new(q, fn_map)));
+            }
+            Err(e) => log::error!("{}", e),
+        };
+    }
+
     pub fn qrmws_class<T: 'static>(&self, value: QrValMapWithState<C, T, String>) {
         if self.status() == ElementStatus::Existing {
             return;
@@ -165,17 +203,4 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
             Err(e) => log::error!("{}", e),
         };
     }
-
-    // pub fn qr_list_render(&mut self, mode: ListElementCreation, tag: &'a str) -> ListRender<C> {
-    //     let (parent, nodes) = self.element.ws_node_and_nodes_mut();
-    //     ListRender::new(
-    //         self.comp,
-    //         self.state,
-    //         nodes,
-    //         tag,
-    //         parent,
-    //         None,
-    //         mode.use_template(),
-    //     )
-    // }
 }
