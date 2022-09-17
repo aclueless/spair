@@ -2,7 +2,7 @@ use crate::{
     component::Component,
     queue_render::{
         dom::{QrTextNode, QrTextNodeMap},
-        value::{QrVal, QrValMap},
+        value::{QrVal, QrValMapWithState},
     },
     render::{
         base::NodesUpdaterMut,
@@ -34,7 +34,7 @@ where
     }
 }
 
-impl<C, T, U> Render<C> for QrValMap<C, T, U>
+impl<C, T, U> Render<C> for QrValMapWithState<C, T, U>
 where
     C: Component,
     T: 'static + ToString,

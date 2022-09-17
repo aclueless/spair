@@ -1,7 +1,7 @@
 use crate::{
     component::Component,
     dom::WsElement,
-    queue_render::value::{QrVal, QrValMap},
+    queue_render::value::{QrVal, QrValMapWithState},
     render::{base::ElementUpdaterMut, html::HtmlElementUpdater},
 };
 
@@ -21,7 +21,7 @@ impl<'a, C: Component> HtmlElementUpdater<'a, C> {
     pub fn qrm_property<T: 'static, U: 'static>(
         &self,
         fn_update: impl Fn(&WsElement, &U) + 'static,
-        value: QrValMap<C, T, U>,
+        value: QrValMapWithState<C, T, U>,
     ) {
         self.element_updater().qrm_property(fn_update, value)
     }
