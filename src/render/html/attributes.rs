@@ -23,7 +23,7 @@ macro_rules! make_traits_for_property_values {
                 $(
                     $attribute_type:ty,
                     $method_name:ident
-                    $ws_method_for_qr:ident $qr_method_name:ident $qrm_method_name:ident,
+                    $ws_method_for_qr:ident $qr_method_name:ident $qrmws_method_name:ident,
                 )+
             }
         )+
@@ -43,7 +43,7 @@ macro_rules! make_traits_for_property_values {
                     $UpdaterType
                     $TraitName
                     $attribute_type,
-                    $ws_method_for_qr $qr_method_name $qrm_method_name
+                    $ws_method_for_qr $qr_method_name $qrmws_method_name
                 }
             )+
         )+
@@ -61,7 +61,7 @@ macro_rules! make_traits_for_property_values {
         $UpdaterType:ident
         $TraitName:ident
         $attribute_type:ty,
-        $ws_method_for_qr:ident $qr_method_name:ident $qrm_method_name:ident
+        $ws_method_for_qr:ident $qr_method_name:ident $qrmws_method_name:ident
     ) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $TraitName<C> for &QrVal<$attribute_type> {
@@ -72,7 +72,7 @@ macro_rules! make_traits_for_property_values {
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $TraitName<C> for QrValMapWithState<C, T, $attribute_type> {
             fn render(self, element: &mut $UpdaterType<C>) {
-                element.$qrm_method_name(WsElement::$ws_method_for_qr, self);
+                element.$qrmws_method_name(WsElement::$ws_method_for_qr, self);
             }
         }
     };
@@ -83,13 +83,13 @@ make_traits_for_property_values! {
     PropertyValue {
         &str,           selected_value_str              NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
         Option<&str>,   selected_value_optional_str     NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
-        String,         selected_value_string           set_value_for_qr qr_property qrm_property,
+        String,         selected_value_string           set_value_for_qr qr_property qrmws_property,
         &String,        selected_value_str              NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
-        Option<String>, selected_value_optional_string  set_value_for_qr_optional qr_property qrm_property,
+        Option<String>, selected_value_optional_string  set_value_for_qr_optional qr_property qrmws_property,
     }
     PropertyIndex {
-        usize,          selected_index_usize            set_selected_index_ref qr_property qrm_property,
-        Option<usize>,  selected_index_optional_usize   set_selected_index_optional qr_property qrm_property,
+        usize,          selected_index_usize            set_selected_index_ref qr_property qrmws_property,
+        Option<usize>,  selected_index_optional_usize   set_selected_index_optional qr_property qrmws_property,
     }
 }
 
@@ -125,13 +125,13 @@ pub trait MethodsForSelectedValueSelectedIndex<C: Component>:
 make_traits_for_property_values! {
     ElementUpdater
     PropertyChecked {
-        bool, checked checked_ref qr_property qrm_property,
+        bool, checked checked_ref qr_property qrmws_property,
     }
     AttributeEnabled {
-        bool, enabled enabled_ref qr_property qrm_property,
+        bool, enabled enabled_ref qr_property qrmws_property,
     }
     ActionFocus {
-        bool, focus focus_ref qr_property qrm_property,
+        bool, focus focus_ref qr_property qrmws_property,
     }
 }
 

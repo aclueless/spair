@@ -32,7 +32,8 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         }
     }
 
-    pub fn qrm_attribute<T: 'static, U: 'static + AttributeUpdater>(
+    // qrmws = queue render map with state
+    pub fn qrmws_attribute<T: 'static, U: 'static + AttributeUpdater>(
         &self,
         name: &'static str,
         value: QrValMapWithState<C, T, U>,
@@ -79,7 +80,8 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         }
     }
 
-    pub fn qrm_property<T: 'static, U: 'static>(
+    // qrmws = queue render map with state
+    pub fn qrmws_property<T: 'static, U: 'static>(
         &self,
         fn_update: impl Fn(&WsElement, &U) + 'static,
         value: QrValMapWithState<C, T, U>,
@@ -120,7 +122,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         }
     }
 
-    pub fn qrm_class<T: 'static>(&self, value: QrValMapWithState<C, T, String>) {
+    pub fn qrmws_class<T: 'static>(&self, value: QrValMapWithState<C, T, String>) {
         if self.status() == ElementStatus::Existing {
             return;
         }
@@ -140,7 +142,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         };
     }
 
-    pub fn qrm_str_class<T: 'static>(&self, value: QrValMapWithState<C, T, &'static str>) {
+    pub fn qrmws_str_class<T: 'static>(&self, value: QrValMapWithState<C, T, &'static str>) {
         if self.status() == ElementStatus::Existing {
             return;
         }

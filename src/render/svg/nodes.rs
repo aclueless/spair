@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[cfg(feature = "queue-render")]
-use crate::queue_render::value::QrVal;
+use crate::queue_render::val::QrVal;
 
 pub trait UpdateSvgElement<C, O>: Sized
 where
