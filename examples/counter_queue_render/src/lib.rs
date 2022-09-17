@@ -46,10 +46,10 @@ impl spair::Component for State {
             .line_break()
             .rstatic("Value / self.rate = ")
             // Unfortunately, Rust fail inference types for this closure
-            .rupdate(self.value.map(|state: &Self, value: &i32| value / state.rate))
+            .rupdate(self.value.map_with_state(|state: &Self, value: &i32| value / state.rate))
             .line_break()
             .rstatic("Value * self.rate = ")
-            .rupdate(self.value.map(|state: &Self, value: &i32| value * state.rate))
+            .rupdate(self.value.map_with_state(|state: &Self, value: &i32| value * state.rate))
             .line_break()
             .rstatic(Button("-", comp.handler_mut(State::decrement)))
             .rstatic(Button("+", comp.handler_mut(State::increment)))

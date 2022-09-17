@@ -123,7 +123,7 @@ impl<T: 'static + PartialEq> QrVal<T> {
         }
     }
 
-    pub fn map<C, U, F>(&self, fn_map: F) -> QrValMap<C, T, U>
+    pub fn map_with_state<C, U, F>(&self, fn_map: F) -> QrValMap<C, T, U>
     where
         F: 'static + Fn(&C, &T) -> U,
     {
