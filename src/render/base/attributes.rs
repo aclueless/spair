@@ -6,28 +6,28 @@ use crate::queue_render::val::{QrVal, QrValMap, QrValMapWithState};
 
 make_traits_for_attribute_values! {
     BoolAttributeValue
-    { bool, set_bool_attribute qr_attribute qrmws_attribute, }
+    { bool, set_bool_attribute qr_attribute qrm_attribute qrmws_attribute, }
 
     I32AttributeValue
-    { i32, set_i32_attribute qr_attribute qrmws_attribute, }
+    { i32, set_i32_attribute qr_attribute qrm_attribute qrmws_attribute, }
 
     U32AttributeValue
-    { u32, set_u32_attribute qr_attribute qrmws_attribute, }
+    { u32, set_u32_attribute qr_attribute qrm_attribute qrmws_attribute, }
 
     F64AttributeValue
-    { f64, set_f64_attribute qr_attribute qrmws_attribute, }
+    { f64, set_f64_attribute qr_attribute qrm_attribute qrmws_attribute, }
 
     AttributeMinMax
     {
-        f64, set_f64_attribute qr_attribute qrmws_attribute,
-        &str, set_str_attribute NO_QUEUE_RENDER NO_QUEUE_RENDER,
-        String, set_string_attribute qr_attribute qrmws_attribute,
+        f64, set_f64_attribute qr_attribute qrm_attribute qrmws_attribute,
+        &str, set_str_attribute NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
+        String, set_string_attribute qr_attribute qrm_attribute qrmws_attribute,
     }
     StringAttributeValue
     {
-        &str, set_str_attribute NO_QUEUE_RENDER NO_QUEUE_RENDER,
-        &String, set_str_attribute NO_QUEUE_RENDER NO_QUEUE_RENDER,
-        String, set_string_attribute qr_attribute qrmws_attribute,
+        &str, set_str_attribute NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
+        &String, set_str_attribute NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER,
+        String, set_string_attribute qr_attribute qrm_attribute qrmws_attribute,
     }
 }
 

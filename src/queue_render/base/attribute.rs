@@ -71,6 +71,31 @@ impl<T: AttributeUpdater> QueueRender<T> for QrNormalAttribute {
     }
 }
 
+pub struct QrNormalAttributeMap<T, U> {
+    qra: QrNormalAttribute,
+    fn_map: Box<dyn Fn(&T) -> U>,
+}
+
+impl<T, U> QrNormalAttributeMap<T, U> {
+    pub fn new(qra: QrNormalAttribute, fn_map: Box<dyn Fn(&T) -> U + 'static>) -> Self {
+        Self { qra, fn_map }
+    }
+
+    fn map(&self, value: &T) -> U {
+        (self.fn_map)(value)
+    }
+}
+
+impl<T, U: AttributeUpdater> QueueRender<T> for QrNormalAttributeMap<T, U> {
+    fn render(&mut self, t: &T) {
+        let u = self.map(t);
+        u.update(self.qra.attribute_name, &self.qra.ws_element)
+    }
+    fn unmounted(&self) -> bool {
+        self.qra.unmounted.get()
+    }
+}
+
 pub struct QrNormalAttributeMapWithState<C, T, U>
 where
     C: Component,
@@ -137,6 +162,34 @@ impl<T> QueueRender<T> for QrProperty<T> {
     }
     fn unmounted(&self) -> bool {
         self.unmounted.get()
+    }
+}
+
+pub struct QrPropertyMap<T, U> {
+    qr_property: QrProperty<U>,
+    fn_map: Box<dyn Fn(&T) -> U>,
+}
+
+impl<T, U> QrPropertyMap<T, U> {
+    pub fn new(qr_property: QrProperty<U>, fn_map: Box<dyn Fn(&T) -> U + 'static>) -> Self {
+        Self {
+            qr_property,
+            fn_map,
+        }
+    }
+
+    fn map(&self, value: &T) -> U {
+        (self.fn_map)(value)
+    }
+}
+
+impl<T, U> QueueRender<T> for QrPropertyMap<T, U> {
+    fn render(&mut self, t: &T) {
+        let u = self.map(t);
+        (self.qr_property.fn_update)(&self.qr_property.ws_element, &u);
+    }
+    fn unmounted(&self) -> bool {
+        self.qr_property.unmounted.get()
     }
 }
 

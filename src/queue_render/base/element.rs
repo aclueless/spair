@@ -7,7 +7,8 @@ use crate::{
 
 use super::{
     AttributeUpdater, QrClass, QrClassMap, QrClassMapWithState, QrNormalAttribute,
-    QrNormalAttributeMapWithState, QrProperty, QrPropertyMapWithState,
+    QrNormalAttributeMap, QrNormalAttributeMapWithState, QrProperty, QrPropertyMap,
+    QrPropertyMapWithState,
 };
 
 impl<'a, C: Component> ElementUpdater<'a, C> {
@@ -30,6 +31,31 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
             }
             Err(e) => log::error!("{}", e),
         }
+    }
+
+    pub fn qrm_attribute<T: 'static, U: 'static + AttributeUpdater>(
+        &self,
+        name: &'static str,
+        value: QrValMap<T, U>,
+    ) {
+        if self.status() == ElementStatus::Existing {
+            return;
+        }
+
+        let element = self.element().ws_element().clone();
+        let unmounted = self.element().unmounted();
+        let mut q = QrNormalAttribute::new(element, unmounted, name);
+
+        let (value, fn_map) = value.into_parts();
+        match value.content().try_borrow_mut() {
+            Ok(mut this) => {
+                let u = (fn_map)(this.value());
+                q.render(&u);
+                let q = QrNormalAttributeMap::new(q, fn_map);
+                this.add_render(Box::new(q));
+            }
+            Err(e) => log::error!("{}", e),
+        };
     }
 
     // qrmws = queue render map with state
@@ -78,6 +104,29 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
             }
             Err(e) => log::error!("{}", e),
         }
+    }
+
+    pub fn qrm_property<T: 'static, U: 'static>(
+        &self,
+        fn_update: impl Fn(&WsElement, &U) + 'static,
+        value: QrValMap<T, U>,
+    ) {
+        if self.status() == ElementStatus::Existing {
+            return;
+        }
+        let element = self.element().ws_element().clone();
+        let unmounted = self.element().unmounted();
+        let mut q = QrProperty::new(element, unmounted, Box::new(fn_update));
+
+        let (value, fn_map) = value.into_parts();
+        match value.content().try_borrow_mut() {
+            Ok(mut this) => {
+                let u = (fn_map)(this.value());
+                q.render(&u);
+                this.add_render(Box::new(QrPropertyMap::new(q, fn_map)));
+            }
+            Err(e) => log::error!("{}", e),
+        };
     }
 
     // qrmws = queue render map with state

@@ -66,7 +66,48 @@ impl<T: ToString> QueueRender<T> for QrTextNode {
     }
 }
 
-pub struct QrTextNodeMap<C, T, U>
+pub struct QrTextNodeMap<T, U> {
+    text_node: QrTextNode,
+    fn_map: Box<dyn Fn(&T) -> U>,
+}
+
+impl<T, U> QrTextNodeMap<T, U>
+where
+    T: ToString,
+    U: 'static,
+{
+    pub fn new(text_node: QrTextNode, fn_map: impl Fn(&T) -> U + 'static) -> Self {
+        Self {
+            text_node,
+            fn_map: Box::new(fn_map),
+        }
+    }
+
+    pub fn map(&self, value: &T) -> U {
+        (self.fn_map)(value)
+    }
+
+    pub fn update_text(&self, text: &str) {
+        self.text_node.update_text(text);
+    }
+}
+
+impl<T, U> QueueRender<T> for QrTextNodeMap<T, U>
+where
+    T: 'static + ToString,
+    U: 'static + ToString,
+{
+    fn render(&mut self, t: &T) {
+        let u = self.map(t);
+        self.update_text(&u.to_string());
+    }
+
+    fn unmounted(&self) -> bool {
+        self.text_node.0.unmounted.get()
+    }
+}
+
+pub struct QrTextNodeMapWithState<C, T, U>
 where
     C: Component,
 {
@@ -75,7 +116,7 @@ where
     fn_map: Box<dyn Fn(&C, &T) -> U>,
 }
 
-impl<C, T, U> QrTextNodeMap<C, T, U>
+impl<C, T, U> QrTextNodeMapWithState<C, T, U>
 where
     C: Component,
     T: ToString,
@@ -111,7 +152,7 @@ where
     }
 }
 
-impl<C, T, U> QueueRender<T> for QrTextNodeMap<C, T, U>
+impl<C, T, U> QueueRender<T> for QrTextNodeMapWithState<C, T, U>
 where
     C: Component,
     T: 'static + ToString,

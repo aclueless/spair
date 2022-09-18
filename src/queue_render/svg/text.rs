@@ -1,8 +1,8 @@
 use crate::{
     component::Component,
     queue_render::{
-        dom::{QrTextNode, QrTextNodeMap},
-        val::{QrVal, QrValMapWithState},
+        dom::{QrTextNode, QrTextNodeMap, QrTextNodeMapWithState},
+        val::{QrVal, QrValMap, QrValMapWithState},
     },
     render::{
         base::NodesUpdaterMut,
@@ -34,6 +34,28 @@ where
     }
 }
 
+impl<C, T, U> SvgRender<C> for QrValMap<T, U>
+where
+    C: Component,
+    T: 'static + ToString,
+    U: 'static + ToString,
+{
+    fn render(self, nodes: SvgNodes<C>) {
+        if let Some(text_node) = nodes.create_qr_text_node() {
+            let (value, fn_map) = self.into_parts();
+            let map_node = QrTextNodeMap::new(text_node, fn_map);
+            match value.content().try_borrow_mut() {
+                Ok(mut this) => {
+                    let u = map_node.map(this.value());
+                    map_node.update_text(&u.to_string());
+                    this.add_render(Box::new(map_node));
+                }
+                Err(e) => log::error!("{}", e),
+            };
+        }
+    }
+}
+
 impl<C, T, U> SvgRender<C> for QrValMapWithState<C, T, U>
 where
     C: Component,
@@ -45,7 +67,7 @@ where
         let comp = nodes.comp();
         if let Some(text_node) = nodes.create_qr_text_node() {
             let (value, fn_map) = self.into_parts();
-            let map_node = QrTextNodeMap::new(text_node, comp, fn_map);
+            let map_node = QrTextNodeMapWithState::new(text_node, comp, fn_map);
             match value.content().try_borrow_mut() {
                 Ok(mut this) => {
                     let u = map_node.map_with_state(state, this.value());

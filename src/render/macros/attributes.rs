@@ -223,7 +223,7 @@ macro_rules! make_traits_for_attribute_values {
     (
         $(
             $AttributeTrait:ident {
-                $($attribute_type:ty, $method_name:ident $queue_render_method_name:ident $queue_render_method_name_map:ident,)+
+                $($attribute_type:ty, $method_name:ident $queue_render_method_name:ident $qrm_method_name:ident $qrmws_method_name:ident,)+
             }
         )+
     ) => {
@@ -240,7 +240,7 @@ macro_rules! make_traits_for_attribute_values {
                 make_traits_for_attribute_values! {
                     @each_queue_render
                     $AttributeTrait
-                    $attribute_type, $queue_render_method_name $queue_render_method_name_map
+                    $attribute_type, $queue_render_method_name $qrm_method_name $qrmws_method_name
                 }
             )+
         )+
@@ -248,24 +248,30 @@ macro_rules! make_traits_for_attribute_values {
     (
         @each_queue_render
         $AttributeTrait:ident
-        $attribute_type:ty, NO_QUEUE_RENDER NO_QUEUE_RENDER
+        $attribute_type:ty, NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER
     ) => {
     };
     (
         @each_queue_render
         $AttributeTrait:ident
-        $attribute_type:ty, $queue_render_method_name:ident $queue_render_method_name_map:ident
+        $attribute_type:ty, $queue_render_method_name:ident $qrm_method_name:ident $qrmws_method_name:ident
     ) => {
         #[cfg(feature = "queue-render")]
-        impl<C: Component> $AttributeTrait<C> for &QrVal<$attribute_type> {
+        impl<C: Component> $AttributeTrait<C> for &crate::queue_render::val::QrVal<$attribute_type> {
             fn render(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<C>) {
                 element.element_updater_mut().$queue_render_method_name(name, self);
             }
         }
         #[cfg(feature = "queue-render")]
-        impl<C: Component, T: 'static> $AttributeTrait<C> for QrValMapWithState<C, T, $attribute_type> {
+        impl<C: Component, T: 'static> $AttributeTrait<C> for crate::queue_render::val::QrValMap<T, $attribute_type> {
             fn render(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<C>) {
-                element.element_updater_mut().$queue_render_method_name_map(name, self);
+                element.element_updater_mut().$qrm_method_name(name, self);
+            }
+        }
+        #[cfg(feature = "queue-render")]
+        impl<C: Component, T: 'static> $AttributeTrait<C> for crate::queue_render::val::QrValMapWithState<C, T, $attribute_type> {
+            fn render(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<C>) {
+                element.element_updater_mut().$qrmws_method_name(name, self);
             }
         }
     };
