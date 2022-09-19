@@ -114,5 +114,5 @@ impl spair::Application for State {
 #[wasm_bindgen(start)]
 pub fn start_counter() {
     wasm_logger::init(wasm_logger::Config::default());
-    State::mount_to("root");
+    State::mount_to_element_id("root");
 }

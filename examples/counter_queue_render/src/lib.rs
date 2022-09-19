@@ -85,5 +85,5 @@ impl spair::Application for State {
 pub fn start_counter() {
     wasm_logger::init(wasm_logger::Config::default());
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-    State::mount_to("root");
+    State::mount_to_element_id("root");
 }

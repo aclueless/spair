@@ -150,5 +150,5 @@ impl spair::Application for State {
 
 #[wasm_bindgen(start)]
 pub fn start_fetch_example() {
-    State::mount_to("root")
+    State::mount_to_element_id("root")
 }

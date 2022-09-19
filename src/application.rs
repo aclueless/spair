@@ -18,7 +18,7 @@ pub trait Application: Component {
         std::mem::forget(rc_comp);
     }
 
-    fn mount_to(id: &str) {
+    fn mount_to_element_id(id: &str) {
         let root = crate::utils::document()
             .get_element_by_id(id)
             .expect_throw("No element associated with the specified id (to use as a root element)");
