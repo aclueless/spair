@@ -29,8 +29,8 @@ This project is in its early stage, frequent breaking changes are expected.
     * Can be used for fetching instead of the built-in fetch command.
 * svg
 
-### Not support, do you want to contribute?
-These are extremely low, or even not on my todo list.
+### Not support (yet), do you want to contribute?
+These features are extremely low (or even not) on my todo list.
 
 * `#[derive(spair::Routes)]`
 * Event delegation
@@ -61,6 +61,10 @@ Prerequisites:
 In an example folder:
 
     trunk serve
+
+or, if it's slow, use: (especialy `examples/boids` or `examples/game_of_life`)
+
+    trunk serve --release
 
 Open your browser at http://localhost:8080
 
@@ -105,7 +109,7 @@ element
 
 ```
 * **Important note**: when an element is creating in static mode, all its
-content will be ignored (not update) in future updates.
+content will be ignored (not update) after the first render.
 
 ```rust
 element
@@ -243,7 +247,7 @@ times because it is renderd, but never update its value.
 
 [`Render`]: https://docs.rs/spair/latest/spair/trait.Render.html
 [`StaticRender`]: https://docs.rs/spair/latest/spair/trait.StaticRender.html
-[`ListItemRender`]: https://docs.rs/spair/latest/spair/trait.ListItemRender.html
+[`ElementRender`]: https://docs.rs/spair/latest/spair/trait.ElementRender.html
 [`.match_if()`]: https://docs.rs/spair/latest/spair/render/html/nodes/trait.HemsHandMade.html#method.match_if
 
 
