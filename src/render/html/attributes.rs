@@ -140,6 +140,11 @@ pub trait HamsHandMade<C: Component>:
 {
     fn done(self) {}
 
+    fn set_attribute_str(mut self, name: &str, value: &str) -> Self {
+        self.element_updater_mut().set_str_attribute(name, value);
+        self
+    }
+
     /// Only execute `input.set_checked` if the value changed. But it's safer
     /// to use `.checked()` instead.
     fn checked_if_changed(mut self, value: bool) -> Self {
