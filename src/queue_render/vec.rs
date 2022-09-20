@@ -190,7 +190,7 @@ impl<I: Clone> QrVecContent<I> {
         let mut removed_indices = Vec::with_capacity(8);
         self.values.retain(|v| {
             let removed = filter(v);
-            if removed {
+            if !removed {
                 removed_indices.push(index);
             }
             index += 1;
