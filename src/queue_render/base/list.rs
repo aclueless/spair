@@ -74,17 +74,17 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
     fn render_change(&mut self, state: &C, items: &[I], diff: Diff<I>) {
         match diff {
             Diff::New => self.all_new(state, items.to_vec()),
-            Diff::Push(item) => self.push(state, item),
+            Diff::Push { value } => self.push(state, value),
             Diff::Pop => self.pop(),
             Diff::Insert { index, value } => self.insert(state, index, value),
-            Diff::RemoveAtIndex(index) => self.remove(index),
+            Diff::RemoveAt { index } => self.remove(index),
             Diff::ReplaceAt { index, new_value } => self.re_render(state, index, new_value),
             Diff::Move {
                 old_index,
                 new_index,
             } => self.move_item(old_index, new_index),
             Diff::Swap { index_1, index_2 } => self.swap(index_1, index_2),
-            Diff::Clear => self.clear(),
+            Diff::Render { index, value } => self.re_render(state, index, value),
         }
     }
 
@@ -274,23 +274,27 @@ mod qr_list_tests {
             crate::application::mount_to_element::<State>(root.ws_element().clone().into_inner());
 
         both_eq! { "1537", qr_list_test(&rc, |_| {}) }
-        both_eq! { "15374", qr_list_test(&rc, |vec| vec.push(4)) }
-        both_eq! { "1374", qr_list_test(&rc, |vec| { vec.remove_at(1); }) }
-        both_eq! { "137", qr_list_test(&rc, |vec| { vec.pop(); }) }
-        both_eq! { "2137", qr_list_test(&rc, |vec| { vec.insert_at(0, 2).expect_throw("insert at 0"); }) }
-        both_eq! { "28137", qr_list_test(&rc, |vec| { vec.insert_at(1, 8).expect_throw("insert at 1"); }) }
-        both_eq! { "281375", qr_list_test(&rc, |vec| { vec.insert_at(5, 5).expect_throw("insert at 5"); }) }
-        both_eq! { "581372", qr_list_test(&rc, |vec| { vec.swap(0, 5).expect_throw("swap 0-5"); }) }
-        both_eq! { "781352", qr_list_test(&rc, |vec| { vec.swap(4, 0).expect_throw("swap 0-4"); }) }
-        both_eq! { "782351", qr_list_test(&rc, |vec| { vec.swap(2, 5).expect_throw("swap 2-5"); }) }
-        both_eq! { "723518", qr_list_test(&rc, |vec| { vec.r#move(1, 5).expect_throw("move 1-5"); }) }
-        both_eq! { "235718", qr_list_test(&rc, |vec| { vec.r#move(0, 3).expect_throw("move 0-3"); }) }
-        both_eq! { "723518", qr_list_test(&rc, |vec| { vec.r#move(3, 0).expect_throw("move 3-0"); }) }
-        both_eq! { "872351", qr_list_test(&rc, |vec| { vec.r#move(5, 0).expect_throw("move 5-0"); }) }
-        both_eq! { "870351", qr_list_test(&rc, |vec| { vec.replace_at(2, 0).expect_throw("move at 2"); }) }
-        both_eq! { "870359", qr_list_test(&rc, |vec| { vec.replace_at(5, 9).expect_throw("move at 5"); }) }
-        both_eq! { "670359", qr_list_test(&rc, |vec| { vec.replace_at(0, 6).expect_throw("move at 0"); }) }
-        both_eq! { "123456", qr_list_test(&rc, |vec| { vec.push(0); vec.new_values(vec![1,2,3,4,5,6]); }) }
-        both_eq! { "", qr_list_test(&rc, |vec| { vec.clear(); }) }
+        both_eq! { "15374", qr_list_test(&rc, |vec| vec.get_mut().push(4)) }
+        both_eq! { "1374", qr_list_test(&rc, |vec| { vec.get_mut().remove_at(1); }) }
+        both_eq! { "137", qr_list_test(&rc, |vec| { vec.get_mut().pop(); }) }
+        both_eq! { "2137", qr_list_test(&rc, |vec| { vec.get_mut().insert_at(0, 2).expect_throw("insert at 0"); }) }
+        both_eq! { "28137", qr_list_test(&rc, |vec| { vec.get_mut().insert_at(1, 8).expect_throw("insert at 1"); }) }
+        both_eq! { "281375", qr_list_test(&rc, |vec| { vec.get_mut().insert_at(5, 5).expect_throw("insert at 5"); }) }
+        both_eq! { "581372", qr_list_test(&rc, |vec| { vec.get_mut().swap(0, 5).expect_throw("swap 0-5"); }) }
+        both_eq! { "781352", qr_list_test(&rc, |vec| { vec.get_mut().swap(4, 0).expect_throw("swap 0-4"); }) }
+        both_eq! { "782351", qr_list_test(&rc, |vec| { vec.get_mut().swap(2, 5).expect_throw("swap 2-5"); }) }
+        both_eq! { "723518", qr_list_test(&rc, |vec| { vec.get_mut().r#move(1, 5).expect_throw("move 1-5"); }) }
+        both_eq! { "235718", qr_list_test(&rc, |vec| { vec.get_mut().r#move(0, 3).expect_throw("move 0-3"); }) }
+        both_eq! { "723518", qr_list_test(&rc, |vec| { vec.get_mut().r#move(3, 0).expect_throw("move 3-0"); }) }
+        both_eq! { "872351", qr_list_test(&rc, |vec| { vec.get_mut().r#move(5, 0).expect_throw("move 5-0"); }) }
+        both_eq! { "870351", qr_list_test(&rc, |vec| { vec.get_mut().replace_at(2, 0).expect_throw("move at 2"); }) }
+        both_eq! { "870359", qr_list_test(&rc, |vec| { vec.get_mut().replace_at(5, 9).expect_throw("move at 5"); }) }
+        both_eq! { "670359", qr_list_test(&rc, |vec| { vec.get_mut().replace_at(0, 6).expect_throw("move at 0"); }) }
+        both_eq! { "123456", qr_list_test(&rc, |vec| {
+            let mut vec = vec.get_mut();
+            vec.push(0);
+            vec.new_values(vec![1,2,3,4,5,6]);
+        }) }
+        both_eq! { "", qr_list_test(&rc, |vec| { vec.get_mut().clear(); }) }
     }
 }

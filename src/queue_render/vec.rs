@@ -1,4 +1,9 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::{Ref, RefCell, RefMut},
+    cmp::Ordering,
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 use wasm_bindgen::UnwrapThrowExt;
 
 pub trait ListRender<I: Clone> {
@@ -33,7 +38,7 @@ pub struct QrVecContent<I: Clone> {
 }
 
 impl<I: Clone> QrVecContent<I> {
-    pub fn add_render(&mut self, r: Box<dyn ListRender<I>>) {
+    pub(crate) fn add_render(&mut self, r: Box<dyn ListRender<I>>) {
         self.renders.push(r);
     }
 
@@ -60,20 +65,227 @@ impl<I: Clone> QrVecContent<I> {
         self.a_render_is_queued = true;
         true
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &I> {
+        self.values.iter()
+    }
+
+    pub fn reserve(&mut self, additional: usize) {
+        self.values.reserve(additional);
+    }
+
+    pub fn new_values(&mut self, values: Vec<I>) {
+        self.diffs.push(Diff::New);
+        self.values = values;
+    }
+
+    pub fn push(&mut self, item: I) {
+        self.diffs.push(Diff::Push {
+            value: item.clone(),
+        });
+        self.values.push(item);
+    }
+
+    pub fn pop(&mut self) -> Option<I> {
+        self.diffs.push(Diff::Pop);
+        self.values.pop()
+    }
+
+    pub fn insert_at(&mut self, index: usize, item: I) -> Result<(), QrVecError> {
+        match index.cmp(&self.values.len()) {
+            Ordering::Greater => Err(QrVecError::IndexOutBounds(index)),
+            Ordering::Equal => {
+                self.diffs.push(Diff::Push {
+                    value: item.clone(),
+                });
+                self.values.push(item);
+                Ok(())
+            }
+            Ordering::Less => {
+                self.diffs.push(Diff::Insert {
+                    index,
+                    value: item.clone(),
+                });
+                self.values.insert(index, item);
+                Ok(())
+            }
+        }
+    }
+
+    pub fn remove_at(&mut self, index: usize) -> Option<I> {
+        if index >= self.values.len() {
+            return None;
+        }
+        self.diffs.push(Diff::RemoveAt { index });
+        Some(self.values.remove(index))
+    }
+
+    pub fn replace_at(&mut self, index: usize, mut item: I) -> Option<I> {
+        if index >= self.values.len() {
+            return None;
+        }
+        self.diffs.push(Diff::ReplaceAt {
+            index,
+            new_value: item.clone(),
+        });
+        std::mem::swap(&mut item, &mut self.values[index]);
+        Some(item)
+    }
+
+    pub fn r#move(&mut self, old_index: usize, new_index: usize) -> Result<(), QrVecError> {
+        if old_index >= self.values.len() {
+            return Err(QrVecError::IndexOutBounds(old_index));
+        }
+        if new_index >= self.values.len() {
+            return Err(QrVecError::IndexOutBounds(new_index));
+        }
+        self.diffs.push(Diff::Move {
+            old_index,
+            new_index,
+        });
+        let item = self.values.remove(old_index);
+        self.values.insert(new_index, item);
+        Ok(())
+    }
+
+    pub fn swap(&mut self, index_1: usize, index_2: usize) -> Result<(), QrVecError> {
+        if index_1 >= self.values.len() {
+            return Err(QrVecError::IndexOutBounds(index_1));
+        }
+        if index_2 >= self.values.len() {
+            return Err(QrVecError::IndexOutBounds(index_2));
+        }
+        self.diffs.push(Diff::Swap { index_1, index_2 });
+        self.values.swap(index_1, index_2);
+        Ok(())
+    }
+
+    pub fn clear(&mut self) {
+        if self.values.is_empty() {
+            return;
+        }
+        self.diffs.push(Diff::New);
+        self.values.clear();
+    }
+
+    fn _request_render_at(&mut self, index: usize) {
+        let item = match self.values.get(index) {
+            None => return,
+            Some(item) => Clone::clone(item),
+        };
+        self.diffs.push(Diff::Render { index, value: item });
+    }
+
+    pub fn request_render_at(&mut self, index: impl RequestRenderIndex<I>) {
+        index.perform(self);
+    }
+
+    // Copied from https://github.com/Pauan/rust-signals
+    pub fn retain(&mut self, filter: impl Fn(&I) -> bool) {
+        if self.values.is_empty() {
+            return;
+        }
+        let mut len = self.values.len();
+        let mut index = 0;
+        let mut removed_indices = Vec::with_capacity(8);
+        self.values.retain(|v| {
+            let removed = filter(v);
+            if removed {
+                removed_indices.push(index);
+            }
+            index += 1;
+            removed
+        });
+        if self.values.is_empty() {
+            self.diffs.push(Diff::New);
+            return;
+        }
+        for removed_index in removed_indices.into_iter().rev() {
+            len -= 1;
+            if removed_index == len {
+                self.diffs.push(Diff::Pop);
+            } else {
+                self.diffs.push(Diff::RemoveAt {
+                    index: removed_index,
+                });
+            }
+        }
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = QrVecItemMut<I>> {
+        // I tried many ways to provide an `.iter_mut()` that can record
+        // the changes. I always failed because of lifetime issues. So,
+        // the last resort is using unsafe.
+
+        // Currently, `iter_mut()` only support modification of items.
+        // Therefore maximum number of changes is `self.values.len()`. Hence,
+        // We reserve the memory to ensure that the `self.diffs` will never
+        // get reallocation. So the raw pointer never becomes invalid. Is this
+        // OK?????
+        self.diffs.reserve(self.values.len());
+        let diffs = &mut self.diffs;
+        self.values
+            .iter_mut()
+            .enumerate()
+            .map(|(index, value)| QrVecItemMut {
+                index,
+                value,
+                diffs,
+            })
+    }
 }
 
-// To support multi-changes, we have to store a copy of the item for some change here.
+pub struct QrVecItemMut<'a, I: Clone> {
+    index: usize,
+    value: &'a mut I,
+    diffs: *mut Vec<Diff<I>>,
+}
+
+impl<'a, I: Clone> QrVecItemMut<'a, I> {
+    pub fn modify(&mut self, f: impl FnOnce(&mut I)) {
+        f(self.value);
+        let diff = Diff::ReplaceAt {
+            index: self.index,
+            new_value: self.value.clone(),
+        };
+        // `QrVecContent::iter_mut()` is responsible to make this safe
+        // See details in comments in `QrVecContent::iter_mut()`.
+        unsafe {
+            (*self.diffs).push(diff);
+        }
+    }
+}
+
+pub trait RequestRenderIndex<I: Clone> {
+    fn perform(self, qrvec: &mut QrVecContent<I>);
+}
+
+impl<I: 'static + Clone> RequestRenderIndex<I> for usize {
+    fn perform(self, qrvec: &mut QrVecContent<I>) {
+        qrvec._request_render_at(self);
+    }
+}
+
+impl<I: 'static + Clone> RequestRenderIndex<I> for Option<usize> {
+    fn perform(self, qrvec: &mut QrVecContent<I>) {
+        if let Some(index) = self {
+            qrvec._request_render_at(index);
+        }
+    }
+}
+
+// To support multi-changes, we have to store a copy of the items for some changes here.
 #[derive(Debug, Clone)]
 pub enum Diff<I: Clone> {
     New,
-    Push(I),
+    Push { value: I },
     Pop,
     Insert { index: usize, value: I },
-    RemoveAtIndex(usize),
+    RemoveAt { index: usize },
     ReplaceAt { index: usize, new_value: I },
     Move { old_index: usize, new_index: usize },
     Swap { index_1: usize, index_2: usize },
-    Clear,
+    Render { index: usize, value: I },
 }
 
 impl<I: 'static + Clone> QrVec<I> {
@@ -101,6 +313,40 @@ impl<I: 'static + Clone> QrVec<I> {
             Ok(mut this) => this.render(),
             Err(e) => log::error!("queue_render::vec::QrVec::render {}", e),
         }
+    }
+}
+
+pub struct QrVecMut<'a, I: 'static + Clone> {
+    content: RefMut<'a, QrVecContent<I>>,
+    qr_vec: Option<QrVec<I>>,
+}
+
+impl<'a, I: 'static + Clone> Deref for QrVecMut<'a, I> {
+    type Target = QrVecContent<I>;
+    fn deref(&self) -> &Self::Target {
+        &self.content
+    }
+}
+
+impl<'a, I: 'static + Clone> DerefMut for QrVecMut<'a, I> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.content
+    }
+}
+
+impl<'a, I: 'static + Clone> Drop for QrVecMut<'a, I> {
+    fn drop(&mut self) {
+        if self.content.need_to_queue_a_render() {
+            if let Some(qr_vec) = self.qr_vec.take() {
+                super::queue_render(move || qr_vec.render());
+            }
+        }
+    }
+}
+
+impl<I: 'static + Clone> Default for QrVec<I> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -134,126 +380,22 @@ impl<I: 'static + Clone> QrVec<I> {
         })))
     }
 
-    fn perform<O>(&self, action: impl FnOnce(&mut QrVecContent<I>) -> O) -> O {
-        let (queue_me, output) = {
-            let mut content = self
-                .0
-                .try_borrow_mut()
-                .expect_throw("queue_render::vec::QrVec::push");
-            let output = (action)(&mut content);
-            let queue_me = content.need_to_queue_a_render();
-            (queue_me, output)
-        };
-        if queue_me {
-            self.queue_a_render();
+    pub fn get_ref(&self) -> Ref<QrVecContent<I>> {
+        self.0
+            .try_borrow()
+            .expect_throw("queue_render::vec::QrVec::get_ref")
+    }
+
+    pub fn get_mut(&self) -> QrVecMut<I> {
+        let content = self
+            .0
+            .try_borrow_mut()
+            .expect_throw("queue_render::vec::QrVec::get_mut");
+        let qr_vec = self.clone();
+        QrVecMut {
+            content,
+            qr_vec: Some(qr_vec),
         }
-        output
-    }
-
-    pub fn new_values(&self, values: Vec<I>) {
-        self.perform(|content| {
-            content.diffs.push(Diff::New);
-            content.values = values;
-        })
-    }
-
-    pub fn push(&self, item: I) {
-        self.perform(|content| {
-            content.diffs.push(Diff::Push(item.clone()));
-            content.values.push(item);
-        });
-    }
-
-    pub fn pop(&self) -> Option<I> {
-        self.perform(|content| {
-            content.diffs.push(Diff::Pop);
-            content.values.pop()
-        })
-    }
-
-    pub fn insert_at(&self, index: usize, item: I) -> Result<(), QrVecError> {
-        self.perform(|content| {
-            if index > content.values.len() {
-                return Err(QrVecError::IndexOutBounds(index));
-            } else if index == content.values.len() {
-                content.diffs.push(Diff::Push(item.clone()));
-                content.values.push(item);
-                Ok(())
-            } else {
-                content.diffs.push(Diff::Insert {
-                    index,
-                    value: item.clone(),
-                });
-                content.values.insert(index, item);
-                Ok(())
-            }
-        })
-    }
-
-    pub fn remove_at(&self, index: usize) -> Option<I> {
-        self.perform(|content| {
-            if index >= content.values.len() {
-                return None;
-            }
-            content.diffs.push(Diff::RemoveAtIndex(index));
-            Some(content.values.remove(index))
-        })
-    }
-
-    pub fn replace_at(&self, index: usize, mut item: I) -> Option<I> {
-        self.perform(|content| {
-            if index >= content.values.len() {
-                return None;
-            }
-            content.diffs.push(Diff::ReplaceAt {
-                index,
-                new_value: item.clone(),
-            });
-            std::mem::swap(&mut item, &mut content.values[index]);
-            Some(item)
-        })
-    }
-
-    pub fn r#move(&self, old_index: usize, new_index: usize) -> Result<(), QrVecError> {
-        self.perform(|content| {
-            if old_index >= content.values.len() {
-                return Err(QrVecError::IndexOutBounds(old_index));
-            }
-            if new_index >= content.values.len() {
-                return Err(QrVecError::IndexOutBounds(new_index));
-            }
-            content.diffs.push(Diff::Move {
-                old_index,
-                new_index,
-            });
-            let item = content.values.remove(old_index);
-            content.values.insert(new_index, item);
-            Ok(())
-        })
-    }
-
-    pub fn swap(&self, index_1: usize, index_2: usize) -> Result<(), QrVecError> {
-        self.perform(|content| {
-            if index_1 >= content.values.len() {
-                return Err(QrVecError::IndexOutBounds(index_1));
-            }
-            if index_2 >= content.values.len() {
-                return Err(QrVecError::IndexOutBounds(index_2));
-            }
-            content.diffs.push(Diff::Swap { index_1, index_2 });
-            content.values.swap(index_1, index_2);
-            Ok(())
-        })
-    }
-
-    pub fn clear(&self) {
-        self.perform(|content| {
-            if content.values.is_empty() {
-                return;
-            }
-            content.diffs.push(Diff::Clear);
-            content.values.clear();
-        })
     }
 }
 
