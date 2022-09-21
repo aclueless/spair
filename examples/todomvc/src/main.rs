@@ -195,7 +195,7 @@ impl spair::Render<App> for Header {
                         .focus(true)
                         .placeholder("What needs to be done?")
                         .on_input(comp.handler_arg_mut(|state, arg: spair::InputEvent| {
-                            if let Some(input) = arg.target_as_input_element() {
+                            if let Some(input) = arg.current_target_as_input_element() {
                                 state.set_new_todo_title(input.value());
                             }
                         }))
@@ -401,14 +401,14 @@ impl<'a> spair::Render<App> for EditingInput<'a> {
                 .static_attributes()
                 .class("edit")
                 .on_blur(comp.handler_arg_mut(|state, arg: spair::FocusEvent| {
-                    state.end_editing(get_value(arg.target_as()))
+                    state.end_editing(get_value(arg.current_target_as()))
                 }))
                 .on_key_down(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
                     // `.key_code()` is deprecated, so we use code instead
                     // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
                     match arg.raw().code().as_str() {
                         "Escape" => state.cancel_editing(),
-                        "Enter" => state.end_editing(get_value(arg.target_as())),
+                        "Enter" => state.end_editing(get_value(arg.current_target_as())),
                         _ => {}
                     }
                 }));

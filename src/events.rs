@@ -3,8 +3,12 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 pub trait Listener {}
 
-macro_rules! create_event_wrappers {
-    ($($EventType:ident)+) => {
+macro_rules! create_events {
+    ($(
+        $EventType:ident $EventListener:ident {
+            $($EventName:ident => $event_name:literal,)+
+        }
+    )+) => {
         $(
             pub struct $EventType(web_sys::$EventType);
             impl $EventType {
@@ -19,36 +23,16 @@ macro_rules! create_event_wrappers {
                 pub fn target_as<T: JsCast>(&self) -> Option<T> {
                     self.0.target().and_then(|et| et.dyn_into().ok())
                 }
+
+                pub fn current_target(&self) -> Option<web_sys::EventTarget> {
+                    self.0.current_target()
+                }
+
+                pub fn current_target_as<T: JsCast>(&self) -> Option<T> {
+                    self.0.current_target().and_then(|et| et.dyn_into().ok())
+                }
             }
-        )+
-    }
-}
 
-create_event_wrappers! {
-    FocusEvent
-    MouseEvent
-    WheelEvent
-    UiEvent
-    InputEvent
-    KeyboardEvent
-    Event
-}
-
-impl InputEvent {
-    pub fn target_as_input_element(&self) -> Option<web_sys::HtmlInputElement> {
-        self.target_as()
-    }
-}
-
-impl Event {
-    pub fn target_as_select_element(&self) -> Option<web_sys::HtmlSelectElement> {
-        self.target_as()
-    }
-}
-
-macro_rules! create_events {
-    ($($EventType:ident $EventListener:ident { $($EventName:ident => $event_name:literal,)+ })+) => {
-        $(
             pub struct $EventListener {
                 event_name: &'static str,
                 event_target: web_sys::EventTarget,
@@ -149,5 +133,17 @@ create_events! {
         PointerLockError => "pointerlockerror",
 
         Ended => "ended",
+    }
+}
+
+impl InputEvent {
+    pub fn current_target_as_input_element(&self) -> Option<web_sys::HtmlInputElement> {
+        self.current_target_as()
+    }
+}
+
+impl Event {
+    pub fn current_target_as_select_element(&self) -> Option<web_sys::HtmlSelectElement> {
+        self.current_target_as()
     }
 }

@@ -116,7 +116,7 @@ impl spair::Component for Slider {
                     .step(step)
                     .value(self.value.to_string())
                     .on_input(comp.handler_arg_mut(|state, input: spair::InputEvent| {
-                        if let Some(input) = input.target_as_input_element() {
+                        if let Some(input) = input.current_target_as_input_element() {
                             state.value_changed(input.value_as_number())
                         }
                     }));
