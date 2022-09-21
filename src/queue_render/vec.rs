@@ -189,12 +189,12 @@ impl<I: Clone> QrVecContent<I> {
         let mut index = 0;
         let mut removed_indices = Vec::with_capacity(8);
         self.values.retain(|v| {
-            let removed = filter(v);
-            if !removed {
+            let to_retain = filter(v);
+            if !to_retain {
                 removed_indices.push(index);
             }
             index += 1;
-            removed
+            to_retain
         });
         if self.values.is_empty() {
             self.diffs.push(Diff::New);
