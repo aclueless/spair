@@ -217,12 +217,21 @@ impl<I: Clone> QrVecContent<I> {
         // the changes. I always failed because of lifetime issues. So,
         // the last resort is using unsafe.
 
-        // Currently, `iter_mut()` only support modification of items.
-        // Therefore maximum number of changes is `self.values.len()`. Hence,
-        // We reserve the memory to ensure that the `self.diffs` will never
-        // get reallocation. So the raw pointer never becomes invalid. Is this
-        // OK?????
-        self.diffs.reserve(self.values.len());
+        // IMI stands for iter-mut-iterator - the iterator returns by this
+        // method.
+
+        // `self.diffs` is belong to `self`. `self` will be alive at least
+        // until the IMI finish. `self` will never be moved during the
+        // executing of the IMI. Therefore, the raw pointer of `self.diffs`
+        // is always valid during the lifetime of IMI.
+
+        // `self.diffs` is a Vec. The IMI may push new values to the
+        // `self.diffs` (via the raw pointer `QrVecItemMut::diffs`). The
+        // `Vec::buf` may have to be reallocated. `Vec::buf` may change,
+        // but the `Vec` itself is never moved around during IMI.
+
+        // The final words are "It is safe to use raw pointer to `&mut
+        // self.diff` during the lifetime of IMI."
         let diffs = &mut self.diffs;
         self.values
             .iter_mut()
