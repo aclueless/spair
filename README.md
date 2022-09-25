@@ -1,11 +1,12 @@
-# spair
+# Spair
 
-![Crates.io](https://img.shields.io/crates/v/spair)
+[![Crates.io](https://img.shields.io/crates/v/spair)](https://crates.io/crates/spair)
+[![docs.rs](https://img.shields.io/docsrs/spair)](https://docs.rs/spair)
 ![Build](https://github.com/aclueless/spair/workflows/Rust/badge.svg)
 
 An incremental and fine-grained render frontend framework for **S**ingle **P**age **A**pplication **i**n **R**ust.
 
-This project is in its _early stage_, things are still missing and *frequent breaking changes are expected*.
+This project is in its *early stage*, things are still missing and *frequent breaking changes are expected*.
 
 ## Features
 
@@ -14,6 +15,7 @@ This project is in its _early stage_, things are still missing and *frequent bre
 * Queue render for fine-grained render.
     * Must be enabled in Cargo.toml, like: `spair = { version="x.y.z", features = ["queue-render"] }`
     * (It is just a queue render, not using any kind of signals)
+    * You have to wrap your values in `spair::QrVal` or `spair::QrVec`
     * Current version of queue render may not very efficient because each fine-grained-render need to borrow the component state separately by it own.
 * Component state can be accessed in every part of render code.
     * Spair's components tend to be big, [`Render`] is used for code splitting.
@@ -22,9 +24,9 @@ This project is in its _early stage_, things are still missing and *frequent bre
 * (Almost) no macro is required for constructing DOM.
     * But Spair is quite verbose because of this.
     * (But a macro can be built on top of Spair).
-    * `spair::set_arm!()` is the only macro (IIRC) you have to use, it saves your days. (without it, `match_if` is a nightmare to maintainers) 
-* Limit support for router
-    * Currently, you have to implement the routing logic by yourself.
+    * `spair::set_arm!()` is the only macro you have to use, it saves your days, (without it, `match_if` is a nightmare to maintainers) 
+* Routing
+    * Just basic support, currently, you have to implement the routing logic by yourself.
 * fetch command
     * JSON, RON
 * async command
