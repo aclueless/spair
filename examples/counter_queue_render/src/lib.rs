@@ -17,13 +17,6 @@ impl State {
 
 impl spair::Component for State {
     type Routes = ();
-    fn test_state() -> Option<Self> {
-        Some(State {
-            rate: 2,
-            value: 4.into(),
-        })
-    }
-
     fn default_should_render() -> spair::ShouldRender {
         spair::ShouldRender::No
     }
