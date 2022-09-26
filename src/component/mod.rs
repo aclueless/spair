@@ -78,10 +78,6 @@ impl UpdateQueue {
 pub trait Component: 'static + Sized {
     type Routes: crate::routing::Routes;
 
-    fn test_state() -> Option<Self> {
-        None
-    }
-
     // This method will be ran once when the component is created.
     fn init(_: &Comp<Self>) {}
 
