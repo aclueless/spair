@@ -32,10 +32,7 @@ Spair's app size is smaller than some others frameworks. [See the comparision he
     * `spair::set_arm!()` is the only macro you have to use, it saves your days, (without it, `match_if` is a nightmare to maintainers) 
 * Routing
     * Just basic support, currently, you have to implement the routing logic by yourself.
-* fetch command
-    * JSON, RON
 * async command
-    * Can be used for fetching instead of the built-in fetch command.
 * svg
 * Missing things here and there...
     * Errr, this is not a feature, obviously. I just put this here to remind potential users not to surprise about missing things :D.
@@ -56,8 +53,6 @@ You can enabled a feature in your Cargo.toml like this:
 | feature-name       | desciption                   |
 | ------------------ | ---------------------------- |
 |`keyed-list`        | Support `keyed-list` for incremental mode |
-|`fetch-json`        | Fetch and parse as a JSON |
-|`fetch-ron`         | Fetch and parse as a RON  |
 |`svg`               | Support svg element       |
 |`queue-render`      | Support fined-grained render (*)|
 

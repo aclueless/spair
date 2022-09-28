@@ -1,7 +1,1 @@
-Please note that you must enable `features = ["fetch-json"]`.
-
-```toml
-# Cargo.toml
-[dependencies]
-spair = { version = "???", features = ["fetch-json"] }
-```
+This is an example that uses `gloo-net` to fetch data from an API.

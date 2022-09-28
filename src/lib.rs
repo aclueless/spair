@@ -6,7 +6,6 @@ mod callback;
 mod component;
 mod dom;
 mod events;
-mod fetch;
 mod future;
 mod macros;
 mod render;
@@ -37,12 +36,10 @@ pub use render::{
 
 // TODO selectively export event traits only?
 pub use events::*;
-pub use fetch::{FetchError, ResponsedError};
 pub use future::Future;
 pub use routing::{Router, Routes};
 pub use utils::*;
 
-pub use http;
 pub use web_sys;
 
 pub mod wasm {
@@ -71,7 +68,6 @@ pub mod prelude {
     #[cfg(feature = "keyed-list")]
     pub use crate::render::html::HemsForKeyedList;
 
-    pub use crate::fetch::{FetchOptionsSetter, RawDataMode};
     #[cfg(feature = "svg")]
     pub use crate::render::svg::{
         MethodsForSvgElementContent, SamsForDistinctNames, SamsHandMade, SemsForDistinctNames,
