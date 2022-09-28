@@ -10,6 +10,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wasm-bindgen = "0.2"
-spair = { path = "../../", features = ["fetch-json"] }
+gloo-net = { version = "0.2.4", default-features = false, features = ["http", "json"] }
 serde = { version = "1.0", features = ["derive"] }
+spair = { path = "../../" }
+wasm-bindgen = "0.2"

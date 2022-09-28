@@ -1,6 +1,4 @@
-// Copied from https://github.com/rustwasm/wasm-bindgen/blob/master/examples/fetch/src/lib.rs
-// and modified to work with spair
-
+use gloo_net::http;
 use serde::{Deserialize, Serialize};
 use spair::prelude::*;
 
@@ -50,21 +48,26 @@ impl State {
 
     fn start_fetching(&mut self) -> spair::Command<Self> {
         self.message = "Clicked! Please wait for a moment".to_string();
-
-        spair::http::Request::get(
-            "https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master",
+        spair::Future::new(fetch_repo_metadata()).callback(
+            |state: &mut Self, result| match result {
+                Ok(branch) => state.set_data(branch),
+                Err(err) => state.fetch_error(err),
+            },
         )
-        .header("Accept", "application/vnd.github.v3+json")
-        .text_mode()
-        // .body().json(data) <== if you are `spair::Request::post`ing something
-        .response()
-        // Please note that you must enable `features = ["fetch-json"]`
-        .json(State::set_data, State::fetch_error)
     }
 
-    fn fetch_error(&mut self, e: spair::FetchError) {
+    fn fetch_error(&mut self, e: gloo_net::Error) {
         self.message = e.to_string();
     }
+}
+
+async fn fetch_repo_metadata() -> Result<Branch, gloo_net::Error> {
+    http::Request::get("https://api.github.com/repos/rustwasm/wasm-bindgen/branches/master")
+        .header("Accept", "application/vnd.github.v3+json")
+        .send()
+        .await?
+        .json()
+        .await
 }
 
 impl spair::Component for State {
