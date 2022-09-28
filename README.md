@@ -8,6 +8,11 @@ An incremental and fine-grained render frontend framework for **S**ingle **P**ag
 
 This project is in its *early stage*, things are still missing and *frequent breaking changes are expected*.
 
+Spair is both small and fast.
+
+Spair's performance is comparable to Dominator and Sycamore. [See the benchmark here](https://github.com/krausest/js-framework-benchmark).
+Spair's app size is smaller than some others frameworks. [See the comparision here](https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc)
+
 ## Features
 
 * Incremtental render
