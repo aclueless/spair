@@ -33,7 +33,6 @@ Spair's app size is smaller than some others frameworks. [See the comparision he
 * Routing
     * Just basic support, currently, you have to implement the routing logic by yourself.
 * async command
-    * Can be used for fetching instead of the built-in fetch command.
 * svg
 * Missing things here and there...
     * Errr, this is not a feature, obviously. I just put this here to remind potential users not to surprise about missing things :D.
