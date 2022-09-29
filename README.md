@@ -8,10 +8,8 @@ An incremental and fine-grained render frontend framework for **S**ingle **P**ag
 
 This project is in its *early stage*, things are still missing and *frequent breaking changes are expected*.
 
-Spair is both small and fast.
-
-Spair's performance is comparable to Dominator and Sycamore. [See the benchmark here](https://github.com/krausest/js-framework-benchmark).
-Spair's app size is smaller than some others frameworks. [See the comparision here](https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc)
+Spair is both small and fast. Spair's performance is comparable to Dominator and Sycamore. [See the benchmark here](https://github.com/krausest/js-framework-benchmark).
+Spair's app size is smaller than some others frameworks. [See the comparision here](https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc).
 
 ## Features
 
@@ -167,7 +165,7 @@ converted to strings and rendered as text nodes.
 
 ## Access to the component state.
 
-When implementing [`Render`], [`StaticRender`] or [`ListItemRender`] for
+When implementing [`Render`], [`StaticRender`] or [`ElementRender`] for
 your data types, you may want to access the state of your component:
 
 ```rust
@@ -236,6 +234,21 @@ To set attributes/properties with such names, you have to call
 `.attributes_only()` or `.static_attributes_only()` first. After setting
 attributes/properties, you have to explicitly switch to nodes-mode using
 `.update_nodes()` or `.static_nodes()`.
+
+Example:
+```rust
+element.span(); // => Error
+
+element
+    .update_nodes()
+    .span(); // Element <span>  
+
+element
+    .attributes_only()
+    .span() // attribute
+    .update_nodes()
+    .span(); // Element <span>  
+```
 
 ## Common errors
 Using Spair, you may encounter common mistakes listed in this section.
