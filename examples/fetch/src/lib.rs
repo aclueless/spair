@@ -48,12 +48,10 @@ impl State {
 
     fn start_fetching(&mut self) -> spair::Command<Self> {
         self.message = "Clicked! Please wait for a moment".to_string();
-        spair::Future::new(fetch_repo_metadata()).callback(
-            |state: &mut Self, result| match result {
-                Ok(branch) => state.set_data(branch),
-                Err(err) => state.fetch_error(err),
-            },
-        )
+        spair::Future::new(fetch_repo_metadata()).with_fn(|state: &mut Self, result| match result {
+            Ok(branch) => state.set_data(branch),
+            Err(err) => state.fetch_error(err),
+        })
     }
 
     fn fetch_error(&mut self, e: gloo_net::Error) {
