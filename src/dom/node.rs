@@ -115,16 +115,20 @@ impl OwnedComponent {
 }
 
 impl Node {
-    pub fn _remove_from_dom(&mut self, parent: &web_sys::Node) {
+    pub fn remove_from_dom(self, parent: &web_sys::Node) {
         match self {
             Self::Element(element) => {
-                element.mark_as_unmounted();
+                // Just remove the web_sys::Node from the parent web_sys::Node.
+                // The children will be drop together with the element. We don't
+                // need to remove them from their parent wes_sys::Node
                 element.remove_from(parent);
             }
             Self::Text(text) => text.remove_from(parent),
-            Self::GroupedNodes(g) => g.clear(parent),
+            // This will be stopped when reaching an actual Node::Element
+            Self::GroupedNodes(g) => g.remove_from_dom(parent),
+            // This will be stopped when reaching an actual Node::Element
             #[cfg(feature = "keyed-list")]
-            Self::KeyedList(list) => list.clear(parent),
+            Self::KeyedList(list) => list.remove_from_dom(parent),
             Self::RefComponent(rc) => {
                 rc.root_node.remove_from(parent);
             }
@@ -134,10 +138,7 @@ impl Node {
                 }
             }
             #[cfg(feature = "queue-render")]
-            Self::QrNode(qr) => {
-                qr.mark_as_unmounted();
-                qr.remove_from(parent);
-            }
+            Self::QrNode(qr) => qr.remove_from(parent),
         }
     }
 

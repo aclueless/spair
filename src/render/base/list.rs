@@ -43,7 +43,7 @@ impl<'a> ListUpdater<'a> {
             self.parent.set_text_content(None);
             self.list.clear_vec();
         } else {
-            self.list.clear_after(index, self.parent);
+            self.list.remove_from_dom_after(index, self.parent);
         }
     }
 

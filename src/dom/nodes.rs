@@ -26,10 +26,15 @@ impl Nodes {
     pub fn count(&self) -> usize {
         self.0.len()
     }
-    pub fn clear(&mut self, parent: &web_sys::Node) {
+
+    pub fn remove_from_dom(mut self, parent: &web_sys::Node) {
+        self.clear_and_remove_child_from_dom(parent);
+    }
+
+    pub fn clear_and_remove_child_from_dom(&mut self, parent: &web_sys::Node) {
         self.0
             .drain(..)
-            .for_each(|mut node| node.remove_from_dom(parent));
+            .for_each(|node| node.remove_from_dom(parent));
     }
 
     /// Just clear the internal Vec of child nodes. The caller must make sure
@@ -38,10 +43,10 @@ impl Nodes {
         self.0.clear();
     }
 
-    pub fn clear_after(&mut self, index: usize, parent: &web_sys::Node) {
+    pub fn remove_from_dom_after(&mut self, index: usize, parent: &web_sys::Node) {
         self.0
             .drain(index..)
-            .for_each(|mut node| node.remove_from_dom(parent));
+            .for_each(|node| node.remove_from_dom(parent));
     }
 
     pub fn append_to(&self, parent: &web_sys::Node) {
@@ -350,7 +355,7 @@ impl GroupedNodes {
 
     pub fn set_active_index(&mut self, index: u32, parent: &web_sys::Node) -> ElementStatus {
         if Some(index) != self.active_index {
-            self.nodes.clear(parent);
+            self.nodes.clear_and_remove_child_from_dom(parent);
             self.active_index = Some(index);
             ElementStatus::JustCreated
         } else {
@@ -358,18 +363,14 @@ impl GroupedNodes {
         }
     }
 
-    pub fn clear(&mut self, parent: &web_sys::Node) {
-        self.nodes.clear(parent);
-        parent
-            .remove_child(&self.end_flag_node)
-            .expect_throw("dom::nodes::GroupedNodes::clear remove_child");
+    pub fn remove_from_dom(self, parent: &web_sys::Node) {
+        self.nodes.remove_from_dom(parent);
+        self.end_flag_node.remove_from(parent);
     }
 
     pub fn append_to(&self, parent: &web_sys::Node) {
         self.nodes.append_to(parent);
-        parent
-            .append_child(&self.end_flag_node)
-            .expect_throw("dom::nodes::GroupedNodes::append_to append_child");
+        self.end_flag_node.append_to(parent);
     }
 
     pub fn nodes(&self) -> &Nodes {

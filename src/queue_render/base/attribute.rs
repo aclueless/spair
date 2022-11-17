@@ -42,7 +42,7 @@ impl AttributeUpdater for String {
 }
 
 pub struct QrNormalAttribute {
-    unmounted: Rc<Cell<bool>>,
+    element_unmounted: Rc<Cell<bool>>,
     ws_element: WsElement,
     attribute_name: &'static str,
 }
@@ -54,7 +54,7 @@ impl QrNormalAttribute {
         attribute_name: &'static str,
     ) -> Self {
         Self {
-            unmounted: element_unmounted,
+            element_unmounted,
             ws_element,
             attribute_name,
         }
@@ -67,7 +67,7 @@ impl<T: AttributeUpdater> QueueRender<T> for QrNormalAttribute {
     }
 
     fn unmounted(&self) -> bool {
-        self.unmounted.get()
+        self.element_unmounted.get()
     }
 }
 
@@ -92,7 +92,7 @@ impl<T, U: AttributeUpdater> QueueRender<T> for QrNormalAttributeMap<T, U> {
         u.update(self.qra.attribute_name, &self.qra.ws_element)
     }
     fn unmounted(&self) -> bool {
-        self.qra.unmounted.get()
+        self.qra.element_unmounted.get()
     }
 }
 
@@ -132,12 +132,12 @@ impl<C: Component, T, U: AttributeUpdater> QueueRender<T>
         u.update(self.qra.attribute_name, &self.qra.ws_element)
     }
     fn unmounted(&self) -> bool {
-        self.qra.unmounted.get()
+        self.qra.element_unmounted.get()
     }
 }
 
 pub struct QrProperty<T> {
-    unmounted: Rc<Cell<bool>>,
+    element_unmounted: Rc<Cell<bool>>,
     ws_element: WsElement,
     fn_update: Box<dyn Fn(&WsElement, &T)>,
 }
@@ -149,7 +149,7 @@ impl<T> QrProperty<T> {
         fn_update: Box<dyn Fn(&WsElement, &T)>,
     ) -> Self {
         Self {
-            unmounted: element_unmounted,
+            element_unmounted,
             ws_element,
             fn_update,
         }
@@ -161,7 +161,7 @@ impl<T> QueueRender<T> for QrProperty<T> {
         (self.fn_update)(&self.ws_element, t);
     }
     fn unmounted(&self) -> bool {
-        self.unmounted.get()
+        self.element_unmounted.get()
     }
 }
 
@@ -189,7 +189,7 @@ impl<T, U> QueueRender<T> for QrPropertyMap<T, U> {
         (self.qr_property.fn_update)(&self.qr_property.ws_element, &u);
     }
     fn unmounted(&self) -> bool {
-        self.qr_property.unmounted.get()
+        self.qr_property.element_unmounted.get()
     }
 }
 
@@ -231,12 +231,12 @@ impl<C: Component, T, U> QueueRender<T> for QrPropertyMapWithState<C, T, U> {
         (self.qr_property.fn_update)(&self.qr_property.ws_element, &u);
     }
     fn unmounted(&self) -> bool {
-        self.qr_property.unmounted.get()
+        self.qr_property.element_unmounted.get()
     }
 }
 
 pub struct QrClass {
-    unmounted: Rc<Cell<bool>>,
+    element_unmounted: Rc<Cell<bool>>,
     ws_element: WsElement,
     last_class: Option<String>,
 }
@@ -244,7 +244,7 @@ pub struct QrClass {
 impl QrClass {
     pub fn new(ws_element: WsElement, element_unmounted: Rc<Cell<bool>>) -> Self {
         Self {
-            unmounted: element_unmounted,
+            element_unmounted,
             ws_element,
             last_class: None,
         }
@@ -278,7 +278,7 @@ impl QueueRender<String> for QrClass {
         self.update_str(Some(t));
     }
     fn unmounted(&self) -> bool {
-        self.unmounted.get()
+        self.element_unmounted.get()
     }
 }
 
@@ -287,7 +287,7 @@ impl<'a> QueueRender<&'a str> for QrClass {
         self.update_str(Some(t));
     }
     fn unmounted(&self) -> bool {
-        self.unmounted.get()
+        self.element_unmounted.get()
     }
 }
 
@@ -296,7 +296,7 @@ impl QueueRender<Option<String>> for QrClass {
         self.update_str(t.as_deref());
     }
     fn unmounted(&self) -> bool {
-        self.unmounted.get()
+        self.element_unmounted.get()
     }
 }
 
@@ -321,7 +321,7 @@ impl<T> QueueRender<T> for QrClassMap<T, &'static str> {
         self.qr.update_str(Some(u));
     }
     fn unmounted(&self) -> bool {
-        self.qr.unmounted.get()
+        self.qr.element_unmounted.get()
     }
 }
 
@@ -331,7 +331,7 @@ impl<T> QueueRender<T> for QrClassMap<T, String> {
         self.qr.update_string(Some(u));
     }
     fn unmounted(&self) -> bool {
-        self.qr.unmounted.get()
+        self.qr.element_unmounted.get()
     }
 }
 
@@ -341,7 +341,7 @@ impl<T> QueueRender<T> for QrClassMap<T, Option<String>> {
         self.qr.update_str(t.as_deref());
     }
     fn unmounted(&self) -> bool {
-        self.qr.unmounted.get()
+        self.qr.element_unmounted.get()
     }
 }
 
@@ -375,7 +375,7 @@ impl<C: Component, T> QueueRender<T> for QrClassMapWithState<C, T, &'static str>
         self.qr.update_str(Some(u));
     }
     fn unmounted(&self) -> bool {
-        self.qr.unmounted.get()
+        self.qr.element_unmounted.get()
     }
 }
 
@@ -385,7 +385,7 @@ impl<C: Component, T> QueueRender<T> for QrClassMapWithState<C, T, String> {
         self.qr.update_string(Some(u));
     }
     fn unmounted(&self) -> bool {
-        self.qr.unmounted.get()
+        self.qr.element_unmounted.get()
     }
 }
 
@@ -395,6 +395,6 @@ impl<C: Component, T> QueueRender<T> for QrClassMapWithState<C, T, Option<String
         self.qr.update_str(t.as_deref());
     }
     fn unmounted(&self) -> bool {
-        self.qr.unmounted.get()
+        self.qr.element_unmounted.get()
     }
 }

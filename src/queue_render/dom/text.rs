@@ -9,6 +9,12 @@ use crate::dom::AChildNode;
 
 pub struct QrTextNode(Rc<TextNodeInner>);
 
+impl Drop for QrTextNode {
+    fn drop(&mut self) {
+        self.0.unmounted.set(true);
+    }
+}
+
 impl Clone for QrTextNode {
     fn clone(&self) -> Self {
         Self(self.0.clone())
@@ -37,10 +43,6 @@ impl QrTextNode {
 
     pub fn update_text(&self, text: &str) {
         self.0.ws_node.set_text_content(Some(text));
-    }
-
-    pub fn mark_as_unmounted(&self) {
-        self.0.unmounted.set(true);
     }
 
     pub fn clone_ws_node(&self) -> web_sys::Node {

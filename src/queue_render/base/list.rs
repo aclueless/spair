@@ -93,7 +93,7 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
             self.parent.set_text_content(None);
             self.nodes.clear_vec();
         } else {
-            self.nodes.clear(&self.parent);
+            self.nodes.clear_and_remove_child_from_dom(&self.parent);
         }
     }
 

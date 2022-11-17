@@ -5,6 +5,12 @@ pub struct QrGroupRepresentative {
     unmounted: Rc<Cell<bool>>,
 }
 
+impl Drop for QrGroupRepresentative {
+    fn drop(&mut self) {
+        self.unmounted.set(true);
+    }
+}
+
 impl QrGroupRepresentative {
     pub fn new(end_flag_node: web_sys::Node, unmounted: Rc<Cell<bool>>) -> Self {
         Self {
@@ -15,9 +21,5 @@ impl QrGroupRepresentative {
 
     pub fn end_flag_node(&self) -> &web_sys::Node {
         &self.end_flag_node
-    }
-
-    pub fn mark_as_unmounted(&self) {
-        self.unmounted.set(true);
     }
 }

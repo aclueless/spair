@@ -13,6 +13,13 @@ pub struct Element {
     unmounted: Rc<Cell<bool>>,
 }
 
+#[cfg(feature = "queue-render")]
+impl Drop for Element {
+    fn drop(&mut self) {
+        self.unmounted.set(true);
+    }
+}
+
 impl Clone for Element {
     fn clone(&self) -> Self {
         let ws_element = self.ws_element.shadow_clone();
@@ -59,10 +66,6 @@ impl Element {
         }
     }
 
-    pub fn mark_as_unmounted(&self) {
-        #[cfg(feature = "queue-render")]
-        self.unmounted.set(true);
-    }
     #[cfg(feature = "queue-render")]
     pub fn unmounted(&self) -> Rc<Cell<bool>> {
         self.unmounted.clone()

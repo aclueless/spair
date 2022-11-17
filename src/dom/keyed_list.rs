@@ -204,7 +204,7 @@ impl KeyedList {
         std::mem::swap(&mut self.active, &mut self.buffer);
     }
 
-    pub fn clear(&mut self, parent: &web_sys::Node) {
+    pub fn remove_from_dom(self, parent: &web_sys::Node) {
         self.active.iter().for_each(|item| {
             item.as_ref()
                 .expect_throw("dom::keyed_list::KeyedList::clear")
