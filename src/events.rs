@@ -53,17 +53,6 @@ macro_rules! create_events {
             }
 
             impl Listener for $EventListener {}
-
-            impl Drop for $EventListener {
-                #[inline]
-                fn drop(&mut self) {
-                    self.event_target
-                        .remove_event_listener_with_callback(
-                            self.event_name,
-                            self.closure.as_ref().unchecked_ref()
-                        ).expect_throw("Expect event removal to be successful");
-                }
-            }
             $(
                 #[doc = "Help creating "]
                 #[doc = $event_name]
