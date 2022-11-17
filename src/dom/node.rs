@@ -115,7 +115,7 @@ impl OwnedComponent {
 }
 
 impl Node {
-    pub fn remove_from_dom(&mut self, parent: &web_sys::Node) {
+    pub fn _remove_from_dom(&mut self, parent: &web_sys::Node) {
         match self {
             Self::Element(element) => {
                 element.mark_as_unmounted();
