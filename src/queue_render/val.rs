@@ -6,7 +6,7 @@ use super::{FnMap, FnMapC};
 pub struct QrVal<T>(Rc<RefCell<ValueContent<T>>>);
 pub struct QrValMap<T, U> {
     value: QrVal<T>,
-    fn_map: FnMap<T,U>,
+    fn_map: FnMap<T, U>,
 }
 pub struct QrValMapWithState<C, T, U> {
     value: QrVal<T>,

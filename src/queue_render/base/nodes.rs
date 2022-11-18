@@ -166,7 +166,7 @@ pub struct QrMatchIfUpdater<C: Component, T> {
     comp: Comp<C>,
     parent: web_sys::Node,
     nodes: GroupedNodes,
-    fn_render: FnMatchIfUpdater<C,T>,
+    fn_render: FnMatchIfUpdater<C, T>,
     unmounted: Rc<Cell<bool>>,
 }
 

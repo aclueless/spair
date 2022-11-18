@@ -11,7 +11,6 @@ pub mod vec;
 type FnMap<T, U> = Box<dyn Fn(&T) -> U>;
 type FnMapC<C, T, U> = Box<dyn Fn(&C, &T) -> U>;
 
-
 struct RenderQueue {
     queue: RefCell<VecDeque<Box<dyn FnOnce()>>>,
 }

@@ -4,7 +4,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use crate::{
     component::{Comp, Component},
     dom::WsElement,
-    queue_render::{FnMapC, val::QueueRender},
+    queue_render::{val::QueueRender, FnMapC},
 };
 
 pub trait AttributeUpdater {
@@ -106,11 +106,7 @@ where
 }
 
 impl<C: Component, T, U> QrNormalAttributeMapWithState<C, T, U> {
-    pub fn new(
-        qra: QrNormalAttribute,
-        comp: Comp<C>,
-        fn_map: FnMapC<C, T, U>,
-    ) -> Self {
+    pub fn new(qra: QrNormalAttribute, comp: Comp<C>, fn_map: FnMapC<C, T, U>) -> Self {
         Self { qra, comp, fn_map }
     }
 
@@ -205,11 +201,7 @@ where
 }
 
 impl<C: Component, T, U> QrPropertyMapWithState<C, T, U> {
-    pub fn new(
-        qr_property: QrProperty<U>,
-        comp: Comp<C>,
-        fn_map: FnMapC<C, T, U>,
-    ) -> Self {
+    pub fn new(qr_property: QrProperty<U>, comp: Comp<C>, fn_map: FnMapC<C, T, U>) -> Self {
         Self {
             qr_property,
             comp,

@@ -1,6 +1,6 @@
 use crate::{
     component::{Comp, Component},
-    queue_render::{FnMap, FnMapC, val::QueueRender},
+    queue_render::{val::QueueRender, FnMap, FnMapC},
 };
 use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
@@ -72,7 +72,7 @@ impl<T: ToString> QueueRender<T> for QrTextNode {
 
 pub struct QrTextNodeMap<T, U> {
     text_node: QrTextNode,
-    fn_map: FnMap<T,U>,
+    fn_map: FnMap<T, U>,
 }
 
 impl<T, U> QrTextNodeMap<T, U>
