@@ -1,24 +1,26 @@
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
 
+use super::{FnMap, FnMapC};
+
 pub struct QrVal<T>(Rc<RefCell<ValueContent<T>>>);
 pub struct QrValMap<T, U> {
     value: QrVal<T>,
-    fn_map: Box<dyn Fn(&T) -> U>,
+    fn_map: FnMap<T,U>,
 }
 pub struct QrValMapWithState<C, T, U> {
     value: QrVal<T>,
-    fn_map: Box<dyn Fn(&C, &T) -> U>,
+    fn_map: FnMapC<C, T, U>,
 }
 
 impl<T, U> QrValMap<T, U> {
-    pub fn into_parts(self) -> (QrVal<T>, Box<dyn Fn(&T) -> U>) {
+    pub fn into_parts(self) -> (QrVal<T>, FnMap<T, U>) {
         (self.value, self.fn_map)
     }
 }
 
 impl<C, T, U> QrValMapWithState<C, T, U> {
-    pub fn into_parts(self) -> (QrVal<T>, Box<dyn Fn(&C, &T) -> U>) {
+    pub fn into_parts(self) -> (QrVal<T>, FnMapC<C, T, U>) {
         (self.value, self.fn_map)
     }
 }

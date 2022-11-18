@@ -1,6 +1,6 @@
 use crate::{
     component::{Comp, Component},
-    queue_render::val::QueueRender,
+    queue_render::{FnMap, FnMapC, val::QueueRender},
 };
 use std::{cell::Cell, rc::Rc};
 use wasm_bindgen::UnwrapThrowExt;
@@ -26,14 +26,16 @@ struct TextNodeInner {
     ws_node: web_sys::Node,
 }
 
-impl QrTextNode {
-    pub fn new() -> Self {
+impl Default for QrTextNode {
+    fn default() -> Self {
         Self(Rc::new(TextNodeInner {
             unmounted: Cell::new(false),
             ws_node: crate::utils::document().create_text_node("").into(),
         }))
     }
+}
 
+impl QrTextNode {
     pub fn with_cloned_node(ws_node: web_sys::Node) -> Self {
         Self(Rc::new(TextNodeInner {
             unmounted: Cell::new(false),
@@ -70,7 +72,7 @@ impl<T: ToString> QueueRender<T> for QrTextNode {
 
 pub struct QrTextNodeMap<T, U> {
     text_node: QrTextNode,
-    fn_map: Box<dyn Fn(&T) -> U>,
+    fn_map: FnMap<T,U>,
 }
 
 impl<T, U> QrTextNodeMap<T, U>
@@ -115,7 +117,7 @@ where
 {
     text_node: QrTextNode,
     comp: Comp<C>,
-    fn_map: Box<dyn Fn(&C, &T) -> U>,
+    fn_map: FnMapC<C, T, U>,
 }
 
 impl<C, T, U> QrTextNodeMapWithState<C, T, U>

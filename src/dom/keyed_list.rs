@@ -175,6 +175,7 @@ impl KeyedList {
         }
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn items_mut(
         &mut self,
     ) -> (

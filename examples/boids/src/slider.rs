@@ -79,7 +79,7 @@ impl spair::Component for Slider {
         let precision = self
             .props
             .precision
-            .unwrap_or(if self.props.percentage { 1 } else { 0 });
+            .unwrap_or_else(|| usize::from(self.props.percentage));
 
         let display_value = if self.props.percentage {
             format!("{:.p$}%", 100.0 * self.value, p = precision)

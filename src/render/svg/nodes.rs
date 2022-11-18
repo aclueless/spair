@@ -247,13 +247,13 @@ impl<'n, C: Component> NodesUpdaterMut<C> for SvgStaticNodesOwned<'n, C> {
 
 impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for SvgNodes<'h, 'n, C> {
     fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
-        &mut self.0
+        self.0
     }
 }
 
 impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for SvgStaticNodes<'h, 'n, C> {
     fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
-        &mut self.0
+        self.0
     }
 }
 

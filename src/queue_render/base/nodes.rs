@@ -20,7 +20,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     // on: New, or on Clone. If the node is an existing active node, it returns None.
     pub fn create_qr_text_node(&mut self) -> Option<QrTextNode> {
         let tn = if self.new_node() {
-            let tn = QrTextNode::new();
+            let tn = QrTextNode::default();
             tn.insert_before_a_sibling(self.parent(), self.next_sibling());
             self.nodes_mut().add_qr_node(QrNode::Text(tn.clone()));
             Some(tn)
@@ -160,11 +160,13 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     }
 }
 
+type FnMatchIfUpdater<C, T> = Box<dyn Fn(&T, MatchIfUpdater<C>)>;
+
 pub struct QrMatchIfUpdater<C: Component, T> {
     comp: Comp<C>,
     parent: web_sys::Node,
     nodes: GroupedNodes,
-    fn_render: Box<dyn Fn(&T, MatchIfUpdater<C>)>,
+    fn_render: FnMatchIfUpdater<C,T>,
     unmounted: Rc<Cell<bool>>,
 }
 

@@ -4,7 +4,7 @@ use wasm_bindgen::UnwrapThrowExt;
 use crate::{
     component::{Comp, Component},
     dom::WsElement,
-    queue_render::val::QueueRender,
+    queue_render::{FnMapC, val::QueueRender},
 };
 
 pub trait AttributeUpdater {
@@ -102,14 +102,14 @@ where
 {
     qra: QrNormalAttribute,
     comp: Comp<C>,
-    fn_map: Box<dyn Fn(&C, &T) -> U>,
+    fn_map: FnMapC<C, T, U>,
 }
 
 impl<C: Component, T, U> QrNormalAttributeMapWithState<C, T, U> {
     pub fn new(
         qra: QrNormalAttribute,
         comp: Comp<C>,
-        fn_map: Box<dyn Fn(&C, &T) -> U + 'static>,
+        fn_map: FnMapC<C, T, U>,
     ) -> Self {
         Self { qra, comp, fn_map }
     }
@@ -136,17 +136,19 @@ impl<C: Component, T, U: AttributeUpdater> QueueRender<T>
     }
 }
 
+type FnWsElementUpdater<T> = Box<dyn Fn(&WsElement, &T)>;
+
 pub struct QrProperty<T> {
     element_unmounted: Rc<Cell<bool>>,
     ws_element: WsElement,
-    fn_update: Box<dyn Fn(&WsElement, &T)>,
+    fn_update: FnWsElementUpdater<T>,
 }
 
 impl<T> QrProperty<T> {
     pub fn new(
         ws_element: WsElement,
         element_unmounted: Rc<Cell<bool>>,
-        fn_update: Box<dyn Fn(&WsElement, &T)>,
+        fn_update: FnWsElementUpdater<T>,
     ) -> Self {
         Self {
             element_unmounted,
@@ -199,14 +201,14 @@ where
 {
     qr_property: QrProperty<U>,
     comp: Comp<C>,
-    fn_map: Box<dyn Fn(&C, &T) -> U>,
+    fn_map: FnMapC<C, T, U>,
 }
 
 impl<C: Component, T, U> QrPropertyMapWithState<C, T, U> {
     pub fn new(
         qr_property: QrProperty<U>,
         comp: Comp<C>,
-        fn_map: Box<dyn Fn(&C, &T) -> U + 'static>,
+        fn_map: FnMapC<C, T, U>,
     ) -> Self {
         Self {
             qr_property,
@@ -351,11 +353,11 @@ where
 {
     qr: QrClass,
     comp: Comp<C>,
-    fn_map: Box<dyn Fn(&C, &T) -> U>,
+    fn_map: FnMapC<C, T, U>,
 }
 
 impl<C: Component, T, U> QrClassMapWithState<C, T, U> {
-    pub fn new(qr: QrClass, comp: Comp<C>, fn_map: Box<dyn Fn(&C, &T) -> U + 'static>) -> Self {
+    pub fn new(qr: QrClass, comp: Comp<C>, fn_map: FnMapC<C, T, U>) -> Self {
         Self { qr, comp, fn_map }
     }
 

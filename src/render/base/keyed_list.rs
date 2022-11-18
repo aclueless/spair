@@ -417,7 +417,8 @@ where
 
     fn construct_old_elements_map_from_remaining_old_elements(&mut self) {
         self.list_context.old_elements_map.clear();
-        while let Some((index, item)) = self.list_context.old.next() {
+        for (index, item) in self.list_context.old.by_ref() {
+        //while let Some((index, item)) = self.list_context.old.next() {
             let KeyedElement { key, element } = item.take().expect_throw(
                 "render::base::keyed_list::KeyedListUpdater::construct_old_elements_map_from_remaining_old_elements",
             );
@@ -439,7 +440,8 @@ where
 
     fn remove_all_old_items(&mut self) {
         self.list_context.parent.set_text_content(None);
-        while let Some((_, item)) = self.list_context.old.next() {
+        for (_, item) in self.list_context.old.by_ref() {
+        // while let Some((_, item)) = self.list_context.old.next() {
             item.take()
                 .expect_throw("render::base::keyed_list::KeyedListUpdater::remove_all_old_items");
         }
@@ -447,7 +449,8 @@ where
 
     fn remove_remain_items(&mut self) {
         let parent = self.list_context.parent;
-        while let Some((_, item)) = self.list_context.old.next() {
+        for (_, item) in self.list_context.old.by_ref() {
+        //while let Some((_, item)) = self.list_context.old.next() {
             item.take()
                 .expect_throw("render::base::keyed_list::KeyedListUpdater::remove_remain_items")
                 .element

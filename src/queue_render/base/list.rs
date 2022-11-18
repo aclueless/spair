@@ -11,6 +11,8 @@ use crate::{
     render::base::ElementUpdater,
 };
 
+type FnElementUpdater<C, I> = Box<dyn Fn(I, ElementUpdater<C>)>;
+
 pub struct QrListRender<C: Component, E, I> {
     comp: Comp<C>,
     parent: web_sys::Node,
@@ -18,7 +20,7 @@ pub struct QrListRender<C: Component, E, I> {
     end_flag_node: Option<web_sys::Node>,
     element_tag: E,
     use_template: bool,
-    fn_render: Box<dyn Fn(I, ElementUpdater<C>)>,
+    fn_render: FnElementUpdater<C, I>,
     unmounted: Rc<Cell<bool>>,
 }
 
