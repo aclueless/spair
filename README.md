@@ -8,13 +8,13 @@ An incremental and fine-grained render frontend framework for **S**ingle **P**ag
 
 This project is in its *early stage*, things are still missing and *frequent breaking changes are expected*.
 
-Spair is both small and fast. Spair's performance is comparable to Dominator and Sycamore. [See the benchmark here](https://github.com/krausest/js-framework-benchmark).
+Spair is both small and fast. Spair's performance is comparable to Leptos, Dominator, and Sycamore. [See the benchmark here](https://github.com/krausest/js-framework-benchmark).
 Spair's app size is smaller than some others frameworks. [See the comparision here](https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc).
 
 ## Features
 
 * Incremtental render
-    * The render method create the DOM tree on the first run, then update it on subsequence runs.
+    * The render method creates the DOM tree on the first run, then updates it on subsequence runs.
 * Queue render for fine-grained render.
     * Must be enabled in Cargo.toml, like: `spair = { version="x.y.z", features = ["queue-render"] }`
     * (It is just a queue render, not using any kind of signals)
@@ -22,7 +22,7 @@ Spair's app size is smaller than some others frameworks. [See the comparision he
     * Current version of queue render may not very efficient because each fine-grained-render need to borrow the component state separately by it own.
 * Component state can be accessed in every part of render code.
     * Spair's components tend to be big, [`Render`] is used for code splitting.
-    * You can access the component state in every [`Render`] without having to pass it around.
+    * You can always access the component state in every [`Render`] without having to pass it around.
     * Component state can also be accessed from queue render, too.
 * (Almost) no macro is required for constructing DOM.
     * But Spair is quite verbose because of this.
@@ -41,6 +41,7 @@ These features are extremely low (or even not) on my todo list.
 
 * `#[derive(spair::Routes)]`
 * Event delegation, under `features = ["event-delegation"]` if it is ever implemented.
+    * But you can always do it manually
 * SSR (under a feature flag, too)
 * RSX macro (under a feature flag, too)
 
