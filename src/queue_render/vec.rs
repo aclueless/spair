@@ -6,6 +6,8 @@ use std::{
 };
 use wasm_bindgen::UnwrapThrowExt;
 
+use super::val::{QrVal, QueueRender};
+
 pub trait ListRender<I: Clone> {
     fn render(&mut self, items: &[I], diffs: Vec<Diff<I>>);
     fn unmounted(&self) -> bool;
@@ -405,6 +407,59 @@ impl<I: 'static + Clone> QrVec<I> {
             content,
             qr_vec: Some(qr_vec),
         }
+    }
+
+    pub fn create_optional_selected_id<T: 'static + Clone>(
+        &self,
+        is_me: impl Fn(&I, &T) -> bool + 'static,
+    ) -> QrVal<Option<T>> {
+        let selected_id: QrVal<Option<T>> = None.into();
+        match selected_id.content().try_borrow_mut() {
+            Ok(mut this) => {
+                let osi = OptionalSelectedId {
+                    last_selected_id: None,
+                    qr_vec: self.clone(),
+                    is_me: Box::new(is_me),
+                };
+                this.add_render(Box::new(osi));
+            }
+            Err(e) => log::error!("{}", e),
+        }
+        selected_id
+    }
+}
+
+type FnIsMe<I, T> = Box<dyn Fn(&I, &T) -> bool>;
+
+struct OptionalSelectedId<I: Clone, T> {
+    last_selected_id: Option<T>,
+    qr_vec: QrVec<I>,
+    is_me: FnIsMe<I, T>,
+}
+
+fn get_index<I: Clone, T>(
+    selected_id: Option<&T>,
+    items: &QrVecMut<I>,
+    is_me: &FnIsMe<I, T>,
+) -> Option<usize> {
+    selected_id
+        .as_ref()
+        .and_then(|id| items.iter().position(|i| (is_me)(i, id)))
+}
+
+impl<I: 'static + Clone, T: Clone> QueueRender<Option<T>> for OptionalSelectedId<I, T> {
+    fn render(&mut self, new_selected_id: &Option<T>) {
+        let mut items = self.qr_vec.get_mut();
+        let old_index = get_index(self.last_selected_id.as_ref(), &items, &self.is_me);
+        let new_index = get_index(new_selected_id.as_ref(), &items, &self.is_me);
+        self.last_selected_id = new_selected_id.clone();
+        items.request_render_at(old_index);
+        items.request_render_at(new_index);
+    }
+
+    fn unmounted(&self) -> bool {
+        // TODO: How to track if the QrVec still need to render?
+        false
     }
 }
 
