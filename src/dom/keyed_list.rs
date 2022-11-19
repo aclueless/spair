@@ -21,6 +21,7 @@ pub enum Key {
     U64(u64),
     I32(i32),
     U32(u32),
+    Uuid(uuid::Uuid),
 }
 
 impl From<&str> for Key {
@@ -50,6 +51,12 @@ impl From<i32> for Key {
 impl From<u32> for Key {
     fn from(value: u32) -> Self {
         Key::U32(value)
+    }
+}
+
+impl From<uuid::Uuid> for Key {
+    fn from(value: uuid::Uuid) -> Self {
+        Key::Uuid(value)
     }
 }
 
@@ -98,6 +105,14 @@ impl PartialEq<Key> for u32 {
     }
 }
 
+impl PartialEq<Key> for uuid::Uuid {
+    fn eq(&self, other: &Key) -> bool {
+        match other {
+            Key::Uuid(value) => value == self,
+            _ => false,
+        }
+    }
+}
 #[derive(Debug)]
 pub struct OldElement {
     pub index: usize,
