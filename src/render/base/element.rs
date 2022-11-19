@@ -8,7 +8,7 @@ use wasm_bindgen::UnwrapThrowExt;
 
 #[cfg(feature = "keyed-list")]
 use crate::{
-    dom::{ElementTag, Key},
+    dom::{ElementTag, ListItemKey},
     render::base::{
         KeyedListContext, KeyedListUpdater, KeyedListUpdaterContext, RememberSettingSelectedOption,
     },
@@ -290,9 +290,10 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     where
         E: ElementTag,
         II: IntoIterator<Item = I>,
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         for<'er> R: Fn(I, ElementUpdater<'er, C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size

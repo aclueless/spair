@@ -2,21 +2,26 @@ use super::{AChildNode, Element};
 use std::collections::HashMap;
 use wasm_bindgen::UnwrapThrowExt;
 
-pub trait Keyed<'k> {
-    type Key: 'k + Into<Key> + PartialEq<Key>;
-    fn key(&self) -> Self::Key;
+pub trait Keyed
+where
+    for<'k> ListItemKey: From<&'k <Self as Keyed>::Key>,
+{
+    type Key: PartialEq<ListItemKey>;
+    fn key(&self) -> &Self::Key;
 }
 
-impl<'k, T: Keyed<'k>> Keyed<'k> for &T {
-    type Key = T::Key;
-    fn key(&self) -> Self::Key {
-        (*self).key()
-    }
-}
+// impl<T: Keyed> Keyed for &T {
+//     type Key = T::Key;
+//     fn key(&self) -> &Self::Key {
+//         (*self).key()
+//     }
+// }
 
 #[derive(PartialEq, Eq, Hash, Clone)]
-pub enum Key {
+pub enum ListItemKey {
     String(String),
+    ISize(isize),
+    USize(usize),
     I64(i64),
     U64(u64),
     I32(i32),
@@ -24,91 +29,136 @@ pub enum Key {
     Uuid(uuid::Uuid),
 }
 
-impl From<&str> for Key {
-    fn from(value: &str) -> Self {
-        Key::String(value.to_string())
+impl From<&String> for ListItemKey {
+    fn from(value: &String) -> Self {
+        ListItemKey::String(value.to_string())
     }
 }
 
-impl From<i64> for Key {
-    fn from(value: i64) -> Self {
-        Key::I64(value)
+impl From<&&'static str> for ListItemKey {
+    fn from(value: &&str) -> Self {
+        ListItemKey::String(value.to_string())
     }
 }
 
-impl From<u64> for Key {
-    fn from(value: u64) -> Self {
-        Key::U64(value)
+impl From<&isize> for ListItemKey {
+    fn from(value: &isize) -> Self {
+        ListItemKey::ISize(*value)
     }
 }
 
-impl From<i32> for Key {
-    fn from(value: i32) -> Self {
-        Key::I32(value)
+impl From<&usize> for ListItemKey {
+    fn from(value: &usize) -> Self {
+        ListItemKey::USize(*value)
     }
 }
 
-impl From<u32> for Key {
-    fn from(value: u32) -> Self {
-        Key::U32(value)
+impl From<&i64> for ListItemKey {
+    fn from(value: &i64) -> Self {
+        ListItemKey::I64(*value)
     }
 }
 
-impl From<uuid::Uuid> for Key {
-    fn from(value: uuid::Uuid) -> Self {
-        Key::Uuid(value)
+impl From<&u64> for ListItemKey {
+    fn from(value: &u64) -> Self {
+        ListItemKey::U64(*value)
     }
 }
 
-impl PartialEq<Key> for &str {
-    fn eq(&self, other: &Key) -> bool {
+impl From<&i32> for ListItemKey {
+    fn from(value: &i32) -> Self {
+        ListItemKey::I32(*value)
+    }
+}
+
+impl From<&u32> for ListItemKey {
+    fn from(value: &u32) -> Self {
+        ListItemKey::U32(*value)
+    }
+}
+
+impl From<&uuid::Uuid> for ListItemKey {
+    fn from(value: &uuid::Uuid) -> Self {
+        ListItemKey::Uuid(*value)
+    }
+}
+
+impl PartialEq<ListItemKey> for String {
+    fn eq(&self, other: &ListItemKey) -> bool {
         match other {
-            Key::String(value) => value == self,
+            ListItemKey::String(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl PartialEq<Key> for i64 {
-    fn eq(&self, other: &Key) -> bool {
+impl PartialEq<ListItemKey> for &str {
+    fn eq(&self, other: &ListItemKey) -> bool {
         match other {
-            Key::I64(value) => value == self,
+            ListItemKey::String(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl PartialEq<Key> for u64 {
-    fn eq(&self, other: &Key) -> bool {
+impl PartialEq<ListItemKey> for isize {
+    fn eq(&self, other: &ListItemKey) -> bool {
         match other {
-            Key::U64(value) => value == self,
+            ListItemKey::ISize(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl PartialEq<Key> for i32 {
-    fn eq(&self, other: &Key) -> bool {
+impl PartialEq<ListItemKey> for usize {
+    fn eq(&self, other: &ListItemKey) -> bool {
         match other {
-            Key::I32(value) => value == self,
+            ListItemKey::USize(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl PartialEq<Key> for u32 {
-    fn eq(&self, other: &Key) -> bool {
+impl PartialEq<ListItemKey> for i64 {
+    fn eq(&self, other: &ListItemKey) -> bool {
         match other {
-            Key::U32(value) => value == self,
+            ListItemKey::I64(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl PartialEq<Key> for uuid::Uuid {
-    fn eq(&self, other: &Key) -> bool {
+impl PartialEq<ListItemKey> for u64 {
+    fn eq(&self, other: &ListItemKey) -> bool {
         match other {
-            Key::Uuid(value) => value == self,
+            ListItemKey::U64(value) => value == self,
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<ListItemKey> for i32 {
+    fn eq(&self, other: &ListItemKey) -> bool {
+        match other {
+            ListItemKey::I32(value) => value == self,
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<ListItemKey> for u32 {
+    fn eq(&self, other: &ListItemKey) -> bool {
+        match other {
+            ListItemKey::U32(value) => value == self,
+            _ => false,
+        }
+    }
+}
+
+impl PartialEq<ListItemKey> for uuid::Uuid {
+    fn eq(&self, other: &ListItemKey) -> bool {
+        match other {
+            ListItemKey::Uuid(value) => value == self,
             _ => false,
         }
     }
@@ -120,12 +170,12 @@ pub struct OldElement {
 }
 
 pub struct KeyedElement {
-    pub key: Key,
+    pub key: ListItemKey,
     pub element: Element,
 }
 
 impl KeyedElement {
-    pub fn new(key: Key, element: Element) -> Self {
+    pub fn new(key: ListItemKey, element: Element) -> Self {
         Self { key, element }
     }
 }
@@ -141,7 +191,7 @@ pub struct KeyedList {
     // The primary reason for the double buffer here is for easy implementation.
     buffer: Vec<Option<KeyedElement>>,
     template: Option<ListItemTemplate>,
-    old_elements_map: HashMap<Key, OldElement>,
+    old_elements_map: HashMap<ListItemKey, OldElement>,
 }
 
 impl Clone for KeyedList {
@@ -197,7 +247,7 @@ impl KeyedList {
         Option<&mut ListItemTemplate>,
         &mut Vec<Option<KeyedElement>>,
         &mut Vec<Option<KeyedElement>>,
-        &mut HashMap<Key, OldElement>,
+        &mut HashMap<ListItemKey, OldElement>,
     ) {
         (
             self.template.as_mut(),

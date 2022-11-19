@@ -1,6 +1,6 @@
 use crate::{
     component::Component,
-    dom::{Key, Keyed},
+    dom::{Keyed, ListItemKey},
     render::{
         base::{ElementUpdater, ElementUpdaterMut, MakeNodesExtensions, NodesExtensions},
         html::{
@@ -23,9 +23,10 @@ pub trait HemsForKeyedList<'a, C: Component>:
     ) -> NodesExtensions<'a>
     where
         II: IntoIterator<Item = I>,
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, HtmlElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         let fn_render = |item: I, element: ElementUpdater<C>| {
             fn_render(item, element.into());
@@ -45,9 +46,10 @@ pub trait HemsForKeyedList<'a, C: Component>:
     ) -> NodesExtensions<'a>
     where
         II: IntoIterator<Item = I>,
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, HtmlElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         self.keyed_list_with_render(
             items,
@@ -60,16 +62,18 @@ pub trait HemsForKeyedList<'a, C: Component>:
 
     fn keyed_list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
     where
-        for<'k> I: Keyed<'k> + super::ElementRender<C>,
+        I: Keyed + super::ElementRender<C>,
         II: IntoIterator<Item = I>,
+        ListItemKey: for<'k> From<&'k <I as Keyed>::Key>,
     {
         self.keyed_list_with_render(items, mode, I::ELEMENT_TAG, I::key, I::render)
     }
 
     fn keyed_list_clone<I, II>(self, items: II) -> NodesExtensions<'a>
     where
-        for<'k> I: Keyed<'k> + super::ElementRender<C>,
+        I: Keyed + super::ElementRender<C>,
         II: IntoIterator<Item = I>,
+        ListItemKey: for<'k> From<&'k <I as Keyed>::Key>,
     {
         self.keyed_list_with_render(
             items,

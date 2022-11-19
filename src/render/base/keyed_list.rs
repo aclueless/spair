@@ -4,7 +4,7 @@ use super::ElementUpdater;
 use crate::{
     component::{Comp, Component},
     dom::{
-        AChildNode, Element, ElementStatus, ElementTag, Key, KeyedElement, KeyedList,
+        AChildNode, Element, ElementStatus, ElementTag, KeyedElement, KeyedList, ListItemKey,
         ListItemTemplate, OldElement,
     },
 };
@@ -16,7 +16,7 @@ pub struct KeyedListContext<'a, E> {
         std::iter::Enumerate<std::slice::IterMut<'a, Option<KeyedElement>>>,
     >,
     new: PeekableDoubleEndedIterator<std::slice::IterMut<'a, Option<KeyedElement>>>,
-    old_elements_map: &'a mut std::collections::HashMap<Key, OldElement>,
+    old_elements_map: &'a mut std::collections::HashMap<ListItemKey, OldElement>,
     new_item_count: usize,
     next_sibling: Option<web_sys::Element>,
     template: Option<&'a mut ListItemTemplate>,
@@ -77,9 +77,9 @@ where
             fn_render,
         }
     }
-    fn get_key<I, K>(&self, item_state: &I) -> K
+    fn get_key<'k, I, K>(&self, item_state: &'k I) -> &'k K
     where
-        G: Fn(&I) -> K,
+        G: Fn(&I) -> &K,
     {
         (self.fn_get_key)(item_state)
     }
@@ -146,9 +146,10 @@ where
         items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
     ) -> super::RememberSettingSelectedOption
     where
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, ElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         // No items? Just clear the current list.
         if self.list_context.new_item_count == 0 {
@@ -193,9 +194,10 @@ where
         items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, ElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         let mut count = 0;
         loop {
@@ -229,9 +231,10 @@ where
         >,
     ) -> usize
     where
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, ElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         let mut count = 0;
         loop {
@@ -268,9 +271,10 @@ where
         items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, ElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         match (items_state_iter.peek(), self.list_context.old.peek_back()) {
             (Some(item_state), Some(item)) => {
@@ -312,9 +316,10 @@ where
         >,
     ) -> usize
     where
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, ElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
             (Some(item_state), Some(item)) => {
@@ -348,9 +353,10 @@ where
         &mut self,
         items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, ElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         if items_state_iter.peek().is_none() {
             self.remove_remain_items();
@@ -462,9 +468,10 @@ where
         &mut self,
         items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, ElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         for item_state in items_state_iter {
             let ke = self.render_an_item(item_state);
@@ -474,9 +481,10 @@ where
 
     fn render_an_item<I, K>(&mut self, item_state: I) -> KeyedElement
     where
-        G: Fn(&I) -> K,
-        K: Into<Key> + PartialEq<Key>,
+        G: Fn(&I) -> &K,
+        K: PartialEq<ListItemKey>,
         R: Fn(I, ElementUpdater<C>),
+        ListItemKey: for<'k> From<&'k K>,
     {
         let (mut element, status) = self.create_element_for_new_item();
 
@@ -684,11 +692,11 @@ mod keyed_list_with_render_tests {
     use wasm_bindgen::UnwrapThrowExt;
     use wasm_bindgen_test::*;
 
-    use crate::dom::{Element, Node};
+    use crate::dom::{Element, Keyed, Node};
     use crate::render::ListElementCreation;
     use crate::render::{
         base::ElementUpdater,
-        html::{HemsForKeyedList, HtmlElementUpdater, HtmlTag},
+        html::{ElementRender, HemsForKeyedList, HtmlElementUpdater, HtmlTag},
     };
 
     impl super::ItemWithLis<&()> {
@@ -782,6 +790,21 @@ mod keyed_list_with_render_tests {
         comp: crate::component::Comp<Unit>,
     }
 
+    impl Keyed for &&'static str {
+        type Key = &'static str;
+        fn key(&self) -> &Self::Key {
+            self
+        }
+    }
+
+    impl ElementRender<Unit> for &&str {
+        const ELEMENT_TAG: &'static str = "span";
+        fn render(self, item: crate::Element<Unit>) {
+            use crate::render::html::MethodsForHtmlElementContent;
+            item.rupdate(*self);
+        }
+    }
+
     impl PhantomApp {
         fn new() -> Self {
             let root = crate::dom::Element::new_ns(HtmlTag("div"));
@@ -831,15 +854,6 @@ mod keyed_list_with_render_tests {
         }
     }
 
-    fn render(item: &&str, span: crate::Element<Unit>) {
-        use crate::render::html::MethodsForHtmlElementContent;
-        span.rupdate(*item);
-    }
-
-    fn get_key<'k>(item: &'k &&'static str) -> &'static str {
-        *item
-    }
-
     #[wasm_bindgen_test]
     fn keyed_list_with_template() {
         keyed_list(ListElementCreation::Clone);
@@ -854,111 +868,83 @@ mod keyed_list_with_render_tests {
         let mut pa = PhantomApp::new();
 
         let empty: Vec<&'static str> = Vec::new();
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&empty, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&empty, mode);
         assert_eq!(Some(""), pa.collect_text_from_root().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
 
         // Random shuffle + addition
         let data = vec!["f", "b", "d", "l", "g", "i", "m", "j", "a", "h", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(Some("fbdlgimjahk"), pa.collect_text_from_root().as_deref());
         assert_eq!(data, pa.collect_from_keyed_list());
 
         // Empty the list
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&empty, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&empty, mode);
         assert_eq!(Some(""), pa.collect_text_from_root().as_deref());
         assert_eq!(empty, pa.collect_from_keyed_list());
 
         // Add back
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
 
         // Forward
         let data = vec!["a", "i", "b", "c", "d", "e", "f", "g", "h", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("aibcdefghjk"), pa.collect_text_from_root().as_deref());
 
         // Backward
         let data = vec!["a", "i", "c", "d", "e", "f", "g", "h", "b", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("aicdefghbjk"), pa.collect_text_from_root().as_deref());
 
         // Swap
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
 
         // Remove middle
         let data = vec!["a", "b", "c", "d", "i", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdijk"), pa.collect_text_from_root().as_deref());
 
         // Insert middle
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
 
         // Remove start
         let data = vec!["d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("defghijk"), pa.collect_text_from_root().as_deref());
 
         // Insert start
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
 
         // Remove end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefgh"), pa.collect_text_from_root().as_deref());
 
         // Append end
         let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa
-            .create_updater()
-            .keyed_list_with_render(&data, mode, "span", get_key, render);
+        let _ = pa.create_updater().keyed_list(&data, mode);
         assert_eq!(data, pa.collect_from_keyed_list());
         assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
     }

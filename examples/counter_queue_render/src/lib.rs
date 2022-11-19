@@ -7,11 +7,11 @@ struct State {
 
 impl State {
     fn increment(&mut self) {
-        self.value.set_with(|v| *v + 1);
+        self.value.set_with(|v| v + 1);
     }
 
     fn decrement(&mut self) {
-        self.value.set_with(|v| *v - 1);
+        self.value.set_with(|v| v - 1);
     }
 }
 

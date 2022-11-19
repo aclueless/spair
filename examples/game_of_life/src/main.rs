@@ -171,10 +171,10 @@ fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
 }
 
 struct Row<'a>(usize, &'a [Cellule]);
-impl<'k, 'a> spair::Keyed<'k> for Row<'a> {
-    type Key = u32;
-    fn key(&self) -> u32 {
-        self.0 as u32
+impl<'a> spair::Keyed for Row<'a> {
+    type Key = usize;
+    fn key(&self) -> &usize {
+        &self.0
     }
 }
 
@@ -186,7 +186,7 @@ impl<'a> spair::ElementRender<App> for Row<'a> {
         element.class("game-row").keyed_lwr_clone(
             self.1.iter().enumerate(),
             "div",
-            |&(index, _)| index as u32,
+            |(index, _)| index,
             |(index, cellule), div| {
                 let index = offset + index;
                 div.class("game-cellule")
