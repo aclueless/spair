@@ -1,5 +1,6 @@
 use super::{AChildNode, Element};
 use std::collections::HashMap;
+use uuid::Uuid;
 use wasm_bindgen::UnwrapThrowExt;
 
 pub trait Keyed
@@ -10,12 +11,15 @@ where
     fn key(&self) -> &Self::Key;
 }
 
-// impl<T: Keyed> Keyed for &T {
-//     type Key = T::Key;
-//     fn key(&self) -> &Self::Key {
-//         (*self).key()
-//     }
-// }
+impl<T: Keyed> Keyed for &T
+where
+    ListItemKey: for<'k> From<&'k <T as Keyed>::Key>,
+{
+    type Key = T::Key;
+    fn key(&self) -> &Self::Key {
+        (*self).key()
+    }
+}
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub enum ListItemKey {
@@ -26,7 +30,7 @@ pub enum ListItemKey {
     U64(u64),
     I32(i32),
     U32(u32),
-    Uuid(uuid::Uuid),
+    Uuid(Uuid),
 }
 
 impl From<&String> for ListItemKey {
@@ -35,51 +39,9 @@ impl From<&String> for ListItemKey {
     }
 }
 
-impl From<&&'static str> for ListItemKey {
+impl From<&&str> for ListItemKey {
     fn from(value: &&str) -> Self {
         ListItemKey::String(value.to_string())
-    }
-}
-
-impl From<&isize> for ListItemKey {
-    fn from(value: &isize) -> Self {
-        ListItemKey::ISize(*value)
-    }
-}
-
-impl From<&usize> for ListItemKey {
-    fn from(value: &usize) -> Self {
-        ListItemKey::USize(*value)
-    }
-}
-
-impl From<&i64> for ListItemKey {
-    fn from(value: &i64) -> Self {
-        ListItemKey::I64(*value)
-    }
-}
-
-impl From<&u64> for ListItemKey {
-    fn from(value: &u64) -> Self {
-        ListItemKey::U64(*value)
-    }
-}
-
-impl From<&i32> for ListItemKey {
-    fn from(value: &i32) -> Self {
-        ListItemKey::I32(*value)
-    }
-}
-
-impl From<&u32> for ListItemKey {
-    fn from(value: &u32) -> Self {
-        ListItemKey::U32(*value)
-    }
-}
-
-impl From<&uuid::Uuid> for ListItemKey {
-    fn from(value: &uuid::Uuid) -> Self {
-        ListItemKey::Uuid(*value)
     }
 }
 
@@ -101,68 +63,36 @@ impl PartialEq<ListItemKey> for &str {
     }
 }
 
-impl PartialEq<ListItemKey> for isize {
-    fn eq(&self, other: &ListItemKey) -> bool {
-        match other {
-            ListItemKey::ISize(value) => value == self,
-            _ => false,
-        }
-    }
+macro_rules! impl_from_and_partial_eq_for_key_type {
+    ($($key_type:ident $KeyVariant:ident)+) => {
+        $(
+            impl From<&$key_type> for ListItemKey {
+                fn from(value: &$key_type) -> Self {
+                    ListItemKey::$KeyVariant(*value)
+                }
+            }
+            impl PartialEq<ListItemKey> for $key_type {
+                fn eq(&self, other: &ListItemKey) -> bool {
+                    match other {
+                        ListItemKey::$KeyVariant(value) => value == self,
+                        _ => false,
+                    }
+                }
+            }
+        )+
+    };
 }
 
-impl PartialEq<ListItemKey> for usize {
-    fn eq(&self, other: &ListItemKey) -> bool {
-        match other {
-            ListItemKey::USize(value) => value == self,
-            _ => false,
-        }
-    }
+impl_from_and_partial_eq_for_key_type! {
+    isize ISize
+    usize USize
+    i64 I64
+    u64 U64
+    i32 I32
+    u32 U32
+    Uuid Uuid
 }
 
-impl PartialEq<ListItemKey> for i64 {
-    fn eq(&self, other: &ListItemKey) -> bool {
-        match other {
-            ListItemKey::I64(value) => value == self,
-            _ => false,
-        }
-    }
-}
-
-impl PartialEq<ListItemKey> for u64 {
-    fn eq(&self, other: &ListItemKey) -> bool {
-        match other {
-            ListItemKey::U64(value) => value == self,
-            _ => false,
-        }
-    }
-}
-
-impl PartialEq<ListItemKey> for i32 {
-    fn eq(&self, other: &ListItemKey) -> bool {
-        match other {
-            ListItemKey::I32(value) => value == self,
-            _ => false,
-        }
-    }
-}
-
-impl PartialEq<ListItemKey> for u32 {
-    fn eq(&self, other: &ListItemKey) -> bool {
-        match other {
-            ListItemKey::U32(value) => value == self,
-            _ => false,
-        }
-    }
-}
-
-impl PartialEq<ListItemKey> for uuid::Uuid {
-    fn eq(&self, other: &ListItemKey) -> bool {
-        match other {
-            ListItemKey::Uuid(value) => value == self,
-            _ => false,
-        }
-    }
-}
 #[derive(Debug)]
 pub struct OldElement {
     pub index: usize,

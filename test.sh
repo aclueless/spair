@@ -10,8 +10,8 @@ cargo clippy --all -- -D warnings
 # wasm-pack test --headless --chrome -- --all-features
 wasm-pack test --headless --firefox -- --all-features
 
-# for x in ./examples/*; do
-#     if [ -f $x/Cargo.toml ]; then
-#         cargo build $TARGET --manifest-path=$x/Cargo.toml
-#     fi
-# done
+for x in ./examples/*; do
+    if [ -f $x/Cargo.toml ]; then
+        cargo build $TARGET --manifest-path=$x/Cargo.toml
+    fi
+done

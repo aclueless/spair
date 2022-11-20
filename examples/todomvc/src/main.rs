@@ -239,7 +239,7 @@ impl spair::Render<App> for Main {
                 })
                 .update_nodes()
                 .ul(|u| {
-                    u.static_attributes().class("todo-list").list_clone(
+                    u.static_attributes().class("todo-list").keyed_list_clone(
                         state
                             .data
                             .items
@@ -342,6 +342,13 @@ impl spair::Render<App> for Info {
                     });
                 });
         });
+    }
+}
+
+impl spair::Keyed for TodoItem {
+    type Key = u32;
+    fn key(&self) -> &Self::Key {
+        &self.id
     }
 }
 
