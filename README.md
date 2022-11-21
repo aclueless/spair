@@ -14,6 +14,7 @@ This project is in its *early stage*, things are still missing.
 * No support for SSR.
 * No event delegation (*)
 * No RSX (*).
+   * Spair is verbose.
 * No community
 
 (*) You can see these as PROS. If these features will ever get implemented, they will be put behind feature-flags.
@@ -22,7 +23,7 @@ This project is in its *early stage*, things are still missing.
 
 * Both [small] and [fast].
 * Both vDOM-like and reactive-like, in the same framework.
-    * Incremtental render (vDOM-like), but Spair doesn't re-create a new vDOM every run.
+    * Incremtental render (vDOM-like, but Spair doesn't re-create a new vDOM in every run.)
     * Queue render (reactive-like, but not using any kind of signals), just queue relevant pieces of code to render change on data change. (The current version of queue render may not very efficient because each fine-grained-render need to borrow the component state separately by it own.)
 * Component state is automatically available in every piece of the render code.
 * (Almost) no macro is required for constructing DOM.
