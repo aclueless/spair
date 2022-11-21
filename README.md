@@ -4,7 +4,7 @@
 [![docs.rs](https://img.shields.io/docsrs/spair)](https://docs.rs/spair)
 ![Build](https://github.com/aclueless/spair/workflows/Rust/badge.svg)
 
-An [small] and [fast] frontend framework for **S**ingle **P**age **A**pplication **i**n **R**ust.
+A [small] and [fast] frontend framework for **S**ingle **P**age **A**pplication **i**n **R**ust.
 
 This project is in its *early stage*, things are still missing.
 
