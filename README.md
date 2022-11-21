@@ -263,5 +263,5 @@ times because it is renderd, but never update its value.
 [`ElementRender`]: https://docs.rs/spair/latest/spair/trait.ElementRender.html
 [`.match_if()`]: https://docs.rs/spair/latest/spair/render/html/nodes/trait.HemsHandMade.html#method.match_if
 
-[small]: (https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc)
-[fast]: (https://github.com/krausest/js-framework-benchmark)
+[small]: https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc
+[fast]: https://github.com/krausest/js-framework-benchmark
