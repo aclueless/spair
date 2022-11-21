@@ -32,7 +32,7 @@ This project is in its *early stage*, things are still missing.
 * async command
 * svg
 * Missing things here and there...
-    * Errr, this is not a _why not_, obviously. I just put this here to remind potential users not to surprise about missing things :D.
+    * Errr, this is definitely a _why not_, obviously. I just put this here to remind potential users not to surprise about missing things :D.
     * For example, Spair currently just implements a handful number of events. 
 
 ## Cargo features
