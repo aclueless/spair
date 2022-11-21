@@ -4,46 +4,35 @@
 [![docs.rs](https://img.shields.io/docsrs/spair)](https://docs.rs/spair)
 ![Build](https://github.com/aclueless/spair/workflows/Rust/badge.svg)
 
-An incremental and fine-grained render frontend framework for **S**ingle **P**age **A**pplication **i**n **R**ust.
+An [small] and [fast] frontend framework for **S**ingle **P**age **A**pplication **i**n **R**ust.
 
-This project is in its *early stage*, things are still missing and *frequent breaking changes are expected*.
+This project is in its *early stage*, things are still missing.
 
-Spair is both small and fast. Spair's performance is comparable to Leptos, Dominator, and Sycamore. [See the benchmark here](https://github.com/krausest/js-framework-benchmark).
-Spair's app size is smaller than some others frameworks. [See the comparision here](https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc).
+## Why not using Spair?
 
-## Features
+* Routing is just at the minimum level. You have to implement it manually.
+* No support for SSR.
+* No event delegation (*)
+* No RSX (*).
+* No community
 
-* Incremtental render
-    * The render method creates the DOM tree on the first run, then updates it on subsequence runs.
-* Queue render for fine-grained render.
-    * Must be enabled in Cargo.toml, like: `spair = { version="x.y.z", features = ["queue-render"] }`
-    * (It is just a queue render, not using any kind of signals)
-    * You have to wrap your values in `spair::QrVal` or `spair::QrVec`
-    * Current version of queue render may not very efficient because each fine-grained-render need to borrow the component state separately by it own.
-* Component state can be accessed in every part of render code.
-    * Spair's components tend to be big, [`Render`] is used for code splitting.
-    * You can always access the component state in every [`Render`] without having to pass it around.
-    * Component state can also be accessed from queue render, too.
+(*) You can see these as PROS. If these features will ever get implemented, they will be put behind feature-flags.
+
+## Why using Spair?
+
+* Both [small] and [fast].
+* Both vDOM-like and reactive-like, in the same framework.
+    * Incremtental render (vDOM-like), but Spair doesn't re-create a new vDOM every run.
+    * Queue render (reactive-like, but not using any kind of signals), just queue relevant pieces of code to render change on data change. (The current version of queue render may not very efficient because each fine-grained-render need to borrow the component state separately by it own.)
+* Component state is automatically available in every piece of the render code.
 * (Almost) no macro is required for constructing DOM.
     * But Spair is quite verbose because of this.
-    * (But a macro can be built on top of Spair).
-    * `spair::set_arm!()` is the only macro you have to use, it saves your days, (without it, `match_if` is a nightmare to maintainers) 
-* Routing
-    * Just basic support, currently, you have to implement the routing logic by yourself.
+* Routing (but just basic support).
 * async command
 * svg
 * Missing things here and there...
-    * Errr, this is not a feature, obviously. I just put this here to remind potential users not to surprise about missing things :D.
+    * Errr, this is not a _why not_, obviously. I just put this here to remind potential users not to surprise about missing things :D.
     * For example, Spair currently just implements a handful number of events. 
-
-### Not support (yet), do you want to contribute?
-These features are extremely low (or even not) on my todo list.
-
-* `#[derive(spair::Routes)]`
-* Event delegation, under `features = ["event-delegation"]` if it is ever implemented.
-    * But you can always do it manually
-* SSR (under a feature flag, too)
-* RSX macro (under a feature flag, too)
 
 ## Cargo features
 You can enabled a feature in your Cargo.toml like this:
@@ -77,6 +66,8 @@ Open your browser at http://localhost:8080
 ## Documentation
 
 Not yet. `/examples/*` is the best place to start now.
+
+[WIP docs](./docs/0-1introduction.md)
 
 Sections below provide first looks into Spair.
 
@@ -272,4 +263,5 @@ times because it is renderd, but never update its value.
 [`ElementRender`]: https://docs.rs/spair/latest/spair/trait.ElementRender.html
 [`.match_if()`]: https://docs.rs/spair/latest/spair/render/html/nodes/trait.HemsHandMade.html#method.match_if
 
-
+[small]: (https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc)
+[fast]: (https://github.com/krausest/js-framework-benchmark)
