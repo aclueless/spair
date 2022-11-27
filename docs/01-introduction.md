@@ -4,7 +4,7 @@ Spair is a Rust frontend framework. Compare to other frameworks in Rust, Spair i
 
 Spair is possibly the weirdest framework in Rust frontend ecosystem. Spair is neither vDOM, nor reactive. But Spair provides features similar to **both** pure-vDOM (without using hooks) and reactive frameworks. The two modes are called *incremental-render* (pure-Spair, or simply Spair for short if not causing confusion) and *queue-render* (Spair-qr). Both modes can be used in the same component.
 
-There are more weirdnesses wait for you if you dive into Spair. But I think it's worth it because Spair is able to reach high performance without having to deal with things like hooks, or signals. If pure-Spair performance is not enough, Spair-qr can help a bit more in performance.
+There are more weirdnesses wait for you if you dive into Spair. But I think it's worth it because pure-Spair is able to reach high performance without having to deal with things like hooks, or signals. If pure-Spair performance is not enough, Spair-qr can help a bit more in performance.
 
 In performance, pure-Spair is significant faster than Yew, React and comparable to [Dominator] and [Sycamore]. Spair-qr is comparable to Leptos and Solid-store. In size, Spair produces smaller `.wasm` file than all of Rust frameworks mentioned above (Yew, Dominator, Sycamore and Leptos).
 
