@@ -32,7 +32,7 @@ impl Simulation {
         let interval = {
             let cb = comp.callback_mut(Self::tick);
             Interval::new(settings.tick_interval_ms as u32, move || {
-                cb.emit();
+                cb.call_or_queue();
             })
         };
 
@@ -75,7 +75,7 @@ impl Simulation {
             self.interval = {
                 let cb = self.comp.callback_mut(Self::tick);
                 Interval::new(settings.tick_interval_ms as u32, move || {
-                    cb.emit();
+                    cb.call_or_queue();
                 })
             };
             spair::ShouldRender::Yes

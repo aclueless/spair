@@ -64,7 +64,7 @@ pub struct Slider {
 
 impl Slider {
     fn value_changed(&self, value: f64) {
-        self.props.callback.emit(value);
+        self.props.callback.call_or_queue(value);
     }
 
     pub fn update_value(&mut self, value: f64) {

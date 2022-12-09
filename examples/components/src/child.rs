@@ -32,7 +32,7 @@ impl ChildState {
 
     fn update_parent_component(&self) {
         if self.value % 5 == 0 {
-            self.props.callback_arg.emit(self.value);
+            self.props.callback_arg.call_or_queue(self.value);
         }
     }
 }

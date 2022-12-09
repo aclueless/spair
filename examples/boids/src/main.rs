@@ -27,7 +27,7 @@ impl App {
         self.simulation
             .comp()
             .callback_arg_mut(Simulation::update_params)
-            .emit((self.settings.clone(), self.generation, self.paused));
+            .call_or_queue((self.settings.clone(), self.generation, self.paused));
     }
 
     fn restart_simulation(&mut self) {

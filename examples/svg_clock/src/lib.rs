@@ -11,7 +11,7 @@ impl Clock {
     fn start_clock(&mut self) {
         let cb = self.comp.callback_mut(Self::update_clock);
         self.clock_closure = Some(gloo_timers::callback::Interval::new(1000, move || {
-            cb.emit()
+            cb.call_or_queue()
         }));
     }
 

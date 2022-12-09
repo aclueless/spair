@@ -224,15 +224,15 @@ where
 }
 
 pub trait Callback {
-    /// `.emit` should be prefered. Only use this method if `.emit` fails to work (in
-    /// this case, there may be a bug somewhere).
+    /// `.call_or_queue` should be prefered. Only use this method if `.call_or_queue`
+    /// fails to work (maybe because of a bug somewhere).
     /// This method executes the callback immediately. But it may fail if the related
     /// component is already in progress of updating or rendering (it means that
     /// the component is being borrowed).
     fn call(&self);
 
-    /// `.emit` should be prefered. Only use this method if `.emit` fails to work (in
-    /// this case, there may be a bug somewhere).
+    /// `.call_or_queue` should be prefered. Only use this method if `.call_or_queue`
+    /// fails to work (maybe because of a bug somewhere).
     /// This method puts the callback in update queue. The queue will be executed if
     /// there is a component that is currently being update. But if no component is be
     /// update, the update queue will not be execute until an event occurs.
@@ -241,7 +241,7 @@ pub trait Callback {
     /// Queue the callback if there is no executing on progress. Otherwise, the callback
     /// will be add to update queue. If this fails (maybe because of a bug) to work,
     /// you can try `.call` or `.queue`.
-    fn emit(&self);
+    fn call_or_queue(&self);
 }
 
 impl<C> Callback for CallbackFn<C, ()>
@@ -256,7 +256,7 @@ where
         self.queue(());
     }
 
-    fn emit(&self) {
+    fn call_or_queue(&self) {
         if crate::component::update_queue_will_be_execute() {
             self.queue(());
         } else {
@@ -266,11 +266,15 @@ where
 }
 
 pub trait CallbackArg<A> {
+    /// `.call_or_queue` should be prefered. Only use this method if `.call_or_queue`
+    /// fails to work (maybe because of a bug somewhere).
     /// This method executes the callback immediately. But it may fail if the related
     /// component is already in progress of updating or rendering (it means that
     /// the component is being borrowed).
     fn call(&self, a: A);
 
+    /// `.call_or_queue` should be prefered. Only use this method if `.call_or_queue`
+    /// fails to work (maybe because of a bug somewhere).
     /// This method puts the callback in update queue. The queue will be executed if
     /// there is a component that is currently being update. But if no component is be
     /// update, the update queue will not be execute until an event occurs.
@@ -279,7 +283,7 @@ pub trait CallbackArg<A> {
     /// Queue the callback if there is no executing on progress. Otherwise, the callback
     /// will be add to update queue. If this fails (maybe because of a bug) to work,
     /// you can try `.call` or `.queue`.
-    fn emit(&self, a: A);
+    fn call_or_queue(&self, a: A);
 }
 
 impl<C, A> CallbackArg<A> for CallbackFn<C, A>
@@ -295,7 +299,7 @@ where
         self.queue(a);
     }
 
-    fn emit(&self, a: A) {
+    fn call_or_queue(&self, a: A) {
         if crate::component::update_queue_will_be_execute() {
             self.queue(a);
         } else {
@@ -305,11 +309,15 @@ where
 }
 
 pub trait CallbackOnce {
+    /// `.call_or_queue` should be prefered. Only use this method if `.call_or_queue`
+    /// fails to work (maybe because of a bug somewhere).
     /// This method executes the callback immediately. But it may fail if the related
     /// component is already in progress of updating or rendering (it means that
     /// the component is being borrowed).
     fn call(self);
 
+    /// `.call_or_queue` should be prefered. Only use this method if `.call_or_queue`
+    /// fails to work (maybe because of a bug somewhere).
     /// This method puts the callback in update queue. The queue will be executed if
     /// there is a component that is currently being update. But if no component is be
     /// update, the update queue will not be execute until an event occurs.
@@ -318,15 +326,19 @@ pub trait CallbackOnce {
     /// Queue the callback if there is no executing on progress. Otherwise, the callback
     /// will be add to update queue. If this fails (maybe because of a bug) to work,
     /// you can try `.call` or `.queue`.
-    fn emit(self);
+    fn call_or_queue(self);
 }
 
 pub trait CallbackOnceArg<A> {
+    /// `.call_or_queue` should be prefered. Only use this method if `.call_or_queue`
+    /// fails to work (maybe because of a bug somewhere).
     /// This method executes the callback immediately. But it may fail if the related
     /// component is already in progress of updating or rendering (it means that
     /// the component is being borrowed).
     fn call(self, a: A);
 
+    /// `.call_or_queue` should be prefered. Only use this method if `.call_or_queue`
+    /// fails to work (maybe because of a bug somewhere).
     /// This method puts the callback in update queue. The queue will be executed if
     /// there is a component that is currently being update. But if no component is be
     /// update, the update queue will not be execute until an event occurs.
@@ -335,7 +347,7 @@ pub trait CallbackOnceArg<A> {
     /// Queue the callback if there is no executing on progress. Otherwise, the callback
     /// will be add to update queue. If this fails (maybe because of a bug) to work,
     /// you can try `.call` or `.queue`.
-    fn emit(self, a: A);
+    fn call_or_queue(self, a: A);
 }
 
 impl<C, Cl, F> CallbackOnce for CallbackFnOnce<C, Cl, F>
@@ -352,7 +364,7 @@ where
         self.queue();
     }
 
-    fn emit(self) {
+    fn call_or_queue(self) {
         if crate::component::update_queue_will_be_execute() {
             self.queue();
         } else {
@@ -376,7 +388,7 @@ where
         self.queue(a);
     }
 
-    fn emit(self, a: A) {
+    fn call_or_queue(self, a: A) {
         if crate::component::update_queue_will_be_execute() {
             self.queue(a);
         } else {

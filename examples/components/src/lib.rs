@@ -27,7 +27,7 @@ impl State {
         self.child_comp
             .comp()
             .callback_once_arg_mut(ChildState::set_value)
-            .emit(value);
+            .call_or_queue(value);
     }
 }
 

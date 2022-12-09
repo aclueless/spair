@@ -39,7 +39,9 @@ impl spair::Router for Router {
             "#active" => Filter::Active,
             _ => Filter::All,
         };
-        self.comp.callback_arg_mut(App::set_filter).emit(filter);
+        self.comp
+            .callback_arg_mut(App::set_filter)
+            .call_or_queue(filter);
     }
 }
 
