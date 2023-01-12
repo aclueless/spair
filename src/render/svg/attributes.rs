@@ -13,7 +13,7 @@ make_traits_for_attribute_values! {
     }
 }
 
-pub trait SamsHandMade<C: Component>: Sized + ElementUpdaterMut<C> {
+pub trait SamsHandMade<'er, C: Component>: Sized + ElementUpdaterMut<'er, C> {
     fn class(mut self, class_name: &str) -> Self {
         self.element_updater_mut().class(class_name);
         self
@@ -375,41 +375,41 @@ impl<'er, C: Component> SvgStaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<C> for SvgAttributesOnly<'er, C> {
+impl<'er, C: Component> ElementUpdaterMut<'er, C> for SvgAttributesOnly<'er, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<C> for SvgStaticAttributesOnly<'er, C> {
+impl<'er, C: Component> ElementUpdaterMut<'er, C> for SvgStaticAttributesOnly<'er, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<C> for SvgStaticAttributes<'er, C> {
+impl<'er, C: Component> ElementUpdaterMut<'er, C> for SvgStaticAttributes<'er, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> SamsHandMade<C> for SvgElementUpdater<'er, C> {}
-impl<'er, C: Component> SamsForDistinctNames<C> for SvgElementUpdater<'er, C> {}
+impl<'er, C: Component> SamsHandMade<'er, C> for SvgElementUpdater<'er, C> {}
+impl<'er, C: Component> SamsForDistinctNames<'er, C> for SvgElementUpdater<'er, C> {}
 
-impl<'er, C: Component> SamsForDistinctNames<C> for SvgStaticAttributes<'er, C> {}
-impl<'er, C: Component> SamsHandMade<C> for SvgStaticAttributes<'er, C> {}
+impl<'er, C: Component> SamsForDistinctNames<'er, C> for SvgStaticAttributes<'er, C> {}
+impl<'er, C: Component> SamsHandMade<'er, C> for SvgStaticAttributes<'er, C> {}
 
-impl<'er, C: Component> SamsForDistinctNames<C> for SvgStaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> SamsHandMade<C> for SvgStaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> SamsForDistinctNames<'er, C> for SvgStaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> SamsHandMade<'er, C> for SvgStaticAttributesOnly<'er, C> {}
 
-impl<'er, C: Component> SamsForDistinctNames<C> for SvgAttributesOnly<'er, C> {}
-impl<'er, C: Component> SamsHandMade<C> for SvgAttributesOnly<'er, C> {}
+impl<'er, C: Component> SamsForDistinctNames<'er, C> for SvgAttributesOnly<'er, C> {}
+impl<'er, C: Component> SamsHandMade<'er, C> for SvgAttributesOnly<'er, C> {}

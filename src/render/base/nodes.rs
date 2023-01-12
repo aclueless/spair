@@ -7,8 +7,8 @@ use crate::{
 };
 use wasm_bindgen::UnwrapThrowExt;
 
-pub trait NodesUpdaterMut<C: Component> {
-    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<C>;
+pub trait NodesUpdaterMut<'n, C: Component> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C>;
 }
 
 pub struct NodesUpdater<'a, C: Component> {

@@ -35,18 +35,18 @@ make_trait_for_same_name_attribute_and_element_methods! {
 impl<'er, C: Component> HemsHamsAmbiguous for HtmlElementUpdater<'er, C> {}
 impl<'er, C: Component> HemsHamsAmbiguous for StaticAttributes<'er, C> {}
 
-impl<'er, C: Component> HamsForAmbiguousNames<C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsForAmbiguousNames<C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForAmbiguousNames<'er, C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForAmbiguousNames<'er, C> for StaticAttributesOnly<'er, C> {}
 
-impl<'n, C: Component> HemsForAmbiguousNames<C> for StaticNodesOwned<'n, C> {
+impl<'n, C: Component> HemsForAmbiguousNames<'n, C> for StaticNodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> HemsForAmbiguousNames<C> for NodesOwned<'n, C> {
+impl<'n, C: Component> HemsForAmbiguousNames<'n, C> for NodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<C> for StaticNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<'n, C> for StaticNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<C> for Nodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> HemsForAmbiguousNames<'n, C> for Nodes<'h, 'n, C> {
     type Output = Self;
 }

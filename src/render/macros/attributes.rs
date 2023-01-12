@@ -12,7 +12,7 @@ macro_rules! make_trait_for_attribute_methods {
             names: $($method_name)+
         }
 
-        pub trait $TraitName<C: Component>: Sized + crate::render::base::ElementUpdaterMut<C>
+        pub trait $TraitName<'er, C: Component>: Sized + crate::render::base::ElementUpdaterMut<'er, C>
         {$(
             make_trait_for_attribute_methods! {
                 @each
@@ -97,7 +97,7 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
                 names: $($attribute_method_name)*
             })+
         );
-        pub trait $TraitName<C: Component>: Sized + crate::render::base::ElementUpdaterMut<C> {
+        pub trait $TraitName<'er, C: Component>: Sized + crate::render::base::ElementUpdaterMut<'er, C> {
             $(
             $(
                 make_trait_for_attributes_with_predefined_values!(
@@ -229,11 +229,11 @@ macro_rules! make_traits_for_attribute_values {
     ) => {
         $(
             pub trait $AttributeTrait<C: Component> {
-                fn render(self, name: &'static str, element: impl crate::render::base::ElementUpdaterMut<C>);
+                fn render<'a>(self, name: &'static str, element: impl crate::render::base::ElementUpdaterMut<'a, C>);
             }
             $(
                 impl<C: Component> $AttributeTrait<C> for $attribute_type {
-                    fn render(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<C>) {
+                    fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
                         element.element_updater_mut().$method_name(name, self);
                     }
                 }
@@ -258,19 +258,19 @@ macro_rules! make_traits_for_attribute_values {
     ) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $AttributeTrait<C> for &crate::queue_render::val::QrVal<$attribute_type> {
-            fn render(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<C>) {
+            fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
                 element.element_updater_mut().$queue_render_method_name(name, self);
             }
         }
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $AttributeTrait<C> for crate::queue_render::val::QrValMap<T, $attribute_type> {
-            fn render(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<C>) {
+            fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
                 element.element_updater_mut().$qrm_method_name(name, self);
             }
         }
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $AttributeTrait<C> for crate::queue_render::val::QrValMapWithState<C, T, $attribute_type> {
-            fn render(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<C>) {
+            fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
                 element.element_updater_mut().$qrmws_method_name(name, self);
             }
         }

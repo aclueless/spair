@@ -23,14 +23,14 @@ pub struct HtmlNodesUpdater<'n, C: Component> {
     _select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-impl<'n, C: Component> NodesUpdaterMut<C> for HtmlNodesUpdater<'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'n, C: Component> NodesUpdaterMut<'n, C> for HtmlNodesUpdater<'n, C> {
+    fn nodes_updater_mut<'a>(self: &'a mut HtmlNodesUpdater<'n, C>) -> &'a mut NodesUpdater<'n, C> {
         &mut self.nodes_updater
     }
 }
 
-pub trait HemsHandMade<C: Component>: Sized {
-    type Output: From<Self> + NodesUpdaterMut<C>;
+pub trait HemsHandMade<'n, C: Component>: Sized {
+    type Output: From<Self> + NodesUpdaterMut<'n, C>;
 
     fn line_break(self) -> Self::Output {
         let mut this: Self::Output = self.into();
@@ -118,10 +118,10 @@ pub trait HemsHandMade<C: Component>: Sized {
     }
 }
 
-pub trait UpdateHtmlElement<C, O>: Sized
+pub trait UpdateHtmlElement<'n, C, O>: Sized
 where
     C: Component,
-    O: From<Self> + NodesUpdaterMut<C>,
+    O: From<Self> + NodesUpdaterMut<'n, C>,
 {
     fn render_element(
         self,
@@ -231,26 +231,26 @@ impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
     }
 }
 
-impl<'n, C: Component> NodesUpdaterMut<C> for NodesOwned<'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'n, C: Component> NodesUpdaterMut<'n, C> for NodesOwned<'n, C> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C> {
         &mut self.0.nodes_updater
     }
 }
 
-impl<'n, C: Component> NodesUpdaterMut<C> for StaticNodesOwned<'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'n, C: Component> NodesUpdaterMut<'n, C> for StaticNodesOwned<'n, C> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C> {
         &mut self.0.nodes_updater
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for Nodes<'h, 'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<'n, C> for Nodes<'h, 'n, C> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C> {
         &mut self.0.nodes_updater
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for StaticNodes<'h, 'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<'n, C> for StaticNodes<'h, 'n, C> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C> {
         &mut self.0.nodes_updater
     }
 }
@@ -338,7 +338,7 @@ impl<'n, C: Component> From<StaticAttributes<'n, C>> for StaticNodesOwned<'n, C>
 }
 
 pub trait MethodsForHtmlElementContent<'n, C: Component>:
-    ElementUpdaterMut<C> + Into<NodesOwned<'n, C>> + Into<StaticNodesOwned<'n, C>>
+    ElementUpdaterMut<'n, C> + Into<NodesOwned<'n, C>> + Into<StaticNodesOwned<'n, C>>
 {
     fn update_nodes(self) -> NodesOwned<'n, C> {
         self.into()
@@ -508,53 +508,59 @@ impl<'n, C: Component> StaticNodesOwned<'n, C> {
     }
 }
 
-impl<'h, 'n: 'h, C: Component> UpdateHtmlElement<C, Nodes<'h, 'n, C>> for Nodes<'h, 'n, C> {}
-impl<'h, 'n: 'h, C: Component> UpdateHtmlElement<C, StaticNodes<'h, 'n, C>>
+impl<'h, 'n: 'h, C: Component> UpdateHtmlElement<'n, C, Nodes<'h, 'n, C>> for Nodes<'h, 'n, C> {}
+impl<'h, 'n: 'h, C: Component> UpdateHtmlElement<'n, C, StaticNodes<'h, 'n, C>>
     for StaticNodes<'h, 'n, C>
 {
 }
-impl<'n, C: Component> UpdateHtmlElement<C, NodesOwned<'n, C>> for NodesOwned<'n, C> {}
-impl<'n, C: Component> UpdateHtmlElement<C, StaticNodesOwned<'n, C>> for StaticNodesOwned<'n, C> {}
-
-impl<'h, 'n: 'h, C: Component> HemsHandMade<C> for Nodes<'h, 'n, C> {
-    type Output = Self;
-}
-impl<'h, 'n: 'h, C: Component> HemsHandMade<C> for StaticNodes<'h, 'n, C> {
-    type Output = Self;
-}
-impl<'n, C: Component> HemsHandMade<C> for NodesOwned<'n, C> {
-    type Output = Self;
-}
-impl<'n, C: Component> HemsHandMade<C> for StaticNodesOwned<'n, C> {
-    type Output = Self;
+impl<'n, C: Component> UpdateHtmlElement<'n, C, NodesOwned<'n, C>> for NodesOwned<'n, C> {}
+impl<'n, C: Component> UpdateHtmlElement<'n, C, StaticNodesOwned<'n, C>>
+    for StaticNodesOwned<'n, C>
+{
 }
 
-impl<'h, 'n: 'h, C: Component> HemsForDistinctNames<C> for Nodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> HemsHandMade<'n, C> for Nodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> HemsForDistinctNames<C> for StaticNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> HemsHandMade<'n, C> for StaticNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> HemsForDistinctNames<C> for NodesOwned<'n, C> {
+impl<'n, C: Component> HemsHandMade<'n, C> for NodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> HemsForDistinctNames<C> for StaticNodesOwned<'n, C> {
+impl<'n, C: Component> HemsHandMade<'n, C> for StaticNodesOwned<'n, C> {
     type Output = Self;
 }
 
-impl<'er, C: Component> UpdateHtmlElement<C, NodesOwned<'er, C>> for HtmlElementUpdater<'er, C> {}
-impl<'er, C: Component> HemsHandMade<C> for HtmlElementUpdater<'er, C> {
+impl<'h, 'n: 'h, C: Component> HemsForDistinctNames<'n, C> for Nodes<'h, 'n, C> {
+    type Output = Self;
+}
+impl<'h, 'n: 'h, C: Component> HemsForDistinctNames<'n, C> for StaticNodes<'h, 'n, C> {
+    type Output = Self;
+}
+impl<'n, C: Component> HemsForDistinctNames<'n, C> for NodesOwned<'n, C> {
+    type Output = Self;
+}
+impl<'n, C: Component> HemsForDistinctNames<'n, C> for StaticNodesOwned<'n, C> {
+    type Output = Self;
+}
+
+impl<'er, C: Component> UpdateHtmlElement<'er, C, NodesOwned<'er, C>>
+    for HtmlElementUpdater<'er, C>
+{
+}
+impl<'er, C: Component> HemsHandMade<'er, C> for HtmlElementUpdater<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
-impl<'er, C: Component> HemsForDistinctNames<C> for HtmlElementUpdater<'er, C> {
+impl<'er, C: Component> HemsForDistinctNames<'er, C> for HtmlElementUpdater<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
 
-impl<'er, C: Component> UpdateHtmlElement<C, NodesOwned<'er, C>> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> HemsHandMade<C> for StaticAttributes<'er, C> {
+impl<'er, C: Component> UpdateHtmlElement<'er, C, NodesOwned<'er, C>> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HemsHandMade<'er, C> for StaticAttributes<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
-impl<'er, C: Component> HemsForDistinctNames<C> for StaticAttributes<'er, C> {
+impl<'er, C: Component> HemsForDistinctNames<'er, C> for StaticAttributes<'er, C> {
     type Output = NodesOwned<'er, C>;
 }
 

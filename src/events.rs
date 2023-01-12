@@ -26,7 +26,7 @@ macro_rules! create_events {
             $($EventName:ident => $event_name:literal $event_method_name:ident,)+
         }
     )+) => {
-        pub trait MethodsForEvents<C: crate::component::Component>: Sized + crate::render::base::ElementUpdaterMut<C> {
+        pub trait MethodsForEvents<'er, C: crate::component::Component>: Sized + crate::render::base::ElementUpdaterMut<'er, C> {
             $(
                 create_methods_for_event_trait! {
                     $($event_method_name $EventName,)+

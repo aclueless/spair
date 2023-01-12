@@ -9,7 +9,7 @@ use crate::{
     },
 };
 
-pub trait SemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
+pub trait SemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<'a, C> {
     fn list_with_render<I, II, R>(
         mut self,
         items: II,
@@ -61,5 +61,5 @@ pub trait SemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
 
 impl<'a, C: Component> SemsForPartialList<'a, C> for SvgNodesOwned<'a, C> {}
 impl<'a, C: Component> SemsForPartialList<'a, C> for SvgStaticNodesOwned<'a, C> {}
-impl<'h, 'n: 'h, C: Component> SemsForPartialList<'h, C> for SvgNodes<'h, 'n, C> {}
-impl<'h, 'n: 'h, C: Component> SemsForPartialList<'h, C> for SvgStaticNodes<'h, 'n, C> {}
+impl<'h, 'n: 'h, C: Component> SemsForPartialList<'n, C> for SvgNodes<'h, 'n, C> {}
+impl<'h, 'n: 'h, C: Component> SemsForPartialList<'n, C> for SvgStaticNodes<'h, 'n, C> {}
