@@ -48,6 +48,7 @@ features = [
     "HtmlSelectElement",
     "HtmlOptionElement",
     "HtmlTextAreaElement",
+    "HtmlFormElement",
     "Node",
     "Text",
     "Window",

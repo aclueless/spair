@@ -3,12 +3,36 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 pub trait Listener {}
 
+macro_rules! create_methods_for_event_trait {
+    ($($method_name:ident $EventName:ident,)+) => {
+        $(
+            fn $method_name<F>(mut self, f: F) -> Self
+            where F: $EventName
+            {
+                let er = self.element_updater_mut();
+                if er.require_set_listener() {
+                    let listener = $EventName::on(f, er.element().ws_element().ws_event_target());
+                    er.store_listener(listener);
+                }
+                self
+            }
+        )+
+    }
+}
+
 macro_rules! create_events {
     ($(
         $EventType:ident $EventListener:ident {
-            $($EventName:ident => $event_name:literal,)+
+            $($EventName:ident => $event_name:literal $event_method_name:ident,)+
         }
     )+) => {
+        pub trait MethodsForEvents<C: crate::component::Component>: Sized + crate::render::base::ElementUpdaterMut<C> {
+            $(
+                create_methods_for_event_trait! {
+                    $($event_method_name $EventName,)+
+                }
+            )+
+        }
         $(
             pub struct $EventType(web_sys::$EventType);
             impl $EventType {
@@ -83,45 +107,41 @@ macro_rules! create_events {
 
 create_events! {
     FocusEvent FocusEventListener {
-        Focus => "focus",
-        Blur => "blur",
+        Focus => "focus" on_focus,
+        Blur => "blur" on_blur,
     }
     MouseEvent MouseEventListener {
-        AuxClick => "auxclick",
-        Click => "click",
-        DblClick => "dblclick",
-        DoubleClick => "dblclick",
-        MouseEnter => "mouseenter",
-        MouseOver => "mouseover",
-        MouseMove => "mousemove",
-        MouseDown => "mousedown",
-        MouseUp => "mouseup",
-        MouseLeave => "mouseleave",
-        MouseOut => "mouseout",
-        ContextMenu => "contextmenu",
+        AuxClick => "auxclick" on_aux_click,
+        Click => "click" on_click,
+        DblClick => "dblclick" on_double_click,
+        MouseEnter => "mouseenter" on_mouse_enter,
+        MouseOver => "mouseover" on_mouse_over,
+        MouseMove => "mousemove" on_mouse_move,
+        MouseDown => "mousedown" on_mouse_down,
+        MouseUp => "mouseup" on_mouse_up,
+        MouseLeave => "mouseleave" on_mouse_leave,
+        MouseOut => "mouseout" on_mouse_out,
+        ContextMenu => "contextmenu" on_context_menu,
     }
     WheelEvent WheelEventListener {
-        Wheel => "wheel",
-    }
-    UiEvent UiEventListener {
-        UiSelect => "select",
+        Wheel => "wheel" on_wheel,
     }
     InputEvent InputEventListener {
-        Input => "input",
+        Input => "input" on_input,
     }
     KeyboardEvent KeyboardEventListener {
-        KeyDown => "keydown",
-        KeyPress => "keypress",
-        KeyUp => "keyup",
+        KeyDown => "keydown" on_key_down,
+        KeyPress => "keypress" on_key_press,
+        KeyUp => "keyup" on_key_up,
     }
     Event EventListener {
-        Change => "change",
-        Reset => "reset",
-        Submit => "submit",
-        PointerLockChange => "pointerlockchange",
-        PointerLockError => "pointerlockerror",
+        Change => "change" on_change,
+        Reset => "reset" on_reset,
+        Submit => "submit" on_submit,
+        PointerLockChange => "pointerlockchange" on_pointer_lock_change,
+        PointerLockError => "pointerlockerror" on_pointer_lock_error,
 
-        Ended => "ended",
+        Ended => "ended" on_ended,
     }
 }
 
@@ -133,6 +153,10 @@ impl InputEvent {
 
 impl Event {
     pub fn current_target_as_select_element(&self) -> Option<web_sys::HtmlSelectElement> {
+        self.current_target_as()
+    }
+
+    pub fn current_target_as_form_element(&self) -> Option<web_sys::HtmlFormElement> {
         self.current_target_as()
     }
 }

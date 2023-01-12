@@ -54,7 +54,7 @@ pub mod prelude {
         CallbackOnce as TraitCallbackOne, CallbackOnceArg as TraitCallbackOnceArg,
     };
     pub use crate::component::{AsChildComp, Component};
-    pub use crate::render::base::MethodsForEvents;
+    pub use crate::render::base::{MethodsForEvents, StateHelperMethods};
     pub use crate::render::html::{
         HamsForAmbiguousNames, HamsForDistinctNames, HamsHandMade, HamsWithPredefinedValues,
         HemsForAmbiguousNames, HemsForDistinctNames, HemsForList, HemsForPartialList,

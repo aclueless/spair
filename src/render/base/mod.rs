@@ -5,6 +5,7 @@ mod list;
 mod nodes;
 mod nodes_extensions;
 
+pub use crate::events::MethodsForEvents;
 pub use attributes::*;
 pub use element::*;
 pub use events::*;
