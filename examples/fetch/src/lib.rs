@@ -31,6 +31,7 @@ pub struct Signature {
 }
 
 struct State {
+    comp: spair::Comp<Self>,
     branch: Option<Branch>,
     message: String,
 }
@@ -46,12 +47,16 @@ impl State {
         self.message = "Wait for your click".to_string();
     }
 
-    fn start_fetching(&mut self) -> spair::Command<Self> {
+    fn start_fetching(&mut self) {
         self.message = "Clicked! Please wait for a moment".to_string();
-        spair::Future::new(fetch_repo_metadata()).with_fn(|state: &mut Self, result| match result {
-            Ok(branch) => state.set_data(branch),
-            Err(err) => state.fetch_error(err),
-        })
+        spair::spawn_local(
+            fetch_repo_metadata(),
+            self.comp
+                .callback_arg_mut(|state: &mut Self, result| match result {
+                    Ok(branch) => state.set_data(branch),
+                    Err(err) => state.fetch_error(err),
+                }),
+        );
     }
 
     fn fetch_error(&mut self, e: gloo_net::Error) {
@@ -124,8 +129,9 @@ impl spair::Render<State> for &Commit {
 }
 
 impl spair::Application for State {
-    fn init(_: &spair::Comp<Self>) -> Self {
+    fn init(comp: &spair::Comp<Self>) -> Self {
         Self {
+            comp: comp.clone(),
             branch: None,
             message: "Wait for your click".to_string(),
         }

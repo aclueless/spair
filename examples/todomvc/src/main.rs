@@ -230,7 +230,7 @@ impl spair::Render<App> for Main {
                         .static_attributes()
                         .id("toggle-all")
                         .class("toggle-all")
-                        .r#type(spair::InputType::CheckBox);
+                        .input_type(spair::InputType::CheckBox);
                 })
                 .static_nodes()
                 .label(|l| {
@@ -371,7 +371,7 @@ impl spair::ElementRender<App> for &TodoItem {
                             .checked(self.completed)
                             .static_attributes()
                             .class("toggle")
-                            .r#type(spair::InputType::CheckBox);
+                            .input_type(spair::InputType::CheckBox);
                     })
                     .label(|l| {
                         l.on_double_click(comp.handler_mut(move |state| state.start_editing(id)))

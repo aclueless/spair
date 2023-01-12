@@ -43,6 +43,14 @@ where
         }
         .into()
     }
+
+    pub fn spawn_with_callback(self, callback: CallbackArg<A>) {
+        let f = async move {
+            let rs = self.future.await;
+            callback.call_or_queue(rs);
+        };
+        wasm_bindgen_futures::spawn_local(f);
+    }
 }
 
 struct FutureCallbackFn<F, A, C, Cl, Cb>(Option<FcFn<F, A, C, Cl, Cb>>);

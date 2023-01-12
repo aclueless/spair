@@ -86,6 +86,18 @@ pub mod prelude {
 pub type Callback = Box<dyn callback::Callback>;
 pub type CallbackArg<A> = Box<dyn callback::CallbackArg<A>>;
 
+pub fn spawn_local<F, A>(future: F, callback: CallbackArg<A>)
+where
+    A: 'static,
+    F: 'static + std::future::Future<Output = A>,
+{
+    let f = async move {
+        let rs = future.await;
+        callback.call_or_queue(rs);
+    };
+    wasm_bindgen_futures::spawn_local(f);
+}
+
 #[must_use = "This value must be returned to the framework. Otherwise, the command will be lost"]
 pub struct Command<C>(Box<dyn component::Command<C>>);
 #[must_use = "This value must be returned to the framework. Otherwise, the command will be lost"]

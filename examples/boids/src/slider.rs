@@ -108,7 +108,7 @@ impl spair::Component for Slider {
                     .rupdate(self.props.label);
             })
             .input(|i| {
-                i.r#type(spair::InputType::Range)
+                i.input_type(spair::InputType::Range)
                     .id(&id)
                     .class("slider__input")
                     .min(self.props.min)
