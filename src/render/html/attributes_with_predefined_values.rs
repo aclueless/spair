@@ -33,7 +33,7 @@ TraitName: HamsWithPredefinedValues
         Submit => "submit",
         Reset => "reset",
     }
-    {}
+    { button_type }
 }
 {
     CrossOriginAttributeValue
@@ -124,7 +124,7 @@ TraitName: HamsWithPredefinedValues
         Url => "url",
         Week => "week",
     }
-    { r#type "type" }
+    { input_type "type" }
 }
 {
     OlTypeAttributeValue

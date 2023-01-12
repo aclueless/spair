@@ -228,6 +228,11 @@ To set attributes/properties with such names, you have to call
 attributes/properties, you have to explicitly switch to nodes-mode using
 `.update_nodes()` or `.static_nodes()`.
 
+### Attributes/properties with the same name.
+Both `<button>` and `<input>` have an attribute named `type`. The methods
+are prefixed with their element name: `button_type`, `input_type`. This is also
+applied for all other conflicted attribute/property names.
+
 Example:
 ```rust
 element.span(); // => Error
