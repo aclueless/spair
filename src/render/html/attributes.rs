@@ -103,8 +103,8 @@ make_traits_for_property_values! {
 /// with attribute value to help handle the issue. But this trait alone
 /// can not sovle the issue. We also need HtmlElementUpdater and
 /// HtmlNodesUpdater.
-pub trait MethodsForSelectedValueSelectedIndex<C: Component>:
-    Sized + HtmlElementUpdaterMut<C>
+pub trait MethodsForSelectedValueSelectedIndex<'er, C: Component>:
+    Sized + HtmlElementUpdaterMut<'er, C>
 {
     fn value(mut self, value: impl PropertyValue<C>) -> Self {
         value.render(self.html_element_updater_mut());
@@ -135,8 +135,8 @@ make_traits_for_property_values! {
     }
 }
 
-pub trait HamsHandMade<C: Component>:
-    Sized + ElementUpdaterMut<C> + HamsForDistinctNames<C>
+pub trait HamsHandMade<'er, C: Component>:
+    Sized + ElementUpdaterMut<'er, C> + HamsForDistinctNames<'er, C>
 {
     fn done(self) {}
 
@@ -384,64 +384,70 @@ impl<'er, C: Component> StaticAttributes<'er, C> {
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<C> for AttributesOnly<'er, C> {
+impl<'er, C: Component> ElementUpdaterMut<'er, C> for AttributesOnly<'er, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         self.0.element_updater()
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         self.0.element_updater_mut()
     }
 }
-impl<'er, C: Component> HtmlElementUpdaterMut<C> for AttributesOnly<'er, C> {
-    fn html_element_updater_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
+impl<'er, C: Component> HtmlElementUpdaterMut<'er, C> for AttributesOnly<'er, C> {
+    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'er, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<C> for StaticAttributesOnly<'er, C> {
+impl<'er, C: Component> ElementUpdaterMut<'er, C> for StaticAttributesOnly<'er, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         self.0.element_updater()
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         self.0.element_updater_mut()
     }
 }
-impl<'er, C: Component> HtmlElementUpdaterMut<C> for StaticAttributesOnly<'er, C> {
-    fn html_element_updater_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
+impl<'er, C: Component> HtmlElementUpdaterMut<'er, C> for StaticAttributesOnly<'er, C> {
+    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'er, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<C> for StaticAttributes<'er, C> {
+impl<'er, C: Component> ElementUpdaterMut<'er, C> for StaticAttributes<'er, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         self.0.element_updater()
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         self.0.element_updater_mut()
     }
 }
-impl<'er, C: Component> HtmlElementUpdaterMut<C> for StaticAttributes<'er, C> {
-    fn html_element_updater_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
+impl<'er, C: Component> HtmlElementUpdaterMut<'er, C> for StaticAttributes<'er, C> {
+    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'er, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for HtmlElementUpdater<'er, C> {}
-impl<'er, C: Component> HamsHandMade<C> for HtmlElementUpdater<'er, C> {}
-impl<'er, C: Component> HamsForDistinctNames<C> for HtmlElementUpdater<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<'er, C>
+    for HtmlElementUpdater<'er, C>
+{
+}
+impl<'er, C: Component> HamsHandMade<'er, C> for HtmlElementUpdater<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<'er, C> for HtmlElementUpdater<'er, C> {}
 
-impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> HamsHandMade<C> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<'er, C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsHandMade<'er, C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<'er, C> for StaticAttributes<'er, C> {}
 
-impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsHandMade<C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsForDistinctNames<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<'er, C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsHandMade<'er, C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<'er, C> for AttributesOnly<'er, C> {}
 
-impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<C> for StaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsHandMade<C> for StaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsForDistinctNames<C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> MethodsForSelectedValueSelectedIndex<'er, C>
+    for StaticAttributesOnly<'er, C>
+{
+}
+impl<'er, C: Component> HamsHandMade<'er, C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> HamsForDistinctNames<'er, C> for StaticAttributesOnly<'er, C> {}
 
-impl<'er, C: Component> MethodsForEvents<C> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> MethodsForEvents<C> for StaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> MethodsForEvents<C> for AttributesOnly<'er, C> {}
+impl<'er, C: Component> MethodsForEvents<'er, C> for StaticAttributes<'er, C> {}
+impl<'er, C: Component> MethodsForEvents<'er, C> for StaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> MethodsForEvents<'er, C> for AttributesOnly<'er, C> {}

@@ -13,10 +13,10 @@ use crate::{
 #[cfg(feature = "queue-render")]
 use crate::queue_render::val::QrVal;
 
-pub trait UpdateSvgElement<C, O>: Sized
+pub trait UpdateSvgElement<'n, C, O>: Sized
 where
     C: Component,
-    O: From<Self> + NodesUpdaterMut<C>,
+    O: From<Self> + NodesUpdaterMut<'n, C>,
 {
     fn render_element(
         self,
@@ -34,8 +34,8 @@ where
     }
 }
 
-pub trait SemsHandMade<C: Component>: Sized {
-    type Output: From<Self> + NodesUpdaterMut<C>;
+pub trait SemsHandMade<'n, C: Component>: Sized {
+    type Output: From<Self> + NodesUpdaterMut<'n, C>;
     fn match_if(self, f: impl FnOnce(SvgMatchIfUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
@@ -233,26 +233,26 @@ impl<'h, 'n: 'h, C: Component> From<SvgStaticNodes<'h, 'n, C>> for SvgNodes<'h, 
     }
 }
 
-impl<'n, C: Component> NodesUpdaterMut<C> for SvgNodesOwned<'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'n, C: Component> NodesUpdaterMut<'n, C> for SvgNodesOwned<'n, C> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C> {
         &mut self.0
     }
 }
 
-impl<'n, C: Component> NodesUpdaterMut<C> for SvgStaticNodesOwned<'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'n, C: Component> NodesUpdaterMut<'n, C> for SvgStaticNodesOwned<'n, C> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C> {
         &mut self.0
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for SvgNodes<'h, 'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<'n, C> for SvgNodes<'h, 'n, C> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C> {
         self.0
     }
 }
 
-impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<C> for SvgStaticNodes<'h, 'n, C> {
-    fn nodes_updater_mut(&mut self) -> &'n mut NodesUpdater<C> {
+impl<'h, 'n: 'h, C: Component> NodesUpdaterMut<'n, C> for SvgStaticNodes<'h, 'n, C> {
+    fn nodes_updater_mut(&mut self) -> &mut NodesUpdater<'n, C> {
         self.0
     }
 }
@@ -270,49 +270,55 @@ impl<'n, C: Component> From<SvgStaticAttributes<'n, C>> for SvgNodesOwned<'n, C>
     }
 }
 
-impl<'n, C: Component> UpdateSvgElement<C, SvgNodesOwned<'n, C>> for SvgElementUpdater<'n, C> {}
-impl<'n, C: Component> UpdateSvgElement<C, SvgNodesOwned<'n, C>> for SvgStaticAttributes<'n, C> {}
+impl<'n, C: Component> UpdateSvgElement<'n, C, SvgNodesOwned<'n, C>> for SvgElementUpdater<'n, C> {}
+impl<'n, C: Component> UpdateSvgElement<'n, C, SvgNodesOwned<'n, C>>
+    for SvgStaticAttributes<'n, C>
+{
+}
 
-impl<'h, 'n: 'h, C: Component> UpdateSvgElement<C, SvgNodes<'h, 'n, C>> for SvgNodes<'h, 'n, C> {}
-impl<'h, 'n: 'h, C: Component> UpdateSvgElement<C, SvgStaticNodes<'h, 'n, C>>
+impl<'h, 'n: 'h, C: Component> UpdateSvgElement<'n, C, SvgNodes<'h, 'n, C>>
+    for SvgNodes<'h, 'n, C>
+{
+}
+impl<'h, 'n: 'h, C: Component> UpdateSvgElement<'n, C, SvgStaticNodes<'h, 'n, C>>
     for SvgStaticNodes<'h, 'n, C>
 {
 }
-impl<'n, C: Component> UpdateSvgElement<C, SvgNodesOwned<'n, C>> for SvgNodesOwned<'n, C> {}
-impl<'n, C: Component> UpdateSvgElement<C, SvgStaticNodesOwned<'n, C>>
+impl<'n, C: Component> UpdateSvgElement<'n, C, SvgNodesOwned<'n, C>> for SvgNodesOwned<'n, C> {}
+impl<'n, C: Component> UpdateSvgElement<'n, C, SvgStaticNodesOwned<'n, C>>
     for SvgStaticNodesOwned<'n, C>
 {
 }
 
-impl<'h, 'n: 'h, C: Component> SemsHandMade<C> for SvgNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> SemsHandMade<'n, C> for SvgNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> SemsHandMade<C> for SvgStaticNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> SemsHandMade<'n, C> for SvgStaticNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> SemsHandMade<C> for SvgNodesOwned<'n, C> {
+impl<'n, C: Component> SemsHandMade<'n, C> for SvgNodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> SemsHandMade<C> for SvgStaticNodesOwned<'n, C> {
+impl<'n, C: Component> SemsHandMade<'n, C> for SvgStaticNodesOwned<'n, C> {
     type Output = Self;
 }
 
-impl<'h, 'n: 'h, C: Component> SemsForDistinctNames<C> for SvgNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> SemsForDistinctNames<'n, C> for SvgNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> SemsForDistinctNames<C> for SvgStaticNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> SemsForDistinctNames<'n, C> for SvgStaticNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> SemsForDistinctNames<C> for SvgNodesOwned<'n, C> {
+impl<'n, C: Component> SemsForDistinctNames<'n, C> for SvgNodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticNodesOwned<'n, C> {
+impl<'n, C: Component> SemsForDistinctNames<'n, C> for SvgStaticNodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> SemsForDistinctNames<C> for SvgStaticAttributes<'n, C> {
+impl<'n, C: Component> SemsForDistinctNames<'n, C> for SvgStaticAttributes<'n, C> {
     type Output = SvgNodesOwned<'n, C>;
 }
-impl<'n, C: Component> SemsForDistinctNames<C> for SvgElementUpdater<'n, C> {
+impl<'n, C: Component> SemsForDistinctNames<'n, C> for SvgElementUpdater<'n, C> {
     type Output = SvgNodesOwned<'n, C>;
 }
 
@@ -453,7 +459,7 @@ impl<'n, C: Component> SvgStaticNodesOwned<'n, C> {
 }
 
 pub trait MethodsForSvgElementContent<'n, C: Component>:
-    ElementUpdaterMut<C> + Into<SvgNodesOwned<'n, C>> + Into<SvgStaticNodesOwned<'n, C>>
+    ElementUpdaterMut<'n, C> + Into<SvgNodesOwned<'n, C>> + Into<SvgStaticNodesOwned<'n, C>>
 {
     fn update_nodes(self) -> SvgNodesOwned<'n, C> {
         self.into()

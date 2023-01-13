@@ -13,11 +13,11 @@ impl<'er, C: Component> From<ElementUpdater<'er, C>> for SvgElementUpdater<'er, 
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<C> for SvgElementUpdater<'er, C> {
+impl<'er, C: Component> ElementUpdaterMut<'er, C> for SvgElementUpdater<'er, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         &mut self.0
     }
 }

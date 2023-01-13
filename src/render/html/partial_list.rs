@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-pub trait HemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
+pub trait HemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<'a, C> {
     fn list_with_render<I, II, R>(
         mut self,
         items: II,
@@ -59,5 +59,5 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<C> {
 
 impl<'a, C: Component> HemsForPartialList<'a, C> for NodesOwned<'a, C> {}
 impl<'a, C: Component> HemsForPartialList<'a, C> for StaticNodesOwned<'a, C> {}
-impl<'h, 'n: 'h, C: Component> HemsForPartialList<'h, C> for Nodes<'h, 'n, C> {}
-impl<'h, 'n: 'h, C: Component> HemsForPartialList<'h, C> for StaticNodes<'h, 'n, C> {}
+impl<'h, 'n: 'h, C: Component> HemsForPartialList<'n, C> for Nodes<'h, 'n, C> {}
+impl<'h, 'n: 'h, C: Component> HemsForPartialList<'n, C> for StaticNodes<'h, 'n, C> {}

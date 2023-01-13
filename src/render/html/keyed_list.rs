@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub trait HemsForKeyedList<'a, C: Component>:
-    Sized + ElementUpdaterMut<C> + MakeNodesExtensions<'a>
+    Sized + ElementUpdaterMut<'a, C> + MakeNodesExtensions<'a>
 {
     fn keyed_list_with_render<I, II, G, K, R>(
         mut self,

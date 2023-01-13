@@ -14,20 +14,20 @@ use crate::{
     },
 };
 
-pub trait ElementUpdaterMut<C: Component> {
+pub trait ElementUpdaterMut<'er, C: Component> {
     fn element_updater(&self) -> &ElementUpdater<C>;
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C>;
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C>;
 }
 
-impl<C, T> ElementUpdaterMut<C> for &mut T
+impl<'er, C, T> ElementUpdaterMut<'er, C> for &mut T
 where
     C: Component,
-    T: ElementUpdaterMut<C>,
+    T: ElementUpdaterMut<'er, C>,
 {
     fn element_updater(&self) -> &ElementUpdater<C> {
         (**self).element_updater()
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         (**self).element_updater_mut()
     }
 }

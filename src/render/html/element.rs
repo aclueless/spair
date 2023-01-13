@@ -58,8 +58,8 @@ impl Drop for SelectElementValueManager {
     }
 }
 
-pub trait HtmlElementUpdaterMut<C: Component> {
-    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<C>;
+pub trait HtmlElementUpdaterMut<'er, C: Component> {
+    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'er, C>;
 }
 
 /// This struct helps rendering the element's attributes and its child nodes.
@@ -72,18 +72,18 @@ pub struct HtmlElementUpdater<'er, C: Component> {
     select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-impl<'er, C: Component> ElementUpdaterMut<C> for HtmlElementUpdater<'er, C> {
+impl<'er, C: Component> ElementUpdaterMut<'er, C> for HtmlElementUpdater<'er, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.element_updater
     }
 
-    fn element_updater_mut(&mut self) -> &'er mut ElementUpdater<C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
         &mut self.element_updater
     }
 }
 
-impl<'er, C: Component> HtmlElementUpdaterMut<C> for HtmlElementUpdater<'er, C> {
-    fn html_element_updater_mut(&mut self) -> &'er mut HtmlElementUpdater<C> {
+impl<'er, C: Component> HtmlElementUpdaterMut<'er, C> for HtmlElementUpdater<'er, C> {
+    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'er, C> {
         self
     }
 }
@@ -221,4 +221,4 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     }
 }
 
-impl<'er, C: Component> MethodsForEvents<C> for HtmlElementUpdater<'er, C> {}
+impl<'er, C: Component> MethodsForEvents<'er, C> for HtmlElementUpdater<'er, C> {}

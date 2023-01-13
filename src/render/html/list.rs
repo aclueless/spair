@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub trait HemsForList<'a, C: Component>:
-    Sized + ElementUpdaterMut<C> + MakeNodesExtensions<'a>
+    Sized + ElementUpdaterMut<'a, C> + MakeNodesExtensions<'a>
 {
     fn list_with_render<I, II, R>(
         mut self,

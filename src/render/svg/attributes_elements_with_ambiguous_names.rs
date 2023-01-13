@@ -32,18 +32,18 @@ make_trait_for_same_name_attribute_and_element_methods! {
 impl<'er, C: Component> SemsSamsAmbiguous for SvgElementUpdater<'er, C> {}
 impl<'er, C: Component> SemsSamsAmbiguous for SvgStaticAttributes<'er, C> {}
 
-impl<'er, C: Component> SamsForAmbiguousNames<C> for SvgAttributesOnly<'er, C> {}
-impl<'er, C: Component> SamsForAmbiguousNames<C> for SvgStaticAttributesOnly<'er, C> {}
+impl<'er, C: Component> SamsForAmbiguousNames<'er, C> for SvgAttributesOnly<'er, C> {}
+impl<'er, C: Component> SamsForAmbiguousNames<'er, C> for SvgStaticAttributesOnly<'er, C> {}
 
-impl<'n, C: Component> SemsForAmbiguousNames<C> for SvgStaticNodesOwned<'n, C> {
+impl<'n, C: Component> SemsForAmbiguousNames<'n, C> for SvgStaticNodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'n, C: Component> SemsForAmbiguousNames<C> for SvgNodesOwned<'n, C> {
+impl<'n, C: Component> SemsForAmbiguousNames<'n, C> for SvgNodesOwned<'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> SemsForAmbiguousNames<C> for SvgStaticNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> SemsForAmbiguousNames<'n, C> for SvgStaticNodes<'h, 'n, C> {
     type Output = Self;
 }
-impl<'h, 'n: 'h, C: Component> SemsForAmbiguousNames<C> for SvgNodes<'h, 'n, C> {
+impl<'h, 'n: 'h, C: Component> SemsForAmbiguousNames<'n, C> for SvgNodes<'h, 'n, C> {
     type Output = Self;
 }

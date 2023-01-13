@@ -1,8 +1,13 @@
 use super::MethodsForEvents;
 
-impl<C: crate::component::Component, T> StateHelperMethods<C> for T where T: MethodsForEvents<C> {}
+impl<'er, C: crate::component::Component, T> StateHelperMethods<'er, C> for T where
+    T: MethodsForEvents<'er, C>
+{
+}
 
-pub trait StateHelperMethods<C: crate::component::Component>: MethodsForEvents<C> {
+pub trait StateHelperMethods<'er, C: crate::component::Component>:
+    MethodsForEvents<'er, C>
+{
     fn on_input_value(
         self,
         comp: &crate::Comp<C>,
