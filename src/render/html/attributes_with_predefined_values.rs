@@ -234,7 +234,16 @@ TraitName: HamsWithPredefinedValues
 }
 }
 
-impl<'er, C: Component> HamsWithPredefinedValues<'er, C> for HtmlElementUpdater<'er, C> {}
-impl<'er, C: Component> HamsWithPredefinedValues<'er, C> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> HamsWithPredefinedValues<'er, C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsWithPredefinedValues<'er, C> for StaticAttributesOnly<'er, C> {}
+impl<'updater, C: Component> HamsWithPredefinedValues<'updater, C>
+    for HtmlElementUpdater<'updater, C>
+{
+}
+impl<'updater, C: Component> HamsWithPredefinedValues<'updater, C>
+    for StaticAttributes<'updater, C>
+{
+}
+impl<'updater, C: Component> HamsWithPredefinedValues<'updater, C> for AttributesOnly<'updater, C> {}
+impl<'updater, C: Component> HamsWithPredefinedValues<'updater, C>
+    for StaticAttributesOnly<'updater, C>
+{
+}

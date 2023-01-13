@@ -1,12 +1,12 @@
 use super::MethodsForEvents;
 
-impl<'er, C: crate::component::Component, T> StateHelperMethods<'er, C> for T where
-    T: MethodsForEvents<'er, C>
+impl<'updater, C: crate::component::Component, T> StateHelperMethods<'updater, C> for T where
+    T: MethodsForEvents<'updater, C>
 {
 }
 
-pub trait StateHelperMethods<'er, C: crate::component::Component>:
-    MethodsForEvents<'er, C>
+pub trait StateHelperMethods<'updater, C: crate::component::Component>:
+    MethodsForEvents<'updater, C>
 {
     fn on_input_value(
         self,

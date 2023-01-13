@@ -14,20 +14,20 @@ use crate::{
     },
 };
 
-pub trait ElementUpdaterMut<'er, C: Component> {
+pub trait ElementUpdaterMut<'updater, C: Component> {
     fn element_updater(&self) -> &ElementUpdater<C>;
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C>;
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'updater, C>;
 }
 
-impl<'er, C, T> ElementUpdaterMut<'er, C> for &mut T
+impl<'updater, C, T> ElementUpdaterMut<'updater, C> for &mut T
 where
     C: Component,
-    T: ElementUpdaterMut<'er, C>,
+    T: ElementUpdaterMut<'updater, C>,
 {
     fn element_updater(&self) -> &ElementUpdater<C> {
         (**self).element_updater()
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'updater, C> {
         (**self).element_updater_mut()
     }
 }
@@ -292,7 +292,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> &K,
         K: PartialEq<ListItemKey>,
-        for<'er> R: Fn(I, ElementUpdater<'er, C>),
+        for<'updater> R: Fn(I, ElementUpdater<'updater, C>),
         ListItemKey: for<'k> From<&'k K>,
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,

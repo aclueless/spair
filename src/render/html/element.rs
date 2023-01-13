@@ -58,8 +58,8 @@ impl Drop for SelectElementValueManager {
     }
 }
 
-pub trait HtmlElementUpdaterMut<'er, C: Component> {
-    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'er, C>;
+pub trait HtmlElementUpdaterMut<'updater, C: Component> {
+    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'updater, C>;
 }
 
 /// This struct helps rendering the element's attributes and its child nodes.
@@ -67,29 +67,31 @@ pub trait HtmlElementUpdaterMut<'er, C: Component> {
 /// Most of HTML attributes and HTML elements can be rendered using methods attached to this
 /// struct (respectively via HamsForDistinctNames and HemsForDistinctNames). Some HTML attributes
 /// and HTML elements that their names appear in both will not be call directly on this struct.
-pub struct HtmlElementUpdater<'er, C: Component> {
-    element_updater: ElementUpdater<'er, C>,
+pub struct HtmlElementUpdater<'updater, C: Component> {
+    element_updater: ElementUpdater<'updater, C>,
     select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-impl<'er, C: Component> ElementUpdaterMut<'er, C> for HtmlElementUpdater<'er, C> {
+impl<'updater, C: Component> ElementUpdaterMut<'updater, C> for HtmlElementUpdater<'updater, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.element_updater
     }
 
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'updater, C> {
         &mut self.element_updater
     }
 }
 
-impl<'er, C: Component> HtmlElementUpdaterMut<'er, C> for HtmlElementUpdater<'er, C> {
-    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'er, C> {
+impl<'updater, C: Component> HtmlElementUpdaterMut<'updater, C>
+    for HtmlElementUpdater<'updater, C>
+{
+    fn html_element_updater_mut(&mut self) -> &mut HtmlElementUpdater<'updater, C> {
         self
     }
 }
 
-impl<'er, C: Component> From<ElementUpdater<'er, C>> for HtmlElementUpdater<'er, C> {
-    fn from(element_updater: ElementUpdater<'er, C>) -> Self {
+impl<'updater, C: Component> From<ElementUpdater<'updater, C>> for HtmlElementUpdater<'updater, C> {
+    fn from(element_updater: ElementUpdater<'updater, C>) -> Self {
         let select_element_value_manager: Option<SelectElementValueManager> =
             match element_updater.element().element_type() {
                 ElementType::Select => Some(element_updater.element().ws_element().unchecked_ref()),
@@ -102,12 +104,17 @@ impl<'er, C: Component> From<ElementUpdater<'er, C>> for HtmlElementUpdater<'er,
         }
     }
 }
-impl<'er, C: Component> HtmlElementUpdater<'er, C> {
-    pub(super) fn into_parts(self) -> (ElementUpdater<'er, C>, Option<SelectElementValueManager>) {
+impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
+    pub(super) fn into_parts(
+        self,
+    ) -> (
+        ElementUpdater<'updater, C>,
+        Option<SelectElementValueManager>,
+    ) {
         (self.element_updater, self.select_element_value_manager)
     }
 
-    pub fn state(&self) -> &'er C {
+    pub fn state(&self) -> &'updater C {
         self.element_updater.state()
     }
 
@@ -116,19 +123,19 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     }
 
     #[cfg(feature = "svg")]
-    pub fn as_svg_element(self) -> crate::render::svg::SvgElementUpdater<'er, C> {
+    pub fn as_svg_element(self) -> crate::render::svg::SvgElementUpdater<'updater, C> {
         self.element_updater.into()
     }
 
-    pub fn attributes_only(self) -> AttributesOnly<'er, C> {
+    pub fn attributes_only(self) -> AttributesOnly<'updater, C> {
         AttributesOnly::new(self)
     }
 
-    pub fn static_attributes_only(self) -> StaticAttributesOnly<'er, C> {
+    pub fn static_attributes_only(self) -> StaticAttributesOnly<'updater, C> {
         StaticAttributesOnly::new(self)
     }
 
-    pub fn static_attributes(self) -> StaticAttributes<'er, C> {
+    pub fn static_attributes(self) -> StaticAttributes<'updater, C> {
         StaticAttributes::new(self)
     }
 
@@ -221,4 +228,4 @@ impl<'er, C: Component> HtmlElementUpdater<'er, C> {
     }
 }
 
-impl<'er, C: Component> MethodsForEvents<'er, C> for HtmlElementUpdater<'er, C> {}
+impl<'updater, C: Component> MethodsForEvents<'updater, C> for HtmlElementUpdater<'updater, C> {}

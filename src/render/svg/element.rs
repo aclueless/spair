@@ -5,29 +5,29 @@ use crate::{
     render::base::{ElementUpdater, ElementUpdaterMut},
 };
 
-pub struct SvgElementUpdater<'er, C: Component>(ElementUpdater<'er, C>);
+pub struct SvgElementUpdater<'updater, C: Component>(ElementUpdater<'updater, C>);
 
-impl<'er, C: Component> From<ElementUpdater<'er, C>> for SvgElementUpdater<'er, C> {
-    fn from(element_updater: ElementUpdater<'er, C>) -> Self {
+impl<'updater, C: Component> From<ElementUpdater<'updater, C>> for SvgElementUpdater<'updater, C> {
+    fn from(element_updater: ElementUpdater<'updater, C>) -> Self {
         Self(element_updater)
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<'er, C> for SvgElementUpdater<'er, C> {
+impl<'updater, C: Component> ElementUpdaterMut<'updater, C> for SvgElementUpdater<'updater, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'updater, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> SvgElementUpdater<'er, C> {
-    pub(super) fn into_inner(self) -> ElementUpdater<'er, C> {
+impl<'updater, C: Component> SvgElementUpdater<'updater, C> {
+    pub(super) fn into_inner(self) -> ElementUpdater<'updater, C> {
         self.0
     }
 
-    pub fn state(&self) -> &'er C {
+    pub fn state(&self) -> &'updater C {
         self.0.state()
     }
 
@@ -35,15 +35,15 @@ impl<'er, C: Component> SvgElementUpdater<'er, C> {
         self.0.comp()
     }
 
-    pub fn attributes_only(self) -> SvgAttributesOnly<'er, C> {
+    pub fn attributes_only(self) -> SvgAttributesOnly<'updater, C> {
         SvgAttributesOnly::new(self.0)
     }
 
-    pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'er, C> {
+    pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'updater, C> {
         SvgStaticAttributesOnly::new(self.0)
     }
 
-    pub fn static_attributes(self) -> SvgStaticAttributes<'er, C> {
+    pub fn static_attributes(self) -> SvgStaticAttributes<'updater, C> {
         SvgStaticAttributes::new(self.0)
     }
 

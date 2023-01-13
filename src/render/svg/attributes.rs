@@ -13,7 +13,7 @@ make_traits_for_attribute_values! {
     }
 }
 
-pub trait SamsHandMade<'er, C: Component>: Sized + ElementUpdaterMut<'er, C> {
+pub trait SamsHandMade<'updater, C: Component>: Sized + ElementUpdaterMut<'updater, C> {
     fn class(mut self, class_name: &str) -> Self {
         self.element_updater_mut().class(class_name);
         self
@@ -335,81 +335,89 @@ make_trait_for_attribute_methods! {
         str          zoom_and_pan "zoomAndPan"
 }
 
-pub struct SvgAttributesOnly<'er, C: Component>(ElementUpdater<'er, C>);
-pub struct SvgStaticAttributesOnly<'er, C: Component>(ElementUpdater<'er, C>);
-pub struct SvgStaticAttributes<'er, C: Component>(ElementUpdater<'er, C>);
+pub struct SvgAttributesOnly<'updater, C: Component>(ElementUpdater<'updater, C>);
+pub struct SvgStaticAttributesOnly<'updater, C: Component>(ElementUpdater<'updater, C>);
+pub struct SvgStaticAttributes<'updater, C: Component>(ElementUpdater<'updater, C>);
 
-impl<'er, C: Component> SvgAttributesOnly<'er, C> {
-    pub(super) fn new(er: ElementUpdater<'er, C>) -> Self {
+impl<'updater, C: Component> SvgAttributesOnly<'updater, C> {
+    pub(super) fn new(er: ElementUpdater<'updater, C>) -> Self {
         Self(er)
     }
-    pub(super) fn into_inner(self) -> ElementUpdater<'er, C> {
+    pub(super) fn into_inner(self) -> ElementUpdater<'updater, C> {
         self.0
     }
 
-    pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'er, C> {
+    pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'updater, C> {
         SvgStaticAttributesOnly::new(self.0)
     }
 }
 
-impl<'er, C: Component> SvgStaticAttributesOnly<'er, C> {
-    pub(super) fn new(mut er: ElementUpdater<'er, C>) -> Self {
+impl<'updater, C: Component> SvgStaticAttributesOnly<'updater, C> {
+    pub(super) fn new(mut er: ElementUpdater<'updater, C>) -> Self {
         er.set_static_mode();
         Self(er)
     }
-    pub(super) fn into_inner(self) -> ElementUpdater<'er, C> {
+    pub(super) fn into_inner(self) -> ElementUpdater<'updater, C> {
         self.0
     }
 }
 
-impl<'er, C: Component> SvgStaticAttributes<'er, C> {
-    pub(super) fn new(mut er: ElementUpdater<'er, C>) -> Self {
+impl<'updater, C: Component> SvgStaticAttributes<'updater, C> {
+    pub(super) fn new(mut er: ElementUpdater<'updater, C>) -> Self {
         er.set_static_mode();
         Self(er)
     }
-    pub(super) fn into_inner(self) -> ElementUpdater<'er, C> {
+    pub(super) fn into_inner(self) -> ElementUpdater<'updater, C> {
         self.0
     }
-    pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'er, C> {
+    pub fn static_attributes_only(self) -> SvgStaticAttributesOnly<'updater, C> {
         SvgStaticAttributesOnly::new(self.0)
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<'er, C> for SvgAttributesOnly<'er, C> {
+impl<'updater, C: Component> ElementUpdaterMut<'updater, C> for SvgAttributesOnly<'updater, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'updater, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<'er, C> for SvgStaticAttributesOnly<'er, C> {
+impl<'updater, C: Component> ElementUpdaterMut<'updater, C>
+    for SvgStaticAttributesOnly<'updater, C>
+{
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'updater, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> ElementUpdaterMut<'er, C> for SvgStaticAttributes<'er, C> {
+impl<'updater, C: Component> ElementUpdaterMut<'updater, C> for SvgStaticAttributes<'updater, C> {
     fn element_updater(&self) -> &ElementUpdater<C> {
         &self.0
     }
-    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'er, C> {
+    fn element_updater_mut(&mut self) -> &mut ElementUpdater<'updater, C> {
         &mut self.0
     }
 }
 
-impl<'er, C: Component> SamsHandMade<'er, C> for SvgElementUpdater<'er, C> {}
-impl<'er, C: Component> SamsForDistinctNames<'er, C> for SvgElementUpdater<'er, C> {}
+impl<'updater, C: Component> SamsHandMade<'updater, C> for SvgElementUpdater<'updater, C> {}
+impl<'updater, C: Component> SamsForDistinctNames<'updater, C> for SvgElementUpdater<'updater, C> {}
 
-impl<'er, C: Component> SamsForDistinctNames<'er, C> for SvgStaticAttributes<'er, C> {}
-impl<'er, C: Component> SamsHandMade<'er, C> for SvgStaticAttributes<'er, C> {}
+impl<'updater, C: Component> SamsForDistinctNames<'updater, C>
+    for SvgStaticAttributes<'updater, C>
+{
+}
+impl<'updater, C: Component> SamsHandMade<'updater, C> for SvgStaticAttributes<'updater, C> {}
 
-impl<'er, C: Component> SamsForDistinctNames<'er, C> for SvgStaticAttributesOnly<'er, C> {}
-impl<'er, C: Component> SamsHandMade<'er, C> for SvgStaticAttributesOnly<'er, C> {}
+impl<'updater, C: Component> SamsForDistinctNames<'updater, C>
+    for SvgStaticAttributesOnly<'updater, C>
+{
+}
+impl<'updater, C: Component> SamsHandMade<'updater, C> for SvgStaticAttributesOnly<'updater, C> {}
 
-impl<'er, C: Component> SamsForDistinctNames<'er, C> for SvgAttributesOnly<'er, C> {}
-impl<'er, C: Component> SamsHandMade<'er, C> for SvgAttributesOnly<'er, C> {}
+impl<'updater, C: Component> SamsForDistinctNames<'updater, C> for SvgAttributesOnly<'updater, C> {}
+impl<'updater, C: Component> SamsHandMade<'updater, C> for SvgAttributesOnly<'updater, C> {}

@@ -545,23 +545,26 @@ impl<'n, C: Component> HemsForDistinctNames<'n, C> for StaticNodesOwned<'n, C> {
     type Output = Self;
 }
 
-impl<'er, C: Component> UpdateHtmlElement<'er, C, NodesOwned<'er, C>>
-    for HtmlElementUpdater<'er, C>
+impl<'updater, C: Component> UpdateHtmlElement<'updater, C, NodesOwned<'updater, C>>
+    for HtmlElementUpdater<'updater, C>
 {
 }
-impl<'er, C: Component> HemsHandMade<'er, C> for HtmlElementUpdater<'er, C> {
-    type Output = NodesOwned<'er, C>;
+impl<'updater, C: Component> HemsHandMade<'updater, C> for HtmlElementUpdater<'updater, C> {
+    type Output = NodesOwned<'updater, C>;
 }
-impl<'er, C: Component> HemsForDistinctNames<'er, C> for HtmlElementUpdater<'er, C> {
-    type Output = NodesOwned<'er, C>;
+impl<'updater, C: Component> HemsForDistinctNames<'updater, C> for HtmlElementUpdater<'updater, C> {
+    type Output = NodesOwned<'updater, C>;
 }
 
-impl<'er, C: Component> UpdateHtmlElement<'er, C, NodesOwned<'er, C>> for StaticAttributes<'er, C> {}
-impl<'er, C: Component> HemsHandMade<'er, C> for StaticAttributes<'er, C> {
-    type Output = NodesOwned<'er, C>;
+impl<'updater, C: Component> UpdateHtmlElement<'updater, C, NodesOwned<'updater, C>>
+    for StaticAttributes<'updater, C>
+{
 }
-impl<'er, C: Component> HemsForDistinctNames<'er, C> for StaticAttributes<'er, C> {
-    type Output = NodesOwned<'er, C>;
+impl<'updater, C: Component> HemsHandMade<'updater, C> for StaticAttributes<'updater, C> {
+    type Output = NodesOwned<'updater, C>;
+}
+impl<'updater, C: Component> HemsForDistinctNames<'updater, C> for StaticAttributes<'updater, C> {
+    type Output = NodesOwned<'updater, C>;
 }
 
 pub struct HtmlMatchIfUpdater<'a, C: Component>(MatchIfUpdater<'a, C>);

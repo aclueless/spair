@@ -32,11 +32,14 @@ make_trait_for_same_name_attribute_and_element_methods! {
         u32     span
 }
 
-impl<'er, C: Component> HemsHamsAmbiguous for HtmlElementUpdater<'er, C> {}
-impl<'er, C: Component> HemsHamsAmbiguous for StaticAttributes<'er, C> {}
+impl<'updater, C: Component> HemsHamsAmbiguous for HtmlElementUpdater<'updater, C> {}
+impl<'updater, C: Component> HemsHamsAmbiguous for StaticAttributes<'updater, C> {}
 
-impl<'er, C: Component> HamsForAmbiguousNames<'er, C> for AttributesOnly<'er, C> {}
-impl<'er, C: Component> HamsForAmbiguousNames<'er, C> for StaticAttributesOnly<'er, C> {}
+impl<'updater, C: Component> HamsForAmbiguousNames<'updater, C> for AttributesOnly<'updater, C> {}
+impl<'updater, C: Component> HamsForAmbiguousNames<'updater, C>
+    for StaticAttributesOnly<'updater, C>
+{
+}
 
 impl<'n, C: Component> HemsForAmbiguousNames<'n, C> for StaticNodesOwned<'n, C> {
     type Output = Self;

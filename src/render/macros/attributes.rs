@@ -12,7 +12,7 @@ macro_rules! make_trait_for_attribute_methods {
             names: $($method_name)+
         }
 
-        pub trait $TraitName<'er, C: Component>: Sized + crate::render::base::ElementUpdaterMut<'er, C>
+        pub trait $TraitName<'updater, C: Component>: Sized + crate::render::base::ElementUpdaterMut<'updater, C>
         {$(
             make_trait_for_attribute_methods! {
                 @each
@@ -97,7 +97,7 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
                 names: $($attribute_method_name)*
             })+
         );
-        pub trait $TraitName<'er, C: Component>: Sized + crate::render::base::ElementUpdaterMut<'er, C> {
+        pub trait $TraitName<'updater, C: Component>: Sized + crate::render::base::ElementUpdaterMut<'updater, C> {
             $(
             $(
                 make_trait_for_attributes_with_predefined_values!(
