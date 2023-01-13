@@ -1,7 +1,9 @@
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-pub trait Listener {}
+pub trait Listener {
+    fn remove_listener_from_element(&mut self);
+}
 
 macro_rules! create_methods_for_event_trait {
     ($($method_name:ident $EventName:ident,)+) => {
@@ -58,9 +60,9 @@ macro_rules! create_events {
             }
 
             pub struct $EventListener {
-                _event_name: &'static str,
-                _event_target: web_sys::EventTarget,
-                _closure: Closure<dyn Fn(web_sys::$EventType)>,
+                event_name: &'static str,
+                event_target: web_sys::EventTarget,
+                closure: Closure<dyn Fn(web_sys::$EventType)>,
             }
             impl $EventListener {
                 fn new(event_name: &'static str, event_target: &web_sys::EventTarget, closure: Closure<dyn Fn(web_sys::$EventType)>) -> Self {
@@ -69,14 +71,23 @@ macro_rules! create_events {
                         closure.as_ref().unchecked_ref()
                     ).expect_throw("Expect event register to be successful");
                     Self {
-                        _event_name: event_name,
-                        _event_target: event_target.clone(),
-                        _closure: closure,
+                        event_name,
+                        event_target: event_target.clone(),
+                        closure,
                     }
                 }
             }
 
-            impl Listener for $EventListener {}
+            impl Listener for $EventListener {
+                fn remove_listener_from_element(&mut self) {
+                    self.event_target
+                        .remove_event_listener_with_callback(
+                            self.event_name,
+                            self.closure.as_ref().unchecked_ref()
+                        ).expect_throw("Expect event removal to be successful");
+                }
+            }
+
             $(
                 #[doc = "Help creating "]
                 #[doc = $event_name]

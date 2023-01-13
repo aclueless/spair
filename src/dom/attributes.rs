@@ -42,7 +42,11 @@ pub struct AttributeValueList(Vec<AttributeValue>);
 impl AttributeValueList {
     pub fn store_listener(&mut self, index: usize, listener: Box<dyn crate::events::Listener>) {
         if index < self.0.len() {
-            self.0[index] = AttributeValue::EventListener(Some(listener));
+            let mut listener = AttributeValue::EventListener(Some(listener));
+            std::mem::swap(&mut self.0[index], &mut listener);
+            if let AttributeValue::EventListener(Some(mut listener)) = listener {
+                listener.remove_listener_from_element();
+            }
         } else {
             self.0.push(AttributeValue::EventListener(Some(listener)));
         }
