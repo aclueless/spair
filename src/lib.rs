@@ -61,6 +61,7 @@ pub mod prelude {
         HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
         MethodsForSelectedValueSelectedIndex,
     };
+    pub use crate::SpawnFutureExt;
 
     #[cfg(feature = "queue-render")]
     pub use crate::queue_render::html::HemsForQrList;
@@ -96,6 +97,26 @@ where
         callback.call_or_queue(rs);
     };
     wasm_bindgen_futures::spawn_local(f);
+}
+
+pub trait SpawnFutureExt<T: 'static>: std::future::Future<Output = T> + Sized
+where
+    Self: 'static,
+{
+    fn spawn_local_with(self, callback: CallbackArg<T>) {
+        let f = async move {
+            let rs = self.await;
+            callback.call_or_queue(rs);
+        };
+        wasm_bindgen_futures::spawn_local(f);
+    }
+}
+
+impl<T, F> SpawnFutureExt<T> for F
+where
+    T: 'static,
+    F: 'static + std::future::Future<Output = T>,
+{
 }
 
 #[must_use = "This value must be returned to the framework. Otherwise, the command will be lost"]
