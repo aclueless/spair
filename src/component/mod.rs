@@ -312,7 +312,7 @@ impl<C: Component> Comp<C> {
             let this = self
                 .0
                 .upgrade()
-                .expect_throw("Expect the component instance alive when updating - update()");
+                .expect_throw("execute_callback: Expect the component instance alive when updating");
             let mut this = match this.try_borrow_mut() {
                 Ok(this) => this,
                 Err(_) => {
