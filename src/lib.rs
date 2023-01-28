@@ -59,7 +59,7 @@ pub mod prelude {
         HamsForAmbiguousNames, HamsForDistinctNames, HamsHandMade, HamsWithPredefinedValues,
         HemsForAmbiguousNames, HemsForDistinctNames, HemsForList, HemsForPartialList,
         HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
-        MethodsForSelectedValueSelectedIndex,
+        MethodsForSelectedValueSelectedIndex, HemsWholeSelf
     };
     pub use crate::SpawnFutureExt;
 
