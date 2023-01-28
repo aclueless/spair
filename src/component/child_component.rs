@@ -117,12 +117,6 @@ impl<C: Component> From<Comp<C>> for ComponentHandle<C> {
 impl<C: Component> Drop for ChildComp<C> {
     fn drop(&mut self) {
         crate::routing::remove_routing_callback::<C>();
-        self.0
-            .try_borrow_mut()
-            .expect_throw("Why unable to borrow a child component in dropping?")
-            .root_element
-            .ws_element()
-            .set_text_content(None);
     }
 }
 
