@@ -70,7 +70,9 @@ impl RefComponentNode {
     pub fn new(comp_ref: Box<dyn ComponentRef>) -> Self {
         Self {
             comp_ref,
-            placeholder_flag: crate::utils::create_comment_node("A flag to mark a child component place"),
+            placeholder_flag: crate::utils::create_comment_node(
+                "A flag to mark a child component place",
+            ),
         }
     }
 
@@ -87,7 +89,9 @@ impl RefComponentNode {
     }
 
     pub fn mount(&self, parent: &web_sys::Node) {
-        self.comp_ref.root_node().insert_before_a_sibling(parent, Some(&self.placeholder_flag));
+        self.comp_ref
+            .root_node()
+            .insert_before_a_sibling(parent, Some(&self.placeholder_flag));
     }
 
     pub fn remove_all_from(&self, parent: &web_sys::Node) {

@@ -136,7 +136,7 @@ impl spair::Component for App {
     fn render(&self, element: spair::Element<Self>) {
         element
             .h1(|h| h.class("title").rupdate("Boids").done())
-            .component_ref(&self.simulation)
+            .component_ref(self.simulation.component_ref())
             .rupdate(Panel);
     }
 }

@@ -1,9 +1,7 @@
 use super::{ElementUpdater, ListUpdater};
 use crate::{
     component::{Child, Comp, Component},
-    dom::{
-        ElementStatus, ElementTag, GroupedNodes, Nodes, OwnedComponent, ComponentRef
-    },
+    dom::{ComponentRef, ElementStatus, ElementTag, GroupedNodes, Nodes, OwnedComponent},
 };
 use wasm_bindgen::UnwrapThrowExt;
 

@@ -6,7 +6,8 @@ use super::{
     SvgStaticAttributesOnly, SvgStaticRender, SvgTag,
 };
 use crate::{
-    component::{Child, ChildComp, Comp, Component},
+    component::{Child, Comp, Component},
+    dom::ComponentRef,
     render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut},
 };
 
@@ -66,11 +67,11 @@ pub trait SemsHandMade<'n, C: Component>: Sized {
         this
     }
 
-    fn component_ref<CC: Component>(self, child: &ChildComp<CC>) -> Self::Output {
+    fn component_ref(self, cr: Option<Box<dyn ComponentRef>>) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            render.component_ref(child);
+        if let Some(cr) = cr {
+            render.component_ref(cr);
         }
         render.next_index();
         this

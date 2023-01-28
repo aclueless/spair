@@ -1,7 +1,7 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{Checklist, Comp, CompInstance, Component, RcComp};
-use crate::dom::{Element, TagName, ComponentRef, CompRef};
+use crate::dom::{CompRef, ComponentRef, Element, TagName};
 
 pub type ChildComp<C> = RcComp<C>;
 

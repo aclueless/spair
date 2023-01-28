@@ -8,8 +8,8 @@ use super::{
 #[cfg(feature = "svg")]
 use crate::render::svg::{SvgElementUpdater, SvgTag};
 use crate::{
-    dom::ComponentRef,
     component::{Child, Comp, Component},
+    dom::ComponentRef,
     render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut},
 };
 
@@ -586,4 +586,3 @@ impl<'a, C: Component> HtmlMatchIfUpdater<'a, C> {
         self.0.comp()
     }
 }
-

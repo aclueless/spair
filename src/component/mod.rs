@@ -309,10 +309,9 @@ impl<C: Component> Comp<C> {
     {
         let promise = self::i_have_to_execute_update_queue();
         {
-            let this = self
-                .0
-                .upgrade()
-                .expect_throw("execute_callback: Expect the component instance alive when updating");
+            let this = self.0.upgrade().expect_throw(
+                "execute_callback: Expect the component instance alive when updating",
+            );
             let mut this = match this.try_borrow_mut() {
                 Ok(this) => this,
                 Err(_) => {
@@ -521,4 +520,8 @@ impl<C: Component> CompInstance<C> {
         matches!(self.mount_status, ComponentMountStatus::Mounted)
     }
 
+    #[cfg(test)]
+    pub(crate) fn root_element(&self) -> &Element {
+        &self.root_element
+    }
 }

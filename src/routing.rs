@@ -89,17 +89,15 @@ pub fn remove_routing_callback<C: Component>() {
 pub fn modify_router<C: Component, F: FnOnce(&mut <<C as Component>::Routes as Routes>::Router)>(
     f: F,
 ) {
-    ROUTER.with(|router| {
-        match router.try_borrow_mut() {
-            Ok(mut router) => match router
-                .router
-                .downcast_mut::<<<C as Component>::Routes as Routes>::Router>()
-            {
-                Some(router) => f(router),
-                None => log::warn!("Routes::Router type mismatched"),
-            }
-            Err(e) => log::warn!("spair::routing::modify_router: {e}"),
-        }
+    ROUTER.with(|router| match router.try_borrow_mut() {
+        Ok(mut router) => match router
+            .router
+            .downcast_mut::<<<C as Component>::Routes as Routes>::Router>()
+        {
+            Some(router) => f(router),
+            None => log::warn!("Routes::Router type mismatched"),
+        },
+        Err(e) => log::warn!("spair::routing::modify_router: {e}"),
     })
 }
 

@@ -1,8 +1,8 @@
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
 use super::{
-    AChildNode, Element, ElementStatus, ElementTag, Node, OwnedComponent, TextNode,
-    ComponentRef, RefComponentNode
+    AChildNode, ComponentRef, Element, ElementStatus, ElementTag, Node, OwnedComponent,
+    RefComponentNode, TextNode,
 };
 #[cfg(feature = "queue-render")]
 use crate::queue_render::dom::QrNode;
@@ -198,20 +198,31 @@ impl Nodes {
         }
     }
 
-    pub fn ref_component(&mut self, index: usize, comp_ref: Box<dyn ComponentRef>, parent: &web_sys::Node,
-        next_sibling: Option<&web_sys::Node>,) {
+    pub fn ref_component(
+        &mut self,
+        index: usize,
+        comp_ref: Box<dyn ComponentRef>,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
         if index == self.0.len() {
             let rcn = RefComponentNode::new(comp_ref);
-            rcn.placeholder_flag().insert_before_a_sibling(parent, next_sibling);
+            rcn.placeholder_flag()
+                .insert_before_a_sibling(parent, next_sibling);
             rcn.mount(parent);
             self.0.push(Node::RefComponent(rcn));
             return;
         }
-        match self.0.get_mut(index)
-            .expect_throw("dom::nodes::Nodes::ref_component2 get_mut") {
-            Node::RefComponent(rcn) => if rcn.comp_ref().type_id() != comp_ref.type_id() {
-                rcn.replace_comp_ref(comp_ref);
-                rcn.mount(parent);
+        match self
+            .0
+            .get_mut(index)
+            .expect_throw("dom::nodes::Nodes::ref_component2 get_mut")
+        {
+            Node::RefComponent(rcn) => {
+                if rcn.comp_ref().type_id() != comp_ref.type_id() {
+                    rcn.replace_comp_ref(comp_ref);
+                    rcn.mount(parent);
+                }
             }
             _ => panic!("dom::nodes::Nodes::ref_component2 expected Node::RefComponent2"),
         }
@@ -343,7 +354,8 @@ impl Default for GroupedNodes {
 
 impl GroupedNodes {
     pub fn new() -> Self {
-        let end_flag_node = crate::utils::create_comment_node("Mark the end of a grouped node list");
+        let end_flag_node =
+            crate::utils::create_comment_node("Mark the end of a grouped node list");
         Self {
             active_index: None,
             end_flag_node,
@@ -391,4 +403,3 @@ impl GroupedNodes {
         (&mut self.nodes, &self.end_flag_node)
     }
 }
-

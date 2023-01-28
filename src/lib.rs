@@ -58,8 +58,8 @@ pub mod prelude {
     pub use crate::render::html::{
         HamsForAmbiguousNames, HamsForDistinctNames, HamsHandMade, HamsWithPredefinedValues,
         HemsForAmbiguousNames, HemsForDistinctNames, HemsForList, HemsForPartialList,
-        HemsHamsAmbiguous, HemsHandMade, MethodsForHtmlElementContent,
-        MethodsForSelectedValueSelectedIndex, HemsWholeSelf
+        HemsHamsAmbiguous, HemsHandMade, HemsWholeSelf, MethodsForHtmlElementContent,
+        MethodsForSelectedValueSelectedIndex,
     };
     pub use crate::SpawnFutureExt;
 
