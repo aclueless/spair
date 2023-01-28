@@ -62,9 +62,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
             let end_flag_node = if full_list {
                 None
             } else {
-                let n: web_sys::Node = crate::utils::document()
-                    .create_comment("Mark the end of a qr list")
-                    .into();
+                let n: web_sys::Node = crate::utils::create_comment_node("Mark the end of a qr list");
                 n.insert_before_a_sibling(self.parent(), self.next_sibling());
                 Some(n)
             };
