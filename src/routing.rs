@@ -90,13 +90,15 @@ pub fn modify_router<C: Component, F: FnOnce(&mut <<C as Component>::Routes as R
     f: F,
 ) {
     ROUTER.with(|router| {
-        if let Ok(mut router) = router.try_borrow_mut() {
-            if let Some(router) = router
+        match router.try_borrow_mut() {
+            Ok(mut router) => match router
                 .router
                 .downcast_mut::<<<C as Component>::Routes as Routes>::Router>()
             {
-                f(router);
+                Some(router) => f(router),
+                None => log::warn!("Routes::Router type mismatched"),
             }
+            Err(e) => log::warn!("spair::routing::modify_router: {e}"),
         }
     })
 }
@@ -104,11 +106,9 @@ pub fn modify_router<C: Component, F: FnOnce(&mut <<C as Component>::Routes as R
 fn register_pop_state_event<R: Router>(
 ) -> wasm_bindgen::closure::Closure<dyn Fn(web_sys::PopStateEvent)> {
     let closure = move |_: web_sys::PopStateEvent| {
-        ROUTER.with(|router| {
-            if let Ok(router) = router.try_borrow() {
-                router.execute_routing::<R>();
-            }
-        })
+        let promise = crate::component::i_have_to_execute_update_queue();
+        self::execute_routing::<R>();
+        crate::component::execute_update_queue(promise);
     };
 
     let closure = wasm_bindgen::closure::Closure::wrap(

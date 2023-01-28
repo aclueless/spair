@@ -7,7 +7,8 @@ use wasm_bindgen::UnwrapThrowExt;
 pub trait Application: Component {
     fn init(comp: &Comp<Self>) -> Self;
 
-    /// If your Component::Routes is not `()`, you must override this to provide the actual router instance
+    /// If your Component::Routes is not `()`, you must override this method
+    /// to provide the actual router instance
     fn init_router(_comp: &Comp<Self>) -> Option<<<Self as Component>::Routes as Routes>::Router> {
         None
     }
