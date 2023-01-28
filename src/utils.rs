@@ -8,6 +8,10 @@ pub fn document() -> web_sys::Document {
     window().document().expect_throw("Unable to get document")
 }
 
+pub fn create_comment_node(content: &str) -> web_sys::Node {
+    document().create_comment(content).into()
+}
+
 pub fn alert(message: &str) {
     window()
         .alert_with_message(message)

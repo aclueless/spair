@@ -62,7 +62,7 @@ impl spair::Component for State {
                 comp.handler_mut(State::send_value_to_child),
             ))
             .horizontal_line()
-            .component_ref(&self.child_comp)
+            .component_ref(self.child_comp.component_ref())
             .horizontal_line()
             .component_owned(|_parent_state, parent_comp| {
                 let props = ChildProps {

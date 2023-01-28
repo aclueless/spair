@@ -40,6 +40,10 @@ impl ChildState {
 impl spair::Component for ChildState {
     type Routes = ();
 
+    fn debug(&self) -> &str {
+        self.props.title
+    }
+
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element

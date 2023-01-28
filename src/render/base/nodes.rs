@@ -1,8 +1,8 @@
 use super::{ElementUpdater, ListUpdater};
 use crate::{
-    component::{Child, ChildComp, Comp, Component},
+    component::{Child, Comp, Component},
     dom::{
-        AChildNode, ElementStatus, ElementTag, GroupedNodes, Nodes, OwnedComponent, RefComponent,
+        ElementStatus, ElementTag, GroupedNodes, Nodes, OwnedComponent, ComponentRef
     },
 };
 use wasm_bindgen::UnwrapThrowExt;
@@ -133,22 +133,9 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         (self.comp, self.state, lr)
     }
 
-    pub fn component_ref<CC: Component>(&mut self, child: &ChildComp<CC>) {
-        // if just created or unmounted:
-        // - do first render
-        // - attach the root element to self.parent
-        // - store the component handle on the node list
-        // on the second subsequent renders, do nothing.
-
-        if self.parent_status == ElementStatus::JustCreated || !child.comp_instance().is_mounted() {
-            child.first_render();
-            child
-                .comp_instance()
-                .root_element()
-                .insert_before_a_sibling(self.parent, self.next_sibling);
-            self.nodes
-                .store_ref_component(self.index, RefComponent::new(child));
-        }
+    pub fn component_ref(&mut self, cr: Box<dyn ComponentRef>) {
+        self.nodes
+            .ref_component(self.index, cr, self.parent, self.next_sibling);
     }
 
     pub fn component_owned<CC, T>(

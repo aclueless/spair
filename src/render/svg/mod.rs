@@ -22,6 +22,13 @@ pub use render::*;
 
 #[derive(Copy, Clone)]
 pub struct SvgTag(pub &'static str);
+
+impl From<&'static str> for SvgTag {
+    fn from(value: &'static str) -> Self {
+        Self(value)
+    }
+}
+
 impl ElementTag for SvgTag {
     const NAMESPACE: &'static str = "http://www.w3.org/2000/svg";
     fn tag_name(&self) -> &str {

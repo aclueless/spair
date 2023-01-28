@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::component::{ChildComp, Component, ComponentHandle};
+use crate::component::{Component, ComponentHandle};
 
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
@@ -17,7 +17,7 @@ pub enum Node {
     GroupedNodes(GroupedNodes),
     #[cfg(feature = "keyed-list")]
     KeyedList(KeyedList),
-    RefComponent(RefComponent),
+    RefComponent(RefComponentNode),
     OwnedComponent(OwnedComponent),
     #[cfg(feature = "queue-render")]
     QrNode(QrNode),
@@ -32,7 +32,7 @@ impl std::fmt::Debug for Node {
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(_) => "Node::KeyedList",
             // This is actually never reachable?
-            Self::RefComponent(_) => "Node::RefComponent",
+            Self::RefComponent(_) => "Node::RefComponent2",
             Self::OwnedComponent(_) => "Node::OwnedComponent",
             #[cfg(feature = "queue-render")]
             Self::QrNode(_) => "Node::QrNode",
@@ -41,24 +41,67 @@ impl std::fmt::Debug for Node {
     }
 }
 
-pub struct RefComponent {
-    _comp: Box<dyn std::any::Any>,
-    root_node: web_sys::Node,
+pub struct CompRef<C: Component> {
+    pub comp: ComponentHandle<C>,
+    pub ws_node: web_sys::Node,
 }
 
-impl RefComponent {
-    pub fn new<C: Component>(comp: &ChildComp<C>) -> Self {
-        let v = comp.comp_instance();
-        let root_node: &web_sys::Node = v.root_element().ws_element().ws_node();
-        let handle = ComponentHandle::from(comp.comp());
-        Self {
-            _comp: Box::new(handle),
-            root_node: root_node.clone(),
-        }
+pub trait ComponentRef {
+    fn type_id(&self) -> std::any::TypeId;
+    fn root_node(&self) -> &web_sys::Node;
+}
+
+impl<C: Component> ComponentRef for CompRef<C> {
+    fn type_id(&self) -> std::any::TypeId {
+        std::any::TypeId::of::<C>()
+    }
+
+    fn root_node(&self) -> &web_sys::Node {
+        &self.ws_node
     }
 }
 
-impl Clone for RefComponent {
+pub struct RefComponentNode {
+    comp_ref: Box<dyn ComponentRef>,
+    placeholder_flag: web_sys::Node,
+}
+
+impl RefComponentNode {
+    pub fn new(comp_ref: Box<dyn ComponentRef>) -> Self {
+        Self {
+            comp_ref,
+            placeholder_flag: crate::utils::create_comment_node("A flag to mark a child component place"),
+        }
+    }
+
+    pub fn comp_ref(&self) -> &dyn ComponentRef {
+        self.comp_ref.as_ref()
+    }
+
+    pub fn replace_comp_ref(&mut self, comp_ref: Box<dyn ComponentRef>) {
+        self.comp_ref = comp_ref;
+    }
+
+    pub fn placeholder_flag(&self) -> &web_sys::Node {
+        &self.placeholder_flag
+    }
+
+    pub fn mount(&self, parent: &web_sys::Node) {
+        self.comp_ref.root_node().insert_before_a_sibling(parent, Some(&self.placeholder_flag));
+    }
+
+    pub fn remove_all_from(&self, parent: &web_sys::Node) {
+        self.comp_ref.root_node().remove_from(parent);
+        self.placeholder_flag.remove_from(parent);
+    }
+
+    pub fn append_all_to(&self, parent: &web_sys::Node) {
+        self.comp_ref.root_node().append_to(parent);
+        self.placeholder_flag.append_to(parent);
+    }
+}
+
+impl Clone for RefComponentNode {
     fn clone(&self) -> Self {
         panic!("Spair does not support using component_ref inside a list item");
     }
@@ -130,7 +173,7 @@ impl Node {
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.remove_from_dom(parent),
             Self::RefComponent(rc) => {
-                rc.root_node.remove_from(parent);
+                rc.remove_all_from(parent);
             }
             Self::OwnedComponent(oc) => {
                 if let Some(wsn) = oc.root_node.as_ref() {
@@ -150,7 +193,7 @@ impl Node {
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.append_to(parent),
             // This is actually never reachable?
-            Self::RefComponent(rc) => rc.root_node.append_to(parent),
+            Self::RefComponent(rc) => rc.append_all_to(parent),
             Self::OwnedComponent(oc) => {
                 if let Some(wsn) = oc.root_node.as_ref() {
                     wsn.append_to(parent);

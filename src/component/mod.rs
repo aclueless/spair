@@ -25,7 +25,7 @@ thread_local! {
     };
 }
 
-fn i_have_to_execute_update_queue() -> bool {
+pub fn i_have_to_execute_update_queue() -> bool {
     UPDATE_QUEUE.with(|uq| {
         match uq.will_be_executed.get() {
             false => {
@@ -51,7 +51,7 @@ pub fn update_component(fn_update: impl FnOnce() + 'static) {
     UPDATE_QUEUE.with(|uq| uq.add(Box::new(fn_update)));
 }
 
-fn execute_update_queue(promise: bool) {
+pub fn execute_update_queue(promise: bool) {
     if !promise {
         return;
     }
@@ -77,6 +77,10 @@ impl UpdateQueue {
 
 pub trait Component: 'static + Sized {
     type Routes: crate::routing::Routes;
+
+    fn debug(&self) -> &str {
+        "Default Component::debug()"
+    }
 
     // This method will be ran once when the component is created.
     fn init(_: &Comp<Self>) {}
@@ -128,15 +132,15 @@ pub struct Comp<C: Component>(Weak<RefCell<CompInstance<C>>>);
 pub struct CompInstance<C> {
     state: Option<C>,
     root_element: Element,
-    mount_status: MountStatus,
+    mount_status: ComponentMountStatus,
     events: Vec<Box<dyn crate::events::Listener>>,
 }
 
-pub enum MountStatus {
+#[derive(Debug)]
+pub enum ComponentMountStatus {
     // A child component that is attached to the DOM.
     Mounted,
-    // A child component that is previously attached to the DOM but
-    // has been detached.
+    // A child component that is not attached from the DOM.
     Unmounted,
     // The main component always in this status.
     PermanentlyMounted,
@@ -205,9 +209,11 @@ impl<C: Component> Checklist<C> {
 }
 
 impl<C: Component> RcComp<C> {
+    // This method should only be used to construct the root component of the application,
+    // which is the component that impled crate::application::Application
     pub(crate) fn with_ws_root(root: web_sys::Element) -> Self {
         let root_element = Element::from_ws_element(root);
-        let mount_status = MountStatus::PermanentlyMounted;
+        let mount_status = ComponentMountStatus::PermanentlyMounted;
 
         Self(Rc::new(RefCell::new(CompInstance {
             state: None,
@@ -221,7 +227,7 @@ impl<C: Component> RcComp<C> {
         Self(Rc::new(RefCell::new(CompInstance {
             state: None,
             root_element,
-            mount_status: MountStatus::Mounted,
+            mount_status: ComponentMountStatus::Unmounted,
             events: Vec::new(),
         })))
     }
@@ -292,7 +298,7 @@ impl<C: Component> Comp<C> {
     fn set_mount_status_to_unmounted(&self) {
         if let Some(instance) = self.0.upgrade() {
             if let Ok(mut instance) = instance.try_borrow_mut() {
-                instance.mount_status = MountStatus::Unmounted;
+                instance.mount_status = ComponentMountStatus::Unmounted;
             }
         }
     }
@@ -512,10 +518,7 @@ impl<C: Component> CompInstance<C> {
     }
 
     pub(crate) fn is_mounted(&self) -> bool {
-        matches!(self.mount_status, MountStatus::Mounted)
+        matches!(self.mount_status, ComponentMountStatus::Mounted)
     }
 
-    pub(crate) fn root_element(&self) -> &Element {
-        &self.root_element
-    }
 }

@@ -1,13 +1,44 @@
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{Checklist, Comp, CompInstance, Component, RcComp};
-use crate::dom::{Element, TagName};
+use crate::dom::{Element, TagName, ComponentRef, CompRef};
 
 pub type ChildComp<C> = RcComp<C>;
 
 impl<C: Component> ChildComp<C> {
     pub fn comp_instance(&self) -> std::cell::Ref<CompInstance<C>> {
         self.0.borrow()
+    }
+
+    // Make a ComponentRef and do a first render if it has never rendered before
+    pub fn component_ref(&self) -> Option<Box<dyn ComponentRef>> {
+        let comp = self.comp();
+
+        // Just render self-component, this component dont have to care about executing
+        // the update queue because this method has to be called from a parent component
+        // which must take care of the update queue if there is no other component is being
+        // updated.
+
+        let mut instance = self
+            .0
+            .try_borrow_mut()
+            .expect_throw("Expect no borrowing at the first render");
+
+        if instance.is_mounted() {
+            return None;
+        }
+
+        instance.mount_status = super::ComponentMountStatus::Mounted;
+        if instance.root_element.is_empty() {
+            // In cases that the router not cause any render yet, such as Routes = ()
+            instance.render(&comp);
+        }
+
+        let ws_node = instance.root_element.ws_element().ws_node().clone();
+        Some(Box::new(CompRef {
+            comp: comp.into(),
+            ws_node,
+        }))
     }
 }
 
@@ -23,6 +54,7 @@ pub trait AsChildComp: Sized + Component {
         };
         let rc_comp = ChildComp::with_root(root_element);
         let comp = rc_comp.comp();
+        Component::init(&comp);
         let state = AsChildComp::init(&comp, props);
         rc_comp.set_state(state);
         crate::routing::register_routing_callback(&comp);
@@ -31,6 +63,10 @@ pub trait AsChildComp: Sized + Component {
 }
 
 impl<C: AsChildComp + Component> ChildComp<C> {
+    pub fn with_props(props: C::Properties) -> ChildComp<C> {
+        C::with_props(props)
+    }
+
     pub fn with_updater<P, T, G, U, Cl>(self, fn_get_value: G, cb: U) -> Child<P, C, T>
     where
         P: Component,

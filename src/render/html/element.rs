@@ -229,3 +229,16 @@ impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
 }
 
 impl<'updater, C: Component> MethodsForEvents<'updater, C> for HtmlElementUpdater<'updater, C> {}
+
+pub trait HemsWholeSelf<'updater, C: Component>: Sized + Sized + HtmlElementUpdaterMut<'updater, C> {
+    fn dangerously_set_inner_html(mut self, value: &str) {
+        // Currently always set the value
+        // TODO: Should we check for value change before setting?
+        self.html_element_updater_mut().ws_element().as_ref().set_inner_html(value);
+    }
+}
+
+impl<'updater, C: Component> HemsWholeSelf<'updater, C> for HtmlElementUpdater<'updater, C> {}
+impl<'updater, C: Component> HemsWholeSelf<'updater, C> for AttributesOnly<'updater, C> {}
+impl<'updater, C: Component> HemsWholeSelf<'updater, C> for StaticAttributes<'updater, C> {}
+impl<'updater, C: Component> HemsWholeSelf<'updater, C> for StaticAttributesOnly<'updater, C> {}

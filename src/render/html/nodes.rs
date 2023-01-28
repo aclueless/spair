@@ -8,7 +8,8 @@ use super::{
 #[cfg(feature = "svg")]
 use crate::render::svg::{SvgElementUpdater, SvgTag};
 use crate::{
-    component::{Child, ChildComp, Comp, Component},
+    dom::ComponentRef,
+    component::{Child, Comp, Component},
     render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut},
 };
 
@@ -94,11 +95,11 @@ pub trait HemsHandMade<'n, C: Component>: Sized {
         this
     }
 
-    fn component_ref<CC: Component>(self, child: &ChildComp<CC>) -> Self::Output {
+    fn component_ref(self, cr: Option<Box<dyn ComponentRef>>) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            render.component_ref(child);
+        if let Some(cr) = cr {
+            render.component_ref(cr);
         }
         render.next_index();
         this
@@ -585,3 +586,4 @@ impl<'a, C: Component> HtmlMatchIfUpdater<'a, C> {
         self.0.comp()
     }
 }
+

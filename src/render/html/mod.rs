@@ -32,6 +32,12 @@ pub use keyed_list::*;
 #[derive(Copy, Clone)]
 pub struct HtmlTag(pub &'static str);
 
+impl From<&'static str> for HtmlTag {
+    fn from(value: &'static str) -> Self {
+        Self(value)
+    }
+}
+
 impl ElementTag for HtmlTag {
     const NAMESPACE: &'static str = "http://www.w3.org/1999/xhtml";
     fn tag_name(&self) -> &str {
