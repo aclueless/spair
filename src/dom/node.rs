@@ -88,10 +88,18 @@ impl RefComponentNode {
         &self.placeholder_flag
     }
 
+    // better name?
     pub fn mount(&self, parent: &web_sys::Node) {
         self.comp_ref
             .root_node()
             .insert_before_a_sibling(parent, Some(&self.placeholder_flag));
+    }
+
+    // better name?
+    pub fn unmount(&self, parent: &web_sys::Node) {
+        self.comp_ref
+            .root_node()
+            .remove_from(parent);
     }
 
     pub fn remove_all_from(&self, parent: &web_sys::Node) {

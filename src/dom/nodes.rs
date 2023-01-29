@@ -220,6 +220,7 @@ impl Nodes {
         {
             Node::RefComponent(rcn) => {
                 if rcn.comp_ref().type_id() != comp_ref.type_id() {
+                    rcn.unmount(parent);
                     rcn.replace_comp_ref(comp_ref);
                     rcn.mount(parent);
                 }
