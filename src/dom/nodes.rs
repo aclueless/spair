@@ -1,3 +1,5 @@
+use std::any::TypeId;
+
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
 use super::{
@@ -334,7 +336,7 @@ impl Nodes {
 }
 
 pub struct GroupedNodes {
-    active_index: Option<u32>,
+    active_index: Option<TypeId>,
     // `end_flag_node` marks the boundary of the end of this group of nodes
     end_flag_node: web_sys::Node,
     nodes: Nodes,
@@ -376,7 +378,7 @@ impl GroupedNodes {
         &self.end_flag_node
     }
 
-    pub fn set_active_index(&mut self, index: u32, parent: &web_sys::Node) -> ElementStatus {
+    pub fn set_active_index(&mut self, index: TypeId, parent: &web_sys::Node) -> ElementStatus {
         if Some(index) != self.active_index {
             self.nodes.clear_and_remove_child_from_dom(parent);
             self.active_index = Some(index);

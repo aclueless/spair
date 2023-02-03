@@ -1,3 +1,5 @@
+use std::any::TypeId;
+
 #[cfg(feature = "queue-render")]
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -531,7 +533,7 @@ impl<'n, C: Component> MethodsForSvgElementContent<'n, C> for SvgStaticAttribute
 pub struct SvgMatchIfUpdater<'a, C: Component>(MatchIfUpdater<'a, C>);
 
 impl<'a, C: Component> SvgMatchIfUpdater<'a, C> {
-    pub fn render_on_arm_index(self, index: u32) -> SvgNodesOwned<'a, C> {
+    pub fn render_on_arm_index(self, index: TypeId) -> SvgNodesOwned<'a, C> {
         SvgNodesOwned::new(self.0.render_on_arm_index(index))
     }
 
