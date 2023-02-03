@@ -571,6 +571,7 @@ impl<'updater, C: Component> HemsForDistinctNames<'updater, C> for StaticAttribu
 pub struct HtmlMatchIfUpdater<'a, C: Component>(MatchIfUpdater<'a, C>);
 
 impl<'a, C: Component> HtmlMatchIfUpdater<'a, C> {
+    #[doc(hidden)]
     pub fn render_on_arm_index(self, index: u32) -> NodesOwned<'a, C> {
         NodesOwned(HtmlNodesUpdater {
             nodes_updater: self.0.render_on_arm_index(index),
