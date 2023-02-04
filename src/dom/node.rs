@@ -37,7 +37,7 @@ impl std::fmt::Debug for Node {
             #[cfg(feature = "queue-render")]
             Self::QrNode(_) => "Node::QrNode",
         };
-        f.write_fmt(format_args!("[{}]", name))
+        f.write_fmt(format_args!("[{name}]"))
     }
 }
 

@@ -136,7 +136,7 @@ impl spair::SvgElementRender<crate::simulation::Simulation> for &Boid {
             let Vector2D { x, y } = self.position + offset;
 
             // Write to string will never fail.
-            let _ = write!(points, "{:.2},{:.2} ", x, y);
+            let _ = write!(points, "{x:.2},{y:.2} ");
         }
         item.points(points).fill(color);
     }

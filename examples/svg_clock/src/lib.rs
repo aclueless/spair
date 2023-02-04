@@ -81,7 +81,7 @@ impl spair::Component for Clock {
                                     .y(101.0)
                                     .text_anchor("middle")
                                     .dominant_baseline("middle")
-                                    .transform(format!("translate({} {})", dx, dy))
+                                    .transform(format!("translate({dx} {dy})"))
                                     .rupdate(n / 5)
                                     .done()
                             });
