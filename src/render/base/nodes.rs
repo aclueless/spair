@@ -1,3 +1,5 @@
+use std::any::TypeId;
+
 use super::{ElementUpdater, ListUpdater};
 use crate::{
     component::{Child, Comp, Component},
@@ -216,7 +218,7 @@ impl<'a, C: Component> MatchIfUpdater<'a, C> {
     }
 
     #[doc(hidden)]
-    pub fn render_on_arm_index(self, index: u32) -> NodesUpdater<'a, C> {
+    pub fn render_on_arm_index(self, index: TypeId) -> NodesUpdater<'a, C> {
         let status = self.grouped_nodes.set_active_index(index, self.parent);
         let (nodes, next_sibling) = self.grouped_nodes.nodes_mut_and_end_flag_node();
 

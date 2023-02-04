@@ -1,3 +1,5 @@
+use std::any::TypeId;
+
 #[cfg(feature = "queue-render")]
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -572,7 +574,7 @@ pub struct HtmlMatchIfUpdater<'a, C: Component>(MatchIfUpdater<'a, C>);
 
 impl<'a, C: Component> HtmlMatchIfUpdater<'a, C> {
     #[doc(hidden)]
-    pub fn render_on_arm_index(self, index: u32) -> NodesOwned<'a, C> {
+    pub fn render_on_arm_index(self, index: TypeId) -> NodesOwned<'a, C> {
         NodesOwned(HtmlNodesUpdater {
             nodes_updater: self.0.render_on_arm_index(index),
             _select_element_value_manager: None, // How about a match_if inside a <select> element?
