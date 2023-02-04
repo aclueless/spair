@@ -37,7 +37,7 @@ impl std::fmt::Debug for Node {
             #[cfg(feature = "queue-render")]
             Self::QrNode(_) => "Node::QrNode",
         };
-        f.write_fmt(format_args!("[{}]", name))
+        f.write_fmt(format_args!("[{name}]"))
     }
 }
 
@@ -97,9 +97,7 @@ impl RefComponentNode {
 
     // better name?
     pub fn unmount(&self, parent: &web_sys::Node) {
-        self.comp_ref
-            .root_node()
-            .remove_from(parent);
+        self.comp_ref.root_node().remove_from(parent);
     }
 
     pub fn remove_all_from(&self, parent: &web_sys::Node) {
