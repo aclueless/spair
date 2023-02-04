@@ -183,7 +183,7 @@ The following code is extracted from `examples/fetch/src/lib.rs`:
 ```rust
 element
     .match_if(|mi| match self.branch.as_ref() {
-        Some(branch) => spair::set_arm!(mi) // `spair::set_arm!()` use `line!()` internally to set `render_on_arm_index()`
+        Some(branch) => spair::set_arm!(mi) // `spair::set_arm!()` uses a unique identifier internally to set `render_on_arm_index()`
             // Render the content of `Some(branch)`
             .rupdate(branch)
             // some code removed
