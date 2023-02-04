@@ -6,7 +6,6 @@ mod callback;
 mod component;
 mod dom;
 mod events;
-mod future;
 mod macros;
 mod render;
 mod routing;
@@ -36,7 +35,6 @@ pub use render::{
 
 // TODO selectively export event traits only?
 pub use events::*;
-pub use future::Future;
 pub use routing::{Router, Routes};
 pub use utils::*;
 

@@ -97,9 +97,7 @@ impl RefComponentNode {
 
     // better name?
     pub fn unmount(&self, parent: &web_sys::Node) {
-        self.comp_ref
-            .root_node()
-            .remove_from(parent);
+        self.comp_ref.root_node().remove_from(parent);
     }
 
     pub fn remove_all_from(&self, parent: &web_sys::Node) {
