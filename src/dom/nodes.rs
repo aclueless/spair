@@ -405,4 +405,9 @@ impl GroupedNodes {
     pub fn nodes_mut_and_end_flag_node(&mut self) -> (&mut Nodes, &web_sys::Node) {
         (&mut self.nodes, &self.end_flag_node)
     }
+
+    #[cfg(test)]
+    pub fn active_index(&self) -> Option<TypeId> {
+        self.active_index
+    }
 }

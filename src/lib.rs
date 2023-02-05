@@ -6,6 +6,7 @@ mod callback;
 mod component;
 mod dom;
 mod events;
+#[macro_use]
 mod macros;
 mod render;
 mod routing;
