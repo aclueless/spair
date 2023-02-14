@@ -266,12 +266,12 @@ mod tests {
         }
 
         let test = Test::set_up();
-        assert_eq!(Some("".to_string()), test.text_content());
+        assert_eq!(Some(""), test.text_content().as_deref());
 
         let active_index_1 = test.execute_on_nodes(get_grouped_nodes_active_index);
 
         test.update(TestMatchIf(None));
-        assert_eq!(Some("".to_string()), test.text_content());
+        assert_eq!(Some(""), test.text_content().as_deref());
 
         let active_index_2 = test.execute_on_nodes(get_grouped_nodes_active_index);
 
@@ -283,18 +283,18 @@ mod tests {
 
         // active_index for different arms must be different
         assert_ne!(active_index_1, active_index_3);
-        assert_eq!(Some("42".to_string()), test.text_content());
+        assert_eq!(Some("42"), test.text_content().as_deref());
 
         test.update(TestMatchIf(Some(24)));
         let active_index_4 = test.execute_on_nodes(get_grouped_nodes_active_index);
 
         // active_index for the same arm must be the same
         assert_eq!(active_index_3, active_index_4);
-        assert_eq!(Some("24".to_string()), test.text_content());
+        assert_eq!(Some("24"), test.text_content().as_deref());
 
         // set to None again
         test.update(TestMatchIf(None));
-        assert_eq!(Some("".to_string()), test.text_content());
+        assert_eq!(Some(""), test.text_content().as_deref());
 
         let active_index_5 = test.execute_on_nodes(get_grouped_nodes_active_index);
         // active_index for the same arm must be the same
