@@ -689,15 +689,10 @@ fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis<I>]) {
 
 #[cfg(test)]
 mod keyed_list_with_render_tests {
-    use wasm_bindgen::UnwrapThrowExt;
     use wasm_bindgen_test::*;
 
     use crate::dom::{Element, Keyed, Node};
-    use crate::render::ListElementCreation;
-    use crate::render::{
-        base::ElementUpdater,
-        html::{ElementRender, HemsForKeyedList, HtmlElementUpdater, HtmlTag},
-    };
+    use crate::render::html::{ElementRender, HtmlTag};
 
     impl super::ItemWithLis<&()> {
         fn index(index: usize) -> Self {
@@ -778,18 +773,6 @@ mod keyed_list_with_render_tests {
         assert_eq!(rs, [0, 3, 4, 5, 9]);
     }
 
-    struct Unit;
-    impl crate::component::Component for Unit {
-        type Routes = ();
-        fn render(&self, _: crate::Element<Self>) {}
-    }
-
-    struct PhantomApp {
-        root: crate::dom::Element,
-        _rc: crate::component::RcComp<Unit>,
-        comp: crate::component::Comp<Unit>,
-    }
-
     impl Keyed for &&'static str {
         type Key = &'static str;
         fn key(&self) -> &Self::Key {
@@ -797,155 +780,138 @@ mod keyed_list_with_render_tests {
         }
     }
 
-    impl ElementRender<Unit> for &&str {
-        const ELEMENT_TAG: &'static str = "span";
-        fn render(self, item: crate::Element<Unit>) {
-            use crate::render::html::MethodsForHtmlElementContent;
-            item.rupdate(*self);
-        }
-    }
-
-    impl PhantomApp {
-        fn new() -> Self {
-            let root = crate::dom::Element::new_ns(HtmlTag("div"));
-            let _rc =
-                crate::component::RcComp::with_ws_root(root.ws_element().clone().into_inner());
-            _rc.set_state(Unit);
-
-            let comp = _rc.comp();
-            Self { root, _rc, comp }
-        }
-
-        fn create_updater(&mut self) -> HtmlElementUpdater<Unit> {
-            ElementUpdater::new(
-                &self.comp,
-                &Unit,
-                &mut self.root,
-                crate::dom::ElementStatus::Existing,
-            )
-            .into()
-        }
-
-        fn collect_from_keyed_list(&self) -> Vec<String> {
-            if let Node::KeyedList(kl) = self.root.nodes().nodes_vec().first().unwrap_throw() {
-                kl.active_nodes()
-                    .iter()
-                    .map(|item| {
-                        item.as_ref()
-                            .unwrap_throw()
-                            .element
-                            .nodes()
-                            .nodes_vec()
-                            .first()
-                            .unwrap_throw()
-                    })
-                    .map(|item| match item {
-                        Node::Text(text) => text.text().to_string(),
-                        _ => panic!("Should be a text?"),
-                    })
-                    .collect()
-            } else {
-                Vec::new()
+    macro_rules! make_keyed_list_test {
+        ($mode:expr) => {
+            make_a_test_component_with! {
+                type: Vec<&'static str>,
+                init: { Vec::new() }
+                render_fn: fn render(&self, element: crate::Element<Self>) {
+                    element.keyed_list(self.0.iter(), $mode);
+                }
             }
-        }
 
-        fn collect_text_from_root(&self) -> Option<String> {
-            self.root.ws_element().ws_node().text_content()
-        }
+            impl ElementRender<TestComponent> for &&str {
+                const ELEMENT_TAG: &'static str = "span";
+                fn render(self, item: crate::Element<TestComponent>) {
+                    item.rupdate(*self);
+                }
+            }
+
+            fn collect_from_keyed_list(nodes: &[crate::dom::Node]) -> Vec<String> {
+                if let Node::KeyedList(kl) = nodes.first().unwrap_throw() {
+                    kl.active_nodes()
+                        .iter()
+                        .map(|item| {
+                            item.as_ref()
+                                .unwrap_throw()
+                                .element
+                                .nodes()
+                                .nodes_vec()
+                                .first()
+                                .unwrap_throw()
+                        })
+                        .map(|item| match item {
+                            Node::Text(text) => text.text().to_string(),
+                            _ => panic!("Should be a text?"),
+                        })
+                        .collect()
+                } else {
+                    Vec::new()
+                }
+            }
+
+            let test = Test::set_up();
+
+            let empty: Vec<&'static str> = Vec::new();
+            test.update(empty.clone());
+            assert_eq!(Some(""), test.text_content().as_deref());
+            assert_eq!(empty, test.execute_on_nodes(collect_from_keyed_list));
+
+            let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("abcdefghijk"), test.text_content().as_deref());
+
+            // Random shuffle + addition
+            let data = vec!["f", "b", "d", "l", "g", "i", "m", "j", "a", "h", "k"];
+            test.update(data.clone());
+            assert_eq!(Some("fbdlgimjahk"), test.text_content().as_deref());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+
+            // Empty the list
+            test.update(empty.clone());
+            assert_eq!(Some(""), test.text_content().as_deref());
+            assert_eq!(empty, test.execute_on_nodes(collect_from_keyed_list));
+
+            // Add back
+            let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("abcdefghijk"), test.text_content().as_deref());
+
+            // Forward
+            let data = vec!["a", "i", "b", "c", "d", "e", "f", "g", "h", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("aibcdefghjk"), test.text_content().as_deref());
+
+            // Backward
+            let data = vec!["a", "i", "c", "d", "e", "f", "g", "h", "b", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("aicdefghbjk"), test.text_content().as_deref());
+
+            // Swap
+            let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("abcdefghijk"), test.text_content().as_deref());
+
+            // Remove middle
+            let data = vec!["a", "b", "c", "d", "i", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("abcdijk"), test.text_content().as_deref());
+
+            // Insert middle
+            let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("abcdefghijk"), test.text_content().as_deref());
+
+            // Remove start
+            let data = vec!["d", "e", "f", "g", "h", "i", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("defghijk"), test.text_content().as_deref());
+
+            // Insert start
+            let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("abcdefghijk"), test.text_content().as_deref());
+
+            // Remove end
+            let data = vec!["a", "b", "c", "d", "e", "f", "g", "h"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("abcdefgh"), test.text_content().as_deref());
+
+            // Append end
+            let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+            test.update(data.clone());
+            assert_eq!(data, test.execute_on_nodes(collect_from_keyed_list));
+            assert_eq!(Some("abcdefghijk"), test.text_content().as_deref());
+        };
     }
 
-    #[wasm_bindgen_test]
-    fn keyed_list_with_template() {
-        keyed_list(ListElementCreation::Clone);
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn keyed_list_clone() {
+        make_keyed_list_test!(crate::ListElementCreation::Clone);
     }
 
-    #[wasm_bindgen_test]
-    fn keyed_list_no_template() {
-        keyed_list(ListElementCreation::New);
-    }
-
-    fn keyed_list(mode: ListElementCreation) {
-        let mut pa = PhantomApp::new();
-
-        let empty: Vec<&'static str> = Vec::new();
-        let _ = pa.create_updater().keyed_list(&empty, mode);
-        assert_eq!(Some(""), pa.collect_text_from_root().as_deref());
-        assert_eq!(empty, pa.collect_from_keyed_list());
-
-        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
-
-        // Random shuffle + addition
-        let data = vec!["f", "b", "d", "l", "g", "i", "m", "j", "a", "h", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(Some("fbdlgimjahk"), pa.collect_text_from_root().as_deref());
-        assert_eq!(data, pa.collect_from_keyed_list());
-
-        // Empty the list
-        let _ = pa.create_updater().keyed_list(&empty, mode);
-        assert_eq!(Some(""), pa.collect_text_from_root().as_deref());
-        assert_eq!(empty, pa.collect_from_keyed_list());
-
-        // Add back
-        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
-
-        // Forward
-        let data = vec!["a", "i", "b", "c", "d", "e", "f", "g", "h", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("aibcdefghjk"), pa.collect_text_from_root().as_deref());
-
-        // Backward
-        let data = vec!["a", "i", "c", "d", "e", "f", "g", "h", "b", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("aicdefghbjk"), pa.collect_text_from_root().as_deref());
-
-        // Swap
-        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
-
-        // Remove middle
-        let data = vec!["a", "b", "c", "d", "i", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("abcdijk"), pa.collect_text_from_root().as_deref());
-
-        // Insert middle
-        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
-
-        // Remove start
-        let data = vec!["d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("defghijk"), pa.collect_text_from_root().as_deref());
-
-        // Insert start
-        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
-
-        // Remove end
-        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("abcdefgh"), pa.collect_text_from_root().as_deref());
-
-        // Append end
-        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
-        let _ = pa.create_updater().keyed_list(&data, mode);
-        assert_eq!(data, pa.collect_from_keyed_list());
-        assert_eq!(Some("abcdefghijk"), pa.collect_text_from_root().as_deref());
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn keyed_list_new() {
+        make_keyed_list_test!(crate::ListElementCreation::New);
     }
 }
