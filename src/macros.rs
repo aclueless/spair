@@ -70,7 +70,6 @@ macro_rules! make_a_test_component {
                 let comp_instance = self.rc_comp.comp_instance();
                 let nodes_vec = comp_instance.root_element().nodes().nodes_vec();
                 func(nodes_vec)
-                //func(self.root.nodes().nodes_vec())
             }
 
             #[allow(dead_code)]
