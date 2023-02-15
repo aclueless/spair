@@ -242,7 +242,7 @@ mod qr_list_tests {
             Node::Element(e) => {
                 return e.ws_element().ws_node().text_content();
             }
-            n => panic!("Expected an Node::Element, found {:?}", n),
+            n => panic!("Expected an Node::Element, found {n:?}"),
         }
     }
 

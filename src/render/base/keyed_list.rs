@@ -782,9 +782,9 @@ mod keyed_list_with_render_tests {
 
     macro_rules! make_keyed_list_test {
         ($mode:expr) => {
-            make_a_test_component_with! {
-                type: Vec<&'static str>,
-                init: { Vec::new() }
+            make_a_test_component! {
+                type: Vec<&'static str>;
+                init: Vec::new();
                 render_fn: fn render(&self, element: crate::Element<Self>) {
                     element.keyed_list(self.0.iter(), $mode);
                 }
