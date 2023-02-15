@@ -194,109 +194,130 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
 
 #[cfg(test)]
 mod qr_list_tests {
-    use wasm_bindgen_test::*;
-
-    use crate::prelude::*;
-
-    use crate::component::{Component, RcComp};
-    use crate::dom::{Element, Node};
     use crate::queue_render::vec::QrVec;
     use crate::render::html::ElementRender;
-    use crate::render::ListElementCreation;
 
-    pub struct State {
-        vec: QrVec<u32>,
-    }
-
-    impl ElementRender<State> for u32 {
-        const ELEMENT_TAG: &'static str = "span";
-        fn render(self, item: crate::Element<State>) {
-            item.rupdate(self);
-        }
-    }
-
-    impl Component for State {
-        type Routes = ();
-        fn render(&self, element: crate::Element<Self>) {
-            element
-                .div(|d| {
-                    d.id("qr_clone")
-                        .qr_list(&self.vec, ListElementCreation::Clone);
-                })
-                .div(|d| {
-                    d.id("qr_new").qr_list(&self.vec, ListElementCreation::New);
-                });
-        }
-    }
-
-    impl Application for State {
-        fn init(_comp: &crate::Comp<Self>) -> Self {
-            Self {
-                vec: QrVec::with_values(vec![1, 5, 3, 7]),
+    macro_rules! make_queue_render_list_test {
+        ($mode:expr) => {
+            make_a_test_component! {
+                type: QrVec<u32>;
+                init: QrVec::with_values(Vec::new());
+                render_fn: fn render(&self, element: crate::Element<Self>) {
+                    element.qr_list(&self.0, $mode);
+                }
             }
-        }
-    }
-
-    fn get_text(node: Option<&Node>) -> Option<String> {
-        match node.expect_throw("Should not empty") {
-            Node::Element(e) => {
-                return e.ws_element().ws_node().text_content();
+            impl ElementRender<TestComponent> for u32 {
+                const ELEMENT_TAG: &'static str = "span";
+                fn render(self, item: crate::Element<TestComponent>) {
+                    item.rupdate(self);
+                }
             }
-            n => panic!("Expected an Node::Element, found {n:?}"),
-        }
-    }
 
-    fn qr_list_test(
-        rc: &RcComp<State>,
-        do_change: impl FnOnce(&QrVec<u32>),
-    ) -> (Option<String>, Option<String>) {
-        do_change(&rc.comp_instance().state().vec);
-        crate::queue_render::execute_render_queue();
-        let comp_instance = rc.comp_instance();
-        let root = comp_instance.root_element();
-        assert_eq!(2, root.nodes().count());
+            let test = Test::set_up();
+            assert_eq!(Some(""), test.text_content().as_deref());
 
-        let render_clone = get_text(root.nodes().nodes_vec().get(0));
-        let render_new = get_text(root.nodes().nodes_vec().get(1));
-        (render_clone, render_new)
-    }
+            test.update_with(|qr| qr.get_mut().new_values(vec![1, 5, 3, 7]));
+            assert_eq!(Some("1537"), test.text_content().as_deref());
 
-    macro_rules! both_eq {
-        ($x:literal, $expr:expr) => {
-            let r = $expr;
-            assert_eq!(Some($x), r.0.as_deref(), "by cloning");
-            assert_eq!(Some($x), r.1.as_deref(), "by creating new");
+            test.update_with(|qr| qr.get_mut().push(4));
+            assert_eq!(Some("15374"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().remove_at(1);
+            });
+            assert_eq!(Some("1374"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().pop();
+            });
+            assert_eq!(Some("137"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().insert_at(0, 2).unwrap();
+            });
+            assert_eq!(Some("2137"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().insert_at(1, 8).unwrap();
+            });
+            assert_eq!(Some("28137"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().insert_at(5, 5).unwrap();
+            });
+            assert_eq!(Some("281375"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().swap(0, 5).unwrap();
+            });
+            assert_eq!(Some("581372"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().swap(4, 0).unwrap();
+            });
+            assert_eq!(Some("781352"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().swap(2, 5).unwrap();
+            });
+            assert_eq!(Some("782351"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().r#move(1, 5).unwrap();
+            });
+            assert_eq!(Some("723518"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().r#move(0, 3).unwrap();
+            });
+            assert_eq!(Some("235718"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().r#move(3, 0).unwrap();
+            });
+            assert_eq!(Some("723518"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().r#move(5, 0).unwrap();
+            });
+            assert_eq!(Some("872351"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().replace_at(2, 0);
+            });
+            assert_eq!(Some("870351"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().replace_at(5, 9);
+            });
+            assert_eq!(Some("870359"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().replace_at(0, 6);
+            });
+            assert_eq!(Some("670359"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                let mut qr = qr.get_mut();
+                qr.push(0);
+                qr.new_values(vec![1, 2, 3, 4, 5, 6]);
+            });
+            assert_eq!(Some("123456"), test.text_content().as_deref());
+
+            test.update_with(|qr| {
+                qr.get_mut().clear();
+            });
+            assert_eq!(Some(""), test.text_content().as_deref());
         };
     }
 
-    #[wasm_bindgen_test]
-    fn qr_list() {
-        let root = Element::new_ns(crate::render::html::HtmlTag("div"));
-        let rc =
-            crate::application::mount_to_element::<State>(root.ws_element().clone().into_inner());
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn qr_list_clone() {
+        make_queue_render_list_test!(crate::ListElementCreation::Clone);
+    }
 
-        both_eq! { "1537", qr_list_test(&rc, |_| {}) }
-        both_eq! { "15374", qr_list_test(&rc, |vec| vec.get_mut().push(4)) }
-        both_eq! { "1374", qr_list_test(&rc, |vec| { vec.get_mut().remove_at(1); }) }
-        both_eq! { "137", qr_list_test(&rc, |vec| { vec.get_mut().pop(); }) }
-        both_eq! { "2137", qr_list_test(&rc, |vec| { vec.get_mut().insert_at(0, 2).expect_throw("insert at 0"); }) }
-        both_eq! { "28137", qr_list_test(&rc, |vec| { vec.get_mut().insert_at(1, 8).expect_throw("insert at 1"); }) }
-        both_eq! { "281375", qr_list_test(&rc, |vec| { vec.get_mut().insert_at(5, 5).expect_throw("insert at 5"); }) }
-        both_eq! { "581372", qr_list_test(&rc, |vec| { vec.get_mut().swap(0, 5).expect_throw("swap 0-5"); }) }
-        both_eq! { "781352", qr_list_test(&rc, |vec| { vec.get_mut().swap(4, 0).expect_throw("swap 0-4"); }) }
-        both_eq! { "782351", qr_list_test(&rc, |vec| { vec.get_mut().swap(2, 5).expect_throw("swap 2-5"); }) }
-        both_eq! { "723518", qr_list_test(&rc, |vec| { vec.get_mut().r#move(1, 5).expect_throw("move 1-5"); }) }
-        both_eq! { "235718", qr_list_test(&rc, |vec| { vec.get_mut().r#move(0, 3).expect_throw("move 0-3"); }) }
-        both_eq! { "723518", qr_list_test(&rc, |vec| { vec.get_mut().r#move(3, 0).expect_throw("move 3-0"); }) }
-        both_eq! { "872351", qr_list_test(&rc, |vec| { vec.get_mut().r#move(5, 0).expect_throw("move 5-0"); }) }
-        both_eq! { "870351", qr_list_test(&rc, |vec| { vec.get_mut().replace_at(2, 0).expect_throw("move at 2"); }) }
-        both_eq! { "870359", qr_list_test(&rc, |vec| { vec.get_mut().replace_at(5, 9).expect_throw("move at 5"); }) }
-        both_eq! { "670359", qr_list_test(&rc, |vec| { vec.get_mut().replace_at(0, 6).expect_throw("move at 0"); }) }
-        both_eq! { "123456", qr_list_test(&rc, |vec| {
-            let mut vec = vec.get_mut();
-            vec.push(0);
-            vec.new_values(vec![1,2,3,4,5,6]);
-        }) }
-        both_eq! { "", qr_list_test(&rc, |vec| { vec.get_mut().clear(); }) }
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn qr_list_new() {
+        make_queue_render_list_test!(crate::ListElementCreation::New);
     }
 }
