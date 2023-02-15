@@ -262,6 +262,8 @@ impl<C: Component> RcComp<C> {
         }
 
         self::execute_update_queue(promise);
+        #[cfg(feature = "queue-render")]
+        crate::queue_render::execute_render_queue();
     }
 
     pub fn comp(&self) -> Comp<C> {
