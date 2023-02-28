@@ -3,7 +3,10 @@ use std::any::TypeId;
 use super::{ElementUpdater, ListUpdater};
 use crate::{
     component::{Child, Comp, Component},
-    dom::{ComponentRef, ElementStatus, ElementTag, GroupedNodes, Nodes, OwnedComponent},
+    dom::{
+        ComponentRef, ElementStatus, ElementTag, GroupedNodes, InternalTextRender, Nodes,
+        OwnedComponent,
+    },
 };
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -78,16 +81,11 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         self.index += 1;
     }
 
-    pub fn update_text(&mut self, text: &str) {
+    pub fn update_text(&mut self, text: impl InternalTextRender) {
         self.nodes
             .update_text(self.index, text, self.parent, self.next_sibling);
-        self.index += 1;
-    }
-
-    pub fn static_text(&mut self, text: &str) {
-        self.nodes
-            .static_text(self.index, text, self.parent, self.next_sibling);
-        self.index += 1;
+        //Don't do this
+        //self.index += 1;
     }
 
     pub fn get_element_updater<E: ElementTag>(&mut self, tag: E) -> ElementUpdater<C> {
@@ -141,9 +139,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     pub fn component_owned<CC, T>(
         &mut self,
         create_child_comp: impl FnOnce(&C, &Comp<C>) -> Child<C, CC, T>,
-    )
-    //-> &mut OwnedComponent
-    where
+    ) where
         CC: Component,
         T: 'static + Clone + PartialEq,
     {
@@ -246,7 +242,7 @@ mod tests {
             render_fn: fn render(&self, element: crate::Element<Self>) {
                 element.match_if(|mi| match self.0 {
                     None => crate::set_arm!(mi).done(),
-                    Some(value) => crate::set_arm!(mi).rupdate(value).done(),
+                    Some(value) => crate::set_arm!(mi).update_text(value).done(),
                 });
             }
         }

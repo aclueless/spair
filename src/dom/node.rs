@@ -27,7 +27,7 @@ impl std::fmt::Debug for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         let name = match self {
             Self::Element(_) => "Node::Element",
-            Self::Text(_) => "Node::Text",
+            Self::Text(_) => "Node::Text2",
             Self::GroupedNodes(_) => "Node::GroupedNodes",
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(_) => "Node::KeyedList",

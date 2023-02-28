@@ -171,250 +171,213 @@ impl spair::Component for App {
             .section(|s| {
                 s.static_attributes()
                     .class("todoapp")
-                    .rupdate(Header)
-                    .rupdate(Main)
-                    .rupdate(Footer);
+                    .rfn(render_header)
+                    .rfn(render_main)
+                    .rfn(render_footer);
             })
-            .rupdate(Info);
+            .rfn(render_info);
     }
 }
 
-struct Header;
-impl spair::Render<App> for Header {
-    fn render(self, nodes: spair::Nodes<App>) {
-        let comp = nodes.comp();
-        let state = nodes.state();
-        nodes.header(|h| {
-            h.static_attributes()
-                .class("header")
-                .static_nodes()
-                .h1(|h| h.rupdate("Spair Todos").done())
-                .update_nodes()
-                .input(|i| {
-                    i.value(&state.new_todo_title)
-                        .static_attributes()
-                        .class("new-todo")
-                        .focus(true)
-                        .placeholder("What needs to be done?")
-                        .on_input(comp.handler_arg_mut(|state, arg: spair::InputEvent| {
-                            if let Some(input) = arg.current_target_as_input_element() {
-                                state.set_new_todo_title(input.value());
-                            }
-                        }))
-                        .on_key_press(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
-                            // `.key_code()` is deprecated, so we use code instead
-                            // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                            if arg.raw().code().as_str() == "Enter" {
-                                state.create_new_todo();
-                            }
-                        }));
-                });
-        });
-    }
+fn render_header(nodes: spair::Nodes<App>) {
+    let comp = nodes.comp();
+    let state = nodes.state();
+    nodes.header(|h| {
+        h.static_attributes()
+            .class("header")
+            .static_nodes()
+            .h1(|h| h.update_text("Spair Todos").done())
+            .update_nodes()
+            .input(|i| {
+                i.value(&state.new_todo_title)
+                    .static_attributes()
+                    .class("new-todo")
+                    .focus(true)
+                    .placeholder("What needs to be done?")
+                    .on_input(comp.handler_arg_mut(|state, arg: spair::InputEvent| {
+                        if let Some(input) = arg.current_target_as_input_element() {
+                            state.set_new_todo_title(input.value());
+                        }
+                    }))
+                    .on_key_press(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
+                        // `.key_code()` is deprecated, so we use code instead
+                        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
+                        if arg.raw().code().as_str() == "Enter" {
+                            state.create_new_todo();
+                        }
+                    }));
+            });
+    });
 }
 
-struct Main;
-impl spair::Render<App> for Main {
-    fn render(self, nodes: spair::Nodes<App>) {
-        let comp = nodes.comp();
-        let state = nodes.state();
-        let todo_count = state.data.items.len();
-        let all_completed = state.data.items.iter().all(|item| item.completed);
-        nodes.section(|s| {
-            s.class_if(todo_count == 0, "hidden")
+fn render_main(nodes: spair::Nodes<App>) {
+    let comp = nodes.comp();
+    let state = nodes.state();
+    let todo_count = state.data.items.len();
+    let all_completed = state.data.items.iter().all(|item| item.completed);
+    nodes.section(|s| {
+        s.class_if(todo_count == 0, "hidden")
+            .static_attributes()
+            .class("main")
+            .input(move |i| {
+                i.checked(all_completed)
+                    .on_change(comp.handler_mut(move |state| state.toggle_all(!all_completed)))
+                    .static_attributes()
+                    .id("toggle-all")
+                    .class("toggle-all")
+                    .input_type(spair::InputType::CheckBox);
+            })
+            .static_nodes()
+            .label(|l| {
+                l.static_attributes()
+                    .r#for("toggle-all")
+                    .static_nodes()
+                    .static_text("Mark all as complete");
+            })
+            .update_nodes()
+            .ul(|u| {
+                u.static_attributes().class("todo-list").keyed_list_clone(
+                    state
+                        .data
+                        .items
+                        .iter()
+                        .filter(|item| item.visible(&state.filter)),
+                    "li",
+                    |item| &item.id,
+                    render_todo_item,
+                );
+            });
+    });
+}
+
+fn render_footer(nodes: spair::Nodes<App>) {
+    let comp = nodes.comp();
+    let state = nodes.state();
+    let list_empty = state.data.items.is_empty();
+    let item_left = state
+        .data
+        .items
+        .iter()
+        .filter(|item| !item.completed)
+        .count();
+    let some_completed = state.data.items.iter().any(|item| item.completed);
+    nodes.footer(|f| {
+        f.class_if(list_empty, "hidden")
+            .static_attributes()
+            .class("footer")
+            .update_nodes()
+            .span(|s| {
+                s.static_attributes()
+                    .class("todo-count")
+                    .strong(|s| s.update_text(item_left).done())
+                    .update_text(if item_left == 1 {
+                        " item left"
+                    } else {
+                        " items left"
+                    });
+            })
+            .ul(|u| {
+                u.static_attributes()
+                    .class("filters")
+                    .rfn(|nodes| render_filter(Filter::All, nodes))
+                    .rfn(|nodes| render_filter(Filter::Active, nodes))
+                    .rfn(|nodes| render_filter(Filter::Completed, nodes));
+            })
+            .button(|b| {
+                b.class_if(!some_completed, "hidden")
+                    .static_attributes()
+                    .class("clear-completed")
+                    .on_click(comp.handler_mut(App::clear_completed))
+                    .static_text("Clear completed");
+            });
+    });
+}
+
+fn render_filter(view: Filter, nodes: spair::Nodes<App>) {
+    let current_filter = nodes.state().filter;
+    nodes.li(|l| {
+        l.a(|a| {
+            a.class_if(current_filter == view, "selected")
                 .static_attributes()
-                .class("main")
-                .input(move |i| {
-                    i.checked(all_completed)
-                        .on_change(comp.handler_mut(move |state| state.toggle_all(!all_completed)))
+                .href(&view)
+                .static_nodes()
+                .static_text(view.as_str());
+        });
+    });
+}
+
+fn render_info(nodes: spair::Nodes<App>) {
+    nodes.footer(|f| {
+        f.static_attributes()
+            .class("info")
+            .static_nodes()
+            .p(|p| p.static_text("Double-click to edit a todo").done())
+            .p(|p| p.static_text("Created by 'aclueless'").done())
+            .p(|p| {
+                p.static_text("Part of ").a(|a| {
+                    a.static_attributes()
+                        .href_str("http://todomvc.com")
+                        .static_text("TodoMVC");
+                });
+            });
+    });
+}
+
+fn render_todo_item(item: &TodoItem, li: spair::Element<App>) {
+    let comp = li.comp();
+    let state = li.state();
+    let id = item.id;
+    let is_editing_me = state.editing_id == Some(item.id);
+    li.class_if(item.completed, "completed")
+        .class_if(is_editing_me, "editing")
+        .div(move |d| {
+            d.static_attributes()
+                .class("view")
+                .input(|i| {
+                    i.on_change(comp.handler_mut(move |state| state.toggle(id)))
+                        .checked(item.completed)
                         .static_attributes()
-                        .id("toggle-all")
-                        .class("toggle-all")
+                        .class("toggle")
                         .input_type(spair::InputType::CheckBox);
                 })
-                .static_nodes()
                 .label(|l| {
-                    l.static_attributes()
-                        .r#for("toggle-all")
-                        .static_nodes()
-                        .rstatic("Mark all as complete");
-                })
-                .update_nodes()
-                .ul(|u| {
-                    u.static_attributes().class("todo-list").keyed_list_clone(
-                        state
-                            .data
-                            .items
-                            .iter()
-                            .filter(|item| item.visible(&state.filter)),
-                    );
-                });
-        });
-    }
-}
-
-struct Footer;
-impl spair::Render<App> for Footer {
-    fn render(self, nodes: spair::Nodes<App>) {
-        let comp = nodes.comp();
-        let state = nodes.state();
-        let list_empty = state.data.items.is_empty();
-        let item_left = state
-            .data
-            .items
-            .iter()
-            .filter(|item| !item.completed)
-            .count();
-        let some_completed = state.data.items.iter().any(|item| item.completed);
-        nodes.footer(|f| {
-            f.class_if(list_empty, "hidden")
-                .static_attributes()
-                .class("footer")
-                .update_nodes()
-                .span(|s| {
-                    s.static_attributes()
-                        .class("todo-count")
-                        .strong(|s| s.rupdate(item_left).done())
-                        .rupdate(if item_left == 1 {
-                            " item left"
-                        } else {
-                            " items left"
-                        });
-                })
-                .ul(|u| {
-                    u.static_attributes()
-                        .class("filters")
-                        .rupdate(FilterView {
-                            current_filter: state.filter,
-                            view: Filter::All,
-                        })
-                        .rupdate(FilterView {
-                            current_filter: state.filter,
-                            view: Filter::Active,
-                        })
-                        .rupdate(FilterView {
-                            current_filter: state.filter,
-                            view: Filter::Completed,
-                        });
+                    l.on_double_click(comp.handler_mut(move |state| state.start_editing(id)))
+                        .update_text(&item.title);
                 })
                 .button(|b| {
-                    b.class_if(!some_completed, "hidden")
+                    b.on_click(comp.handler_mut(move |state| state.remove(id)))
                         .static_attributes()
-                        .class("clear-completed")
-                        .on_click(comp.handler_mut(App::clear_completed))
-                        .rstatic("Clear completed");
+                        .class("destroy");
                 });
+        })
+        .match_if(|mi| match is_editing_me {
+            true => spair::set_arm!(mi)
+                .rfn(|nodes| render_input(&item.title, nodes))
+                .done(),
+            false => spair::set_arm!(mi).done(),
         });
-    }
 }
 
-struct FilterView {
-    current_filter: Filter,
-    view: Filter,
-}
-
-impl spair::Render<App> for FilterView {
-    fn render(self, nodes: spair::Nodes<App>) {
-        nodes.li(|l| {
-            l.a(|a| {
-                a.class_if(self.current_filter == self.view, "selected")
-                    .static_attributes()
-                    .href(&self.view)
-                    .static_nodes()
-                    .rstatic(self.view.as_str());
-            });
-        });
-    }
-}
-
-struct Info;
-impl spair::Render<App> for Info {
-    fn render(self, nodes: spair::Nodes<App>) {
-        nodes.footer(|f| {
-            f.static_attributes()
-                .class("info")
-                .static_nodes()
-                .p(|p| p.rstatic("Double-click to edit a todo").done())
-                .p(|p| p.rstatic("Created by 'aclueless'").done())
-                .p(|p| {
-                    p.rstatic("Part of ").a(|a| {
-                        a.static_attributes()
-                            .href_str("http://todomvc.com")
-                            .rstatic("TodoMVC");
-                    });
-                });
-        });
-    }
-}
-
-impl spair::Keyed for TodoItem {
-    type Key = u32;
-    fn key(&self) -> &Self::Key {
-        &self.id
-    }
-}
-
-impl spair::ElementRender<App> for &TodoItem {
-    const ELEMENT_TAG: &'static str = "li";
-    fn render(self, li: spair::Element<App>) {
-        let comp = li.comp();
-        let state = li.state();
-        let id = self.id;
-        let is_editing_me = state.editing_id == Some(self.id);
-        li.class_if(self.completed, "completed")
-            .class_if(is_editing_me, "editing")
-            .div(move |d| {
-                d.static_attributes()
-                    .class("view")
-                    .input(|i| {
-                        i.on_change(comp.handler_mut(move |state| state.toggle(id)))
-                            .checked(self.completed)
-                            .static_attributes()
-                            .class("toggle")
-                            .input_type(spair::InputType::CheckBox);
-                    })
-                    .label(|l| {
-                        l.on_double_click(comp.handler_mut(move |state| state.start_editing(id)))
-                            .rupdate(&self.title);
-                    })
-                    .button(|b| {
-                        b.on_click(comp.handler_mut(move |state| state.remove(id)))
-                            .static_attributes()
-                            .class("destroy");
-                    });
-            })
-            .match_if(|mi| match is_editing_me {
-                true => spair::set_arm!(mi)
-                    .rupdate(EditingInput(&self.title))
-                    .done(),
-                false => spair::set_arm!(mi).done(),
-            });
-    }
-}
-
-struct EditingInput<'a>(&'a String);
-impl<'a> spair::Render<App> for EditingInput<'a> {
-    fn render(self, nodes: spair::Nodes<App>) {
-        let comp = nodes.comp();
-        nodes.input(|i| {
-            i.focus(true)
-                .value(self.0)
-                .static_attributes()
-                .class("edit")
-                .on_blur(comp.handler_arg_mut(|state, arg: spair::FocusEvent| {
-                    state.end_editing(get_value(arg.current_target_as()))
-                }))
-                .on_key_down(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
-                    // `.key_code()` is deprecated, so we use code instead
-                    // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                    match arg.raw().code().as_str() {
-                        "Escape" => state.cancel_editing(),
-                        "Enter" => state.end_editing(get_value(arg.current_target_as())),
-                        _ => {}
-                    }
-                }));
-        });
-    }
+fn render_input(title: &str, nodes: spair::Nodes<App>) {
+    let comp = nodes.comp();
+    nodes.input(|i| {
+        i.focus(true)
+            .value(title)
+            .static_attributes()
+            .class("edit")
+            .on_blur(comp.handler_arg_mut(|state, arg: spair::FocusEvent| {
+                state.end_editing(get_value(arg.current_target_as()))
+            }))
+            .on_key_down(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
+                // `.key_code()` is deprecated, so we use code instead
+                // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
+                match arg.raw().code().as_str() {
+                    "Escape" => state.cancel_editing(),
+                    "Enter" => state.end_editing(get_value(arg.current_target_as())),
+                    _ => {}
+                }
+            }));
+    });
 }
 
 fn get_value(i: Option<web_sys::HtmlInputElement>) -> Option<String> {

@@ -3,8 +3,8 @@ use std::any::TypeId;
 #[cfg(feature = "keyed-list")]
 use super::KeyedList;
 use super::{
-    AChildNode, ComponentRef, Element, ElementStatus, ElementTag, Node, OwnedComponent,
-    RefComponentNode, TextNode,
+    AChildNode, ComponentRef, Element, ElementStatus, ElementTag, InternalTextRender, Node,
+    OwnedComponent, RefComponentNode, TextNode,
 };
 #[cfg(feature = "queue-render")]
 use crate::queue_render::dom::QrNode;
@@ -273,22 +273,10 @@ impl Nodes {
         self.0.last().and_then(|n| n.get_last_element())
     }
 
-    pub fn static_text(
-        &mut self,
-        index: usize,
-        text: &str,
-        parent: &web_sys::Node,
-        next_sibling: Option<&web_sys::Node>,
-    ) {
-        if index == self.0.len() {
-            self.add_text_node(text, parent, next_sibling);
-        }
-    }
-
     pub fn update_text(
         &mut self,
         index: usize,
-        text: &str,
+        text: impl InternalTextRender,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
     ) {
@@ -308,11 +296,14 @@ impl Nodes {
 
     fn add_text_node(
         &mut self,
-        text: &str,
+        value: impl InternalTextRender,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
     ) {
-        let text = TextNode::new(text);
+        let text = value.to_string();
+        let ws_node: web_sys::Node = crate::utils::document().create_text_node(&text).into();
+        let text = TextNode::new(value.create_text_node_value(), ws_node);
+
         text.insert_before_a_sibling(parent, next_sibling);
         self.0.push(Node::Text(text));
     }

@@ -279,7 +279,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list_with_render<E, I, II, G, K, R>(
+    pub fn keyed_list<E, I, II, G, K, R>(
         &mut self,
         items: II,
         mode: ListElementCreation,

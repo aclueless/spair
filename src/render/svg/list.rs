@@ -1,4 +1,3 @@
-use super::SvgElementRender;
 use crate::{
     component::Component,
     render::{
@@ -14,7 +13,7 @@ use crate::{
 pub trait SemsForList<'a, C: Component>:
     Sized + ElementUpdaterMut<'a, C> + MakeNodesExtensions<'a>
 {
-    fn list_with_render<I, II, R>(
+    fn list<I, II, R>(
         mut self,
         items: II,
         mode: ListElementCreation,
@@ -36,28 +35,12 @@ pub trait SemsForList<'a, C: Component>:
         self.make_nodes_extensions()
     }
 
-    fn lwr_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> NodesExtensions<'a>
+    fn list_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> NodesExtensions<'a>
     where
         II: Iterator<Item = I>,
         R: Fn(I, crate::SvgElement<C>),
     {
-        self.list_with_render(items, ListElementCreation::Clone, tag, render)
-    }
-
-    fn list<I, II>(self, items: II, mode: ListElementCreation) -> NodesExtensions<'a>
-    where
-        I: SvgElementRender<C>,
-        II: Iterator<Item = I>,
-    {
-        self.list_with_render(items, mode, I::ELEMENT_TAG, I::render)
-    }
-
-    fn list_clone<I, II>(self, items: II) -> NodesExtensions<'a>
-    where
-        I: SvgElementRender<C>,
-        II: Iterator<Item = I>,
-    {
-        self.list_with_render(items, ListElementCreation::Clone, I::ELEMENT_TAG, I::render)
+        self.list(items, ListElementCreation::Clone, tag, render)
     }
 }
 

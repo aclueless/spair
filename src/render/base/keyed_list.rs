@@ -692,7 +692,7 @@ mod keyed_list_with_render_tests {
     use wasm_bindgen_test::*;
 
     use crate::dom::{Element, Keyed, Node};
-    use crate::render::html::{ElementRender, HtmlTag};
+    use crate::render::html::HtmlTag;
 
     impl super::ItemWithLis<&()> {
         fn index(index: usize) -> Self {
@@ -786,15 +786,12 @@ mod keyed_list_with_render_tests {
                 type: Vec<&'static str>;
                 init: Vec::new();
                 render_fn: fn render(&self, element: crate::Element<Self>) {
-                    element.keyed_list(self.0.iter(), $mode);
+                    element.keyed_list(self.0.iter(), $mode, "div", |item| *item, render_str);
                 }
             }
 
-            impl ElementRender<TestComponent> for &&str {
-                const ELEMENT_TAG: &'static str = "span";
-                fn render(self, item: crate::Element<TestComponent>) {
-                    item.rupdate(*self);
-                }
+            fn render_str(value: &&str, item: crate::Element<TestComponent>) {
+                item.update_text(*value);
             }
 
             fn collect_from_keyed_list(nodes: &[crate::dom::Node]) -> Vec<String> {
@@ -811,7 +808,7 @@ mod keyed_list_with_render_tests {
                                 .unwrap_throw()
                         })
                         .map(|item| match item {
-                            Node::Text(text) => text.text().to_string(),
+                            Node::Text(text) => text.test_string(),
                             _ => panic!("Should be a text?"),
                         })
                         .collect()

@@ -125,17 +125,17 @@ impl spair::Component for App {
                                 i.alt("The app logo").src("favicon.ico").class("app-logo");
                             })
                             .h1(|h| {
-                                h.class("app-title").rupdate("Game of Life");
+                                h.class("app-title").static_text("Game of Life");
                             });
                     })
                     .section(|s| {
                         s.class("game-area")
                             .div(|d| {
                                 d.class("game-of-life").keyed_list_clone(
-                                    self.cellules
-                                        .chunks(self.cellules_width)
-                                        .enumerate()
-                                        .map(|r| Row(r.0, r.1)),
+                                    self.cellules.chunks(self.cellules_width).enumerate(),
+                                    "div",
+                                    |row| &row.0,
+                                    render_row,
                                 );
                             })
                             .div(|d| {
@@ -152,12 +152,12 @@ impl spair::Component for App {
                 f.class("app-footer")
                     .strong(|s| {
                         s.class("footer-text")
-                            .rupdate("Game of Life - a port from Yew's implementation");
+                            .static_text("Game of Life - a port from Yew's implementation");
                     })
                     .a(|a| {
                         a.href_str("https://github.com/yewstack/yew")
                             .target(spair::Target::_Blank)
-                            .rupdate("source");
+                            .static_text("source");
                     });
             });
         });
@@ -166,36 +166,25 @@ impl spair::Component for App {
 
 fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
     nodes.button(|b| {
-        b.class("game-button").on_click(h).rupdate(name);
+        b.class("game-button").on_click(h).update_text(name);
     });
 }
 
-struct Row<'a>(usize, &'a [Cellule]);
-impl<'a> spair::Keyed for Row<'a> {
-    type Key = usize;
-    fn key(&self) -> &usize {
-        &self.0
-    }
-}
-
-impl<'a> spair::ElementRender<App> for Row<'a> {
-    const ELEMENT_TAG: &'static str = "div";
-    fn render(self, element: spair::Element<App>) {
-        let comp = element.comp();
-        let offset = self.0 * element.state().cellules_width;
-        element.class("game-row").keyed_lwr_clone(
-            self.1.iter().enumerate(),
-            "div",
-            |(index, _)| index,
-            |(index, cellule), div| {
-                let index = offset + index;
-                div.class("game-cellule")
-                    .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
-                    .static_attributes()
-                    .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
-            },
-        );
-    }
+fn render_row((index, row): (usize, &[Cellule]), element: spair::Element<App>) {
+    let comp = element.comp();
+    let offset = index * element.state().cellules_width;
+    element.class("game-row").keyed_list_clone(
+        row.iter().enumerate(),
+        "div",
+        |(index, _)| index,
+        |(index, cellule), div| {
+            let index = offset + index;
+            div.class("game-cellule")
+                .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
+                .static_attributes()
+                .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
+        },
+    );
 }
 
 fn wrap(coord: isize, range: isize) -> usize {

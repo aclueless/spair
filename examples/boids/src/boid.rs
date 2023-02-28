@@ -126,20 +126,17 @@ impl Boid {
     }
 }
 
-impl spair::SvgElementRender<crate::simulation::Simulation> for &Boid {
-    const ELEMENT_TAG: &'static str = "polygon";
-    fn render(self, item: spair::SvgElement<crate::simulation::Simulation>) {
-        let color = format!("hsl({:.3}rad, 100%, 50%)", self.hue);
+pub fn render_boid(boid: &Boid, item: spair::SvgElement<crate::simulation::Simulation>) {
+    let color = format!("hsl({:.3}rad, 100%, 50%)", boid.hue);
 
-        let mut points = String::new();
-        for offset in iter_shape_points(self.radius, self.velocity.angle()) {
-            let Vector2D { x, y } = self.position + offset;
+    let mut points = String::new();
+    for offset in iter_shape_points(boid.radius, boid.velocity.angle()) {
+        let Vector2D { x, y } = boid.position + offset;
 
-            // Write to string will never fail.
-            let _ = write!(points, "{x:.2},{y:.2} ");
-        }
-        item.points(points).fill(color);
+        // Write to string will never fail.
+        let _ = write!(points, "{x:.2},{y:.2} ");
     }
+    item.points(points).fill(color);
 }
 
 fn iter_shape_points(radius: f64, rotation: f64) -> impl Iterator<Item = Vector2D> {

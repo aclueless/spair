@@ -22,26 +22,23 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
-                    .rstatic("The initial value is ")
-                    .rstatic(self.value);
+                    .static_text("The initial value is ")
+                    .static_text(self.value);
             })
-            .rstatic(Button("-", comp.handler_mut(State::decrement)))
             .update_nodes()
-            .rupdate(self.value)
-            .rstatic(Button("+", comp.handler_mut(State::increment)));
+            .rfn(|nodes| render_button("-", comp.handler_mut(State::decrement), nodes))
+            .update_text(self.value)
+            .rfn(|nodes| render_button("+", comp.handler_mut(State::increment), nodes));
     }
 }
 
-struct Button<H>(&'static str, H);
-impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
-    fn render(self, nodes: spair::StaticNodes<State>) {
-        nodes.button(|b| {
-            b.static_attributes()
-                .on_click(self.1)
-                .static_nodes()
-                .rstatic(self.0);
-        });
-    }
+fn render_button<H: spair::Click>(label: &str, handler: H, nodes: spair::Nodes<State>) {
+    nodes.static_nodes().button(|b| {
+        b.static_attributes()
+            .on_click(handler)
+            .static_nodes()
+            .static_text(label);
+    });
 }
 
 impl spair::Application for State {

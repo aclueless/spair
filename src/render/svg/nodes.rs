@@ -4,13 +4,12 @@ use std::any::TypeId;
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{
-    SvgAttributesOnly, SvgElementRender, SvgElementUpdater, SvgRender, SvgStaticAttributes,
-    SvgStaticAttributesOnly, SvgStaticRender, SvgTag,
+    SvgAttributesOnly, SvgElementUpdater, SvgStaticAttributes, SvgStaticAttributesOnly, SvgTag,
 };
 use crate::{
     component::{Child, Comp, Component},
     dom::ComponentRef,
-    render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut},
+    render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut, TextRender},
 };
 
 #[cfg(feature = "queue-render")]
@@ -87,6 +86,31 @@ pub trait SemsHandMade<'n, C: Component>: Sized {
         let render = this.nodes_updater_mut();
         if render.require_update() {
             render.component_owned(create_child_comp);
+        }
+        render.next_index();
+        this
+    }
+
+    /// Always update the given value (if change), even under `.static_nodes()`.
+    /// But be aware that if this is inside a static element (the parent element),
+    /// this will only create a text node on creation but never update, because
+    /// the parent element is static.
+    fn update_text(self, text: impl TextRender<C>) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_updater_mut();
+        text.render(render);
+        render.next_index();
+        this
+    }
+
+    /// Create a text node on the first render, but never update it.
+    /// Even under `.update_nodes()`. When you pass an QrVal to this method,
+    /// it will always update.
+    fn static_text(self, text: impl TextRender<C>) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_updater_mut();
+        if render.new_node() {
+            text.render(render);
         }
         render.next_index();
         this
@@ -326,10 +350,6 @@ impl<'n, C: Component> SemsForDistinctNames<'n, C> for SvgElementUpdater<'n, C> 
 }
 
 impl<'h, 'n: 'h, C: Component> SvgNodes<'h, 'n, C> {
-    pub(super) fn update_text(self, text: &str) {
-        self.0.update_text(text);
-    }
-
     pub fn done(self) {}
 
     pub fn state(&self) -> &'n C {
@@ -344,24 +364,6 @@ impl<'h, 'n: 'h, C: Component> SvgNodes<'h, 'n, C> {
         SvgStaticNodes::new(self.0)
     }
 
-    pub fn rupdate(self, render: impl SvgRender<C>) -> Self {
-        let n = SvgNodes::new(self.0);
-        render.render(n);
-        //self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn rstatic(mut self, render: impl SvgStaticRender<C>) -> Self {
-        let n = SvgStaticNodes::new(self.0);
-        render.render(n);
-        self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn relement<R: SvgElementRender<C>>(self, render: R) -> Self {
-        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
-    }
-
     pub fn rfn(self, func: impl FnOnce(SvgNodes<C>)) -> Self {
         let n = SvgNodes::new(self.0);
         func(n);
@@ -370,10 +372,6 @@ impl<'h, 'n: 'h, C: Component> SvgNodes<'h, 'n, C> {
 }
 
 impl<'h, 'n: 'h, C: Component> SvgStaticNodes<'h, 'n, C> {
-    pub(super) fn static_text(self, text: &str) {
-        self.0.static_text(text);
-    }
-
     pub fn done(self) {}
 
     pub fn state(&self) -> &'n C {
@@ -387,20 +385,6 @@ impl<'h, 'n: 'h, C: Component> SvgStaticNodes<'h, 'n, C> {
     pub fn update_nodes(self) -> SvgNodes<'h, 'n, C> {
         SvgNodes::new(self.0)
     }
-
-    // No .rupdate() on a `SvgStaticNodes`
-    // pub fn rupdate(mut self, render: impl SvgRender<C>) -> Self {}
-
-    pub fn rstatic(self, render: impl SvgStaticRender<C>) -> Self {
-        let n = SvgStaticNodes::new(self.0);
-        render.render(n);
-        //self.nodes_updater_mut().set_static_mode();
-        self
-    }
-
-    pub fn relement<R: SvgElementRender<C>>(self, render: R) -> Self {
-        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
-    }
 }
 
 impl<'n, C: Component> SvgNodesOwned<'n, C> {
@@ -408,24 +392,6 @@ impl<'n, C: Component> SvgNodesOwned<'n, C> {
 
     pub fn static_nodes(self) -> SvgStaticNodesOwned<'n, C> {
         SvgStaticNodesOwned::new(self.0)
-    }
-
-    pub fn rupdate(mut self, render: impl SvgRender<C>) -> Self {
-        let n = SvgNodes::new(&mut self.0);
-        render.render(n);
-        //self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn rstatic(mut self, render: impl SvgStaticRender<C>) -> Self {
-        let n = SvgStaticNodes::new(&mut self.0);
-        render.render(n);
-        self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn relement<R: SvgElementRender<C>>(self, render: R) -> Self {
-        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
     }
 
     pub fn rfn(mut self, func: impl FnOnce(SvgNodes<C>)) -> Self {
@@ -441,24 +407,6 @@ impl<'n, C: Component> SvgStaticNodesOwned<'n, C> {
     pub fn update_nodes(self) -> SvgNodesOwned<'n, C> {
         SvgNodesOwned::new(self.0)
     }
-
-    pub fn rupdate(mut self, render: impl SvgRender<C>) -> Self {
-        let n = SvgNodes::new(&mut self.0);
-        render.render(n);
-        self.nodes_updater_mut().set_static_mode();
-        self
-    }
-
-    pub fn rstatic(mut self, render: impl SvgStaticRender<C>) -> Self {
-        let n = SvgStaticNodes::new(&mut self.0);
-        render.render(n);
-        //self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn relement<R: SvgElementRender<C>>(self, render: R) -> Self {
-        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
-    }
 }
 
 pub trait MethodsForSvgElementContent<'n, C: Component>:
@@ -470,21 +418,6 @@ pub trait MethodsForSvgElementContent<'n, C: Component>:
 
     fn static_nodes(self) -> SvgStaticNodesOwned<'n, C> {
         self.into()
-    }
-
-    fn rupdate(self, render: impl SvgRender<C>) -> SvgNodesOwned<'n, C> {
-        let n: SvgNodesOwned<C> = self.into();
-        n.rupdate(render)
-    }
-
-    fn rstatic(self, render: impl SvgStaticRender<C>) -> SvgNodesOwned<'n, C> {
-        let n: SvgNodesOwned<C> = self.into();
-        n.rstatic(render)
-    }
-
-    fn relement<R: SvgElementRender<C>>(self, render: R) -> SvgNodesOwned<'n, C> {
-        let n: SvgNodesOwned<C> = self.into();
-        n.render_element(R::ELEMENT_TAG, |e| render.render(e))
     }
 
     fn rfn(self, func: impl FnOnce(SvgNodes<C>)) -> SvgNodesOwned<'n, C> {
@@ -545,4 +478,11 @@ impl<'a, C: Component> SvgMatchIfUpdater<'a, C> {
     pub fn comp(&self) -> Comp<C> {
         self.0.comp()
     }
+}
+
+impl<'updater, C: Component> SemsHandMade<'updater, C> for SvgElementUpdater<'updater, C> {
+    type Output = SvgNodesOwned<'updater, C>;
+}
+impl<'updater, C: Component> SemsHandMade<'updater, C> for SvgStaticAttributes<'updater, C> {
+    type Output = SvgNodesOwned<'updater, C>;
 }

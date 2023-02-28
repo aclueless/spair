@@ -8,7 +8,6 @@ mod keyed_list;
 mod list;
 mod nodes;
 mod partial_list;
-mod render;
 
 pub use attributes::*;
 pub use attributes_elements_with_ambiguous_names::*;
@@ -18,7 +17,6 @@ pub use keyed_list::*;
 pub use list::*;
 pub use nodes::*;
 pub use partial_list::*;
-pub use render::*;
 
 #[derive(Copy, Clone)]
 pub struct SvgTag(pub &'static str);

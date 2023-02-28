@@ -27,42 +27,40 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
-                    .rstatic("The initial value is ")
-                    .rstatic(self.value.get())
+                    .static_text("The initial value is ")
+                    .static_text(self.value.get())
                     .line_break()
-                    .rstatic("The rate is ")
-                    .rstatic(self.rate)
+                    .static_text("The rate is ")
+                    .static_text(self.rate)
                     ;
             })
-            .rstatic("Value: ")
-            .rupdate(&self.value)
+            .static_text("Value: ")
+            .update_text(&self.value)
             .line_break()
-            .rstatic("Value / self.rate = ")
-            // Unfortunately, Rust fail inference types for this closure
-            .rupdate(self.value.map_with_state(|state: &Self, value: &i32| value / state.rate))
+            .static_text("Value / self.rate = ")
+            // Unfortunately, Rust fails to inference types for this closure
+            .update_text(self.value.map_with_state(|state: &Self, value: &i32| value / state.rate))
             .line_break()
-            .rstatic("Value * self.rate = ")
-            .rupdate(self.value.map_with_state(|state: &Self, value: &i32| value * state.rate))
+            .static_text("Value * self.rate = ")
+            .update_text(self.value.map_with_state(|state: &Self, value: &i32| value * state.rate))
             .line_break()
-            .rstatic(Button("-", comp.handler_mut(State::decrement)))
-            .rstatic(Button("+", comp.handler_mut(State::increment)))
+            .update_nodes()
+            .rfn(|nodes| render_button("-", comp.handler_mut(State::decrement), nodes))
+            .rfn(|nodes| render_button("+", comp.handler_mut(State::increment), nodes))
             .line_break()
-            .rstatic("This value will be never updated if the update method return `spair::ShouldRender::No`: ")
-            .rupdate(self.value.get())
+            .static_text("This value will be never updated if the update method return `spair::ShouldRender::No`: ")
+            .update_text(self.value.get())
             ;
     }
 }
 
-struct Button<H>(&'static str, H);
-impl<H: spair::Click> spair::StaticRender<State> for Button<H> {
-    fn render(self, nodes: spair::StaticNodes<State>) {
-        nodes.button(|b| {
-            b.static_attributes()
-                .on_click(self.1)
-                .static_nodes()
-                .rstatic(self.0);
-        });
-    }
+fn render_button<H: spair::Click>(label: &str, handler: H, nodes: spair::Nodes<State>) {
+    nodes.static_nodes().button(|b| {
+        b.static_attributes()
+            .on_click(handler)
+            .static_nodes()
+            .static_text(label);
+    });
 }
 
 impl spair::Application for State {

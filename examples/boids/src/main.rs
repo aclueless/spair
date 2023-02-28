@@ -135,71 +135,67 @@ impl spair::Component for App {
     type Routes = ();
     fn render(&self, element: spair::Element<Self>) {
         element
-            .h1(|h| h.class("title").rupdate("Boids").done())
+            .h1(|h| h.class("title").static_text("Boids").done())
             .component_ref(self.simulation.component_ref())
-            .rupdate(Panel);
+            .rfn(render_panel);
     }
 }
-struct Panel;
-impl spair::Render<App> for Panel {
-    fn render(self, nodes: spair::Nodes<App>) {
-        let comp = nodes.comp();
-        let state = nodes.state();
-        nodes.div(|d| {
-            d.class("panel").rupdate(SettingsPanel).div(|d| {
-                d.class("panel__buttons")
-                    .button(|b| {
-                        let pause_text = if state.paused { "Resume" } else { "Pause" };
-                        b.on_click(comp.handler_mut(App::toggle_pause))
-                            .rupdate(pause_text);
-                    })
-                    .button(|b| {
-                        b.on_click(comp.handler_mut(App::reset_settings))
-                            .rupdate("Use Defaults");
-                    })
-                    .button(|b| {
-                        b.on_click(comp.handler_mut(App::restart_simulation))
-                            .rupdate("Restart");
-                    });
-            });
-        });
-    }
-}
-struct SettingsPanel;
-impl spair::Render<App> for SettingsPanel {
-    fn render(self, nodes: spair::Nodes<App>) {
-        let mut id = 0;
-        let mut next_id = || {
-            id += 1;
-            id
-        };
-        nodes.div(|d| {
-            d.class("settings")
-                .component_owned(|_pstate, pcomp| {
-                    Slider::with_props(
-                        SliderProps::new(
-                            next_id(),
-                            pcomp.callback_arg_mut(|state, value| state.boids(value as usize)),
-                        )
-                        .label("Number of Boids")
-                        .min(1.0)
-                        .max(600.0),
-                    )
-                    .with_updater(
-                        |parent_state: &App| parent_state.settings.boids as f64,
-                        Slider::update_value,
-                    )
+
+fn render_panel(nodes: spair::Nodes<App>) {
+    let comp = nodes.comp();
+    let state = nodes.state();
+    nodes.div(|d| {
+        d.class("panel").rfn(render_settings_panel).div(|d| {
+            d.class("panel__buttons")
+                .button(|b| {
+                    let pause_text = if state.paused { "Resume" } else { "Pause" };
+                    b.on_click(comp.handler_mut(App::toggle_pause))
+                        .update_text(pause_text);
                 })
-                .component_owned(sliders::visible_range(next_id()))
-                .component_owned(sliders::min_distance(next_id()))
-                .component_owned(sliders::max_speed(next_id()))
-                .component_owned(sliders::cohesion_factor(next_id()))
-                .component_owned(sliders::separation_factor(next_id()))
-                .component_owned(sliders::alignment_factor(next_id()))
-                .component_owned(sliders::turn_speed_ratio(next_id()))
-                .component_owned(sliders::color_adapt_factor(next_id()));
+                .button(|b| {
+                    b.on_click(comp.handler_mut(App::reset_settings))
+                        .static_text("Use Defaults");
+                })
+                .button(|b| {
+                    b.on_click(comp.handler_mut(App::restart_simulation))
+                        .static_text("Restart");
+                });
         });
-    }
+    });
+}
+
+fn render_settings_panel(nodes: spair::Nodes<App>) {
+    let mut id = 0;
+    let mut next_id = || {
+        id += 1;
+        id
+    };
+    nodes.div(|d| {
+        d.class("settings")
+            .component_owned(|_pstate, pcomp| {
+                Slider::with_props(
+                    SliderProps::new(
+                        next_id(),
+                        pcomp.callback_arg_mut(|state, value| state.boids(value as usize)),
+                    )
+                    .label("Number of Boids")
+                    .min(1.0)
+                    .max(600.0),
+                )
+                .with_updater(
+                    |parent_state: &App| parent_state.settings.boids as f64,
+                    Slider::update_value,
+                )
+            })
+            .component_owned(sliders::visible_range(next_id()))
+            .component_owned(sliders::min_distance(next_id()))
+            .component_owned(sliders::max_speed(next_id()))
+            .component_owned(sliders::cohesion_factor(next_id()))
+            .component_owned(sliders::separation_factor(next_id()))
+            .component_owned(sliders::alignment_factor(next_id()))
+            .component_owned(sliders::turn_speed_ratio(next_id()))
+            .component_owned(sliders::color_adapt_factor(next_id()));
+    });
 }
 
 impl spair::Application for App {
