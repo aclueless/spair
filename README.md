@@ -29,7 +29,6 @@ This project is in its *early stage*, things are still missing.
 * (Almost) no macro is required for constructing DOM.
     * But Spair is quite verbose because of this.
 * Routing (but just basic support).
-* async command
 * svg
 * Missing things here and there...
     * Errr, this is definitely a _why not_, obviously. I just put this here to remind potential users not to surprise about missing things :D.
@@ -68,8 +67,6 @@ Open your browser at http://localhost:8080
 
 Not yet. `/examples/*` is the best place to start now.
 
-[WIP docs](./docs/0-1introduction.md)
-
 Sections below provide first looks into Spair.
 
 ## Static-mode and update-mode
@@ -83,12 +80,11 @@ ignore them when iterating over them later by turn on the static-mode.
 | items                    | update-mode                  | static-mode            | notes                                                                      |
 | ------------------------ | ---------------------------- | ---------------------- | -------------------------------------------------------------------------- |
 | attributes / properties  | *default*                    | `.static_attributes()` | call `.static_attributes()` after you are done with update-mode-attributes |
-| elements                 | *default*, `.update_nodes()` | `.static_nodes()`      | only apply to elements (include `.relement()`), *not* apply to texts/renderable-items|
-| texts / renderable-items | `.rupdate(value)`            | `.rstatic(value)`      | not affected by mode introduced by `.update_nodes()` or `.static_nodes()`  |
+| elements                 | *default*, `.update_nodes()` | `.static_nodes()`      | only apply to elements, *not* apply to texts |
+| texts                    | `.update_text(value)`        | `.static_text(value)`  | not affected by mode introduced by `.update_nodes()` or `.static_nodes()`  |
 
 * `.update_nodes()` and `.static_nodes()` can be switched back and forth as
 many times as you want.
-* Again, please rememeber that `.relement()` is affected by `.update_nodes()` and `.static_nodes()`.
 
 ```rust
 element
@@ -99,12 +95,12 @@ element
     .class("class-name") // class="class-name" is added on creation, but ignored on subsequence renders
     // just add child-elements, default to update mode.
     .p(|p| {}) // create and update a <p>
-    .rupdate(value) // create and update a text
-    .rstatic(value) // a create-only text - not affected by update-mode (default).
+    .update_text(value) // create and update a text
+    .static_text(value) // a create-only text - not affected by update-mode (default).
     .static_nodes()
     .div(|d| {}) // a create-only <div> (because creating in static-mode)
-    .rupdate(value) // an updatable text - not affected by `.static_nodes()`
-    .rstatic(value) // a create-only text - because of `rstatic`, not cause by `static_nodes`
+    .update_text(value) // an updatable text - not affected by `.static_nodes()`
+    .static_text(value) // a create-only text - because of `static_text`, not cause by `static_nodes`
 
 ```
 * **Important note**: when an element is creating in static mode, all its
@@ -119,7 +115,7 @@ element
         // therefore, all child-nodes of <p> will NOT be updated despite
         // being created in update-mode.
         p.span(|s| {})
-            .rupdate(value); // NEW VALUE OF `value` WILL NEVER BE RENDERED.
+            .update_text(value); // NEW VALUE OF `value` WILL NEVER BE RENDERED.
     });
 ```
 
@@ -136,38 +132,27 @@ impl spair::Component for State {
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
-                    .rstatic("The initial value is ")
-                    .rstatic(self.value);
+                    .static_text("The initial value is ")
+                    .static_text(self.value);
             })
-            .rstatic(Button("-", comp.handler(State::decrement)))
-            .rupdate(self.value)
-            .rstatic(Button("+", comp.handler(State::increment)));
+            .rfn(|nodes| button("-", comp.handler(State::decrement), nodes))
+            .update_text(self.value)
+            .rfn(|nodes| button("+", comp.handler(State::increment), nodes));
     }
 }
 ```
 
-## `Render` and `StaticRender` traits
-
-You can split your codes into small pieces by implement [`Render`] or
-[`StaticRender`] on your data types and pass the values to `.rupdate()`
-or `.rstatic()` respectively.
-
-[`Render`] and [`StaticRender`] are implemented for primitives (`i8`,
-..., `u64`, `f32`, `f64`, `bool`, `usize`, `isize`). They are simply
-converted to strings and rendered as text nodes.
-
 ## Access to the component state.
 
-When implementing [`Render`], [`StaticRender`] or [`ElementRender`] for
-your data types, you may want to access the state of your component:
+You can split your code into small functions. In those functions, you
+may want to access the state of your component:
 
 ```rust
-impl spair::Render<State> for &YourType {
-    fn render(self, nodes: spair::Nodes<State>) {
-        let state = nodes.state(); // type of `state` is `&State`
-
-        nodes.rupdate(state.value);
-    }
+fn some_render_fn(self, nodes: spair::Nodes<ComponentState>) {
+    // type of `state` is `&ComponentState`
+    let state = nodes.state();
+    // render a value from the state
+    nodes.update_text(state.value);
 }
 ```
 
@@ -185,7 +170,7 @@ element
     .match_if(|mi| match self.branch.as_ref() {
         Some(branch) => spair::set_arm!(mi) // `spair::set_arm!()` uses a unique identifier internally to set `render_on_arm_index()`
             // Render the content of `Some(branch)`
-            .rupdate(branch)
+            .rfn(|nodes| render_branch(branch, nodes))
             // some code removed
             .done(),
         None => spair::set_arm!(mi)
@@ -235,14 +220,14 @@ applied for all other conflicted attribute/property names.
 
 Example:
 ```rust
-element.span(); // => Error
+element.span(); // => Error (an attribute or an element?)
 
 element
-    .update_nodes()
+    .update_nodes() // => Only have methods for elements, no methods for attributes
     .span(); // Element <span>  
 
 element
-    .attributes_only()
+    .attributes_only() // => Only have methods for attributes, no methods for elements 
     .span() // attribute
     .update_nodes()
     .span(); // Element <span>  
@@ -259,7 +244,7 @@ static-mode. Now, after a while, You decide to add something that you want it
 to be updated on change. But you placed it under a branch of the DOM tree without
 noticing that the branch is under static-mode. Finally, you give the new version
 of the app a test, at first, you may scratch head and check back and forth many
-times because it is renderd, but never update its value.
+times because it is rendered, but its value never gets updated.
 
 [Rust]: https://www.rust-lang.org/
 [Trunk]: https://trunkrs.dev/
