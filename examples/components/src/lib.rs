@@ -37,30 +37,33 @@ impl spair::Component for State {
         let comp = element.comp();
         element
             .static_nodes()
-            .rstatic(
+            .static_text(
                 "Using Spair, you don't usually use components. If you only need
                 to split your code to smaller spieces, then use `spair::Render`.
                 Only split your app into child components if you really need to
                 do that.",
             )
             .horizontal_line()
-            .rstatic("root component")
+            .static_text("root component")
             .update_nodes()
             .div(|d| {
-                d.rstatic("The value that received from child-components: ")
+                d.static_text("The value that received from child-components: ")
                     .match_if(|mi| match self.value_sent_from_child {
-                        Some(value) => spair::set_arm!(mi).rupdate(value).done(),
-                        None => spair::set_arm!(mi).rupdate("[not yet]").done(),
+                        Some(value) => spair::set_arm!(mi).update_text(value).done(),
+                        None => spair::set_arm!(mi).update_text("[not yet]").done(),
                     });
             })
             .line_break()
-            .rstatic(Button("-", comp.handler_mut(State::decrement)))
-            .rupdate(self.value)
-            .rstatic(Button("+", comp.handler_mut(State::increment)))
-            .rstatic(Button(
-                "Send value to the child-component-ref",
-                comp.handler_mut(State::send_value_to_child),
-            ))
+            .rfn(|nodes| render_button("-", comp.handler_mut(State::decrement), nodes))
+            .update_text(self.value)
+            .rfn(|nodes| render_button("+", comp.handler_mut(State::increment), nodes))
+            .rfn(|nodes| {
+                render_button(
+                    "Send value to the child-component-ref",
+                    comp.handler_mut(State::send_value_to_child),
+                    nodes,
+                )
+            })
             .horizontal_line()
             .component_ref(self.child_comp.component_ref())
             .horizontal_line()
@@ -81,17 +84,17 @@ impl spair::Component for State {
             });
     }
 }
-
-struct Button<H>(&'static str, H);
-impl<C: spair::Component, H: spair::Click> spair::StaticRender<C> for Button<H> {
-    fn render(self, nodes: spair::StaticNodes<C>) {
-        nodes.button(|b| {
-            b.static_attributes()
-                .on_click(self.1)
-                .static_nodes()
-                .rstatic(self.0);
-        });
-    }
+fn render_button<H: spair::Click, C: spair::Component>(
+    label: &str,
+    handler: H,
+    nodes: spair::Nodes<C>,
+) {
+    nodes.static_nodes().button(|b| {
+        b.static_attributes()
+            .on_click(handler)
+            .static_nodes()
+            .static_text(label);
+    });
 }
 
 impl spair::Application for State {

@@ -4,6 +4,7 @@ mod events;
 mod list;
 mod nodes;
 mod nodes_extensions;
+mod text;
 
 pub use crate::events::MethodsForEvents;
 pub use attributes::*;
@@ -12,6 +13,7 @@ pub use events::*;
 pub use list::*;
 pub use nodes::*;
 pub use nodes_extensions::*;
+pub use text::*;
 
 #[cfg(feature = "keyed-list")]
 mod keyed_list;

@@ -3,7 +3,10 @@ use std::any::TypeId;
 use super::{ElementUpdater, ListUpdater};
 use crate::{
     component::{Child, Comp, Component},
-    dom::{ComponentRef, ElementStatus, ElementTag, GroupedNodes, Nodes, OwnedComponent},
+    dom::{
+        ComponentRef, ElementStatus, ElementTagExt, GroupedNodes, InternalTextRender, Nodes,
+        OwnedComponent,
+    },
 };
 use wasm_bindgen::UnwrapThrowExt;
 
@@ -78,19 +81,21 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         self.index += 1;
     }
 
-    pub fn update_text(&mut self, text: &str) {
-        self.nodes
-            .update_text(self.index, text, self.parent, self.next_sibling);
+    pub fn update_text(&mut self, text: impl InternalTextRender, update_mode: bool) {
+        if update_mode || self.parent_status == ElementStatus::JustCreated {
+            self.nodes
+                .update_text(self.index, text, self.parent, self.next_sibling);
+        }
         self.index += 1;
     }
 
-    pub fn static_text(&mut self, text: &str) {
-        self.nodes
-            .static_text(self.index, text, self.parent, self.next_sibling);
-        self.index += 1;
-    }
-
-    pub fn get_element_updater<E: ElementTag>(&mut self, tag: E) -> ElementUpdater<C> {
+    pub fn get_element_updater<'b, E: ElementTagExt<'b, C>>(
+        self: &'b mut NodesUpdater<'a, C>,
+        tag: E,
+    ) -> Option<E::Updater> {
+        if !self.require_update() {
+            return None;
+        }
         let status = self.nodes.check_or_create_element(
             tag,
             self.index,
@@ -99,9 +104,10 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
             self.next_sibling,
         );
         let element = self.nodes.get_element_mut(self.index);
-        // Don't do this here, because .get_element_updater() is not always called
-        // self.index += 1;
-        ElementUpdater::new(self.comp, self.state, element, status)
+        self.index += 1;
+        Some(E::make_updater(ElementUpdater::new(
+            self.comp, self.state, element, status,
+        )))
     }
 
     pub fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {
@@ -141,9 +147,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     pub fn component_owned<CC, T>(
         &mut self,
         create_child_comp: impl FnOnce(&C, &Comp<C>) -> Child<C, CC, T>,
-    )
-    //-> &mut OwnedComponent
-    where
+    ) where
         CC: Component,
         T: 'static + Clone + PartialEq,
     {
@@ -246,7 +250,7 @@ mod tests {
             render_fn: fn render(&self, element: crate::Element<Self>) {
                 element.match_if(|mi| match self.0 {
                     None => crate::set_arm!(mi).done(),
-                    Some(value) => crate::set_arm!(mi).rupdate(value).done(),
+                    Some(value) => crate::set_arm!(mi).update_text(value).done(),
                 });
             }
         }

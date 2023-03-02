@@ -4,7 +4,7 @@
 // `Hems` is short for `HTML element methods`
 // `Hams` is short for `HTML attribute methods`
 
-use crate::dom::ElementTag;
+use crate::dom::{ElementTag, ElementTagExt};
 
 mod attributes;
 mod attributes_elements_with_ambiguous_names;
@@ -13,7 +13,6 @@ mod element;
 mod list;
 mod nodes;
 mod partial_list;
-mod render;
 
 pub use attributes::*;
 pub use attributes_elements_with_ambiguous_names::*;
@@ -22,7 +21,6 @@ pub use element::*;
 pub use list::*;
 pub use nodes::*;
 pub use partial_list::*;
-pub use render::*;
 
 #[cfg(feature = "keyed-list")]
 mod keyed_list;
@@ -42,6 +40,13 @@ impl ElementTag for HtmlTag {
     const NAMESPACE: &'static str = "http://www.w3.org/1999/xhtml";
     fn tag_name(&self) -> &str {
         self.0
+    }
+}
+
+impl<'a, C: crate::Component> ElementTagExt<'a, C> for HtmlTag {
+    type Updater = HtmlElementUpdater<'a, C>;
+    fn make_updater(e: super::base::ElementUpdater<'a, C>) -> Self::Updater {
+        e.into()
     }
 }
 

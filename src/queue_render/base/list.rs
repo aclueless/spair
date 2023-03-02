@@ -195,7 +195,6 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
 #[cfg(test)]
 mod qr_list_tests {
     use crate::queue_render::vec::QrVec;
-    use crate::render::html::ElementRender;
 
     macro_rules! make_queue_render_list_test {
         ($mode:expr) => {
@@ -203,14 +202,12 @@ mod qr_list_tests {
                 type: QrVec<u32>;
                 init: QrVec::with_values(Vec::new());
                 render_fn: fn render(&self, element: crate::Element<Self>) {
-                    element.qr_list(&self.0, $mode);
+                    element.qr_list(&self.0, $mode, "span", render_u32);
                 }
             }
-            impl ElementRender<TestComponent> for u32 {
-                const ELEMENT_TAG: &'static str = "span";
-                fn render(self, item: crate::Element<TestComponent>) {
-                    item.rupdate(self);
-                }
+
+            fn render_u32(value: u32, item: crate::Element<TestComponent>) {
+                item.update_text(value);
             }
 
             let test = Test::set_up();

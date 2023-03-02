@@ -4,15 +4,15 @@ use std::any::TypeId;
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{
-    AttributesOnly, ElementRender, HtmlElementUpdater, HtmlTag, Render, SelectElementValueManager,
-    StaticAttributes, StaticAttributesOnly, StaticRender,
+    AttributesOnly, HtmlElementUpdater, HtmlTag, SelectElementValueManager, StaticAttributes,
+    StaticAttributesOnly,
 };
 #[cfg(feature = "svg")]
 use crate::render::svg::{SvgElementUpdater, SvgTag};
 use crate::{
     component::{Child, Comp, Component},
     dom::ComponentRef,
-    render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut},
+    render::base::{ElementUpdaterMut, MatchIfUpdater, NodesUpdater, NodesUpdaterMut, TextRender},
 };
 
 #[cfg(feature = "queue-render")]
@@ -38,20 +38,14 @@ pub trait HemsHandMade<'n, C: Component>: Sized {
     fn line_break(self) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            render.get_element_updater(HtmlTag("br"));
-        }
-        render.next_index();
+        render.get_element_updater(HtmlTag("br"));
         this
     }
 
     fn horizontal_line(self) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            render.get_element_updater(HtmlTag("hr"));
-        }
-        render.next_index();
+        render.get_element_updater(HtmlTag("hr"));
         this
     }
 
@@ -86,14 +80,12 @@ pub trait HemsHandMade<'n, C: Component>: Sized {
     }
 
     #[cfg(feature = "svg")]
-    fn svg(self, f: impl FnOnce(SvgElementUpdater<C>)) -> Self::Output {
+    fn svg(self, element_updater: impl FnOnce(SvgElementUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            let r = render.get_element_updater(SvgTag("svg"));
-            f(r.into())
+        if let Some(e) = render.get_element_updater(SvgTag("svg")) {
+            element_updater(e);
         }
-        render.next_index();
         this
     }
 
@@ -119,6 +111,27 @@ pub trait HemsHandMade<'n, C: Component>: Sized {
         render.next_index();
         this
     }
+
+    /// Always update the given value (if change), even under `.static_nodes()`.
+    /// But be aware that if this is inside a static element (the parent element),
+    /// this will only create a text node on creation but never update, because
+    /// the parent element is static.
+    fn update_text(self, text: impl TextRender<C>) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_updater_mut();
+        text.render(render, true);
+        this
+    }
+
+    /// Create a text node on the first render, but never update it.
+    /// Even under `.update_nodes()`. When you pass an QrVal to this method,
+    /// it will always update.
+    fn static_text(self, text: impl TextRender<C>) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_updater_mut();
+        text.render(render, false);
+        this
+    }
 }
 
 pub trait UpdateHtmlElement<'n, C, O>: Sized
@@ -133,11 +146,9 @@ where
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            let e = render.get_element_updater(HtmlTag(tag)).into();
+        if let Some(e) = render.get_element_updater(HtmlTag(tag)) {
             element_updater(e);
         }
-        render.next_index();
         this
     }
 }
@@ -351,21 +362,6 @@ pub trait MethodsForHtmlElementContent<'n, C: Component>:
         self.into()
     }
 
-    fn rupdate(self, render: impl Render<C>) -> NodesOwned<'n, C> {
-        let n: NodesOwned<C> = self.into();
-        n.rupdate(render)
-    }
-
-    fn rstatic(self, render: impl StaticRender<C>) -> NodesOwned<'n, C> {
-        let n: NodesOwned<C> = self.into();
-        n.rstatic(render)
-    }
-
-    fn relement<R: ElementRender<C>>(self, render: R) -> NodesOwned<'n, C> {
-        let n: NodesOwned<C> = self.into();
-        n.render_element(R::ELEMENT_TAG, |e| render.render(e))
-    }
-
     fn rfn(self, func: impl FnOnce(Nodes<C>)) -> NodesOwned<'n, C> {
         let mut n: NodesOwned<C> = self.into();
         let nodes = Nodes::new(&mut n.0);
@@ -380,10 +376,6 @@ impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for StaticAttributesO
 impl<'n, C: Component> MethodsForHtmlElementContent<'n, C> for StaticAttributes<'n, C> {}
 
 impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
-    pub(super) fn update_text(self, text: &str) {
-        self.0.nodes_updater.update_text(text);
-    }
-
     pub fn done(self) {}
 
     pub fn state(&self) -> &'n C {
@@ -398,36 +390,13 @@ impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
         StaticNodes::new(self.0)
     }
 
-    pub fn rupdate(self, render: impl Render<C>) -> Self {
-        let n = Nodes::new(self.0);
-        render.render(n);
-        //self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn rstatic(mut self, render: impl StaticRender<C>) -> Self {
-        let n = StaticNodes::new(self.0);
-        render.render(n);
-        self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn relement<R: ElementRender<C>>(self, render: R) -> Self {
-        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
-    }
-
     pub fn rfn(self, func: impl FnOnce(Nodes<C>)) -> Self {
-        let n = Nodes::new(self.0);
-        func(n);
+        func(Nodes::new(self.0));
         self
     }
 }
 
 impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
-    pub(super) fn static_text(self, text: &str) {
-        self.0.nodes_updater.static_text(text);
-    }
-
     pub fn done(self) {}
 
     pub fn state(&self) -> &'n C {
@@ -441,16 +410,6 @@ impl<'h, 'n: 'h, C: Component> StaticNodes<'h, 'n, C> {
     pub fn update_nodes(self) -> Nodes<'h, 'n, C> {
         Nodes::new(self.0)
     }
-
-    // No .rupdate() on a `StaticNodes`???
-    // pub fn rupdate(mut self, render: impl Render<C>) -> Self {}
-
-    pub fn rstatic(self, render: impl StaticRender<C>) -> Self {
-        let n = StaticNodes::new(self.0);
-        render.render(n);
-        //self.nodes_updater_mut().set_static_mode();
-        self
-    }
 }
 
 impl<'n, C: Component> NodesOwned<'n, C> {
@@ -460,27 +419,8 @@ impl<'n, C: Component> NodesOwned<'n, C> {
         StaticNodesOwned::new(self.0)
     }
 
-    pub fn rupdate(mut self, render: impl Render<C>) -> Self {
-        let n = Nodes::new(&mut self.0);
-        render.render(n);
-        //self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn rstatic(mut self, render: impl StaticRender<C>) -> Self {
-        let n = StaticNodes::new(&mut self.0);
-        render.render(n);
-        self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn relement<R: ElementRender<C>>(self, render: R) -> Self {
-        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
-    }
-
     pub fn rfn(mut self, func: impl FnOnce(Nodes<C>)) -> Self {
-        let n = Nodes::new(&mut self.0);
-        func(n);
+        func(Nodes::new(&mut self.0));
         self
     }
 }
@@ -490,24 +430,6 @@ impl<'n, C: Component> StaticNodesOwned<'n, C> {
 
     pub fn update_nodes(self) -> NodesOwned<'n, C> {
         NodesOwned::new(self.0)
-    }
-
-    pub fn rupdate(mut self, render: impl Render<C>) -> Self {
-        let n = Nodes::new(&mut self.0);
-        render.render(n);
-        self.nodes_updater_mut().set_static_mode();
-        self
-    }
-
-    pub fn rstatic(mut self, render: impl StaticRender<C>) -> Self {
-        let n = StaticNodes::new(&mut self.0);
-        render.render(n);
-        //self.nodes_updater_mut().set_update_mode();
-        self
-    }
-
-    pub fn relement<R: ElementRender<C>>(self, render: R) -> Self {
-        self.render_element(R::ELEMENT_TAG, |e| render.render(e))
     }
 }
 
@@ -566,6 +488,7 @@ impl<'updater, C: Component> UpdateHtmlElement<'updater, C, NodesOwned<'updater,
 impl<'updater, C: Component> HemsHandMade<'updater, C> for StaticAttributes<'updater, C> {
     type Output = NodesOwned<'updater, C>;
 }
+
 impl<'updater, C: Component> HemsForDistinctNames<'updater, C> for StaticAttributes<'updater, C> {
     type Output = NodesOwned<'updater, C>;
 }

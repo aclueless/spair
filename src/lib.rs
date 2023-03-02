@@ -1,13 +1,14 @@
 #[cfg(test)]
 wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
+#[macro_use]
+mod macros;
+
 mod application;
 mod callback;
 mod component;
 mod dom;
 mod events;
-#[macro_use]
-mod macros;
 mod render;
 mod routing;
 mod utils;
@@ -24,13 +25,11 @@ pub use dom::TagName;
 pub use queue_render::{val::QrVal, vec::QrVec};
 pub use render::html::HtmlTag;
 #[cfg(feature = "svg")]
-pub use render::svg::{
-    SvgElementRender, SvgElementUpdater as SvgElement, SvgNodes, SvgRender, SvgStaticNodes, SvgTag,
-};
+pub use render::svg::{SvgElementUpdater as SvgElement, SvgNodes, SvgStaticNodes, SvgTag};
 pub use render::{
     html::predefined_attribute_types::*,
     html::HtmlElementUpdater as Element,
-    html::{ElementRender, Nodes, Render, StaticNodes, StaticRender},
+    html::{Nodes, StaticNodes},
     ListElementCreation,
 };
 

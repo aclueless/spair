@@ -93,7 +93,7 @@ impl spair::Component for Simulation {
             .as_svg_element()
             .class("simulation-window")
             .view_box(view_box)
-            .list_clone(self.boids.iter());
+            .list_clone(self.boids.iter(), "polygon", crate::boid::render_boid);
     }
 }
 

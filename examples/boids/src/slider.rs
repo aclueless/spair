@@ -105,7 +105,7 @@ impl spair::Component for Slider {
             .label(|l| {
                 l.r#for(&id)
                     .class("slider__label")
-                    .rupdate(self.props.label);
+                    .update_text(self.props.label);
             })
             .input(|i| {
                 i.input_type(spair::InputType::Range)
@@ -122,7 +122,7 @@ impl spair::Component for Slider {
                     }));
             })
             .span(|s| {
-                s.class("slider__value").rupdate(display_value);
+                s.class("slider__value").update_text(display_value);
             });
     }
 }
