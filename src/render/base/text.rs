@@ -1,11 +1,13 @@
-pub trait TextRender<C: crate::component::Component> {
+use crate::component::Component;
+
+pub trait TextRender<C: Component> {
     fn render(self, nodes: &mut super::NodesUpdater<C>);
 }
 
 macro_rules! impl_text_render_ref {
     ($($type:ty)+) => {
         $(
-            impl<C: crate::component::Component> TextRender<C> for $type {
+            impl<C: Component> TextRender<C> for $type {
                 fn render(self, nodes: &mut super::NodesUpdater<C>) {
                     nodes.update_text(self);
                 }
@@ -18,7 +20,7 @@ impl_text_render_ref! {
     i8 i16 i32 i64 isize u8 u16 u32 u64 usize f32 f64 bool char &str &String
 }
 
-impl<C: crate::component::Component> TextRender<C> for String {
+impl<C: Component> TextRender<C> for String {
     fn render(self, nodes: &mut super::NodesUpdater<C>) {
         nodes.update_text(self);
     }
