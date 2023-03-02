@@ -38,20 +38,14 @@ pub trait HemsHandMade<'n, C: Component>: Sized {
     fn line_break(self) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            render.get_element_updater(HtmlTag("br"));
-        }
-        render.next_index();
+        render.get_element_updater(HtmlTag("br"));
         this
     }
 
     fn horizontal_line(self) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            render.get_element_updater(HtmlTag("hr"));
-        }
-        render.next_index();
+        render.get_element_updater(HtmlTag("hr"));
         this
     }
 
@@ -86,14 +80,12 @@ pub trait HemsHandMade<'n, C: Component>: Sized {
     }
 
     #[cfg(feature = "svg")]
-    fn svg(self, f: impl FnOnce(SvgElementUpdater<C>)) -> Self::Output {
+    fn svg(self, element_updater: impl FnOnce(SvgElementUpdater<C>)) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            let r = render.get_element_updater(SvgTag("svg"));
-            f(r.into())
+        if let Some(e) = render.get_element_updater(SvgTag("svg")) {
+            element_updater(e);
         }
-        render.next_index();
         this
     }
 
@@ -158,11 +150,9 @@ where
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            let e = render.get_element_updater(HtmlTag(tag)).into();
+        if let Some(e) = render.get_element_updater(HtmlTag(tag)) {
             element_updater(e);
         }
-        render.next_index();
         this
     }
 }

@@ -4,7 +4,7 @@ use super::{ElementUpdater, ListUpdater};
 use crate::{
     component::{Child, Comp, Component},
     dom::{
-        ComponentRef, ElementStatus, ElementTag, GroupedNodes, InternalTextRender, Nodes,
+        ComponentRef, ElementStatus, ElementTagExt, GroupedNodes, InternalTextRender, Nodes,
         OwnedComponent,
     },
 };
@@ -88,7 +88,13 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         //self.index += 1;
     }
 
-    pub fn get_element_updater<E: ElementTag>(&mut self, tag: E) -> ElementUpdater<C> {
+    pub fn get_element_updater<'b, E: ElementTagExt<'b, C>>(
+        self: &'b mut NodesUpdater<'a, C>,
+        tag: E,
+    ) -> Option<E::Updater> {
+        if !self.require_update() {
+            return None;
+        }
         let status = self.nodes.check_or_create_element(
             tag,
             self.index,
@@ -97,9 +103,10 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
             self.next_sibling,
         );
         let element = self.nodes.get_element_mut(self.index);
-        // Don't do this here, because .get_element_updater() is not always called
-        // self.index += 1;
-        ElementUpdater::new(self.comp, self.state, element, status)
+        self.index += 1;
+        Some(E::make_updater(ElementUpdater::new(
+            self.comp, self.state, element, status,
+        )))
     }
 
     pub fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {

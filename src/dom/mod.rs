@@ -22,6 +22,11 @@ pub trait ElementTag: Copy {
     fn tag_name(&self) -> &str;
 }
 
+pub trait ElementTagExt<'a, C: crate::Component>: ElementTag {
+    type Updater;
+    fn make_updater(e: crate::render::base::ElementUpdater<'a, C>) -> Self::Updater;
+}
+
 pub enum TagName {
     Html(crate::render::html::HtmlTag),
     #[cfg(feature = "svg")]

@@ -27,11 +27,9 @@ where
     ) -> O {
         let mut this: O = self.into();
         let render = this.nodes_updater_mut();
-        if render.require_update() {
-            let e = render.get_element_updater(SvgTag(tag)).into();
+        if let Some(e) = render.get_element_updater(SvgTag(tag)) {
             element_updater(e);
         }
-        render.next_index();
         this
     }
 }
