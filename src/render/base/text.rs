@@ -1,15 +1,15 @@
 use crate::component::Component;
 
 pub trait TextRender<C: Component> {
-    fn render(self, nodes: &mut super::NodesUpdater<C>);
+    fn render(self, nodes: &mut super::NodesUpdater<C>, update_mode: bool);
 }
 
 macro_rules! impl_text_render_ref {
     ($($type:ty)+) => {
         $(
             impl<C: Component> TextRender<C> for $type {
-                fn render(self, nodes: &mut super::NodesUpdater<C>) {
-                    nodes.update_text(self);
+                fn render(self, nodes: &mut super::NodesUpdater<C>, update_mode: bool) {
+                    nodes.update_text(self, update_mode);
                 }
             }
         )+
@@ -21,8 +21,8 @@ impl_text_render_ref! {
 }
 
 impl<C: Component> TextRender<C> for String {
-    fn render(self, nodes: &mut super::NodesUpdater<C>) {
-        nodes.update_text(self);
+    fn render(self, nodes: &mut super::NodesUpdater<C>, update_mode: bool) {
+        nodes.update_text(self, update_mode);
     }
 }
 

@@ -96,8 +96,7 @@ pub trait SemsHandMade<'n, C: Component>: Sized {
     fn update_text(self, text: impl TextRender<C>) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        text.render(render);
-        render.next_index();
+        text.render(render, true);
         this
     }
 
@@ -107,10 +106,7 @@ pub trait SemsHandMade<'n, C: Component>: Sized {
     fn static_text(self, text: impl TextRender<C>) -> Self::Output {
         let mut this: Self::Output = self.into();
         let render = this.nodes_updater_mut();
-        if render.new_node() {
-            text.render(render);
-        }
-        render.next_index();
+        text.render(render, false);
         this
     }
 }

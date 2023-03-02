@@ -81,11 +81,12 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         self.index += 1;
     }
 
-    pub fn update_text(&mut self, text: impl InternalTextRender) {
-        self.nodes
-            .update_text(self.index, text, self.parent, self.next_sibling);
-        //Don't do this
-        //self.index += 1;
+    pub fn update_text(&mut self, text: impl InternalTextRender, update_mode: bool) {
+        if update_mode || self.parent_status == ElementStatus::JustCreated {
+            self.nodes
+                .update_text(self.index, text, self.parent, self.next_sibling);
+        }
+        self.index += 1;
     }
 
     pub fn get_element_updater<'b, E: ElementTagExt<'b, C>>(

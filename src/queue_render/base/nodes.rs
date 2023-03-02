@@ -42,7 +42,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
                 }
             }
         };
-        //self.next_index();
+        self.next_index();
         tn
     }
 
