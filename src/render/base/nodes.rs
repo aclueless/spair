@@ -105,8 +105,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
             Some(E::make_updater(ElementUpdater::new(
                 self.comp, self.state, element, status,
             )))
-        }
-        else {
+        } else {
             None
         };
         self.index += 1;
