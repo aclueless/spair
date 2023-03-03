@@ -2,6 +2,35 @@ use crate::component::Component;
 
 pub trait TextRender<C: Component> {
     fn render(self, nodes: &mut super::NodesUpdater<C>, update_mode: bool);
+    #[cfg(feature = "nightly")]
+    fn update_text(self) -> Tr<C, Self>
+    where
+        Self: Sized,
+    {
+        Tr {
+            value: self,
+            update_mode: true,
+            c: std::marker::PhantomData,
+        }
+    }
+    #[cfg(feature = "nightly")]
+    fn static_text(self) -> Tr<C, Self>
+    where
+        Self: Sized,
+    {
+        Tr {
+            value: self,
+            update_mode: false,
+            c: std::marker::PhantomData,
+        }
+    }
+}
+
+#[cfg(feature = "nightly")]
+pub struct Tr<C, T> {
+    value: T,
+    update_mode: bool,
+    c: std::marker::PhantomData<C>,
 }
 
 macro_rules! impl_text_render_ref {
@@ -26,6 +55,20 @@ impl<C: Component> TextRender<C> for String {
     }
 }
 
+#[cfg(feature = "nightly")]
+impl<'a, C: Component, T> FnOnce<(crate::Element<'a, C>,)> for Tr<C, T>
+where
+    T: TextRender<C>,
+{
+    type Output = ();
+    extern "rust-call" fn call_once(self, (element,): (crate::Element<'a, C>,)) -> Self::Output {
+        use super::NodesUpdaterMut;
+        let mut nodes: crate::render::html::NodesOwned<C> = element.into();
+        self.value
+            .render(nodes.nodes_updater_mut(), self.update_mode);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[wasm_bindgen_test::wasm_bindgen_test]
@@ -43,5 +86,29 @@ mod tests {
 
         test.update(44);
         assert_eq!(Some("44 42"), test.text_content().as_deref());
+
+        test.update(43);
+        assert_eq!(Some("43 42"), test.text_content().as_deref());
+    }
+
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn update_text_static_text_as_fn_once() {
+        use super::TextRender;
+        make_a_test_component! {
+            type: u32;
+            init: 42;
+            render_fn: fn render(&self, element: crate::Element<Self>) {
+                element.div(self.0.update_text()).static_text(" ").div(self.0.static_text());
+            }
+        }
+
+        let test = Test::set_up();
+        assert_eq!(Some("42 42"), test.text_content().as_deref());
+
+        test.update(44);
+        assert_eq!(Some("44 42"), test.text_content().as_deref());
+
+        test.update(43);
+        assert_eq!(Some("43 42"), test.text_content().as_deref());
     }
 }

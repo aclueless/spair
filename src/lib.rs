@@ -1,3 +1,6 @@
+#![cfg_attr(feature = "nightly", feature(fn_traits))]
+#![cfg_attr(feature = "nightly", feature(unboxed_closures))]
+
 #[cfg(test)]
 wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
@@ -52,7 +55,7 @@ pub mod prelude {
         CallbackOnce as TraitCallbackOne, CallbackOnceArg as TraitCallbackOnceArg,
     };
     pub use crate::component::{AsChildComp, Component};
-    pub use crate::render::base::{MethodsForEvents, StateHelperMethods};
+    pub use crate::render::base::{MethodsForEvents, StateHelperMethods, TextRender};
     pub use crate::render::html::{
         HamsForAmbiguousNames, HamsForDistinctNames, HamsHandMade, HamsWithPredefinedValues,
         HemsForAmbiguousNames, HemsForDistinctNames, HemsForList, HemsForPartialList,
