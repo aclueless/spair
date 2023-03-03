@@ -93,21 +93,23 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         self: &'b mut NodesUpdater<'a, C>,
         tag: E,
     ) -> Option<E::Updater> {
-        if !self.require_update() {
-            return None;
-        }
-        let status = self.nodes.check_or_create_element(
-            tag,
-            self.index,
-            self.parent_status,
-            self.parent,
-            self.next_sibling,
-        );
-        let element = self.nodes.get_element_mut(self.index);
+        let rs = if self.require_update() {
+            let status = self.nodes.check_or_create_element(
+                tag,
+                self.index,
+                self.parent_status,
+                self.parent,
+                self.next_sibling,
+            );
+            let element = self.nodes.get_element_mut(self.index);
+            Some(E::make_updater(ElementUpdater::new(
+                self.comp, self.state, element, status,
+            )))
+        } else {
+            None
+        };
         self.index += 1;
-        Some(E::make_updater(ElementUpdater::new(
-            self.comp, self.state, element, status,
-        )))
+        rs
     }
 
     pub fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {
