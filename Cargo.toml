@@ -16,7 +16,7 @@ readme = "README.md"
 keyed-list = ["uuid"]
 svg = []
 queue-render = []
-nightly = []
+nightly-text-render = []
 
 [workspace]
 members = [

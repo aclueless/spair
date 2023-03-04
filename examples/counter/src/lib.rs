@@ -19,8 +19,6 @@ impl spair::Component for State {
     fn render(&self, element: spair::Element<Self>) {
         let comp = element.comp();
         element
-            .div(self.value.static_text())
-            .div(self.value.update_text())
             .static_nodes()
             .p(|p| {
                 p.static_nodes()
