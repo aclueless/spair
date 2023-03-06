@@ -67,7 +67,7 @@ macro_rules! create_events {
             impl $EventListener {
                 fn new(event_name: &'static str, event_target: &web_sys::EventTarget, closure: Closure<dyn Fn(web_sys::$EventType)>) -> Self {
                     event_target.add_event_listener_with_callback(
-                        event_name,
+                        wasm_bindgen::intern(event_name),
                         closure.as_ref().unchecked_ref()
                     ).expect_throw("Expect event register to be successful");
                     Self {
