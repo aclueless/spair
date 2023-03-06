@@ -1,7 +1,7 @@
 use super::ListUpdater;
 use crate::{
     component::{Comp, Component},
-    dom::{AttributeValueList, Element, ElementStatus},
+    dom::{AttributeValueAsString, AttributeValueList, Element, ElementStatus},
     render::ListElementCreation,
 };
 use wasm_bindgen::UnwrapThrowExt;
@@ -104,10 +104,6 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         !self.update_mode
     }
 
-    fn is_update_mode(&self) -> bool {
-        self.update_mode
-    }
-
     pub fn require_set_listener(&mut self) -> bool {
         if self.is_static_mode() {
             if self.status == ElementStatus::Existing {
@@ -133,60 +129,65 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         self.index += 1;
     }
 
-    pub fn must_update_attribute<T>(
-        &mut self,
-        value: T,
-        check: impl FnOnce(&mut AttributeValueList, usize, T) -> bool,
-    ) -> bool {
+    pub fn attribute(&mut self, name: &str, value: impl AttributeValueAsString) {
+        if self.is_static_mode() {
+            if self.status == ElementStatus::JustCreated {
+                // never have to detect changes, so just
+                // only render the attribute value on ws_element
+                value.set(name, self.element.ws_element());
+            }
+        } else {
+            self.element.attribute(self.index, name, value);
+            self.index += 1;
+        }
+    }
+
+    pub fn bool_value_change(&mut self, new_value: bool) -> bool {
         if self.is_static_mode() {
             self.status == ElementStatus::JustCreated
         } else {
-            let rs = check(self.element.attribute_list_mut(), self.index, value);
+            let rs = self
+                .element
+                .attribute_list_mut()
+                .bool_value_change(self.index, new_value);
             self.index += 1;
             rs
         }
     }
 
-    pub fn set_bool_attribute(&mut self, name: &str, value: bool) {
-        if !self.must_update_attribute(value, AttributeValueList::check_bool_attribute) {
-            return;
+    pub fn i32_value_change(&mut self, new_value: i32) -> bool {
+        if self.is_static_mode() {
+            self.status == ElementStatus::JustCreated
+        } else {
+            let rs = self
+                .element
+                .attribute_list_mut()
+                .i32_value_change(self.index, new_value);
+            self.index += 1;
+            rs
         }
-        self.element.ws_element().set_bool_attribute(name, value);
     }
 
-    pub fn set_str_attribute(&mut self, name: &str, value: &str) {
-        if !self.must_update_attribute(value, AttributeValueList::check_str_attribute) {
-            return;
+    pub fn value_change<T>(
+        &mut self,
+        new_value: T,
+        check: impl FnOnce(&mut AttributeValueList, usize, T) -> (bool, Option<String>),
+    ) -> (bool, Option<String>) {
+        if self.is_static_mode() {
+            (self.status == ElementStatus::JustCreated, None)
+        } else {
+            let rs = check(self.element.attribute_list_mut(), self.index, new_value);
+            self.index += 1;
+            rs
         }
-        self.element.ws_element().set_str_attribute(name, value);
     }
 
-    pub fn set_string_attribute(&mut self, name: &str, value: String) {
-        if !self.must_update_attribute(value.as_str(), AttributeValueList::check_str_attribute) {
-            return;
-        }
-        self.element.ws_element().set_str_attribute(name, &value);
+    pub fn str_value_change(&mut self, new_value: &str) -> (bool, Option<String>) {
+        self.value_change(Some(new_value), AttributeValueList::option_str_value_change)
     }
 
-    pub fn set_i32_attribute(&mut self, name: &str, value: i32) {
-        if !self.must_update_attribute(value, AttributeValueList::check_i32_attribute) {
-            return;
-        }
-        self.element.ws_element().set_attribute(name, value);
-    }
-
-    pub fn set_u32_attribute(&mut self, name: &str, value: u32) {
-        if !self.must_update_attribute(value, AttributeValueList::check_u32_attribute) {
-            return;
-        }
-        self.element.ws_element().set_attribute(name, value);
-    }
-
-    pub fn set_f64_attribute(&mut self, name: &str, value: f64) {
-        if !self.must_update_attribute(value, AttributeValueList::check_f64_attribute) {
-            return;
-        }
-        self.element.ws_element().set_attribute(name, value);
+    pub fn option_str_value_change(&mut self, new_value: Option<&str>) -> (bool, Option<String>) {
+        self.value_change(new_value, AttributeValueList::option_str_value_change)
     }
 
     /// Always checked.
@@ -199,16 +200,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     pub fn class(&mut self, class_name: &str) {
-        let (changed, old_value) = if self.is_update_mode() {
-            let rs = self
-                .element
-                .attribute_list_mut()
-                .check_str_attribute_and_return_old_value(self.index, class_name);
-            self.index += 1;
-            rs
-        } else {
-            (self.status == ElementStatus::JustCreated, None)
-        };
+        let (changed, old_value) = self.str_value_change(class_name);
         if let Some(old_value) = old_value {
             self.element.ws_element().remove_class(&old_value);
         }
@@ -219,7 +211,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
 
     /// Make sure that value of `class_name` does not change between calls.
     pub fn class_if(&mut self, class_on: bool, class_name: &str) {
-        if !self.must_update_attribute(class_on, AttributeValueList::check_bool_attribute) {
+        if !self.bool_value_change(class_on) {
             return;
         }
         if class_on {
@@ -230,7 +222,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     pub fn class_or(&mut self, first: bool, first_class: &str, second_class: &str) {
-        if !self.must_update_attribute(first, AttributeValueList::check_bool_attribute) {
+        if !self.bool_value_change(first) {
             return;
         }
         if first {
@@ -243,7 +235,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     pub fn focus(&mut self, value: bool) {
-        if !self.must_update_attribute(value, AttributeValueList::check_bool_attribute) {
+        if !self.bool_value_change(value) {
             return;
         }
         if value {
@@ -259,17 +251,21 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         // Is that possible? It may avoid calling `route.url()` if the route does not change.
         use crate::routing::Routes;
         let url = route.url();
-        if !self.must_update_attribute(url.as_str(), AttributeValueList::check_str_attribute) {
-            return;
-        }
-        self.element.ws_element().set_str_attribute("href", &url);
+        self.attribute("href", url);
     }
 
     pub fn id(&mut self, id: &str) {
-        if !self.must_update_attribute(id, AttributeValueList::check_str_attribute) {
+        if !self
+            .element
+            .attribute_list_mut()
+            .option_str_value_change(self.index, Some(id))
+            .0
+        {
             return;
         }
-        self.element.ws_element().set_id(id);
+        if self.status == ElementStatus::JustCreated {
+            self.element.ws_element().set_id(id);
+        }
     }
 
     pub fn list_updater(&mut self, mode: ListElementCreation) -> (&Comp<C>, &C, ListUpdater) {

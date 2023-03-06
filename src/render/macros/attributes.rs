@@ -190,7 +190,7 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
 
         impl<C: Component> $AttributeValueTrait<C> for $AttributeValueType {
             fn render(self, attribute_name: &str, element: &mut crate::render::base::ElementUpdater<C>) {
-                element.set_str_attribute(attribute_name, self.as_str());
+                element.attribute(attribute_name, self.as_str());
             }
         }
     };
@@ -222,9 +222,9 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
 macro_rules! make_traits_for_attribute_values {
     (
         $(
-            $AttributeTrait:ident {
-                $($attribute_type:ty, $method_name:ident $queue_render_method_name:ident $qrm_method_name:ident $qrmws_method_name:ident,)+
-            }
+            $AttributeTrait:ident {$(
+                $attribute_type:ty:  $incremental_render:ident $queue_render:ident,
+            )+}
         )+
     ) => {
         $(
@@ -232,46 +232,46 @@ macro_rules! make_traits_for_attribute_values {
                 fn render<'a>(self, name: &'static str, element: impl crate::render::base::ElementUpdaterMut<'a, C>);
             }
             $(
-                impl<C: Component> $AttributeTrait<C> for $attribute_type {
-                    fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
-                        element.element_updater_mut().$method_name(name, self);
-                    }
+                make_traits_for_attribute_values! {
+                    @each_incremental_render
+                    $AttributeTrait
+                    $attribute_type: $incremental_render
                 }
+
                 make_traits_for_attribute_values! {
                     @each_queue_render
                     $AttributeTrait
-                    $attribute_type, $queue_render_method_name $qrm_method_name $qrmws_method_name
+                    $attribute_type: $queue_render
                 }
             )+
         )+
     };
-    (
-        @each_queue_render
-        $AttributeTrait:ident
-        $attribute_type:ty, NO_QUEUE_RENDER NO_QUEUE_RENDER NO_QUEUE_RENDER
-    ) => {
-    };
-    (
-        @each_queue_render
-        $AttributeTrait:ident
-        $attribute_type:ty, $queue_render_method_name:ident $qrm_method_name:ident $qrmws_method_name:ident
-    ) => {
+    (@each_incremental_render $AttributeTrait:ident $attribute_type:ty: NO) => { };
+    (@each_queue_render $AttributeTrait:ident $attribute_type:ty: NO) => { };
+    (@each_incremental_render $AttributeTrait:ident $attribute_type:ty: YES) => {
+        impl<C: Component> $AttributeTrait<C> for $attribute_type {
+            fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
+                element.element_updater_mut().attribute(name, self);
+            }
+        }
+   };
+    (@each_queue_render $AttributeTrait:ident $attribute_type:ty: YES) => {
         #[cfg(feature = "queue-render")]
         impl<C: Component> $AttributeTrait<C> for &crate::queue_render::val::QrVal<$attribute_type> {
             fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
-                element.element_updater_mut().$queue_render_method_name(name, self);
+                element.element_updater_mut().qr_attribute(name, self);
             }
         }
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $AttributeTrait<C> for crate::queue_render::val::QrValMap<T, $attribute_type> {
             fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
-                element.element_updater_mut().$qrm_method_name(name, self);
+                element.element_updater_mut().qrm_attribute(name, self);
             }
         }
         #[cfg(feature = "queue-render")]
         impl<C: Component, T: 'static> $AttributeTrait<C> for crate::queue_render::val::QrValMapWithState<C, T, $attribute_type> {
             fn render<'a>(self, name: &'static str, mut element: impl crate::render::base::ElementUpdaterMut<'a, C>) {
-                element.element_updater_mut().$qrmws_method_name(name, self);
+                element.element_updater_mut().qrmws_attribute(name, self);
             }
         }
     };
