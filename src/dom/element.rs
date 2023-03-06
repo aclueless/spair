@@ -129,12 +129,14 @@ pub struct WsElement {
 }
 
 impl WsElement {
-    pub fn new(namespace: &str, tag: &str) -> Self {
+    pub fn new(namespace: &str, tag_name: &str) -> Self {
+        let namespace = wasm_bindgen::intern(namespace);
+        let tag_name = wasm_bindgen::intern(tag_name);
         Self {
             ws_element: crate::utils::document()
-                .create_element_ns(Some(namespace), tag)
+                .create_element_ns(Some(namespace), tag_name)
                 .expect_throw("dom::element::WsElement::new"),
-            element_type: tag.into(),
+            element_type: tag_name.into(),
         }
     }
 
@@ -189,26 +191,30 @@ impl WsElement {
     }
 
     pub fn set_str_attribute(&self, attribute_name: &str, attribute_value: &str) {
+        let attribute_name = wasm_bindgen::intern(attribute_name);
         self.ws_element
             .set_attribute(attribute_name, attribute_value)
             .expect_throw("dom::element::WsElement::set_str_attribute");
     }
 
     pub fn remove_attribute(&self, attribute_name: &str) {
+        let attribute_name = wasm_bindgen::intern(attribute_name);
         self.ws_element
             .remove_attribute(attribute_name)
             .expect_throw("dom::element::WsElement::remove_attribute");
     }
 
-    pub fn set_bool_attribute(&self, name: &str, value: bool) {
+    pub fn set_bool_attribute(&self, attribute_name: &str, value: bool) {
+        let attribute_name = wasm_bindgen::intern(attribute_name);
         if value {
-            self.set_str_attribute(name, "");
+            self.set_str_attribute(attribute_name, "");
         } else {
-            self.remove_attribute(name);
+            self.remove_attribute(attribute_name);
         }
     }
 
     pub fn add_class(&self, class_name: &str) {
+        let class_name = wasm_bindgen::intern(class_name);
         self.ws_element
             .class_list()
             .add_1(class_name)
@@ -216,6 +222,7 @@ impl WsElement {
     }
 
     pub fn remove_class(&self, class_name: &str) {
+        let class_name = wasm_bindgen::intern(class_name);
         self.ws_element
             .class_list()
             .remove_1(class_name)

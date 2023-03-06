@@ -255,15 +255,12 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     pub fn id(&mut self, id: &str) {
-        if !self
+        if self
             .element
             .attribute_list_mut()
             .option_str_value_change(self.index, Some(id))
             .0
         {
-            return;
-        }
-        if self.status == ElementStatus::JustCreated {
             self.element.ws_element().set_id(id);
         }
     }
