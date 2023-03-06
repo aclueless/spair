@@ -186,22 +186,8 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         self.value_change(Some(new_value), AttributeValueList::option_str_value_change)
     }
 
-    pub fn string_value_change(&mut self, new_value: String) -> (bool, Option<String>) {
-        self.value_change(
-            Some(new_value),
-            AttributeValueList::option_string_value_change,
-        )
-    }
-
     pub fn option_str_value_change(&mut self, new_value: Option<&str>) -> (bool, Option<String>) {
         self.value_change(new_value, AttributeValueList::option_str_value_change)
-    }
-
-    pub fn option_string_value_change(
-        &mut self,
-        new_value: Option<String>,
-    ) -> (bool, Option<String>) {
-        self.value_change(new_value, AttributeValueList::option_string_value_change)
     }
 
     /// Always checked.

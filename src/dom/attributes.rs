@@ -263,25 +263,4 @@ impl AttributeValueList {
             },
         }
     }
-
-    pub fn option_string_value_change(
-        &mut self,
-        index: usize,
-        mut value: Option<String>,
-    ) -> (bool, Option<String>) {
-        match self.0.get_mut(index) {
-            None => {
-                self.0.push(AttributeValue::String(value));
-                (true, None)
-            }
-            Some(a) => match a {
-                AttributeValue::String(old_value) if value == *old_value => (false, None),
-                AttributeValue::String(old_value) => {
-                    std::mem::swap(old_value, &mut value);
-                    (true, value)
-                }
-                _ => panic!("Spair's internal error, expected an AttributeValue::String?"),
-            },
-        }
-    }
 }
