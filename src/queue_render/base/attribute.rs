@@ -13,19 +13,19 @@ pub trait AttributeUpdater {
 
 impl AttributeUpdater for i32 {
     fn update(&self, name: &str, ws: &WsElement) {
-        ws.set_attribute(name, *self);
+        ws.set_str_attribute(name, &self.to_string());
     }
 }
 
 impl AttributeUpdater for u32 {
     fn update(&self, name: &str, ws: &WsElement) {
-        ws.set_attribute(name, *self);
+        ws.set_str_attribute(name, &self.to_string());
     }
 }
 
 impl AttributeUpdater for f64 {
     fn update(&self, name: &str, ws: &WsElement) {
-        ws.set_attribute(name, *self);
+        ws.set_str_attribute(name, &self.to_string());
     }
 }
 

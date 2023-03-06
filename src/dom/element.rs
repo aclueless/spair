@@ -101,6 +101,15 @@ impl Element {
         &mut self.attributes
     }
 
+    pub fn attribute(
+        &mut self,
+        index: usize,
+        name: &str,
+        value: impl super::AttributeValueAsString,
+    ) {
+        value.update(index, &mut self.attributes, name, &self.ws_element);
+    }
+
     #[cfg(test)]
     pub fn nodes(&self) -> &Nodes {
         &self.nodes
@@ -118,24 +127,6 @@ pub struct WsElement {
     ws_element: web_sys::Element,
     element_type: ElementType,
 }
-
-pub trait AttributeValueAsString {
-    fn to_string(self) -> String;
-}
-
-macro_rules! impl_string_attribute {
-    ($($TypeName:ident)+) => {
-        $(
-            impl AttributeValueAsString for $TypeName {
-                fn to_string(self) -> String {
-                    ToString::to_string(&self)
-                }
-            }
-        )+
-    };
-}
-
-impl_string_attribute! { i32 u32 f64 }
 
 impl WsElement {
     pub fn new(namespace: &str, tag: &str) -> Self {
@@ -207,14 +198,6 @@ impl WsElement {
         self.ws_element
             .remove_attribute(attribute_name)
             .expect_throw("dom::element::WsElement::remove_attribute");
-    }
-
-    pub fn set_attribute<T: AttributeValueAsString>(
-        &self,
-        attribute_name: &str,
-        attribute_value: T,
-    ) {
-        self.set_str_attribute(attribute_name, &attribute_value.to_string());
     }
 
     pub fn set_bool_attribute(&self, name: &str, value: bool) {

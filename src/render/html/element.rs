@@ -1,7 +1,7 @@
 use super::{AttributesOnly, StaticAttributes, StaticAttributesOnly};
 use crate::{
     component::{Comp, Component},
-    dom::{AttributeValueList, ElementType, WsElement},
+    dom::{ElementType, WsElement},
     render::base::{ElementUpdater, ElementUpdaterMut, MethodsForEvents},
 };
 use wasm_bindgen::JsCast;
@@ -169,49 +169,47 @@ impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
         }
     }
 
+    // This must call by a <select>
     pub(super) fn selected_value_str(&mut self, value: &str) {
-        if !self
-            .element_updater
-            .must_update_attribute(value, AttributeValueList::check_str_attribute)
-        {
-            return;
+        if self.element_updater.str_value_change(value).0 {
+            self.set_value(value);
         }
-        self.set_value(value);
     }
+
+    // This must call by a <select>
     pub(super) fn selected_value_string(&mut self, value: String) {
-        if !self
-            .element_updater
-            .must_update_attribute(value.as_str(), AttributeValueList::check_str_attribute)
-        {
-            return;
+        if self.element_updater.str_value_change(&value).0 {
+            self.set_selected_value_string(Some(value));
         }
-        self.set_value(&value);
     }
+
+    // This must call by a <select>
     pub(super) fn selected_value_optional_str(&mut self, value: Option<&str>) {
         match self.element_updater.element_mut().element_type() {
             ElementType::Select => {
-                if !self
-                    .element_updater
-                    .must_update_attribute(value, AttributeValueList::check_optional_str_attribute)
-                {
-                    return;
+                if self.element_updater.option_str_value_change(value).0 {
+                    self.set_selected_value(value);
                 }
-                self.set_selected_value(value);
             }
             _ => log::warn!("Should a value:Option<String> only can be set on a select element?"),
         }
     }
+
+    // This must call by a <select>
     pub(super) fn selected_value_optional_string(&mut self, value: Option<String>) {
-        self.selected_value_optional_str(value.as_deref());
+        if self
+            .element_updater
+            .option_str_value_change(value.as_deref())
+            .0
+        {
+            self.set_selected_value_string(value);
+        }
     }
 
     fn selected_index(&mut self, value: i32) {
         match self.element_updater.element_mut().element_type() {
             ElementType::Select => {
-                if !self
-                    .element_updater
-                    .must_update_attribute(value, AttributeValueList::check_i32_attribute)
-                {
+                if !self.element_updater.i32_value_change(value) {
                     return;
                 }
                 self.set_selected_index(Some(value));
@@ -235,7 +233,7 @@ pub trait HemsWholeSelf<'updater, C: Component>:
 {
     fn dangerously_set_inner_html(mut self, value: &str) {
         // Currently always set the value
-        // TODO: Should we check for value change before setting?
+        // TODO: Should we check for value change using some kind of hash?
         self.html_element_updater_mut()
             .ws_element()
             .as_ref()
