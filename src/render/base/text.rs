@@ -55,6 +55,23 @@ impl<C: Component> TextRender<C> for String {
     }
 }
 
+impl<C: Component, T> TextRender<C> for Option<T>
+where
+    T: 'static + TextRender<C> + crate::dom::InternalTextRender,
+{
+    fn render(self, nodes: &mut super::NodesUpdater<C>, update_mode: bool) {
+        let mi = nodes.get_match_if_updater();
+        match self {
+            None => {
+                mi.render_on_arm_index(std::any::TypeId::of::<Option<T>>());
+            }
+            Some(value) => mi
+                .render_on_arm_index(std::any::TypeId::of::<T>())
+                .update_text(value, update_mode),
+        }
+    }
+}
+
 #[cfg(feature = "nightly-text-render")]
 impl<'a, C: Component, T> FnOnce<(crate::Element<'a, C>,)> for TextRenderOnElement<C, T>
 where
@@ -77,18 +94,37 @@ mod tests {
             type: u32;
             init: 42;
             render_fn: fn render(&self, element: crate::Element<Self>) {
-                element.update_text(self.0).static_text(" ").static_text(self.0).static_text(" ").update_text(self.0);
+                element
+                    .update_text(self.0)
+                    .static_text(" ")
+                    .static_text(self.0)
+                    .static_text(" ")
+                    .update_text(self.0)
+                    .static_text(" Option: ")
+                    .update_text(None::<u32>)
+                    .update_text(Some(self.0))
+                    .static_text(" ")
+                    .static_text(Some(self.0));
             }
         }
 
         let test = Test::set_up();
-        assert_eq!(Some("42 42 42"), test.text_content().as_deref());
+        assert_eq!(
+            Some("42 42 42 Option: 42 42"),
+            test.text_content().as_deref()
+        );
 
         test.update(44);
-        assert_eq!(Some("44 42 44"), test.text_content().as_deref());
+        assert_eq!(
+            Some("44 42 44 Option: 44 42"),
+            test.text_content().as_deref()
+        );
 
         test.update(43);
-        assert_eq!(Some("43 42 43"), test.text_content().as_deref());
+        assert_eq!(
+            Some("43 42 43 Option: 43 42"),
+            test.text_content().as_deref()
+        );
     }
 
     #[cfg(feature = "nightly-text-render")]
@@ -99,17 +135,36 @@ mod tests {
             type: u32;
             init: 42;
             render_fn: fn render(&self, element: crate::Element<Self>) {
-                element.div(self.0.text()).static_text(" ").div(self.0.static_text()).static_text(" ").div(self.0.text());
+                element
+                    .div(self.0.text())
+                    .static_text(" ")
+                    .div(self.0.static_text())
+                    .static_text(" ")
+                    .div(self.0.text())
+                    .static_text(" Option: ")
+                    .div(None::<u32>.text())
+                    .div(Some(self.0).text())
+                    .static_text(" ")
+                    .div(Some(self.0).static_text());
             }
         }
 
         let test = Test::set_up();
-        assert_eq!(Some("42 42 42"), test.text_content().as_deref());
+        assert_eq!(
+            Some("42 42 42 Option: 42 42"),
+            test.text_content().as_deref()
+        );
 
         test.update(44);
-        assert_eq!(Some("44 42 44"), test.text_content().as_deref());
+        assert_eq!(
+            Some("44 42 44 Option: 44 42"),
+            test.text_content().as_deref()
+        );
 
         test.update(43);
-        assert_eq!(Some("43 42 43"), test.text_content().as_deref());
+        assert_eq!(
+            Some("43 42 43 Option: 43 42"),
+            test.text_content().as_deref()
+        );
     }
 }
