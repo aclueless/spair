@@ -57,16 +57,16 @@ impl<C: Component> TextRender<C> for String {
 
 impl<C: Component, T> TextRender<C> for Option<T>
 where
-    T: 'static + TextRender<C> + crate::dom::InternalTextRender,
+    T: TextRender<C> + crate::dom::InternalTextRender,
 {
     fn render(self, nodes: &mut super::NodesUpdater<C>, update_mode: bool) {
         let mi = nodes.get_match_if_updater();
         match self {
             None => {
-                mi.render_on_arm_index(std::any::TypeId::of::<Option<T>>());
+                mi.render_on_arm_index(std::any::TypeId::of::<usize>());
             }
             Some(value) => mi
-                .render_on_arm_index(std::any::TypeId::of::<T>())
+                .render_on_arm_index(std::any::TypeId::of::<isize>())
                 .update_text(value, update_mode),
         }
     }
