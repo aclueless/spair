@@ -100,6 +100,7 @@ make_trait_for_attribute_methods! {
         str          calc_mode "calcMode"
         str          cap_height "cap-height"
         //str          class
+        str          classes "class"
         str          clip
         // ambiguous
         // str          clip_path "clip-path"

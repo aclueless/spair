@@ -255,6 +255,7 @@ make_trait_for_attribute_methods! {
         // str     cite
 
         //str     class
+        str     classes "class"
         u32     cols
         u32     col_span "colspan"
         bool    content_editable "contenteditable"
