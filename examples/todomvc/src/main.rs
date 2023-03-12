@@ -293,15 +293,15 @@ fn render_footer(nodes: spair::Nodes<App>) {
     });
 }
 
-fn render_filter(view: Filter, nodes: spair::Nodes<App>) {
+fn render_filter(view_filter: Filter, nodes: spair::Nodes<App>) {
     let current_filter = nodes.state().filter;
     nodes.li(|l| {
         l.a(|a| {
-            a.class_if(current_filter == view, "selected")
+            a.class_if(current_filter == view_filter, "selected")
                 .static_attributes()
-                .href(&view)
+                .href(&view_filter)
                 .static_nodes()
-                .static_text(view.as_str());
+                .static_text(view_filter.as_str());
         });
     });
 }
