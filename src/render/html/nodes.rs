@@ -58,6 +58,31 @@ pub trait HemsHandMade<'n, C: Component>: Sized {
         this
     }
 
+    /// A convenience method to render an Option<T> with a text fallback for None.
+    /// If you want to render something else for None, then use `.match_if()`.
+    fn render_option<T>(
+        self,
+        value: Option<T>,
+        fn_for_some: impl FnOnce(T, Nodes<C>),
+        text_for_none: &'static str,
+    ) -> Self::Output {
+        let mut this: Self::Output = self.into();
+        let render = this.nodes_updater_mut();
+        let mi = render.get_match_if_updater();
+        let mi = HtmlMatchIfUpdater(mi);
+        match value {
+            None => mi
+                .render_on_arm_index(std::any::TypeId::of::<isize>())
+                .update_text(text_for_none)
+                .done(),
+            Some(value) => mi
+                .render_on_arm_index(std::any::TypeId::of::<usize>())
+                .rfn(|nodes| fn_for_some(value, nodes))
+                .done(),
+        }
+        this
+    }
+
     #[cfg(feature = "queue-render")]
     fn qr_match_if<T: 'static>(
         self,
