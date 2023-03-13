@@ -15,6 +15,7 @@ make_traits_for_attribute_values! {
 }
 
 pub trait SamsHandMade<'updater, C: Component>: Sized + ElementUpdaterMut<'updater, C> {
+    fn done(self) {}
     fn class(mut self, class_name: &str) -> Self {
         self.element_updater_mut().class(class_name);
         self

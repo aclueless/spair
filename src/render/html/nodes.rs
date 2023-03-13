@@ -26,9 +26,8 @@ pub struct HtmlNodesUpdater<'n, C: Component> {
     _select_element_value_manager: Option<SelectElementValueManager>,
 }
 
-#[cfg(feature = "keyed-list")]
 impl<'n, C: Component> HtmlNodesUpdater<'n, C> {
-    pub(super) fn new(nodes_updater: NodesUpdater<'n, C>) -> Self {
+    pub(crate) fn new(nodes_updater: NodesUpdater<'n, C>) -> Self {
         Self {
             nodes_updater,
             _select_element_value_manager: None,
@@ -267,7 +266,7 @@ impl<'n, C: Component> StaticNodesOwned<'n, C> {
 }
 
 impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
-    pub(super) fn new(r: &'h mut HtmlNodesUpdater<'n, C>) -> Self {
+    pub(crate) fn new(r: &'h mut HtmlNodesUpdater<'n, C>) -> Self {
         r.nodes_updater.set_update_mode();
         Self(r)
     }

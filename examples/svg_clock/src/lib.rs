@@ -63,44 +63,41 @@ impl spair::Component for Clock {
                     });
                 })
                 .g(|g| {
-                    g.list_clone(1..=60, "g", |n, g| {
+                    g.list_clone(1..=60, |n, nodes| {
                         let degree = 360.0 * n as f64 / 60.0;
                         if n % 5 == 0 {
                             let length = 58.0;
                             let dr = degree.to_radians();
                             let dx = dr.sin() * length;
                             let dy = -dr.cos() * length;
-                            g.rfn(|nodes| {
-                                render_stick(
+                            nodes
+                                .rfn(|nodes| {
                                     Stick {
                                         width: 2,
                                         y1: 29,
                                         y2: 32,
                                         angle: degree,
-                                    },
-                                    nodes,
-                                )
-                            })
-                            .text(|t| {
-                                t.x(100.0)
-                                    .y(101.0)
-                                    .text_anchor("middle")
-                                    .dominant_baseline("middle")
-                                    .transform(format!("translate({dx} {dy})"))
-                                    .update_text(n / 5)
-                                    .done()
-                            });
+                                    }
+                                    .render(nodes)
+                                })
+                                .text(|t| {
+                                    t.x(100.0)
+                                        .y(101.0)
+                                        .text_anchor("middle")
+                                        .dominant_baseline("middle")
+                                        .transform(format!("translate({dx} {dy})"))
+                                        .update_text(n / 5)
+                                        .done()
+                                });
                         } else {
-                            g.rfn(|nodes| {
-                                render_stick(
-                                    Stick {
-                                        width: 1,
-                                        y1: 30,
-                                        y2: 32,
-                                        angle: degree,
-                                    },
-                                    nodes,
-                                )
+                            nodes.rfn(|nodes| {
+                                Stick {
+                                    width: 1,
+                                    y1: 30,
+                                    y2: 32,
+                                    angle: degree,
+                                }
+                                .render(nodes)
                             });
                         }
                     });
@@ -108,34 +105,28 @@ impl spair::Component for Clock {
                 .update_nodes()
                 .g(|g| {
                     g.rfn(|nodes| {
-                        render_hand(
-                            Hand {
-                                width: 4,
-                                y2: 55,
-                                angle: hours_angle,
-                            },
-                            nodes,
-                        )
+                        Hand {
+                            width: 4,
+                            y2: 55,
+                            angle: hours_angle,
+                        }
+                        .render(nodes)
                     })
                     .rfn(|nodes| {
-                        render_hand(
-                            Hand {
-                                width: 2,
-                                y2: 40,
-                                angle: minutes_angle,
-                            },
-                            nodes,
-                        )
+                        Hand {
+                            width: 2,
+                            y2: 40,
+                            angle: minutes_angle,
+                        }
+                        .render(nodes)
                     })
                     .rfn(|nodes| {
-                        render_hand(
-                            Hand {
-                                width: 1,
-                                y2: 30,
-                                angle: seconds_angle,
-                            },
-                            nodes,
-                        )
+                        Hand {
+                            width: 1,
+                            y2: 30,
+                            angle: seconds_angle,
+                        }
+                        .render(nodes)
                     });
                 })
                 .static_nodes()
@@ -157,16 +148,18 @@ struct Stick {
     angle: f64,
 }
 
-fn render_stick(stick: Stick, nodes: spair::SvgNodes<Clock>) {
-    nodes.line(|l| {
-        l.transform(format!("rotate({} 100 100)", stick.angle))
-            .x1(100.0)
-            .y1(stick.y1 as f64)
-            .x2(100.0)
-            .y2(stick.y2 as f64)
-            .stroke("white")
-            .stroke_width(stick.width as f64);
-    });
+impl Stick {
+    fn render(self, nodes: spair::SvgNodes<Clock>) {
+        nodes.line(|l| {
+            l.transform(format!("rotate({} 100 100)", self.angle))
+                .x1(100.0)
+                .y1(self.y1 as f64)
+                .x2(100.0)
+                .y2(self.y2 as f64)
+                .stroke("white")
+                .stroke_width(self.width as f64);
+        });
+    }
 }
 
 struct Hand {
@@ -175,17 +168,19 @@ struct Hand {
     angle: f64,
 }
 
-fn render_hand(hand: Hand, nodes: spair::SvgNodes<Clock>) {
-    nodes.line(|l| {
-        l.transform(format!("rotate({} 100 100)", hand.angle))
-            .static_attributes()
-            .x1(100.0)
-            .y1(100.0)
-            .x2(100.0)
-            .y2(hand.y2 as f64)
-            .stroke("white")
-            .stroke_width(hand.width as f64);
-    });
+impl Hand {
+    fn render(self, nodes: spair::SvgNodes<Clock>) {
+        nodes.line(|l| {
+            l.transform(format!("rotate({} 100 100)", self.angle))
+                .static_attributes()
+                .x1(100.0)
+                .y1(100.0)
+                .x2(100.0)
+                .y2(self.y2 as f64)
+                .stroke("white")
+                .stroke_width(self.width as f64);
+        });
+    }
 }
 
 impl spair::Application for Clock {

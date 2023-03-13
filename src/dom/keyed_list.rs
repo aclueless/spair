@@ -152,7 +152,7 @@ impl KeyedList {
             None => {
                 self.template = Some(ListEntryTemplate {
                     rendered: false,
-                    group: GroupedNodes::new("start of a list entry"),
+                    group: GroupedNodes::with_flag_name(super::nodes::FLAG_NAME_FOR_LIST_ENTRY),
                 });
                 true
             }

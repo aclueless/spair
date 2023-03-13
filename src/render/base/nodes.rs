@@ -136,7 +136,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     pub fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {
         let grouped_nodes = self.nodes.grouped_nodes(
             self.index,
-            "end of match_if",
+            crate::dom::FLAG_NAME_FOR_MATCH_IF,
             self.parent,
             self.next_sibling,
         );
@@ -152,7 +152,7 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     pub fn get_list_updater(&mut self, use_template: bool) -> (&Comp<C>, &C, ListUpdater) {
         let gn = self.nodes.grouped_nodes(
             self.index,
-            "end of non-keyed list",
+            crate::dom::FLAG_NAME_FOR_PARTIAL_LIST,
             self.parent,
             self.next_sibling,
         );

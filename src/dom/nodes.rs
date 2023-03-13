@@ -13,6 +13,10 @@ use wasm_bindgen::UnwrapThrowExt;
 #[derive(Default, Clone)]
 pub struct Nodes(Vec<Node>);
 
+pub const FLAG_NAME_FOR_PARTIAL_LIST: &str = "end of a partial list";
+pub const FLAG_NAME_FOR_LIST_ENTRY: &str = "start of a list entry";
+pub const FLAG_NAME_FOR_MATCH_IF: &str = "end of a match_if";
+
 impl std::fmt::Debug for Nodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         f.write_fmt(format_args!("[{} nodes]", self.0.len()))
@@ -56,32 +60,32 @@ impl Nodes {
     }
 
     // The following methods, from here until '================' are especically
-    // use for QrListUpdater, but the list only store elements: Vec<Element>.
-    // TODO: Should we have an Vec<Element> for List and QrList
-    // This method is use for QrList, so the items are always Element
-    pub fn pop_element(&mut self) -> Option<Element> {
+    // use for QrListUpdater, but the list only store elements: Vec<GroupedNodes>.
+    // TODO: Should we have an Vec<GroupedNodes> for List and QrList
+    // This method is use for QrList, so the items are always GroupedNodes
+    pub fn pop_group(&mut self) -> Option<GroupedNodes> {
         match self.0.pop()? {
-            Node::Element(e) => Some(e),
-            _ => None, // Actually, it is a bug if it is not an Element
+            Node::GroupedNodes(g) => Some(g),
+            _ => None, // Actually, it is a bug if it is not a GroupedNodes
         }
     }
 
-    pub fn insert_element_at(&mut self, index: usize, element: Element) {
-        self.0.insert(index, Node::Element(element));
+    pub fn insert_group_at(&mut self, index: usize, group: GroupedNodes) {
+        self.0.insert(index, Node::GroupedNodes(group));
     }
 
-    pub fn remove_element_at(&mut self, index: usize) -> Element {
+    pub fn remove_group_at(&mut self, index: usize) -> GroupedNodes {
         match self.0.remove(index) {
-            Node::Element(e) => e,
-            _ => panic!("remove_element_at should be an Element"),
+            Node::GroupedNodes(g) => g,
+            _ => panic!("remove_element_at should be a GroupedNodes"),
         }
     }
 
-    pub fn get_element(&self, index: usize) -> Option<&Element> {
+    pub fn get_grouped_nodes(&self, index: usize) -> Option<&GroupedNodes> {
         match self.0.get(index) {
-            Some(Node::Element(element)) => Some(element),
+            Some(Node::GroupedNodes(group)) => Some(group),
             None => None,
-            _ => panic!("dom::nodes::Nodes::get_element expected Node::Element"),
+            _ => panic!("dom::nodes::Nodes::get_element expected Node::GroupedNodes"),
         }
     }
 
@@ -126,32 +130,47 @@ impl Nodes {
         }
     }
 
-    pub fn check_or_create_element_for_list<E: ElementTag>(
+    pub fn recipe_for_list_entry(
         &mut self,
-        tag: E,
         index: usize,
         parent: &web_sys::Node,
         parent_status: ElementStatus,
         next_sibling: Option<&web_sys::Node>,
         use_template: bool,
-    ) -> ElementStatus {
+    ) -> (ElementStatus, &mut GroupedNodes, Option<web_sys::Node>) {
         let item_count = self.0.len();
-        if index < item_count {
+        let status = if index < item_count {
             parent_status
         } else if !use_template || item_count == 0 {
-            self.create_new_element_ns(tag, parent, next_sibling);
+            self.new_grouped_nodes(FLAG_NAME_FOR_LIST_ENTRY, parent, next_sibling);
             ElementStatus::JustCreated
         } else {
-            let element = self.0[0].clone();
-            match &element {
-                Node::Element(element) => element.insert_before_a_sibling(parent, next_sibling),
+            let grouped_nodes = self.0[0].clone();
+            match &grouped_nodes {
+                Node::GroupedNodes(group) => group.insert_before_a_sibling(parent, next_sibling),
                 _ => panic!(
                     "dom::nodes::Nodes::check_or_create_element_for_list expected Node::Element"
                 ),
             }
-            self.0.push(element);
+            self.0.push(grouped_nodes);
             ElementStatus::JustCloned
-        }
+        };
+        let next_sibling = self
+            .get_grouped_nodes(index + 1)
+            .map(|g| g.flag_node.clone_node().expect_throw("Clone web_sys::Node"));
+
+        (status, self.get_grouped_nodes_mut(index), next_sibling)
+    }
+
+    fn new_grouped_nodes(
+        &mut self,
+        flag_name: &str,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        let gn = GroupedNodes::with_flag_name(flag_name);
+        gn.flag_node.insert_before_a_sibling(parent, next_sibling);
+        self.0.push(Node::GroupedNodes(gn));
     }
 
     pub fn grouped_nodes(
@@ -162,12 +181,12 @@ impl Nodes {
         next_sibling: Option<&web_sys::Node>,
     ) -> &mut GroupedNodes {
         if index == self.0.len() {
-            let gn = GroupedNodes::new(flag_name);
-            gn.flag_node.insert_before_a_sibling(parent, next_sibling);
-            //.expect_throw("dom::nodes::Nodes::grouped_nodes insert_before");
-            self.0.push(Node::GroupedNodes(gn));
+            self.new_grouped_nodes(flag_name, parent, next_sibling);
         }
+        self.get_grouped_nodes_mut(index)
+    }
 
+    pub fn get_grouped_nodes_mut(&mut self, index: usize) -> &mut GroupedNodes {
         match self
             .0
             .get_mut(index)
@@ -355,7 +374,7 @@ impl Clone for GroupedNodes {
 }
 
 impl GroupedNodes {
-    pub fn new(flag_name: &str) -> Self {
+    pub fn with_flag_name(flag_name: &str) -> Self {
         let flag_node = crate::utils::create_comment_node(flag_name);
         Self {
             active_index: None,
@@ -372,7 +391,7 @@ impl GroupedNodes {
         }
     }
 
-    pub fn flag_node(&self) -> &web_sys::Node {
+    pub fn flag_node_ref(&self) -> &web_sys::Node {
         &self.flag_node
     }
 

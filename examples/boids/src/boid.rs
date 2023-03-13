@@ -126,7 +126,7 @@ impl Boid {
     }
 }
 
-pub fn render_boid(boid: &Boid, item: spair::SvgElement<crate::simulation::Simulation>) {
+pub fn render_boid(boid: &Boid, nodes: spair::SvgNodes<crate::simulation::Simulation>) {
     let color = format!("hsl({:.3}rad, 100%, 50%)", boid.hue);
 
     let mut points = String::new();
@@ -136,7 +136,7 @@ pub fn render_boid(boid: &Boid, item: spair::SvgElement<crate::simulation::Simul
         // Write to string will never fail.
         let _ = write!(points, "{x:.2},{y:.2} ");
     }
-    item.points(points).fill(color);
+    nodes.polygon(|p| p.points(points).fill(color).done());
 }
 
 fn iter_shape_points(radius: f64, rotation: f64) -> impl Iterator<Item = Vector2D> {

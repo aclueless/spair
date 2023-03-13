@@ -5,27 +5,29 @@ use crate::queue_render::vec::QrVec;
 use crate::{
     component::Component,
     render::{
-        base::{ElementUpdater, NodesUpdaterMut},
+        base::{NodesUpdater, NodesUpdaterMut},
         html::{
-            AttributesOnly, HtmlElementUpdater, HtmlTag, NodesOwned, StaticAttributes,
-            StaticAttributesOnly,
+            AttributesOnly, HtmlElementUpdater, HtmlNodesUpdater, Nodes, NodesOwned,
+            StaticAttributes, StaticAttributesOnly,
         },
         ListElementCreation,
     },
 };
 
 pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
-    fn qr_list<I, R>(self, list: &QrVec<I>, mode: ListElementCreation, tag: &'static str, render: R)
+    fn qr_list<I, R>(self, list: &QrVec<I>, mode: ListElementCreation, render: R)
     where
         I: 'static + Clone,
-        R: 'static + Fn(I, crate::Element<C>),
+        R: 'static + Fn(I, crate::Nodes<C>),
     {
         let mut nodes_updater: NodesOwned<C> = self.into();
         let qr_list_render = match nodes_updater.nodes_updater_mut().create_qr_list_render(
             true,
             mode,
-            HtmlTag(tag),
-            move |item: I, er: ElementUpdater<C>| render(item, er.into()),
+            move |entry: I, nodes: NodesUpdater<C>| {
+                let mut nodes = HtmlNodesUpdater::new(nodes);
+                render(entry, Nodes::new(&mut nodes));
+            },
         ) {
             None => return,
             Some(render) => render,
@@ -37,12 +39,12 @@ pub trait HemsForQrList<'a, C: Component>: Sized + Into<NodesOwned<'a, C>> {
         list.check_and_queue_a_render();
     }
 
-    fn qr_list_clone<I, R>(self, list: &QrVec<I>, tag: &'static str, render: R)
+    fn qr_list_clone<I, R>(self, list: &QrVec<I>, render: R)
     where
         I: 'static + Clone,
-        R: 'static + Fn(I, crate::Element<C>),
+        R: 'static + Fn(I, crate::Nodes<C>),
     {
-        self.qr_list(list, ListElementCreation::Clone, tag, render)
+        self.qr_list(list, ListElementCreation::Clone, render)
     }
 }
 

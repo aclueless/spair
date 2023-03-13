@@ -1,7 +1,7 @@
-use super::ElementUpdater;
+use super::NodesUpdater;
 use crate::{
     component::{Comp, Component},
-    dom::{ElementStatus, ElementTag, Nodes},
+    dom::{ElementStatus, Nodes},
 };
 
 #[must_use = "Caller should set selected option for <select> element"]
@@ -47,33 +47,36 @@ impl<'a> ListUpdater<'a> {
         }
     }
 
-    pub fn render<C, E, I, II, R>(
+    pub fn render<C, I, II, R>(
         &mut self,
         comp: &Comp<C>,
         state: &C,
         items: II,
-        tag: E,
         render: R,
     ) -> RememberSettingSelectedOption
     where
         C: Component,
-        E: ElementTag,
         II: Iterator<Item = I>,
-        R: Fn(I, ElementUpdater<C>),
+        R: Fn(I, NodesUpdater<C>),
     {
         let mut index = 0;
         for item in items {
-            let status = self.list.check_or_create_element_for_list(
-                tag,
+            let (status, group, next_sibling) = self.list.recipe_for_list_entry(
                 index,
                 self.parent,
                 self.parent_status,
                 self.end_of_list_flag,
                 self.use_template,
             );
-            let element = self.list.get_element_mut(index);
-            let r = ElementUpdater::new(comp, state, element, status);
-            render(item, r);
+            let u = NodesUpdater::new(
+                comp,
+                state,
+                status,
+                self.parent,
+                next_sibling.as_ref().or(self.end_of_list_flag),
+                group.nodes_mut(),
+            );
+            render(item, u);
             index += 1;
         }
         self.clear_after(index);

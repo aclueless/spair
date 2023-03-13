@@ -140,7 +140,7 @@ where
         match &self.list_context.template {
             Some(template) => (template.group.clone_list_entry(), ElementStatus::JustCloned),
             None => (
-                GroupedNodes::new("start of a list entry"),
+                GroupedNodes::with_flag_name(crate::dom::FLAG_NAME_FOR_LIST_ENTRY),
                 ElementStatus::JustCreated,
             ),
         }
@@ -227,7 +227,7 @@ where
                 self.list_context
                     .old
                     .peek()
-                    .and_then(|old| old.1.as_ref().map(|entry| entry.group.flag_node())),
+                    .and_then(|old| old.1.as_ref().map(|entry| entry.group.flag_node_ref())),
                 false,
             );
         }
@@ -267,7 +267,7 @@ where
                     // The proccessed entry will be up by one from the bottom.
                     // And we will need to update `end_flag_for_the_next_entry_bottom_up`
                     // with this value
-                    old_entry.group.flag_node().clone()
+                    old_entry.group.flag_node_ref().clone()
                 }
                 _ => return count,
             };
@@ -314,7 +314,7 @@ where
             .list_context
             .old
             .peek()
-            .and_then(|entry| entry.1.as_ref().map(|entry| entry.group.flag_node()));
+            .and_then(|entry| entry.1.as_ref().map(|entry| entry.group.flag_node_ref()));
         self.render_context.update_existing_entry(
             entries_state_iter.next().unwrap_throw(),
             self.list_context.parent,
@@ -347,7 +347,7 @@ where
                     // No entry moved backward
                     return 0;
                 }
-                old_entry.group.flag_node().clone()
+                old_entry.group.flag_node_ref().clone()
             }
             _ => return 0,
         };
@@ -434,7 +434,7 @@ where
             self.render_context.render(entry_state, nu);
 
             self.list_context.end_flag_for_the_next_entry_bottom_up =
-                Some(group.flag_node().clone());
+                Some(group.flag_node_ref().clone());
             *self.list_context.new.next_back().expect_throw(
                 "render::base::keyed_list::KeyedListUpdater::update_other_entries_in_the_middle",
             ) = Some(KeyedEntry::new(key, group));
@@ -720,7 +720,7 @@ mod keyed_list_with_render_tests {
                 entry_state: &(),
                 old_entry: Some(super::OldEntry {
                     index,
-                    group: GroupedNodes::new("start of list entry"),
+                    group: GroupedNodes::with_flag_name("start of list entry"),
                 }),
                 lis: false,
             }
