@@ -8,9 +8,10 @@ use wasm_bindgen::UnwrapThrowExt;
 
 #[cfg(feature = "keyed-list")]
 use crate::{
-    dom::{ElementTag, ListItemKey},
+    dom::ListEntryKey,
     render::base::{
-        KeyedListContext, KeyedListUpdater, KeyedListUpdaterContext, RememberSettingSelectedOption,
+        KeyedListContext, KeyedListUpdater, KeyedListUpdaterContext, NodesUpdater,
+        RememberSettingSelectedOption,
     },
 };
 
@@ -272,21 +273,19 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
     }
 
     #[cfg(feature = "keyed-list")]
-    pub fn keyed_list<E, I, II, G, K, R>(
+    pub fn keyed_list<I, II, G, K, R>(
         &mut self,
         items: II,
         mode: ListElementCreation,
-        tag: E,
         fn_get_key: G,
         fn_render: R,
     ) -> RememberSettingSelectedOption
     where
-        E: ElementTag,
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        for<'updater> R: Fn(I, ElementUpdater<'updater, C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        for<'updater> R: Fn(I, NodesUpdater<'updater, C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
         // TODO: How to avoid this? The current implementation requires knowing the exact number of items,
         // we need to collect items into a vec to know exact size
@@ -295,7 +294,7 @@ impl<'a, C: Component> ElementUpdater<'a, C> {
         let use_template = mode.use_template();
         let (parent, nodes) = self.element.ws_node_and_nodes_mut();
         let mut keyed_list_updater = KeyedListUpdater::new(
-            KeyedListContext::new(nodes.keyed_list(), tag, items.len(), parent, use_template),
+            KeyedListContext::new(nodes.keyed_list(), items.len(), parent, use_template),
             KeyedListUpdaterContext::new(self.comp, self.state, fn_get_key, fn_render),
         );
         keyed_list_updater.update(items.into_iter())

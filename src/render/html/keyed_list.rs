@@ -1,10 +1,11 @@
 use crate::{
     component::Component,
-    dom::ListItemKey,
+    dom::ListEntryKey,
     render::{
-        base::{ElementUpdater, ElementUpdaterMut, MakeNodesExtensions, NodesExtensions},
+        base::{ElementUpdaterMut, MakeNodesExtensions, NodesExtensions, NodesUpdater},
         html::{
-            AttributesOnly, HtmlElementUpdater, HtmlTag, StaticAttributes, StaticAttributesOnly,
+            AttributesOnly, HtmlElementUpdater, HtmlNodesUpdater, Nodes, StaticAttributes,
+            StaticAttributesOnly,
         },
         ListElementCreation,
     },
@@ -15,49 +16,42 @@ pub trait HemsForKeyedList<'a, C: Component>:
 {
     fn keyed_list<I, II, G, K, R>(
         mut self,
-        items: II,
+        entries: II,
         mode: ListElementCreation,
-        tag: &'static str,
         fn_get_key: G,
         fn_render: R,
     ) -> NodesExtensions<'a>
     where
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, HtmlElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, Nodes<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
-        let fn_render = |item: I, element: ElementUpdater<C>| {
-            fn_render(item, element.into());
+        let fn_render = |entry: I, nodes_updater: NodesUpdater<C>| {
+            let mut nodes = HtmlNodesUpdater::new(nodes_updater);
+            fn_render(entry, Nodes::new(&mut nodes));
         };
         let _select_element_value_will_be_set_on_dropping_of_the_manager = self
             .element_updater_mut()
-            .keyed_list(items, mode, HtmlTag(tag), fn_get_key, fn_render);
+            .keyed_list(entries, mode, fn_get_key, fn_render);
         self.make_nodes_extensions()
     }
 
     fn keyed_list_clone<I, II, G, K, R>(
         self,
-        items: II,
-        tag: &'static str,
+        entries: II,
         fn_get_key: G,
         fn_render: R,
     ) -> NodesExtensions<'a>
     where
         II: IntoIterator<Item = I>,
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, HtmlElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, Nodes<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
-        self.keyed_list(
-            items,
-            ListElementCreation::Clone,
-            tag,
-            fn_get_key,
-            fn_render,
-        )
+        self.keyed_list(entries, ListElementCreation::Clone, fn_get_key, fn_render)
     }
 }
 

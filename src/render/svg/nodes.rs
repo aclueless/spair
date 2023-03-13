@@ -217,7 +217,7 @@ impl<'n, C: Component> SvgStaticNodesOwned<'n, C> {
 }
 
 impl<'h, 'n: 'h, C: Component> SvgNodes<'h, 'n, C> {
-    fn new(r: &'h mut NodesUpdater<'n, C>) -> Self {
+    pub(super) fn new(r: &'h mut NodesUpdater<'n, C>) -> Self {
         r.set_update_mode();
         Self(r)
     }

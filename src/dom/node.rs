@@ -109,6 +109,18 @@ impl RefComponentNode {
         self.comp_ref.root_node().append_to(parent);
         self.placeholder_flag.append_to(parent);
     }
+
+    pub fn insert_before_a_sibling(
+        &self,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        self.comp_ref
+            .root_node()
+            .insert_before_a_sibling(parent, next_sibling);
+        self.placeholder_flag
+            .insert_before_a_sibling(parent, next_sibling);
+    }
 }
 
 impl Clone for RefComponentNode {
@@ -199,7 +211,7 @@ impl Node {
         match self {
             Self::Element(element) => element.append_to(parent),
             Self::Text(text) => text.append_to(parent),
-            Self::GroupedNodes(g) => g.append_to(parent),
+            Self::GroupedNodes(g) => g.append_to_parent_with_flag_as_end(parent),
             #[cfg(feature = "keyed-list")]
             Self::KeyedList(list) => list.append_to(parent),
             // This is actually never reachable?
@@ -241,6 +253,29 @@ impl Node {
             Self::OwnedComponent(_) => None,
             #[cfg(feature = "queue-render")]
             Self::QrNode(qr) => qr.get_last_element(),
+        }
+    }
+
+    pub fn insert_before_a_sibling(
+        &self,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        match self {
+            Self::Element(element) => element.insert_before_a_sibling(parent, next_sibling),
+            Self::Text(text) => text.insert_before_a_sibling(parent, next_sibling),
+            Self::GroupedNodes(g) => g.insert_before_a_sibling(parent, next_sibling),
+            #[cfg(feature = "keyed-list")]
+            Self::KeyedList(list) => list.insert_before_a_sibling(parent, next_sibling),
+            // This is actually never reachable?
+            Self::RefComponent(rc) => rc.insert_before_a_sibling(parent, next_sibling),
+            Self::OwnedComponent(oc) => {
+                if let Some(wsn) = oc.root_node.as_ref() {
+                    wsn.insert_before_a_sibling(parent, next_sibling);
+                }
+            }
+            #[cfg(feature = "queue-render")]
+            Self::QrNode(qr) => qr.insert_before_a_sibling(parent, next_sibling),
         }
     }
 }

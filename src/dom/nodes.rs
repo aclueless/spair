@@ -157,13 +157,13 @@ impl Nodes {
     pub fn grouped_nodes(
         &mut self,
         index: usize,
+        flag_name: &str,
         parent: &web_sys::Node,
         next_sibling: Option<&web_sys::Node>,
     ) -> &mut GroupedNodes {
         if index == self.0.len() {
-            let gn = GroupedNodes::new();
-            gn.end_flag_node
-                .insert_before_a_sibling(parent, next_sibling);
+            let gn = GroupedNodes::new(flag_name);
+            gn.flag_node.insert_before_a_sibling(parent, next_sibling);
             //.expect_throw("dom::nodes::Nodes::grouped_nodes insert_before");
             self.0.push(Node::GroupedNodes(gn));
         }
@@ -324,49 +324,80 @@ impl Nodes {
             _ => panic!("dom::nodes::Nodes::get_qr_node expected Node::QrNode"),
         }
     }
+
+    fn insert_before_a_sibling(
+        &self,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        for n in self.0.iter() {
+            n.insert_before_a_sibling(parent, next_sibling);
+        }
+    }
 }
 
+#[derive(Debug)]
 pub struct GroupedNodes {
     active_index: Option<TypeId>,
-    // `end_flag_node` marks the boundary of the end of this group of nodes
-    end_flag_node: web_sys::Node,
+    // `flag_node` marks the boundary of the start/end of this group of nodes
+    // It is the start node for a list entry group, but it is the end node for other uses
+    flag_node: web_sys::Node,
     nodes: Nodes,
 }
 
 impl Clone for GroupedNodes {
     fn clone(&self) -> Self {
         // a GroupedNodes should not be cloned?
-        Self::new()
-    }
-}
-
-impl Default for GroupedNodes {
-    fn default() -> Self {
-        Self::new()
+        // default: GroupNodes is not cloned, but a GroupedNodes is also used for
+        // a list entry, list implementations use GroupedNodes::clone_list_entry
+        Self::with_flag(self.clone_flag_node())
     }
 }
 
 impl GroupedNodes {
-    pub fn new() -> Self {
-        let end_flag_node =
-            crate::utils::create_comment_node("Mark the end of a grouped node list");
+    pub fn new(flag_name: &str) -> Self {
+        let flag_node = crate::utils::create_comment_node(flag_name);
         Self {
             active_index: None,
-            end_flag_node,
+            flag_node,
             nodes: Nodes::default(),
         }
     }
 
-    pub fn with_flag(end_flag_node: web_sys::Node) -> Self {
+    pub fn with_flag(flag_node: web_sys::Node) -> Self {
         Self {
             active_index: None,
-            end_flag_node,
+            flag_node,
             nodes: Nodes::default(),
         }
     }
 
-    pub fn end_flag_node(&self) -> &web_sys::Node {
-        &self.end_flag_node
+    pub fn flag_node(&self) -> &web_sys::Node {
+        &self.flag_node
+    }
+
+    fn clone_flag_node(&self) -> web_sys::Node {
+        self.flag_node
+            .clone_node_with_deep(false)
+            .expect_throw("clone GroupedNodes::flag_node")
+    }
+
+    pub fn clone_list_entry(&self) -> Self {
+        let nodes = self.nodes.clone();
+        Self {
+            active_index: self.active_index,
+            flag_node: self.clone_flag_node(),
+            nodes,
+        }
+    }
+
+    pub fn insert_before_a_sibling(
+        &self,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        self.flag_node.insert_before_a_sibling(parent, next_sibling);
+        self.nodes.insert_before_a_sibling(parent, next_sibling);
     }
 
     pub fn set_active_index(&mut self, index: TypeId, parent: &web_sys::Node) -> ElementStatus {
@@ -381,20 +412,29 @@ impl GroupedNodes {
 
     pub fn remove_from_dom(self, parent: &web_sys::Node) {
         self.nodes.remove_from_dom(parent);
-        self.end_flag_node.remove_from(parent);
+        self.flag_node.remove_from(parent);
     }
 
-    pub fn append_to(&self, parent: &web_sys::Node) {
+    pub fn append_to_parent_with_flag_as_end(&self, parent: &web_sys::Node) {
         self.nodes.append_to(parent);
-        self.end_flag_node.append_to(parent);
+        self.flag_node.append_to(parent);
+    }
+
+    pub fn append_to_parent_with_flag_as_start(&self, parent: &web_sys::Node) {
+        self.flag_node.append_to(parent);
+        self.nodes.append_to(parent);
     }
 
     pub fn nodes(&self) -> &Nodes {
         &self.nodes
     }
 
-    pub fn nodes_mut_and_end_flag_node(&mut self) -> (&mut Nodes, &web_sys::Node) {
-        (&mut self.nodes, &self.end_flag_node)
+    pub fn nodes_mut(&mut self) -> &mut Nodes {
+        &mut self.nodes
+    }
+
+    pub fn nodes_mut_and_flag_node(&mut self) -> (&mut Nodes, &web_sys::Node) {
+        (&mut self.nodes, &self.flag_node)
     }
 
     #[cfg(test)]

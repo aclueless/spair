@@ -118,12 +118,12 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
             let r = QrMatchIfUpdater {
                 comp: self.comp(),
                 parent: self.parent().clone(),
-                nodes: GroupedNodes::new(),
+                nodes: GroupedNodes::new("end of qr match_if"),
                 fn_render: Box::new(fn_render),
                 unmounted: Rc::new(Cell::new(false)),
             };
             r.nodes
-                .end_flag_node()
+                .flag_node()
                 .insert_before_a_sibling(self.parent(), self.next_sibling());
             self.nodes_mut()
                 .add_qr_node(QrNode::Group(r.make_representative()));
@@ -171,7 +171,7 @@ pub struct QrMatchIfUpdater<C: Component, T> {
 
 impl<C: Component, T> QrMatchIfUpdater<C, T> {
     pub fn make_representative(&self) -> QrGroupRepresentative {
-        QrGroupRepresentative::new(self.nodes.end_flag_node().clone(), self.unmounted.clone())
+        QrGroupRepresentative::new(self.nodes.flag_node().clone(), self.unmounted.clone())
     }
 }
 
