@@ -1,6 +1,5 @@
 use std::any::TypeId;
 
-#[cfg(feature = "queue-render")]
 use wasm_bindgen::UnwrapThrowExt;
 
 use super::{
@@ -427,6 +426,37 @@ impl<'h, 'n: 'h, C: Component> Nodes<'h, 'n, C> {
     pub fn rfn(self, func: impl FnOnce(Nodes<C>)) -> Self {
         func(Nodes::new(self.0));
         self
+    }
+
+    /// Just a convenience method to create a single element. The original purpose
+    /// is to use in list's render to reduce the indentation when only a single
+    /// element is rendered per list entry.
+    /// Without using `single_element`:
+    /// ```rust
+    /// fn render_a_list_entry(entry: &Entry, nodes: spair::Nodes<AppState>) {
+    ///     nodes.div(|d| {
+    ///         d.class("class-name")
+    ///             .class_if(entry.is_something_on, "something")
+    ///             .span(|s| {})
+    ///             .span(|s| {});
+    ///     });
+    /// }
+    /// ```
+    /// When using `single_element`, the indentation reduces one level:
+    /// ```rust
+    /// fn render_a_list_entry(entry: &Entry, mut nodes: spair::Nodes<AppState>) {
+    ///     nodes
+    ///         .single_element("div")
+    ///         .class("class-name")
+    ///         .class_if(entry.is_something_on, "something")
+    ///         .span(|s| {})
+    ///         .span(|s| {});
+    /// }
+    /// ```
+    pub fn single_element(&mut self, tag: &'static str) -> HtmlElementUpdater<C> {
+        self.nodes_updater_mut()
+            .get_element_updater(HtmlTag(tag))
+            .expect_throw("Must be Some() because we are on Nodes")
     }
 }
 

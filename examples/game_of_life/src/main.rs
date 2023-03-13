@@ -169,26 +169,25 @@ fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
     });
 }
 
-fn render_row((index, row): (usize, &[Cellule]), nodes: spair::Nodes<App>) {
+fn render_row((index, row): (usize, &[Cellule]), mut nodes: spair::Nodes<App>) {
     let comp = nodes.comp();
     let offset = index * nodes.state().cellules_width;
-    nodes.div(|d| {
-        d.class("game-row")
-            .keyed_list_clone(
-                row.iter().enumerate(),
-                |(index, _)| index,
-                |(index, cellule), nodes| {
-                    let index = offset + index;
-                    nodes.div(|d| {
-                        d.class("game-cellule")
-                            .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
-                            .static_attributes()
-                            .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
-                    });
-                },
-            )
-            .done()
-    });
+    nodes
+        .single_element("div")
+        .class("game-row")
+        .keyed_list_clone(
+            row.iter().enumerate(),
+            |(index, _)| index,
+            |(index, cellule), mut nodes| {
+                let index = offset + index;
+                nodes
+                    .single_element("div")
+                    .class("game-cellule")
+                    .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
+                    .static_attributes()
+                    .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
+            },
+        );
 }
 
 fn wrap(coord: isize, range: isize) -> usize {
