@@ -21,8 +21,6 @@ mod queue_render;
 
 pub use application::Application;
 pub use component::{AsChildComp, Checklist, Child, ChildComp, Comp, Component, ShouldRender};
-#[cfg(feature = "keyed-list")]
-pub use dom::Keyed;
 pub use dom::TagName;
 #[cfg(feature = "queue-render")]
 pub use queue_render::{val::QrVal, vec::QrVec};

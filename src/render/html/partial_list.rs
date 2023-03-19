@@ -2,42 +2,35 @@ use super::{Nodes, NodesOwned, StaticNodes, StaticNodesOwned};
 use crate::{
     component::Component,
     render::{
-        base::{ElementUpdater, NodesUpdaterMut},
-        html::HtmlTag,
+        base::{NodesUpdater, NodesUpdaterMut},
+        html::HtmlNodesUpdater,
         ListElementCreation,
     },
 };
 
 pub trait HemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<'a, C> {
-    fn list<I, II, R>(
-        mut self,
-        items: II,
-        mode: ListElementCreation,
-        tag: &'static str,
-        render: R,
-    ) -> Self
+    fn list<I, II, R>(mut self, items: II, mode: ListElementCreation, render: R) -> Self
     where
         II: Iterator<Item = I>,
-        R: Fn(I, crate::Element<C>),
+        R: Fn(I, crate::Nodes<C>),
     {
-        let tag = HtmlTag(tag);
-
         let (comp, state, mut r) = self
             .nodes_updater_mut()
             .get_list_updater(mode.use_template());
         let _do_we_have_to_care_about_this_returned_value_ =
-            r.render(comp, state, items, tag, |item: I, er: ElementUpdater<C>| {
-                render(item, er.into())
+            r.render(comp, state, items, |item: I, nodes: NodesUpdater<C>| {
+                let mut nodes = HtmlNodesUpdater::new(nodes);
+                render(item, crate::Nodes::new(&mut nodes))
             });
         self
     }
 
-    fn list_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> Self
+    fn list_clone<I, II, R>(self, items: II, render: R) -> Self
     where
         II: Iterator<Item = I>,
-        R: Fn(I, crate::Element<C>),
+        R: Fn(I, crate::Nodes<C>),
     {
-        self.list(items, ListElementCreation::Clone, tag, render)
+        self.list(items, ListElementCreation::Clone, render)
     }
 }
 

@@ -1,9 +1,10 @@
 use crate::{
     component::Component,
     render::{
-        base::{ElementUpdater, ElementUpdaterMut, MakeNodesExtensions, NodesExtensions},
+        base::{ElementUpdaterMut, MakeNodesExtensions, NodesExtensions, NodesUpdater},
         html::{
-            AttributesOnly, HtmlElementUpdater, HtmlTag, StaticAttributes, StaticAttributesOnly,
+            AttributesOnly, HtmlElementUpdater, HtmlNodesUpdater, StaticAttributes,
+            StaticAttributesOnly,
         },
         ListElementCreation,
     },
@@ -16,29 +17,28 @@ pub trait HemsForList<'a, C: Component>:
         mut self,
         items: II,
         mode: ListElementCreation,
-        tag: &'static str,
         render: R,
     ) -> NodesExtensions<'a>
     where
         II: Iterator<Item = I>,
-        R: Fn(I, crate::Element<C>),
+        R: Fn(I, crate::Nodes<C>),
     {
-        let tag = HtmlTag(tag);
         let (comp, state, mut r) = self.element_updater_mut().list_updater(mode);
         let _do_we_have_to_care_about_this_returned_value_ =
-            r.render(comp, state, items, tag, |item: I, er: ElementUpdater<C>| {
-                render(item, er.into())
+            r.render(comp, state, items, |item: I, nodes: NodesUpdater<C>| {
+                let mut nodes = HtmlNodesUpdater::new(nodes);
+                render(item, crate::Nodes::new(&mut nodes))
             });
 
         self.make_nodes_extensions()
     }
 
-    fn list_clone<I, II, R>(self, items: II, tag: &'static str, render: R) -> NodesExtensions<'a>
+    fn list_clone<I, II, R>(self, items: II, render: R) -> NodesExtensions<'a>
     where
         II: Iterator<Item = I>,
-        R: Fn(I, crate::Element<C>),
+        R: Fn(I, crate::Nodes<C>),
     {
-        self.list(items, ListElementCreation::Clone, tag, render)
+        self.list(items, ListElementCreation::Clone, render)
     }
 }
 

@@ -133,7 +133,6 @@ impl spair::Component for App {
                             .div(|d| {
                                 d.class("game-of-life").keyed_list_clone(
                                     self.cellules.chunks(self.cellules_width).enumerate(),
-                                    "div",
                                     |row| &row.0,
                                     render_row,
                                 );
@@ -170,21 +169,25 @@ fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
     });
 }
 
-fn render_row((index, row): (usize, &[Cellule]), element: spair::Element<App>) {
-    let comp = element.comp();
-    let offset = index * element.state().cellules_width;
-    element.class("game-row").keyed_list_clone(
-        row.iter().enumerate(),
-        "div",
-        |(index, _)| index,
-        |(index, cellule), div| {
-            let index = offset + index;
-            div.class("game-cellule")
-                .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
-                .static_attributes()
-                .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
-        },
-    );
+fn render_row((index, row): (usize, &[Cellule]), mut nodes: spair::Nodes<App>) {
+    let comp = nodes.comp();
+    let offset = index * nodes.state().cellules_width;
+    nodes
+        .single_element("div")
+        .class("game-row")
+        .keyed_list_clone(
+            row.iter().enumerate(),
+            |(index, _)| index,
+            |(index, cellule), mut nodes| {
+                let index = offset + index;
+                nodes
+                    .single_element("div")
+                    .class("game-cellule")
+                    .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
+                    .static_attributes()
+                    .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
+            },
+        );
 }
 
 fn wrap(coord: isize, range: isize) -> usize {

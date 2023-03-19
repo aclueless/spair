@@ -1,28 +1,10 @@
-use super::{AChildNode, Element};
+use super::{Element, GroupedNodes};
 use std::collections::HashMap;
 use uuid::Uuid;
 use wasm_bindgen::UnwrapThrowExt;
 
-pub trait Keyed
-where
-    for<'k> ListItemKey: From<&'k <Self as Keyed>::Key>,
-{
-    type Key: PartialEq<ListItemKey>;
-    fn key(&self) -> &Self::Key;
-}
-
-impl<T: Keyed> Keyed for &T
-where
-    ListItemKey: for<'k> From<&'k <T as Keyed>::Key>,
-{
-    type Key = T::Key;
-    fn key(&self) -> &Self::Key {
-        (*self).key()
-    }
-}
-
 #[derive(PartialEq, Eq, Hash, Clone)]
-pub enum ListItemKey {
+pub enum ListEntryKey {
     String(String),
     ISize(isize),
     USize(usize),
@@ -33,31 +15,31 @@ pub enum ListItemKey {
     Uuid(Uuid),
 }
 
-impl From<&String> for ListItemKey {
+impl From<&String> for ListEntryKey {
     fn from(value: &String) -> Self {
-        ListItemKey::String(value.to_string())
+        ListEntryKey::String(value.to_string())
     }
 }
 
-impl From<&&str> for ListItemKey {
+impl From<&&str> for ListEntryKey {
     fn from(value: &&str) -> Self {
-        ListItemKey::String(value.to_string())
+        ListEntryKey::String(value.to_string())
     }
 }
 
-impl PartialEq<ListItemKey> for String {
-    fn eq(&self, other: &ListItemKey) -> bool {
+impl PartialEq<ListEntryKey> for String {
+    fn eq(&self, other: &ListEntryKey) -> bool {
         match other {
-            ListItemKey::String(value) => value == self,
+            ListEntryKey::String(value) => value == self,
             _ => false,
         }
     }
 }
 
-impl PartialEq<ListItemKey> for &str {
-    fn eq(&self, other: &ListItemKey) -> bool {
+impl PartialEq<ListEntryKey> for &str {
+    fn eq(&self, other: &ListEntryKey) -> bool {
         match other {
-            ListItemKey::String(value) => value == self,
+            ListEntryKey::String(value) => value == self,
             _ => false,
         }
     }
@@ -66,15 +48,15 @@ impl PartialEq<ListItemKey> for &str {
 macro_rules! impl_from_and_partial_eq_for_key_type {
     ($($key_type:ident $KeyVariant:ident)+) => {
         $(
-            impl From<&$key_type> for ListItemKey {
+            impl From<&$key_type> for ListEntryKey {
                 fn from(value: &$key_type) -> Self {
-                    ListItemKey::$KeyVariant(*value)
+                    ListEntryKey::$KeyVariant(*value)
                 }
             }
-            impl PartialEq<ListItemKey> for $key_type {
-                fn eq(&self, other: &ListItemKey) -> bool {
+            impl PartialEq<ListEntryKey> for $key_type {
+                fn eq(&self, other: &ListEntryKey) -> bool {
                     match other {
-                        ListItemKey::$KeyVariant(value) => value == self,
+                        ListEntryKey::$KeyVariant(value) => value == self,
                         _ => false,
                     }
                 }
@@ -94,34 +76,40 @@ impl_from_and_partial_eq_for_key_type! {
 }
 
 #[derive(Debug)]
-pub struct OldElement {
+pub struct OldEntry {
     pub index: usize,
-    pub element: Element,
+    pub group: GroupedNodes,
 }
 
-pub struct KeyedElement {
-    pub key: ListItemKey,
-    pub element: Element,
+pub struct KeyedEntry {
+    pub key: ListEntryKey,
+    pub group: GroupedNodes,
 }
 
-impl KeyedElement {
-    pub fn new(key: ListItemKey, element: Element) -> Self {
-        Self { key, element }
+impl KeyedEntry {
+    pub fn new(key: ListEntryKey, group: GroupedNodes) -> Self {
+        Self { key, group }
     }
 }
 
-pub struct ListItemTemplate {
+pub struct ListEntryTemplate {
     pub rendered: bool,
-    pub element: Element,
+    pub group: GroupedNodes,
 }
 
+// Keyed list occupied the whole parent element. In the example below, there
+// is nothing inside the `div` rather than the content rendered by `keyed_list`
+// nodes.div(|d| {
+//    d.keyed_list(state.items.iter(), |item, d| {});
+// })
+//
 #[derive(Default)]
 pub struct KeyedList {
-    active: Vec<Option<KeyedElement>>,
+    active: Vec<Option<KeyedEntry>>,
     // The primary reason for the double buffer here is for easy implementation.
-    buffer: Vec<Option<KeyedElement>>,
-    template: Option<ListItemTemplate>,
-    old_elements_map: HashMap<ListItemKey, OldElement>,
+    buffer: Vec<Option<KeyedEntry>>,
+    template: Option<ListEntryTemplate>,
+    old_elements_map: HashMap<ListEntryKey, OldEntry>,
 }
 
 impl Clone for KeyedList {
@@ -141,28 +129,30 @@ impl Clone for KeyedList {
 
 impl KeyedList {
     #[cfg(test)]
-    pub fn active_nodes(&self) -> &Vec<Option<KeyedElement>> {
+    pub fn active_nodes(&self) -> &Vec<Option<KeyedEntry>> {
         &self.active
     }
 
     pub fn get_first_element(&self) -> Option<&Element> {
-        self.active
-            .first()
-            .and_then(|i| i.as_ref().map(|ke| &ke.element))
+        self.active.first().and_then(|i| {
+            i.as_ref()
+                .and_then(|ke| ke.group.nodes().get_first_element())
+        })
     }
 
     pub fn get_last_element(&self) -> Option<&Element> {
-        self.active
-            .last()
-            .and_then(|i| i.as_ref().map(|ke| &ke.element))
+        self.active.last().and_then(|i| {
+            i.as_ref()
+                .and_then(|ke| ke.group.nodes().get_first_element())
+        })
     }
 
-    pub fn require_init_template(&mut self, f: impl FnOnce() -> Element) -> bool {
-        match self.template.as_mut() {
+    pub fn require_init_template(&mut self) -> bool {
+        match self.template.as_ref() {
             None => {
-                self.template = Some(ListItemTemplate {
+                self.template = Some(ListEntryTemplate {
                     rendered: false,
-                    element: f(),
+                    group: GroupedNodes::with_flag_name(super::nodes::FLAG_NAME_FOR_LIST_ENTRY),
                 });
                 true
             }
@@ -171,13 +161,13 @@ impl KeyedList {
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn items_mut(
+    pub fn entries_mut(
         &mut self,
     ) -> (
-        Option<&mut ListItemTemplate>,
-        &mut Vec<Option<KeyedElement>>,
-        &mut Vec<Option<KeyedElement>>,
-        &mut HashMap<ListItemKey, OldElement>,
+        Option<&mut ListEntryTemplate>,
+        &mut Vec<Option<KeyedEntry>>,
+        &mut Vec<Option<KeyedEntry>>,
+        &mut HashMap<ListEntryKey, OldEntry>,
     ) {
         (
             self.template.as_mut(),
@@ -201,11 +191,10 @@ impl KeyedList {
     }
 
     pub fn remove_from_dom(self, parent: &web_sys::Node) {
-        self.active.iter().for_each(|item| {
-            item.as_ref()
-                .expect_throw("dom::keyed_list::KeyedList::clear")
-                .element
-                .remove_from(parent)
+        self.active.into_iter().for_each(|item| {
+            item.expect_throw("dom::keyed_list::KeyedList::clear")
+                .group
+                .remove_from_dom(parent)
         });
     }
 
@@ -213,8 +202,21 @@ impl KeyedList {
         self.active.iter().for_each(|item| {
             item.as_ref()
                 .expect_throw("dom::keyed_list::KeyedList::append_to")
-                .element
-                .append_to(parent)
+                .group
+                .append_to_parent_with_flag_as_start(parent)
         });
+    }
+
+    pub fn insert_before_a_sibling(
+        &self,
+        parent: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
+    ) {
+        self.active.iter().for_each(|item| {
+            item.as_ref()
+                .expect_throw("dom::keyed_list::KeyedList::insert_before_a_sibling")
+                .group
+                .insert_before_a_sibling(parent, next_sibling)
+        })
     }
 }

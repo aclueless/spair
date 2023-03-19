@@ -3,28 +3,27 @@ use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{
     component::{Comp, Component},
-    dom::{AChildNode, Element, ElementStatus, ElementTag, Nodes},
+    dom::{ElementStatus, GroupedNodes, Nodes},
     queue_render::{
         dom::QrListRepresentative,
         vec::{Diff, ListRender},
     },
-    render::base::ElementUpdater,
+    render::base::NodesUpdater,
 };
 
-type FnElementUpdater<C, I> = Box<dyn Fn(I, ElementUpdater<C>)>;
+type FnNodesUpdater<C, I> = Box<dyn Fn(I, NodesUpdater<C>)>;
 
-pub struct QrListRender<C: Component, E, I> {
+pub struct QrListRender<C: Component, I> {
     comp: Comp<C>,
     parent: web_sys::Node,
     nodes: Nodes,
     end_flag_node: Option<web_sys::Node>,
-    element_tag: E,
     use_template: bool,
-    fn_render: FnElementUpdater<C, I>,
+    fn_render: FnNodesUpdater<C, I>,
     unmounted: Rc<Cell<bool>>,
 }
 
-impl<C: Component, E: ElementTag, I: Clone> ListRender<I> for QrListRender<C, E, I> {
+impl<C: Component, I: Clone> ListRender<I> for QrListRender<C, I> {
     fn render(&mut self, items: &[I], diffs: Vec<Diff<I>>) {
         self.render_list(items, diffs);
     }
@@ -34,13 +33,12 @@ impl<C: Component, E: ElementTag, I: Clone> ListRender<I> for QrListRender<C, E,
     }
 }
 
-impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
+impl<C: Component, I: Clone> QrListRender<C, I> {
     pub fn new(
-        element_tag: E,
         comp: Comp<C>,
         parent: web_sys::Node,
         end_flag_node: Option<web_sys::Node>,
-        fn_render: impl Fn(I, ElementUpdater<C>) + 'static,
+        fn_render: impl Fn(I, NodesUpdater<C>) + 'static,
         use_template: bool,
     ) -> Self {
         Self {
@@ -48,7 +46,6 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
             parent,
             nodes: Nodes::default(),
             end_flag_node,
-            element_tag,
             use_template,
             fn_render: Box::new(fn_render),
             unmounted: Rc::new(Cell::new(false)),
@@ -108,64 +105,90 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
 
     fn push(&mut self, state: &C, item: I) {
         let index = self.nodes.count();
-        let status = self.nodes.check_or_create_element_for_list(
-            self.element_tag,
+        let (status, group, next_sibling) = self.nodes.recipe_for_list_entry(
             index,
             &self.parent,
             ElementStatus::JustCreated,
             self.end_flag_node.as_ref(),
             self.use_template,
         );
-        let element = self.nodes.get_element_mut(index);
-        let render = ElementUpdater::new(&self.comp, state, element, status);
-        (self.fn_render)(item, render);
+        let u = NodesUpdater::new(
+            &self.comp,
+            state,
+            status,
+            &self.parent,
+            next_sibling.as_ref().or(self.end_flag_node.as_ref()),
+            group.nodes_mut(),
+        );
+        (self.fn_render)(item, u);
     }
 
     fn pop(&mut self) {
-        if let Some(element) = self.nodes.pop_element() {
-            element.remove_from(&self.parent);
+        if let Some(group) = self.nodes.pop_group() {
+            group.remove_from_dom(&self.parent);
         }
     }
 
     fn insert(&mut self, state: &C, index: usize, item: I) {
         // An insert at the end of the list is handled by QrVec as a push
-        let existing_element = self.nodes.get_element(index);
-        let next_sibling = existing_element.map(|e| e.ws_node());
-        let (mut new_element, status) = if self.use_template {
-            let new_element = existing_element
+        let existing_group = self.nodes.get_grouped_nodes(index);
+        let next_sibling = existing_group.map(|g| g.flag_node_ref());
+        let (mut new_group, status) = if self.use_template {
+            let new_group = existing_group
                 .expect_throw("guanrantee valid index by QrVec::insert")
-                .clone();
-            (new_element, ElementStatus::JustCloned)
+                .clone_list_entry();
+            (new_group, ElementStatus::JustCloned)
         } else {
-            let element = Element::new_ns(self.element_tag);
-            (element, ElementStatus::JustCreated)
+            (
+                GroupedNodes::with_flag_name(crate::dom::FLAG_NAME_FOR_LIST_ENTRY),
+                ElementStatus::JustCreated,
+            )
         };
-        let render = ElementUpdater::new(&self.comp, state, &mut new_element, status);
-        (self.fn_render)(item, render);
-        new_element.insert_before_a_sibling(&self.parent, next_sibling);
-        self.nodes.insert_element_at(index, new_element);
+        new_group.insert_before_a_sibling(&self.parent, next_sibling);
+
+        let u = NodesUpdater::new(
+            &self.comp,
+            state,
+            status,
+            &self.parent,
+            next_sibling,
+            new_group.nodes_mut(),
+        );
+        (self.fn_render)(item, u);
+        self.nodes.insert_group_at(index, new_group);
     }
 
     fn remove(&mut self, index: usize) {
-        let element = self.nodes.remove_element_at(index);
-        element.remove_from(&self.parent);
+        let group = self.nodes.remove_group_at(index);
+        group.remove_from_dom(&self.parent);
     }
 
     fn re_render(&mut self, state: &C, index: usize, item: I) {
-        let element = self.nodes.get_element_mut(index);
-        let render = ElementUpdater::new(&self.comp, state, element, ElementStatus::Existing);
-        (self.fn_render)(item, render);
+        let next_sibling = self
+            .nodes
+            .get_grouped_nodes(index + 1)
+            .map(|g| g.flag_node_ref().clone());
+        let group = self.nodes.get_grouped_nodes_mut(index);
+        let u = NodesUpdater::new(
+            &self.comp,
+            state,
+            ElementStatus::Existing,
+            &self.parent,
+            next_sibling.as_ref().or(self.end_flag_node.as_ref()),
+            group.nodes_mut(),
+        );
+        (self.fn_render)(item, u);
     }
 
     fn move_item(&mut self, old_index: usize, new_index: usize) {
-        let element = self.nodes.remove_element_at(old_index);
+        let group = self.nodes.remove_group_at(old_index);
         let next_sibling = self
             .nodes
-            .get_element(new_index)
-            .map(|e| e.ws_node())
+            .get_grouped_nodes(new_index)
+            .map(|g| g.flag_node_ref())
             .or(self.end_flag_node.as_ref());
-        element.insert_before_a_sibling(&self.parent, next_sibling);
-        self.nodes.insert_element_at(new_index, element);
+        group.insert_before_a_sibling(&self.parent, next_sibling);
+        self.nodes.insert_group_at(new_index, group);
     }
 
     fn swap(&mut self, index_1: usize, index_2: usize) {
@@ -174,21 +197,22 @@ impl<C: Component, E: ElementTag, I: Clone> QrListRender<C, E, I> {
         } else {
             (index_2, index_1)
         };
-        let high_element = self.nodes.remove_element_at(high_index);
-        let low_element = self.nodes.remove_element_at(low_index);
+        let high_group = self.nodes.remove_group_at(high_index);
+        let low_group = self.nodes.remove_group_at(low_index);
 
-        let low_node = low_element.ws_node();
-        high_element.insert_before_a_sibling(&self.parent, Some(low_node));
-        self.nodes.insert_element_at(low_index, high_element);
+        // low_node is not removed from DOM yet
+        let low_node = low_group.flag_node_ref();
+        high_group.insert_before_a_sibling(&self.parent, Some(low_node));
+        self.nodes.insert_group_at(low_index, high_group);
 
         let next_sibling = self
             .nodes
-            .get_element(high_index)
-            .map(|e| e.ws_node())
+            .get_grouped_nodes(high_index)
+            .map(|g| g.flag_node_ref())
             .or(self.end_flag_node.as_ref());
 
-        low_element.insert_before_a_sibling(&self.parent, next_sibling);
-        self.nodes.insert_element_at(high_index, low_element);
+        low_group.insert_before_a_sibling(&self.parent, next_sibling);
+        self.nodes.insert_group_at(high_index, low_group);
     }
 }
 
@@ -202,12 +226,12 @@ mod qr_list_tests {
                 type: QrVec<u32>;
                 init: QrVec::with_values(Vec::new());
                 render_fn: fn render(&self, element: crate::Element<Self>) {
-                    element.qr_list(&self.0, $mode, "span", render_u32);
+                    element.qr_list(&self.0, $mode, render_u32);
                 }
             }
 
-            fn render_u32(value: u32, item: crate::Element<TestComponent>) {
-                item.update_text(value);
+            fn render_u32(value: u32, nodes: crate::Nodes<TestComponent>) {
+                nodes.update_text(value);
             }
 
             let test = Test::set_up();

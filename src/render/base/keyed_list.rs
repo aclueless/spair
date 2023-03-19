@@ -1,60 +1,57 @@
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::UnwrapThrowExt;
 
-use super::ElementUpdater;
+use super::NodesUpdater;
 use crate::{
     component::{Comp, Component},
     dom::{
-        AChildNode, Element, ElementStatus, ElementTag, KeyedElement, KeyedList, ListItemKey,
-        ListItemTemplate, OldElement,
+        ElementStatus, GroupedNodes, KeyedEntry, KeyedList, ListEntryKey, ListEntryTemplate,
+        OldEntry,
     },
 };
 
-pub struct KeyedListContext<'a, E> {
+pub struct KeyedListContext<'a> {
     parent: &'a web_sys::Node,
-    root_item_tag: E,
     old: PeekableDoubleEndedIterator<
-        std::iter::Enumerate<std::slice::IterMut<'a, Option<KeyedElement>>>,
+        std::iter::Enumerate<std::slice::IterMut<'a, Option<KeyedEntry>>>,
     >,
-    new: PeekableDoubleEndedIterator<std::slice::IterMut<'a, Option<KeyedElement>>>,
-    old_elements_map: &'a mut std::collections::HashMap<ListItemKey, OldElement>,
-    new_item_count: usize,
-    next_sibling: Option<web_sys::Element>,
-    template: Option<&'a mut ListItemTemplate>,
+    new: PeekableDoubleEndedIterator<std::slice::IterMut<'a, Option<KeyedEntry>>>,
+    old_entries_map: &'a mut std::collections::HashMap<ListEntryKey, OldEntry>,
+    new_entry_count: usize,
+    end_flag_for_the_next_entry_bottom_up: Option<web_sys::Node>,
+    template: Option<&'a mut ListEntryTemplate>,
     require_init_template: bool,
 }
 
-impl<'a, E: ElementTag> KeyedListContext<'a, E> {
+impl<'a> KeyedListContext<'a> {
     pub fn new(
         list: &'a mut KeyedList,
-        root_item_tag: E,
-        new_item_count: usize,
+        new_entry_count: usize,
         parent: &'a web_sys::Node,
         use_template: bool,
     ) -> Self {
-        list.pre_update(new_item_count);
+        list.pre_update(new_entry_count);
 
         let require_init_template = match use_template {
-            true => list.require_init_template(|| Element::new_ns(root_item_tag)),
+            true => list.require_init_template(),
             false => false,
         };
 
-        let (template, old, new, old_elements_map) = list.items_mut();
+        let (template, old, new, old_entries_map) = list.entries_mut();
         KeyedListContext {
             parent,
-            root_item_tag,
             old: old.iter_mut().enumerate().peekable_double_ended(),
             new: new.iter_mut().peekable_double_ended(),
-            old_elements_map,
-            new_item_count,
-            next_sibling: None,
+            old_entries_map,
+            new_entry_count,
+            end_flag_for_the_next_entry_bottom_up: None,
             template,
             require_init_template,
         }
     }
 }
 
-pub struct KeyedListUpdater<'a, C: Component, E, G, R> {
-    list_context: KeyedListContext<'a, E>,
+pub struct KeyedListUpdater<'a, C: Component, G, R> {
+    list_context: KeyedListContext<'a>,
     render_context: KeyedListUpdaterContext<'a, C, G, R>,
 }
 
@@ -77,53 +74,61 @@ where
             fn_render,
         }
     }
-    fn get_key<'k, I, K>(&self, item_state: &'k I) -> &'k K
+    fn get_key<'k, I, K>(&self, entry_state: &'k I) -> &'k K
     where
         G: Fn(&I) -> &K,
     {
-        (self.fn_get_key)(item_state)
+        (self.fn_get_key)(entry_state)
     }
 
-    fn render<I>(&self, item_state: I, r: ElementUpdater<C>)
+    fn render<I>(&self, entry_state: I, r: NodesUpdater<C>)
     where
-        R: Fn(I, ElementUpdater<C>),
+        R: Fn(I, NodesUpdater<C>),
     {
-        (self.fn_render)(item_state, r)
+        (self.fn_render)(entry_state, r)
     }
 
-    fn update_existing_item<I>(
+    fn update_existing_entry<I>(
         &self,
-        item_state: I,
-        old_item: Option<(usize, &mut std::option::Option<KeyedElement>)>,
-        new_item: Option<&mut std::option::Option<KeyedElement>>,
-        next_sibling: Option<&web_sys::Element>,
-        fn_insert: impl FnOnce(&Element, Option<&web_sys::Element>),
+        entry_state: I,
+        parent: &web_sys::Node,
+        old_entry: Option<(usize, &mut std::option::Option<KeyedEntry>)>,
+        new_entry: Option<&mut std::option::Option<KeyedEntry>>,
+        next_sibling: Option<&web_sys::Node>,
+        relocating: bool,
     ) where
-        R: Fn(I, ElementUpdater<C>),
+        R: Fn(I, NodesUpdater<C>),
     {
-        let mut old_item = old_item.unwrap_throw().1.take();
-        fn_insert(&old_item.as_ref().unwrap_throw().element, next_sibling);
+        let mut old_entry = old_entry.unwrap_throw().1.take();
+        if relocating {
+            old_entry
+                .as_ref()
+                .unwrap_throw()
+                .group
+                .insert_before_a_sibling(parent, next_sibling);
+        }
 
-        let er = ElementUpdater::new(
+        let nu = NodesUpdater::new(
             self.comp,
             self.state,
-            &mut old_item.as_mut().unwrap_throw().element,
             ElementStatus::Existing,
+            parent,
+            next_sibling,
+            old_entry.as_mut().unwrap_throw().group.nodes_mut(),
         );
-        (self.fn_render)(item_state, er);
-        *new_item.expect_throw(
-            "render::base::keyed_list::KeyedListUpdaterContext::update_existing_item",
-        ) = old_item;
+        (self.fn_render)(entry_state, nu);
+        *new_entry.expect_throw(
+            "render::base::keyed_list::KeyedListUpdaterContext::update_existing_entry",
+        ) = old_entry;
     }
 }
 
-impl<'a, C, E, G, R> KeyedListUpdater<'a, C, E, G, R>
+impl<'a, C, G, R> KeyedListUpdater<'a, C, G, R>
 where
     C: Component,
-    E: ElementTag,
 {
     pub fn new(
-        list_context: KeyedListContext<'a, E>,
+        list_context: KeyedListContext<'a>,
         render_context: KeyedListUpdaterContext<'a, C, G, R>,
     ) -> Self {
         Self {
@@ -131,11 +136,11 @@ where
             render_context,
         }
     }
-    fn create_element_for_new_item(&self) -> (Element, ElementStatus) {
+    fn create_entry_for_new_entry(&self) -> (GroupedNodes, ElementStatus) {
         match &self.list_context.template {
-            Some(template) => (Clone::clone(&template.element), ElementStatus::JustCloned),
+            Some(template) => (template.group.clone_list_entry(), ElementStatus::JustCloned),
             None => (
-                Element::new_ns(self.list_context.root_item_tag),
+                GroupedNodes::with_flag_name(crate::dom::FLAG_NAME_FOR_LIST_ENTRY),
                 ElementStatus::JustCreated,
             ),
         }
@@ -143,376 +148,392 @@ where
 
     pub fn update<I, K>(
         &mut self,
-        items_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
+        entries_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
     ) -> super::RememberSettingSelectedOption
     where
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, ElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, NodesUpdater<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
-        // No items? Just clear the current list.
-        if self.list_context.new_item_count == 0 {
-            self.remove_all_old_items();
+        // No entries? Just clear the current list.
+        if self.list_context.new_entry_count == 0 {
+            self.remove_all_old_entries();
             return super::RememberSettingSelectedOption;
         }
 
-        let mut items_state_iter = items_state_iter.peekable_double_ended();
+        let mut entries_state_iter = entries_state_iter.peekable_double_ended();
         if self.list_context.require_init_template {
-            // If the template is not available yet, it means that no item has ever been rendered.
+            // If the template is not available yet, it means that no entry has ever been rendered.
             // The current render is the first render to the list. Then we just take the first
-            // item off the list, render it, clone the rendered element. Put one element into
+            // entry off the list, render it, clone the rendered element. Put one element into
             // the list, store the other as a template
 
-            let ke = self.render_an_item(
-                items_state_iter
+            let entry = self.render_an_entry(
+                entries_state_iter
                     .next()
                     .expect_throw("Only non empty can reach here"),
             );
             if let Some(template) = self.list_context.template.as_mut() {
                 template.rendered = true;
-                template.element = ke.element.clone();
+                template.group = entry.group.clone();
             }
-            self.store_keyed_rendered_item(ke);
+            self.store_keyed_rendered_entry(entry);
         }
         loop {
-            let mut count = self.update_same_key_items_from_start(&mut items_state_iter);
-            count += self.update_same_key_items_from_end(&mut items_state_iter);
-            count += self.update_moved_forward_item(&mut items_state_iter);
-            count += self.update_moved_backward_item(&mut items_state_iter);
+            let mut count = self.update_same_key_entries_from_start(&mut entries_state_iter);
+            count += self.update_same_key_entries_from_end(&mut entries_state_iter);
+            count += self.update_moved_forward_entry(&mut entries_state_iter);
+            count += self.update_moved_backward_entry(&mut entries_state_iter);
             if count == 0 {
                 break;
             }
         }
 
-        self.update_other_items_in_middle(&mut items_state_iter);
+        self.update_other_entries_in_middle(&mut entries_state_iter);
         super::RememberSettingSelectedOption
     }
 
-    fn update_same_key_items_from_start<I, K>(
+    fn update_same_key_entries_from_start<I, K>(
         &mut self,
-        items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        entries_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, ElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, NodesUpdater<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
         let mut count = 0;
         loop {
-            match (items_state_iter.peek(), self.list_context.old.peek()) {
-                (Some(item_state), Some(item)) => {
-                    let item = item
+            match (entries_state_iter.peek(), self.list_context.old.peek()) {
+                (Some(entry_state), Some(old_entry)) => {
+                    let old_entry = old_entry
                         .1
                         .as_ref()
-                        .expect_throw("render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_start");
-                    if !self.render_context.get_key(item_state).eq(&item.key) {
+                        .expect_throw("render::base::keyed_list::KeyedListUpdater::update_same_key_entries_from_start");
+                    if !self.render_context.get_key(entry_state).eq(&old_entry.key) {
                         return count;
                     }
                 }
                 _ => return count,
             }
             count += 1;
-            self.render_context.update_existing_item(
-                items_state_iter.next().unwrap_throw(),
+            self.render_context.update_existing_entry(
+                entries_state_iter.next().unwrap_throw(),
+                self.list_context.parent,
                 self.list_context.old.next(),
                 self.list_context.new.next(),
-                None,
-                |_, _| {},
+                self.list_context
+                    .old
+                    .peek()
+                    .and_then(|old| old.1.as_ref().map(|entry| entry.group.flag_node_ref())),
+                false,
             );
         }
     }
 
-    fn update_same_key_items_from_end<I, K>(
+    fn update_same_key_entries_from_end<I, K>(
         &mut self,
-        items_state_iter: &mut PeekableDoubleEndedIterator<
+        entries_state_iter: &mut PeekableDoubleEndedIterator<
             impl Iterator<Item = I> + DoubleEndedIterator,
         >,
     ) -> usize
     where
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, ElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, NodesUpdater<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
         let mut count = 0;
         loop {
-            let ws_element = match (
-                items_state_iter.peek_back(),
+            let new_end_flag = match (
+                entries_state_iter.peek_back(),
                 self.list_context.old.peek_back(),
             ) {
-                (Some(item_state), Some(item)) => {
-                    let item = item.1.as_ref().expect_throw(
-                        "render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_end",
+                (Some(entry_state), Some(old_entry)) => {
+                    // The old entry must have an entry in it
+                    let old_entry = old_entry.1.as_ref().expect_throw(
+                        "render::base::keyed_list::KeyedListUpdater::update_same_key_entries_from_end",
                     );
 
-                    if !self.render_context.get_key(item_state).eq(&item.key) {
+                    if !self.render_context.get_key(entry_state).eq(&old_entry.key) {
+                        // The old entry and the new entry-state dont have the same key,
+                        // so the entry-state is a new entry. Nothing more to do in this
+                        // `update_same_key_entries_from_end` method.
                         return count;
                     }
-                    item.element.ws_element().clone()
+                    // The keys are the same, so we need to continue the loop.
+                    // The proccessed entry will be up by one from the bottom.
+                    // And we will need to update `end_flag_for_the_next_entry_bottom_up`
+                    // with this value
+                    old_entry.group.flag_node_ref().clone()
                 }
                 _ => return count,
             };
             count += 1;
-            self.render_context.update_existing_item(
-                items_state_iter.next_back().unwrap_throw(),
+            self.render_context.update_existing_entry(
+                entries_state_iter.next_back().unwrap_throw(),
+                self.list_context.parent,
                 self.list_context.old.next_back(),
                 self.list_context.new.next_back(),
-                None,
-                |_, _| {},
+                self.list_context
+                    .end_flag_for_the_next_entry_bottom_up
+                    .as_ref(),
+                false,
             );
-            self.list_context.next_sibling = Some(ws_element.into_inner());
+            self.list_context.end_flag_for_the_next_entry_bottom_up = Some(new_end_flag);
         }
     }
 
-    fn update_moved_forward_item<I, K>(
+    fn update_moved_forward_entry<I, K>(
         &mut self,
-        items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        entries_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) -> usize
     where
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, ElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, NodesUpdater<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
-        match (items_state_iter.peek(), self.list_context.old.peek_back()) {
-            (Some(item_state), Some(item)) => {
-                let item = item.1.as_ref().expect_throw(
-                    "render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_end",
+        match (entries_state_iter.peek(), self.list_context.old.peek_back()) {
+            (Some(entry_state), Some(old_entry)) => {
+                let old_entry = old_entry.1.as_ref().expect_throw(
+                    "render::base::keyed_list::KeyedListUpdater::update_same_key_entries_from_end",
                 );
-                if !self.render_context.get_key(item_state).eq(&item.key) {
+                if !self.render_context.get_key(entry_state).eq(&old_entry.key) {
+                    // No entry moved forward
                     return 0;
                 }
             }
             _ => return 0,
         }
+
         let moved = self.list_context.old.next_back();
-        let next_sibling = self.list_context.old.peek().and_then(|item| {
-            item.1
-                .as_ref()
-                .map(|item| item.element.ws_element().as_ref())
-        });
-        let parent = self.list_context.parent;
-        self.render_context.update_existing_item(
-            items_state_iter.next().unwrap_throw(),
+        let next_sibling = self
+            .list_context
+            .old
+            .peek()
+            .and_then(|entry| entry.1.as_ref().map(|entry| entry.group.flag_node_ref()));
+        self.render_context.update_existing_entry(
+            entries_state_iter.next().unwrap_throw(),
+            self.list_context.parent,
             moved,
             self.list_context.new.next(),
             next_sibling,
-            |element, next_sibling| {
-                element.insert_before_a_sibling(
-                    parent,
-                    next_sibling.map(|element| element.unchecked_ref()),
-                );
-            },
+            true,
         );
         1
     }
 
-    fn update_moved_backward_item<I, K>(
+    fn update_moved_backward_entry<I, K>(
         &mut self,
-        items_state_iter: &mut PeekableDoubleEndedIterator<
+        entries_state_iter: &mut PeekableDoubleEndedIterator<
             impl Iterator<Item = I> + DoubleEndedIterator,
         >,
     ) -> usize
     where
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, ElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, NodesUpdater<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
-        let new_next_sibling = match (items_state_iter.peek_back(), self.list_context.old.peek()) {
-            (Some(item_state), Some(item)) => {
-                let item = item.1.as_ref().expect_throw(
-                    "render::base::keyed_list::KeyedListUpdater::update_same_key_items_from_end",
+        let new_end_flag = match (entries_state_iter.peek_back(), self.list_context.old.peek()) {
+            (Some(entry_state), Some(old_entry)) => {
+                let old_entry = old_entry.1.as_ref().expect_throw(
+                    "render::base::keyed_list::KeyedListUpdater::update_same_key_entries_from_end",
                 );
-                if !self.render_context.get_key(item_state).eq(&item.key) {
+                if !self.render_context.get_key(entry_state).eq(&old_entry.key) {
+                    // No entry moved backward
                     return 0;
                 }
-                item.element.ws_element().clone()
+                old_entry.group.flag_node_ref().clone()
             }
             _ => return 0,
         };
-        self.render_context.update_existing_item(
-            items_state_iter.next_back().unwrap_throw(),
+        self.render_context.update_existing_entry(
+            entries_state_iter.next_back().unwrap_throw(),
+            self.list_context.parent,
             self.list_context.old.next(),
             self.list_context.new.next_back(),
-            self.list_context.next_sibling.as_ref(),
-            |element, next_sibling| {
-                element.insert_before_a_sibling(
-                    self.list_context.parent,
-                    next_sibling.map(|element| element.unchecked_ref()),
-                );
-            },
+            self.list_context
+                .end_flag_for_the_next_entry_bottom_up
+                .as_ref(),
+            true,
         );
-        self.list_context.next_sibling = Some(new_next_sibling.into_inner());
+        self.list_context.end_flag_for_the_next_entry_bottom_up = Some(new_end_flag);
         1
     }
 
-    fn update_other_items_in_middle<I, K>(
+    fn update_other_entries_in_middle<I, K>(
         &mut self,
-        items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        entries_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, ElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, NodesUpdater<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
-        if items_state_iter.peek().is_none() {
-            self.remove_remain_items();
+        if entries_state_iter.peek().is_none() {
+            self.remove_remain_entries();
             return;
         }
 
         if self.list_context.old.peek().is_none() {
-            self.insert_remain_items(items_state_iter);
+            self.insert_remain_entries(entries_state_iter);
             return;
         }
 
-        self.construct_old_elements_map_from_remaining_old_elements();
+        self.construct_old_entries_map_from_remaining_old_entries();
 
         // Using longest_increasing_subsequence find which elements should be moved around in the browser's DOM
         // and which should be stay still
-        let mut items_with_lis: Vec<_> = items_state_iter
-            .map(|item| {
-                let old_element = self
+        let mut entries_with_lis: Vec<_> = entries_state_iter
+            .map(|entry| {
+                let old_entry = self
                     .list_context
-                    .old_elements_map
-                    .remove(&self.render_context.get_key(&item).into());
-                ItemWithLis::new(item, old_element)
+                    .old_entries_map
+                    .remove(&self.render_context.get_key(&entry).into());
+                EntryWithLis::new(entry, old_entry)
             })
             .collect();
-        longest_increasing_subsequence(&mut items_with_lis);
+        longest_increasing_subsequence(&mut entries_with_lis);
 
-        self.remove_old_elements_that_still_in_old_elements_map();
+        self.remove_old_entries_that_still_in_old_entries_map();
 
-        for ItemWithLis {
-            item_state,
-            old_element,
-            lis,
-        } in items_with_lis.into_iter().rev()
-        {
-            let (mut element, status) = match old_element {
-                Some(old_element) => (old_element.element, ElementStatus::Existing),
-                None => self.create_element_for_new_item(),
+        for iwl in entries_with_lis.into_iter().rev() {
+            let EntryWithLis {
+                entry_state,
+                old_entry,
+                lis,
+            } = iwl;
+
+            let (mut group, status) = match old_entry {
+                Some(old_entry) => (old_entry.group, ElementStatus::Existing),
+                None => self.create_entry_for_new_entry(),
             };
 
-            let er = ElementUpdater::new(
-                self.render_context.comp,
-                self.render_context.state,
-                &mut element,
-                status,
-            );
-
-            let key = self.render_context.get_key(&item_state).into();
-            self.render_context.render(item_state, er);
+            let next_sibling = self
+                .list_context
+                .end_flag_for_the_next_entry_bottom_up
+                .as_ref();
             if !lis {
-                let next_sibling = self
-                    .list_context
-                    .next_sibling
-                    .as_ref()
-                    .map(|element| element.unchecked_ref());
-                element.insert_before_a_sibling(self.list_context.parent, next_sibling);
+                group.insert_before_a_sibling(self.list_context.parent, next_sibling);
             }
 
-            self.list_context.next_sibling = Some(element.ws_element().clone().into_inner());
+            let nu = NodesUpdater::new(
+                self.render_context.comp,
+                self.render_context.state,
+                status,
+                self.list_context.parent,
+                next_sibling,
+                group.nodes_mut(),
+            );
+
+            let key = self.render_context.get_key(&entry_state).into();
+            self.render_context.render(entry_state, nu);
+
+            self.list_context.end_flag_for_the_next_entry_bottom_up =
+                Some(group.flag_node_ref().clone());
             *self.list_context.new.next_back().expect_throw(
-                "render::base::keyed_list::KeyedListUpdater::update_other_items_in_the_middle",
-            ) = Some(KeyedElement::new(key, element));
+                "render::base::keyed_list::KeyedListUpdater::update_other_entries_in_the_middle",
+            ) = Some(KeyedEntry::new(key, group));
         }
     }
 
-    fn construct_old_elements_map_from_remaining_old_elements(&mut self) {
-        self.list_context.old_elements_map.clear();
-        for (index, item) in self.list_context.old.by_ref() {
-            //while let Some((index, item)) = self.list_context.old.next() {
-            let KeyedElement { key, element } = item.take().expect_throw(
-                "render::base::keyed_list::KeyedListUpdater::construct_old_elements_map_from_remaining_old_elements",
+    fn construct_old_entries_map_from_remaining_old_entries(&mut self) {
+        self.list_context.old_entries_map.clear();
+        for (index, entry) in self.list_context.old.by_ref() {
+            let KeyedEntry { key, group } = entry.take().expect_throw(
+                "render::base::keyed_list::KeyedListUpdater::construct_old_entries_map_from_remaining_old_entries",
             );
             self.list_context
-                .old_elements_map
-                .insert(key, OldElement { index, element });
+                .old_entries_map
+                .insert(key, OldEntry { index, group });
         }
     }
 
-    fn remove_old_elements_that_still_in_old_elements_map(&mut self) {
+    fn remove_old_entries_that_still_in_old_entries_map(&mut self) {
         let parent = self.list_context.parent;
         self.list_context
-            .old_elements_map
+            .old_entries_map
             .drain()
-            .for_each(|(_, item)| {
-                item.element.remove_from(parent);
+            .for_each(|(_, entry)| {
+                entry.group.remove_from_dom(parent);
             })
     }
 
-    fn remove_all_old_items(&mut self) {
+    fn remove_all_old_entries(&mut self) {
         self.list_context.parent.set_text_content(None);
-        for (_, item) in self.list_context.old.by_ref() {
-            // while let Some((_, item)) = self.list_context.old.next() {
-            item.take()
-                .expect_throw("render::base::keyed_list::KeyedListUpdater::remove_all_old_items");
+        for (_, entry) in self.list_context.old.by_ref() {
+            entry
+                .take()
+                .expect_throw("render::base::keyed_list::KeyedListUpdater::remove_all_old_entries");
         }
     }
 
-    fn remove_remain_items(&mut self) {
+    fn remove_remain_entries(&mut self) {
         let parent = self.list_context.parent;
-        for (_, item) in self.list_context.old.by_ref() {
-            //while let Some((_, item)) = self.list_context.old.next() {
-            item.take()
-                .expect_throw("render::base::keyed_list::KeyedListUpdater::remove_remain_items")
-                .element
-                .remove_from(parent);
+        for (_, entry) in self.list_context.old.by_ref() {
+            entry
+                .take()
+                .expect_throw("render::base::keyed_list::KeyedListUpdater::remove_remain_entries")
+                .group
+                .remove_from_dom(parent);
         }
     }
 
-    fn insert_remain_items<I, K>(
+    fn insert_remain_entries<I, K>(
         &mut self,
-        items_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
+        entries_state_iter: &mut PeekableDoubleEndedIterator<impl Iterator<Item = I>>,
     ) where
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, ElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, NodesUpdater<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
-        for item_state in items_state_iter {
-            let ke = self.render_an_item(item_state);
-            self.store_keyed_rendered_item(ke);
+        for entry_state in entries_state_iter {
+            let ke = self.render_an_entry(entry_state);
+            self.store_keyed_rendered_entry(ke);
         }
     }
 
-    fn render_an_item<I, K>(&mut self, item_state: I) -> KeyedElement
+    fn render_an_entry<I, K>(&mut self, entry_state: I) -> KeyedEntry
     where
         G: Fn(&I) -> &K,
-        K: PartialEq<ListItemKey>,
-        R: Fn(I, ElementUpdater<C>),
-        ListItemKey: for<'k> From<&'k K>,
+        K: PartialEq<ListEntryKey>,
+        R: Fn(I, NodesUpdater<C>),
+        ListEntryKey: for<'k> From<&'k K>,
     {
-        let (mut element, status) = self.create_element_for_new_item();
+        let (mut group, status) = self.create_entry_for_new_entry();
 
-        let er = ElementUpdater::new(
+        let next_sibling = self
+            .list_context
+            .end_flag_for_the_next_entry_bottom_up
+            .as_ref();
+        group.insert_before_a_sibling(self.list_context.parent, next_sibling);
+
+        let nu = NodesUpdater::new(
             self.render_context.comp,
             self.render_context.state,
-            &mut element,
             status,
+            self.list_context.parent,
+            next_sibling,
+            group.nodes_mut(),
         );
 
-        let key = self.render_context.get_key(&item_state).into();
-        self.render_context.render(item_state, er);
-        element.insert_before_a_sibling(
-            self.list_context.parent,
-            self.list_context
-                .next_sibling
-                .as_ref()
-                .map(|element| element.unchecked_ref()),
-        );
-        KeyedElement::new(key, element)
+        let key = self.render_context.get_key(&entry_state).into();
+        self.render_context.render(entry_state, nu);
+
+        KeyedEntry::new(key, group)
     }
 
-    fn store_keyed_rendered_item(&mut self, ke: KeyedElement) {
+    fn store_keyed_rendered_entry(&mut self, ke: KeyedEntry) {
         *self
             .list_context
             .new
             .next()
-            .expect_throw("render::base::keyed_list::KeyedListUpdater::inser_remain_items") =
+            .expect_throw("render::base::keyed_list::KeyedListUpdater::inser_remain_entries") =
             Some(ke);
     }
 }
@@ -614,32 +635,32 @@ impl<I: DoubleEndedIterator> DoubleEndedIterator for PeekableDoubleEndedIterator
 }
 
 #[derive(Debug)]
-struct ItemWithLis<I> {
-    item_state: I,
-    old_element: Option<OldElement>,
+struct EntryWithLis<I> {
+    entry_state: I,
+    old_entry: Option<OldEntry>,
     lis: bool,
 }
 
-impl<I> ItemWithLis<I> {
-    fn new(item_state: I, old_element: Option<OldElement>) -> Self {
+impl<I> EntryWithLis<I> {
+    fn new(entry_state: I, old_entry: Option<OldEntry>) -> Self {
         Self {
-            item_state,
-            old_element,
+            entry_state,
+            old_entry,
             lis: false,
         }
     }
 }
 
 // Copied from https://github.com/axelf4/lis and modified to work with Spair.
-fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis<I>]) {
-    let mut p = vec![0; items.len()];
-    // indices of the new items
-    let mut m = Vec::with_capacity(items.len());
-    // only iter through items with old index
-    let mut it = items
+fn longest_increasing_subsequence<I>(entries: &mut [EntryWithLis<I>]) {
+    let mut p = vec![0; entries.len()];
+    // indices of the new entries
+    let mut m = Vec::with_capacity(entries.len());
+    // only iter through entries with old index
+    let mut it = entries
         .iter()
         .enumerate()
-        .filter(|(_, x)| x.old_element.is_some());
+        .filter(|(_, x)| x.old_entry.is_some());
     if let Some((i, _)) = it.next() {
         m.push(i);
     } else {
@@ -648,12 +669,12 @@ fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis<I>]) {
 
     for (i, x) in it {
         // Test whether a[i] can extend the current sequence
-        if items[*m.last().unwrap_throw()]
-            .old_element
+        if entries[*m.last().unwrap_throw()]
+            .old_entry
             .as_ref()
             .unwrap_throw()
             .index
-            .cmp(&x.old_element.as_ref().unwrap_throw().index)
+            .cmp(&x.old_entry.as_ref().unwrap_throw().index)
             == std::cmp::Ordering::Less
         {
             p[i] = *m.last().unwrap_throw();
@@ -663,12 +684,12 @@ fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis<I>]) {
 
         // Binary search for largest j ≤ m.len() such that a[m[j]] < a[i]
         let j = match m.binary_search_by(|&j| {
-            items[j]
-                .old_element
+            entries[j]
+                .old_entry
                 .as_ref()
                 .unwrap_throw()
                 .index
-                .cmp(&x.old_element.as_ref().unwrap_throw().index)
+                .cmp(&x.old_entry.as_ref().unwrap_throw().index)
                 .then(std::cmp::Ordering::Greater)
         }) {
             Ok(j) | Err(j) => j,
@@ -682,7 +703,7 @@ fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis<I>]) {
     // Reconstruct the longest increasing subsequence
     let mut k = *m.last().unwrap_throw();
     for _ in (0..m.len()).rev() {
-        items[k].lis = true;
+        entries[k].lis = true;
         k = p[k];
     }
 }
@@ -691,38 +712,35 @@ fn longest_increasing_subsequence<I>(items: &mut [ItemWithLis<I>]) {
 mod keyed_list_with_render_tests {
     use wasm_bindgen_test::*;
 
-    use crate::dom::{Element, Keyed, Node};
-    use crate::render::html::HtmlTag;
+    use crate::dom::{GroupedNodes, Node};
 
-    impl super::ItemWithLis<&()> {
+    impl super::EntryWithLis<&()> {
         fn index(index: usize) -> Self {
             Self {
-                item_state: &(),
-                old_element: Some(super::OldElement {
+                entry_state: &(),
+                old_entry: Some(super::OldEntry {
                     index,
-                    element: Element::new_ns(HtmlTag("div")),
+                    group: GroupedNodes::with_flag_name("start of list entry"),
                 }),
                 lis: false,
             }
         }
         fn none() -> Self {
             Self {
-                item_state: &(),
-                old_element: None,
+                entry_state: &(),
+                old_entry: None,
                 lis: false,
             }
         }
     }
 
-    fn collect_lis(mut items: Vec<super::ItemWithLis<&()>>) -> Vec<usize> {
-        super::longest_increasing_subsequence(&mut items[..]);
-        items
+    fn collect_lis(mut entries: Vec<super::EntryWithLis<&()>>) -> Vec<usize> {
+        super::longest_increasing_subsequence(&mut entries[..]);
+        entries
             .iter()
-            .flat_map(|item| {
-                if item.lis {
-                    item.old_element
-                        .as_ref()
-                        .map(|old_element| old_element.index)
+            .flat_map(|entry| {
+                if entry.lis {
+                    entry.old_entry.as_ref().map(|old_entry| old_entry.index)
                 } else {
                     None
                 }
@@ -731,28 +749,28 @@ mod keyed_list_with_render_tests {
     }
 
     fn collect_lis_from_index(indices: &[usize]) -> Vec<usize> {
-        let items = indices
+        let entries = indices
             .iter()
-            .map(|i| super::ItemWithLis::index(*i))
+            .map(|i| super::EntryWithLis::index(*i))
             .collect();
-        collect_lis(items)
+        collect_lis(entries)
     }
 
     #[wasm_bindgen_test]
     fn lis_with_none() {
-        let items = vec![
-            super::ItemWithLis::index(5),
-            super::ItemWithLis::index(1),
-            super::ItemWithLis::index(3),
-            super::ItemWithLis::none(),
-            super::ItemWithLis::index(6),
-            super::ItemWithLis::index(8),
-            super::ItemWithLis::none(),
-            super::ItemWithLis::index(9),
-            super::ItemWithLis::index(0),
-            super::ItemWithLis::index(7),
+        let entries = vec![
+            super::EntryWithLis::index(5),
+            super::EntryWithLis::index(1),
+            super::EntryWithLis::index(3),
+            super::EntryWithLis::none(),
+            super::EntryWithLis::index(6),
+            super::EntryWithLis::index(8),
+            super::EntryWithLis::none(),
+            super::EntryWithLis::index(9),
+            super::EntryWithLis::index(0),
+            super::EntryWithLis::index(7),
         ];
-        let rs = collect_lis(items);
+        let rs = collect_lis(entries);
         let expected = [1, 3, 6, 8, 9];
         assert_eq!(&expected[..], &rs[..]);
     }
@@ -773,41 +791,35 @@ mod keyed_list_with_render_tests {
         assert_eq!(rs, [0, 3, 4, 5, 9]);
     }
 
-    impl Keyed for &&'static str {
-        type Key = &'static str;
-        fn key(&self) -> &Self::Key {
-            self
-        }
-    }
-
     macro_rules! make_keyed_list_test {
         ($mode:expr) => {
             make_a_test_component! {
                 type: Vec<&'static str>;
                 init: Vec::new();
                 render_fn: fn render(&self, element: crate::Element<Self>) {
-                    element.keyed_list(self.0.iter(), $mode, "div", |item| *item, render_str);
+                    element.keyed_list(self.0.iter(), $mode, |entry| *entry, render_str);
                 }
             }
 
-            fn render_str(value: &&str, item: crate::Element<TestComponent>) {
-                item.update_text(*value);
+            fn render_str(value: &&str, nodes: crate::Nodes<TestComponent>) {
+                nodes.update_text(*value);
             }
 
             fn collect_from_keyed_list(nodes: &[crate::dom::Node]) -> Vec<String> {
                 if let Node::KeyedList(kl) = nodes.first().unwrap_throw() {
                     kl.active_nodes()
                         .iter()
-                        .map(|item| {
-                            item.as_ref()
+                        .map(|entry| {
+                            entry
+                                .as_ref()
                                 .unwrap_throw()
-                                .element
+                                .group
                                 .nodes()
                                 .nodes_vec()
                                 .first()
                                 .unwrap_throw()
                         })
-                        .map(|item| match item {
+                        .map(|entry| match entry {
                             Node::Text(text) => text.test_string(),
                             _ => panic!("Should be a text?"),
                         })

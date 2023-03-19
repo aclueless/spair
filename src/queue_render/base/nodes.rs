@@ -3,14 +3,14 @@ use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{
     component::{Comp, Component},
-    dom::{AChildNode, ElementTag, GroupedNodes},
+    dom::{AChildNode, GroupedNodes},
     queue_render::{
         base::QrListRender,
         dom::{QrGroupRepresentative, QrNode, QrTextNode},
         val::QueueRender,
     },
     render::{
-        base::{ElementUpdater, MatchIfUpdater, NodesUpdater},
+        base::{MatchIfUpdater, NodesUpdater},
         ListElementCreation,
     },
 };
@@ -46,17 +46,15 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
         tn
     }
 
-    pub fn create_qr_list_render<E, I, R>(
+    pub fn create_qr_list_render<I, R>(
         &mut self,
         full_list: bool,
         mode: ListElementCreation,
-        tag: E,
         fn_render: R,
-    ) -> Option<QrListRender<C, E, I>>
+    ) -> Option<QrListRender<C, I>>
     where
-        E: ElementTag,
         I: Clone,
-        R: 'static + Fn(I, ElementUpdater<C>),
+        R: 'static + Fn(I, NodesUpdater<C>),
     {
         let list = if self.new_node() {
             let end_flag_node = if full_list {
@@ -69,7 +67,6 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
             };
 
             let list = QrListRender::new(
-                tag,
                 self.comp(),
                 self.parent().clone(),
                 end_flag_node,
@@ -89,7 +86,6 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
                 QrNode::ClonedWsNode(wsn) => match wsn.take() {
                     Some(wsn) => {
                         let list = QrListRender::new(
-                            tag,
                             comp,
                             parent,
                             Some(wsn),
@@ -118,12 +114,12 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
             let r = QrMatchIfUpdater {
                 comp: self.comp(),
                 parent: self.parent().clone(),
-                nodes: GroupedNodes::new(),
+                nodes: GroupedNodes::with_flag_name(crate::dom::FLAG_NAME_FOR_MATCH_IF),
                 fn_render: Box::new(fn_render),
                 unmounted: Rc::new(Cell::new(false)),
             };
             r.nodes
-                .end_flag_node()
+                .flag_node_ref()
                 .insert_before_a_sibling(self.parent(), self.next_sibling());
             self.nodes_mut()
                 .add_qr_node(QrNode::Group(r.make_representative()));
@@ -171,7 +167,7 @@ pub struct QrMatchIfUpdater<C: Component, T> {
 
 impl<C: Component, T> QrMatchIfUpdater<C, T> {
     pub fn make_representative(&self) -> QrGroupRepresentative {
-        QrGroupRepresentative::new(self.nodes.end_flag_node().clone(), self.unmounted.clone())
+        QrGroupRepresentative::new(self.nodes.flag_node_ref().clone(), self.unmounted.clone())
     }
 }
 

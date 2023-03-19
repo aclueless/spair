@@ -45,6 +45,27 @@ impl<'a, C: Component> From<ElementUpdater<'a, C>> for NodesUpdater<'a, C> {
 }
 
 impl<'a, C: Component> NodesUpdater<'a, C> {
+    pub fn new(
+        comp: &'a Comp<C>,
+        state: &'a C,
+        parent_status: ElementStatus,
+        parent: &'a web_sys::Node,
+        next_sibling: Option<&'a web_sys::Node>,
+        nodes: &'a mut Nodes,
+    ) -> Self {
+        Self {
+            comp,
+            state,
+
+            update_mode: true,
+            index: 0,
+            parent_status,
+            parent,
+            next_sibling,
+            nodes,
+        }
+    }
+
     pub fn state(&self) -> &'a C {
         self.state
     }
@@ -113,9 +134,12 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     }
 
     pub fn get_match_if_updater(&mut self) -> MatchIfUpdater<C> {
-        let grouped_nodes = self
-            .nodes
-            .grouped_nodes(self.index, self.parent, self.next_sibling);
+        let grouped_nodes = self.nodes.grouped_nodes(
+            self.index,
+            crate::dom::FLAG_NAME_FOR_MATCH_IF,
+            self.parent,
+            self.next_sibling,
+        );
         self.index += 1;
         MatchIfUpdater {
             comp: self.comp,
@@ -126,11 +150,14 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
     }
 
     pub fn get_list_updater(&mut self, use_template: bool) -> (&Comp<C>, &C, ListUpdater) {
-        let gn = self
-            .nodes
-            .grouped_nodes(self.index, self.parent, self.next_sibling);
+        let gn = self.nodes.grouped_nodes(
+            self.index,
+            crate::dom::FLAG_NAME_FOR_PARTIAL_LIST,
+            self.parent,
+            self.next_sibling,
+        );
         self.index += 1;
-        let (list, next_sibling) = gn.nodes_mut_and_end_flag_node();
+        let (list, next_sibling) = gn.nodes_mut_and_flag_node();
         let lr = ListUpdater::new(
             list,
             self.parent,
@@ -226,7 +253,7 @@ impl<'a, C: Component> MatchIfUpdater<'a, C> {
     #[doc(hidden)]
     pub fn render_on_arm_index(self, index: TypeId) -> NodesUpdater<'a, C> {
         let status = self.grouped_nodes.set_active_index(index, self.parent);
-        let (nodes, next_sibling) = self.grouped_nodes.nodes_mut_and_end_flag_node();
+        let (nodes, next_sibling) = self.grouped_nodes.nodes_mut_and_flag_node();
 
         NodesUpdater {
             comp: self.comp,

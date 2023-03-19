@@ -242,7 +242,6 @@ fn render_main(nodes: spair::Nodes<App>) {
                         .items
                         .iter()
                         .filter(|item| item.visible(&state.filter)),
-                    "li",
                     |item| &item.id,
                     render_todo_item,
                 );
@@ -323,12 +322,14 @@ fn render_info(nodes: spair::Nodes<App>) {
     });
 }
 
-fn render_todo_item(item: &TodoItem, li: spair::Element<App>) {
-    let comp = li.comp();
-    let state = li.state();
+fn render_todo_item(item: &TodoItem, mut nodes: spair::Nodes<App>) {
+    let comp = nodes.comp();
+    let state = nodes.state();
     let id = item.id;
     let is_editing_me = state.editing_id == Some(item.id);
-    li.class_if(item.completed, "completed")
+    nodes
+        .single_element("li")
+        .class_if(item.completed, "completed")
         .class_if(is_editing_me, "editing")
         .div(move |d| {
             d.static_attributes()
