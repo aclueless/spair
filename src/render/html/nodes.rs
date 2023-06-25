@@ -576,3 +576,136 @@ impl<'a, C: Component> HtmlMatchIfUpdater<'a, C> {
         self.0.comp()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    fn get_selected_value(nodes: &[crate::dom::Node]) -> Option<String> {
+        let crate::dom::Node::Element(select_element) = nodes.first().unwrap() else {
+                panic!("Expect an Element for <select>");
+            };
+        assert_eq!(
+            crate::dom::ElementType::Select,
+            select_element.element_type()
+        );
+        let select_element = select_element
+            .ws_element()
+            .unchecked_ref::<web_sys::HtmlSelectElement>();
+        if select_element.selected_index() < 0 {
+            None
+        } else {
+            Some(select_element.value())
+        }
+    }
+
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn selected_value_on_select_element_start_with_none() {
+        make_a_test_component! {
+            type: Option<&'static str>;
+            init: None;
+            render_fn: fn render(&self, element: crate::Element<Self>) {
+                element.select(|s| {
+                    s.selected_value(self.0.as_deref())
+                        .option(|o| o.value("first-value").update_text("First Value").done())
+                        .option(|o| o.value("second-value").update_text("Second Value").done())
+                        .option(|o| o.value("third-value").update_text("Third Value").done());
+                });
+            }
+        }
+
+        let test = Test::set_up();
+        assert_eq!(None, test.execute_on_nodes(get_selected_value));
+        test.update(Some("first-value"));
+        assert_eq!(
+            Some("first-value".to_string()),
+            test.execute_on_nodes(get_selected_value)
+        );
+    }
+
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn selected_value_on_select_element_start_with_some() {
+        make_a_test_component! {
+            type: Option<&'static str>;
+            init: Some("first-value");
+            render_fn: fn render(&self, element: crate::Element<Self>) {
+                element.select(|s| {
+                    s.selected_value(self.0.as_deref())
+                        .option(|o| o.value("first-value").update_text("First Value").done())
+                        .option(|o| o.value("second-value").update_text("Second Value").done())
+                        .option(|o| o.value("third-value").update_text("Third Value").done());
+                });
+            }
+        }
+
+        let test = Test::set_up();
+        assert_eq!(
+            Some("first-value".to_string()),
+            test.execute_on_nodes(get_selected_value)
+        );
+        test.update(None);
+        assert_eq!(None, test.execute_on_nodes(get_selected_value));
+    }
+
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn selected_value_on_select_element_filled_by_list() {
+        make_a_test_component! {
+            type: Option<&'static str>;
+            init: None;
+            render_fn: fn render(&self, element: crate::Element<Self>) {
+                element.select(|s| {
+                    s.selected_value(self.0.as_deref())
+                        .list_clone(["first-value", "second-value", "third-value"].iter(), |value, mut nodes| {
+                            nodes.single_element("option")
+                                .value(*value)
+                                .update_text(*value);
+                    });
+                });
+            }
+        }
+
+        let test = Test::set_up();
+        assert_eq!(None, test.execute_on_nodes(get_selected_value));
+        test.update(Some("first-value"));
+        assert_eq!(
+            Some("first-value".to_string()),
+            test.execute_on_nodes(get_selected_value)
+        );
+    }
+
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn selected_value_on_select_element_start_with_no_items() {
+        struct Data {
+            selected: Option<&'static str>,
+            items: Vec<&'static str>,
+        }
+        make_a_test_component! {
+            type: Data;
+            init: Data {
+                selected: None,
+                items: Vec::new(),
+            };
+            render_fn: fn render(&self, element: crate::Element<Self>) {
+                element.select(|s| {
+                    s.selected_value(self.0.selected)
+                        .list_clone(self.0.items.iter(), |value, mut nodes| {
+                            nodes.single_element("option")
+                                .value(*value)
+                                .update_text(*value);
+                    });
+                });
+            }
+        }
+
+        let test = Test::set_up();
+        assert_eq!(None, test.execute_on_nodes(get_selected_value));
+        test.update_with(|data| {
+            data.items.push("first-value");
+            data.items.push("second-value");
+        });
+        assert_eq!(None, test.execute_on_nodes(get_selected_value));
+        test.update_with(|data| data.selected = Some("second-value"));
+        assert_eq!(
+            Some("second-value".to_string()),
+            test.execute_on_nodes(get_selected_value)
+        );
+    }
+}

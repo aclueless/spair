@@ -160,10 +160,11 @@ impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
     }
 
     fn set_value(&mut self, value: &str) {
-        if self.ws_element().set_value(value, false) {
+        if !self.ws_element().set_value(value, false) {
+            // set_value return false if the element is a <select>
             // It has no effect if you set a value for
             // a <select> element before adding its <option>s,
-            // this hacking should finish in the list() method.
+            // this hacking should be finished in the list() method.
             // Is there a better solution?
             self.set_selected_value(Some(value));
         }
@@ -171,25 +172,34 @@ impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
 
     // This must call by a <select>
     pub(super) fn selected_value_str(&mut self, value: &str) {
-        if self.element_updater.str_value_change(value).0 {
-            self.set_value(value);
-        }
+        // No checking for value changed here, always set the selected value
+        // for <select> element, otherwise the test at
+        // /render/html/nodes/selected_value_on_select_element_start_with_no_items
+        // will fail.
+
+        // if self.element_updater.str_value_change(value).0 {
+        self.set_value(value);
+        // }
     }
 
     // This must call by a <select>
     pub(super) fn selected_value_string(&mut self, value: String) {
-        if self.element_updater.str_value_change(&value).0 {
-            self.set_selected_value_string(Some(value));
-        }
+        // See comments in `fn selected_value_str` for information on these
+        // commented code
+        // if self.element_updater.str_value_change(&value).0 {
+        self.set_selected_value_string(Some(value));
+        // }
     }
 
     // This must call by a <select>
     pub(super) fn selected_value_optional_str(&mut self, value: Option<&str>) {
         match self.element_updater.element_mut().element_type() {
             ElementType::Select => {
-                if self.element_updater.option_str_value_change(value).0 {
-                    self.set_selected_value(value);
-                }
+                // See comments in `fn selected_value_str` for information on these
+                // commented code
+                // if self.element_updater.option_str_value_change(value).0 {
+                self.set_selected_value(value);
+                // }
             }
             _ => log::warn!("Should a value:Option<String> only can be set on a select element?"),
         }
@@ -197,21 +207,25 @@ impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
 
     // This must call by a <select>
     pub(super) fn selected_value_optional_string(&mut self, value: Option<String>) {
-        if self
-            .element_updater
-            .option_str_value_change(value.as_deref())
-            .0
-        {
-            self.set_selected_value_string(value);
-        }
+        // See comments in `fn selected_value_str` for information on these
+        // commented code
+        // if self
+        //     .element_updater
+        //     .option_str_value_change(value.as_deref())
+        //     .0
+        // {
+        self.set_selected_value_string(value);
+        // }
     }
 
     fn selected_index(&mut self, value: i32) {
         match self.element_updater.element_mut().element_type() {
             ElementType::Select => {
-                if !self.element_updater.i32_value_change(value) {
-                    return;
-                }
+                // See comments in `fn selected_value_str` for information on these
+                // commented code
+                // if !self.element_updater.i32_value_change(value) {
+                //     return;
+                // }
                 self.set_selected_index(Some(value));
             }
             _ => log::warn!("Should a selected_index only can be set on a select element?"),
