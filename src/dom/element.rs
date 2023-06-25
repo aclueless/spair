@@ -241,10 +241,10 @@ impl WsElement {
         }
     }
 
-    // return `true` if the element is a <select>
+    // return `false` if the element is a <select>
     // If it's in queue render mode, the value is always set, users
-    // must make sure that the value is set after the children
-    // of <select> are added.
+    // must make sure that the value is set after the child-elements
+    // of <select> had added.
     #[must_use = "Make sure that the return value is handled if queue_render = false"]
     pub fn set_value(&self, value: &str, queue_render: bool) -> bool {
         match self.element_type {
@@ -259,7 +259,7 @@ impl WsElement {
                         .unchecked_ref::<web_sys::HtmlSelectElement>();
                     select.set_value(value);
                 }
-                return true;
+                return false;
             }
             ElementType::TextArea => {
                 let text_area = self
@@ -279,7 +279,7 @@ impl WsElement {
                 );
             }
         }
-        false
+        true
     }
 
     #[allow(clippy::ptr_arg)]
