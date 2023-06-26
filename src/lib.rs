@@ -11,6 +11,7 @@ mod application;
 mod callback;
 mod component;
 mod dom;
+pub mod element;
 mod events;
 mod render;
 mod routing;
