@@ -377,8 +377,8 @@ fn render_input(title: &str, nodes: spair::Nodes<App>) {
     });
 }
 
-fn get_value(i: Option<spair::element::EventTarget>) -> Option<String> {
-    i.and_then(|v| v.into_input_element()).and_then(|i| {
+fn get_value(i: spair::element::EventTarget) -> Option<String> {
+    i.into_input_element().and_then(|i| {
         let text = i.into_inner().value();
         let text = text.trim();
         match text.is_empty() {

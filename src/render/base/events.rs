@@ -17,7 +17,7 @@ pub trait StateHelperMethods<'updater, C: crate::component::Component>:
             comp.handler_arg_mut(move |state, event: crate::events::InputEvent| {
                 if let Some(value) = event
                     .current_target()
-                    .and_then(|v| v.into_input_element())
+                    .into_input_element()
                     .map(|i| i.0.value())
                 {
                     updater(state, value);

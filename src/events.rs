@@ -42,12 +42,12 @@ macro_rules! create_events {
                     &self.0
                 }
 
-                pub fn target(&self) -> Option<crate::element::EventTarget> {
-                    self.0.target().map(|v|crate::element::EventTarget(v))
+                pub fn target(&self) -> crate::element::EventTarget {
+                    crate::element::EventTarget(self.0.target())
                 }
 
-                pub fn current_target(&self) -> Option<crate::element::EventTarget> {
-                    self.0.current_target().map(|v|crate::element::EventTarget(v))
+                pub fn current_target(&self) -> crate::element::EventTarget {
+                    crate::element::EventTarget(self.0.current_target())
                 }
             }
 
