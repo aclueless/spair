@@ -622,6 +622,30 @@ mod tests {
     }
 
     #[wasm_bindgen_test::wasm_bindgen_test]
+    fn selected_value_on_select_element_start_with_none_string() {
+        make_a_test_component! {
+            type: Option<&'static str>;
+            init: None;
+            render_fn: fn render(&self, element: crate::Element<Self>) {
+                element.select(|s| {
+                    s.selected_value(self.0.as_deref())
+                        .option(|o| o.value("first-value".to_string()).update_text("First Value").done())
+                        .option(|o| o.value("second-value".to_string()).update_text("Second Value").done())
+                        .option(|o| o.value("third-value".to_string()).update_text("Third Value").done());
+                });
+            }
+        }
+
+        let test = Test::set_up();
+        assert_eq!(None, test.execute_on_nodes(get_selected_value));
+        test.update(Some("first-value"));
+        assert_eq!(
+            Some("first-value".to_string()),
+            test.execute_on_nodes(get_selected_value)
+        );
+    }
+
+    #[wasm_bindgen_test::wasm_bindgen_test]
     fn selected_value_on_select_element_start_with_some() {
         make_a_test_component! {
             type: Option<&'static str>;
@@ -689,6 +713,8 @@ mod tests {
                         .list_clone(self.0.items.iter(), |value, mut nodes| {
                             nodes.single_element("option")
                                 .value(*value)
+                                .update_text(*value)
+                                .static_text("--")
                                 .update_text(*value);
                     });
                 });

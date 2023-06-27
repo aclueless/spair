@@ -159,7 +159,7 @@ impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
         }
     }
 
-    fn set_value(&mut self, value: &str) {
+    fn set_value_str(&mut self, value: &str) {
         if !self.ws_element().set_value(value, false) {
             // set_value return false if the element is a <select>
             // It has no effect if you set a value for
@@ -167,6 +167,17 @@ impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
             // this hacking should be finished in the list() method.
             // Is there a better solution?
             self.set_selected_value(Some(value));
+        }
+    }
+
+    fn set_value_string(&mut self, value: String) {
+        if !self.ws_element().set_value(&value, false) {
+            // set_value return false if the element is a <select>
+            // It has no effect if you set a value for
+            // a <select> element before adding its <option>s,
+            // this hacking should be finished in the list() method.
+            // Is there a better solution?
+            self.set_selected_value_string(Some(value));
         }
     }
 
@@ -178,16 +189,15 @@ impl<'updater, C: Component> HtmlElementUpdater<'updater, C> {
         // will fail.
 
         // if self.element_updater.str_value_change(value).0 {
-        self.set_value(value);
+        self.set_value_str(value);
         // }
     }
 
-    // This must call by a <select>
     pub(super) fn selected_value_string(&mut self, value: String) {
         // See comments in `fn selected_value_str` for information on these
         // commented code
         // if self.element_updater.str_value_change(&value).0 {
-        self.set_selected_value_string(Some(value));
+        self.set_value_string(value);
         // }
     }
 
