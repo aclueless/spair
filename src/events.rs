@@ -38,24 +38,16 @@ macro_rules! create_events {
         $(
             pub struct $EventType(web_sys::$EventType);
             impl $EventType {
-                pub fn raw(&self) -> &web_sys::$EventType {
+                pub fn raw_event_type(&self) -> &web_sys::$EventType {
                     &self.0
                 }
 
-                pub fn target(&self) -> Option<web_sys::EventTarget> {
-                    self.0.target()
+                pub fn target(&self) -> crate::element::EventTarget {
+                    crate::element::EventTarget(self.0.target())
                 }
 
-                pub fn target_as<T: JsCast>(&self) -> Option<T> {
-                    self.0.target().and_then(|et| et.dyn_into().ok())
-                }
-
-                pub fn current_target(&self) -> Option<web_sys::EventTarget> {
-                    self.0.current_target()
-                }
-
-                pub fn current_target_as<T: JsCast>(&self) -> Option<T> {
-                    self.0.current_target().and_then(|et| et.dyn_into().ok())
+                pub fn current_target(&self) -> crate::element::EventTarget {
+                    crate::element::EventTarget(self.0.current_target())
                 }
             }
 
@@ -153,21 +145,5 @@ create_events! {
         PointerLockError => "pointerlockerror" on_pointer_lock_error,
 
         Ended => "ended" on_ended,
-    }
-}
-
-impl InputEvent {
-    pub fn current_target_as_input_element(&self) -> Option<web_sys::HtmlInputElement> {
-        self.current_target_as()
-    }
-}
-
-impl Event {
-    pub fn current_target_as_select_element(&self) -> Option<web_sys::HtmlSelectElement> {
-        self.current_target_as()
-    }
-
-    pub fn current_target_as_form_element(&self) -> Option<web_sys::HtmlFormElement> {
-        self.current_target_as()
     }
 }

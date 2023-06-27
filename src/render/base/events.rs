@@ -15,7 +15,11 @@ pub trait StateHelperMethods<'updater, C: crate::component::Component>:
     ) -> Self {
         self.on_input(
             comp.handler_arg_mut(move |state, event: crate::events::InputEvent| {
-                if let Some(value) = event.current_target_as_input_element().map(|i| i.value()) {
+                if let Some(value) = event
+                    .current_target()
+                    .into_input_element()
+                    .map(|i| i.0.value())
+                {
                     updater(state, value);
                 }
             }),

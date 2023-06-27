@@ -194,15 +194,11 @@ fn render_header(nodes: spair::Nodes<App>) {
                     .class("new-todo")
                     .focus(true)
                     .placeholder("What needs to be done?")
-                    .on_input(comp.handler_arg_mut(|state, arg: spair::InputEvent| {
-                        if let Some(input) = arg.current_target_as_input_element() {
-                            state.set_new_todo_title(input.value());
-                        }
-                    }))
+                    .on_input_value(&comp, App::set_new_todo_title)
                     .on_key_press(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
                         // `.key_code()` is deprecated, so we use code instead
                         // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                        if arg.raw().code().as_str() == "Enter" {
+                        if arg.raw_event_type().code().as_str() == "Enter" {
                             state.create_new_todo();
                         }
                     }));
@@ -367,23 +363,23 @@ fn render_input(title: &str, nodes: spair::Nodes<App>) {
             .static_attributes()
             .class("edit")
             .on_blur(comp.handler_arg_mut(|state, arg: spair::FocusEvent| {
-                state.end_editing(get_value(arg.current_target_as()))
+                state.end_editing(get_value(arg.current_target()))
             }))
             .on_key_down(comp.handler_arg_mut(|state, arg: spair::KeyboardEvent| {
                 // `.key_code()` is deprecated, so we use code instead
                 // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-                match arg.raw().code().as_str() {
+                match arg.raw_event_type().code().as_str() {
                     "Escape" => state.cancel_editing(),
-                    "Enter" => state.end_editing(get_value(arg.current_target_as())),
+                    "Enter" => state.end_editing(get_value(arg.current_target())),
                     _ => {}
                 }
             }));
     });
 }
 
-fn get_value(i: Option<web_sys::HtmlInputElement>) -> Option<String> {
-    i.and_then(|i| {
-        let text = i.value();
+fn get_value(i: spair::element::EventTarget) -> Option<String> {
+    i.into_input_element().and_then(|i| {
+        let text = i.into_inner().value();
         let text = text.trim();
         match text.is_empty() {
             true => None,
