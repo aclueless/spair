@@ -87,7 +87,7 @@ make_traits_for_property_values! {
 /// `option`, and `textarea`. Apart from `select`, other elements have
 /// no issues with the `value` property. Setting `value` on a `select`
 /// element expect the corresponding `option` element inside the
-/// `select` element got highlighted as an selected item. But setting
+/// `select` element got highlighted as a selected item. But setting
 /// the value property before adding the children (`option` elements)
 /// of the select will not work. This trait provide methods to work
 /// with attribute value to help handle the issue. But this trait alone
