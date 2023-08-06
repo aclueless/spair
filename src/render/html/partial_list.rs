@@ -14,11 +14,11 @@ pub trait HemsForPartialList<'a, C: Component>: Sized + NodesUpdaterMut<'a, C> {
         II: Iterator<Item = I>,
         R: Fn(I, crate::Nodes<C>),
     {
-        let (comp, state, mut r) = self
+        let (comp, state, mut list_updater) = self
             .nodes_updater_mut()
             .get_list_updater(mode.use_template());
         let _do_we_have_to_care_about_this_returned_value_ =
-            r.render(comp, state, items, |item: I, nodes: NodesUpdater<C>| {
+            list_updater.render(comp, state, items, |item: I, nodes: NodesUpdater<C>| {
                 let mut nodes = HtmlNodesUpdater::new(nodes);
                 render(item, crate::Nodes::new(&mut nodes))
             });

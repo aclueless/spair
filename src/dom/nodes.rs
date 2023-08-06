@@ -145,14 +145,18 @@ impl Nodes {
             self.new_grouped_nodes(FLAG_NAME_FOR_LIST_ENTRY, parent, next_sibling);
             ElementStatus::JustCreated
         } else {
-            let grouped_nodes = self.0[0].clone();
-            match &grouped_nodes {
-                Node::GroupedNodes(group) => group.insert_before_a_sibling(parent, next_sibling),
+            let grouped_nodes = &self.0[0];
+            let grouped_nodes = match grouped_nodes {
+                Node::GroupedNodes(group) => {
+                    let group = group.clone_list_entry();
+                    group.insert_before_a_sibling(parent, next_sibling);
+                    group
+                }
                 _ => panic!(
                     "dom::nodes::Nodes::check_or_create_element_for_list expected Node::Element"
                 ),
-            }
-            self.0.push(grouped_nodes);
+            };
+            self.0.push(Node::GroupedNodes(grouped_nodes));
             ElementStatus::JustCloned
         };
         let next_sibling = self

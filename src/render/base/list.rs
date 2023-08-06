@@ -68,7 +68,7 @@ impl<'a> ListUpdater<'a> {
                 self.end_of_list_flag,
                 self.use_template,
             );
-            let u = NodesUpdater::new(
+            let updater = NodesUpdater::new(
                 comp,
                 state,
                 status,
@@ -76,7 +76,7 @@ impl<'a> ListUpdater<'a> {
                 next_sibling.as_ref().or(self.end_of_list_flag),
                 group.nodes_mut(),
             );
-            render(item, u);
+            render(item, updater);
             index += 1;
         }
         self.clear_after(index);
