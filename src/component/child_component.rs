@@ -54,7 +54,6 @@ pub trait AsChildComp: Sized + Component {
         };
         let rc_comp = ChildComp::with_root(root_element);
         let comp = rc_comp.comp();
-        Component::init(&comp);
         let state = AsChildComp::init(&comp, props);
         rc_comp.set_state(state);
         crate::routing::register_routing_callback(&comp);

@@ -280,6 +280,7 @@ impl Nodes {
             self.get_owned_component_mut(index)
         } else {
             let oc = self.get_owned_component_mut(index);
+            oc.set_status_to_existing();
             if oc.is_empty() {
                 *oc = ccc();
                 oc.insert_before_a_sibling(parent, next_sibling);
