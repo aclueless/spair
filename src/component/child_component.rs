@@ -66,7 +66,10 @@ impl<C: AsChildComp + Component> ChildComp<C> {
         C::with_props(props)
     }
 
-    pub fn with_updater<P, T, G, U, Cl>(self, fn_get_value: G, cb: U) -> Child<P, C, T>
+    /// Execute update on the child's state and UI with given functions.
+    /// The `child_callback` is executed only if the value returned by `value_getter`
+    /// changed.
+    pub fn with_updater<P, T, G, U, Cl>(self, value_getter: G, child_callback: U) -> Child<P, C, T>
     where
         P: Component,
         G: 'static + Fn(&P) -> T,
@@ -74,11 +77,11 @@ impl<C: AsChildComp + Component> ChildComp<C> {
         Cl: 'static + Into<Checklist<C>>,
         T: 'static + Clone + PartialEq,
     {
-        let child_callback = self.comp().callback_arg_mut(cb);
+        let child_callback = self.comp().callback_arg_mut(child_callback);
         Child {
             child: self,
             last_value: None,
-            fn_get_value: Some(Box::new(fn_get_value)),
+            value_getter: Some(Box::new(value_getter)),
             child_callback: Some(child_callback),
         }
     }
@@ -90,7 +93,7 @@ impl<C: AsChildComp + Component> ChildComp<C> {
         Child {
             child: self,
             last_value: None,
-            fn_get_value: None,
+            value_getter: None,
             child_callback: None,
         }
     }
@@ -129,7 +132,7 @@ where
 {
     child: ChildComp<C>,
     last_value: Option<T>,
-    fn_get_value: Option<GetValue<P, T>>,
+    value_getter: Option<GetValue<P, T>>,
     child_callback: Option<crate::CallbackArg<T>>,
 }
 
@@ -140,8 +143,8 @@ where
     T: Clone + PartialEq,
 {
     // This return `true` if it queue an update
-    pub fn update(&mut self, parent_state: &P) -> bool {
-        let getter = match self.fn_get_value.as_ref() {
+    pub(crate) fn update(&mut self, parent_state: &P) -> bool {
+        let getter = match self.value_getter.as_ref() {
             Some(g) => g,
             None => return false,
         };
@@ -161,7 +164,7 @@ where
         false
     }
 
-    pub fn get_root_node(&self) -> web_sys::Node {
+    pub(crate) fn get_root_node(&self) -> web_sys::Node {
         let v =
             self.child.0.try_borrow().expect_throw(
                 "component::child_component::Child::get_root_node borrow CompInstance",
@@ -170,7 +173,11 @@ where
         n.clone()
     }
 
-    pub fn first_render(&self) {
+    pub(crate) fn first_render(&self) {
         self.child.first_render();
+    }
+
+    pub(crate) fn init(&self) {
+        Component::init(&self.child.comp());
     }
 }
