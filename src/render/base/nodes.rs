@@ -191,14 +191,21 @@ impl<'a, C: Component> NodesUpdater<'a, C> {
             self.nodes
                 .owned_component(self.index, self.parent, self.next_sibling, ccc);
         let just_created = owned_component.just_created();
+        if just_created {
+            owned_component.set_status_to_existing();
+        }
         let any = owned_component
             .get_any_component_mut()
             .expect_throw("render::base::nodes::NodesUpdater::component get_any_component");
         match any.downcast_mut::<Child<C, CC, T>>() {
             Some(child) => {
                 let have_a_queue_update = child.update(state);
-                if just_created && !have_a_queue_update {
-                    child.first_render();
+                if just_created {
+                    if have_a_queue_update {
+                        child.init();
+                    } else {
+                        child.first_render();
+                    }
                 }
             }
             None => log::warn!("Failed to downcast to the expected child component"),

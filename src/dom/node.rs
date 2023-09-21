@@ -177,6 +177,10 @@ impl OwnedComponent {
     pub fn just_created(&self) -> bool {
         self.status == ElementStatus::JustCreated
     }
+
+    pub(crate) fn set_status_to_existing(&mut self) {
+        self.status = ElementStatus::Existing;
+    }
 }
 
 impl Node {
