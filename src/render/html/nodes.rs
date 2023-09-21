@@ -581,8 +581,8 @@ impl<'a, C: Component> HtmlMatchIfUpdater<'a, C> {
 mod tests {
     fn get_selected_value(nodes: &[crate::dom::Node]) -> Option<String> {
         let crate::dom::Node::Element(select_element) = nodes.first().unwrap() else {
-                panic!("Expect an Element for <select>");
-            };
+            panic!("Expect an Element for <select>");
+        };
         assert_eq!(
             crate::dom::ElementType::Select,
             select_element.element_type()
