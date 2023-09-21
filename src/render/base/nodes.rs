@@ -293,7 +293,7 @@ mod tests {
 
         fn get_grouped_nodes_active_index(nodes: &[crate::dom::Node]) -> Option<std::any::TypeId> {
             let crate::dom::Node::GroupedNodes(mi) = nodes.first().unwrap() else {
-                    panic!("Expect a GroupNodes for match_if");
+                panic!("Expect a GroupNodes for match_if");
             };
             mi.active_index()
         }
