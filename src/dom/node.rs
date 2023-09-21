@@ -125,7 +125,9 @@ impl RefComponentNode {
 
 impl Clone for RefComponentNode {
     fn clone(&self) -> Self {
-        panic!("Spair does not support using component_ref inside a list item");
+        const MSG: &str = "Spair does not support using component_ref inside a list item";
+        log::error!("{MSG}");
+        panic!("{MSG}");
     }
 }
 

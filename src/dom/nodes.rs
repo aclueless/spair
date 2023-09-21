@@ -244,11 +244,13 @@ impl Nodes {
             .expect_throw("dom::nodes::Nodes::ref_component2 get_mut")
         {
             Node::RefComponent(rcn) => {
-                if rcn.comp_ref().type_id() != comp_ref.type_id() {
-                    rcn.unmount(parent);
-                    rcn.replace_comp_ref(comp_ref);
-                    rcn.mount(parent);
-                }
+                // if rcn.comp_ref().type_id() != comp_ref.type_id() {
+                // always replace the component. If the component is mounted then ChildComp::component_ref()
+                // returns None and this will never be reached
+                rcn.unmount(parent);
+                rcn.replace_comp_ref(comp_ref);
+                rcn.mount(parent);
+                // }
             }
             _ => panic!("dom::nodes::Nodes::ref_component2 expected Node::RefComponent2"),
         }

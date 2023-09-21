@@ -25,10 +25,14 @@ impl<C: Component> ChildComp<C> {
             .expect_throw("Expect no borrowing at the first render");
 
         if instance.is_mounted() {
+            // nothing to do because the component is already in place.
             return None;
+            // otherwise, the component is new, it will be rendered and returned a
+            // handle to mount to the DOM
         }
 
         instance.mount_status = super::ComponentMountStatus::Mounted;
+        C::init(&comp);
         if instance.root_element.is_empty() {
             // In cases that the router not cause any render yet, such as Routes = ()
             instance.render(&comp);
