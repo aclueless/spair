@@ -109,25 +109,27 @@ macro_rules! create_events {
 }
 
 create_events! {
+    // ClipboardEvent ClipboardEventListener {
+    // web_sys requires to compile with a flag to work with clipboard api,
+    // these apis are moved to the Event section to use the basic functionalities provide by Event
+    // without having to compile with the flag.
+    // }
+    Event EventListener {
+        Copy => "copy" on_copy,
+        Cut => "cut" on_cut,
+        Paste => "paste" on_paste,
+
+        Change => "change" on_change,
+        Ended => "ended" on_ended,
+        PointerLockChange => "pointerlockchange" on_pointer_lock_change,
+        PointerLockError => "pointerlockerror" on_pointer_lock_error,
+        Reset => "reset" on_reset,
+        Submit => "submit" on_submit,
+
+    }
     FocusEvent FocusEventListener {
-        Focus => "focus" on_focus,
         Blur => "blur" on_blur,
-    }
-    MouseEvent MouseEventListener {
-        AuxClick => "auxclick" on_aux_click,
-        Click => "click" on_click,
-        DblClick => "dblclick" on_double_click,
-        MouseEnter => "mouseenter" on_mouse_enter,
-        MouseOver => "mouseover" on_mouse_over,
-        MouseMove => "mousemove" on_mouse_move,
-        MouseDown => "mousedown" on_mouse_down,
-        MouseUp => "mouseup" on_mouse_up,
-        MouseLeave => "mouseleave" on_mouse_leave,
-        MouseOut => "mouseout" on_mouse_out,
-        ContextMenu => "contextmenu" on_context_menu,
-    }
-    WheelEvent WheelEventListener {
-        Wheel => "wheel" on_wheel,
+        Focus => "focus" on_focus,
     }
     InputEvent InputEventListener {
         Input => "input" on_input,
@@ -137,13 +139,20 @@ create_events! {
         KeyPress => "keypress" on_key_press,
         KeyUp => "keyup" on_key_up,
     }
-    Event EventListener {
-        Change => "change" on_change,
-        Reset => "reset" on_reset,
-        Submit => "submit" on_submit,
-        PointerLockChange => "pointerlockchange" on_pointer_lock_change,
-        PointerLockError => "pointerlockerror" on_pointer_lock_error,
-
-        Ended => "ended" on_ended,
+    MouseEvent MouseEventListener {
+        AuxClick => "auxclick" on_aux_click,
+        Click => "click" on_click,
+        ContextMenu => "contextmenu" on_context_menu,
+        DblClick => "dblclick" on_double_click,
+        MouseDown => "mousedown" on_mouse_down,
+        MouseEnter => "mouseenter" on_mouse_enter,
+        MouseLeave => "mouseleave" on_mouse_leave,
+        MouseMove => "mousemove" on_mouse_move,
+        MouseOut => "mouseout" on_mouse_out,
+        MouseOver => "mouseover" on_mouse_over,
+        MouseUp => "mouseup" on_mouse_up,
+    }
+    WheelEvent WheelEventListener {
+        Wheel => "wheel" on_wheel,
     }
 }

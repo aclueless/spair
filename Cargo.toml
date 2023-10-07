@@ -70,6 +70,7 @@ features = [
     "EventTarget",
     "PopStateEvent",
     "HashChangeEvent",
+    "ClipboardEvent",
     # Scroll into view
     "ScrollBehavior",
     "ScrollLogicalPosition",

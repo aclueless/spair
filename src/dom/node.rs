@@ -76,10 +76,6 @@ impl RefComponentNode {
         }
     }
 
-    pub fn comp_ref(&self) -> &dyn ComponentRef {
-        self.comp_ref.as_ref()
-    }
-
     pub fn replace_comp_ref(&mut self, comp_ref: Box<dyn ComponentRef>) {
         self.comp_ref = comp_ref;
     }
