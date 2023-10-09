@@ -13,24 +13,12 @@ use crate::{
 pub trait HemsForList<'a, C: Component>:
     Sized + ElementUpdaterMut<'a, C> + MakeNodesExtensions<'a>
 {
-    fn list<I, II, R>(
-        mut self,
-        items: II,
-        mode: ListElementCreation,
-        render: R,
-    ) -> NodesExtensions<'a>
+    fn list<I, II, R>(self, items: II, render: R) -> NodesExtensions<'a>
     where
         II: Iterator<Item = I>,
         R: Fn(I, crate::Nodes<C>),
     {
-        let (comp, state, mut r) = self.element_updater_mut().list_updater(mode);
-        let _do_we_have_to_care_about_this_returned_value_ =
-            r.render(comp, state, items, |item: I, nodes: NodesUpdater<C>| {
-                let mut nodes = HtmlNodesUpdater::new(nodes);
-                render(item, crate::Nodes::new(&mut nodes))
-            });
-
-        self.make_nodes_extensions()
+        render_list(self, ListElementCreation::New, items, render)
     }
 
     fn list_clone<I, II, R>(self, items: II, render: R) -> NodesExtensions<'a>
@@ -38,8 +26,30 @@ pub trait HemsForList<'a, C: Component>:
         II: Iterator<Item = I>,
         R: Fn(I, crate::Nodes<C>),
     {
-        self.list(items, ListElementCreation::Clone, render)
+        render_list(self, ListElementCreation::Clone, items, render)
     }
+}
+
+fn render_list<'a, C, T, I, II, R>(
+    mut updater: T,
+    mode: ListElementCreation,
+    items: II,
+    render: R,
+) -> NodesExtensions<'a>
+where
+    II: Iterator<Item = I>,
+    R: Fn(I, crate::Nodes<C>),
+    C: Component,
+    T: ElementUpdaterMut<'a, C> + MakeNodesExtensions<'a> + Sized,
+{
+    let (comp, state, mut r) = updater.element_updater_mut().list_updater(mode);
+    let _do_we_have_to_care_about_this_returned_value_ =
+        r.render(comp, state, items, |item: I, nodes: NodesUpdater<C>| {
+            let mut nodes = HtmlNodesUpdater::new(nodes);
+            render(item, crate::Nodes::new(&mut nodes))
+        });
+
+    updater.make_nodes_extensions()
 }
 
 impl<'a, C: Component> MakeNodesExtensions<'a> for HtmlElementUpdater<'a, C> {
