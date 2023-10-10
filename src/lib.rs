@@ -32,7 +32,6 @@ pub use render::{
     html::predefined_attribute_types::*,
     html::HtmlElementUpdater as Element,
     html::{Nodes, StaticNodes},
-    ListElementCreation,
 };
 
 // TODO selectively export event traits only?

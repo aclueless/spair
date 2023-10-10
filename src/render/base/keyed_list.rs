@@ -792,12 +792,12 @@ mod keyed_list_with_render_tests {
     }
 
     macro_rules! make_keyed_list_test {
-        ($mode:expr) => {
+        ($method_name:ident) => {
             make_a_test_component! {
                 type: Vec<&'static str>;
                 init: Vec::new();
                 render_fn: fn render(&self, element: crate::Element<Self>) {
-                    element.keyed_list(self.0.iter(), $mode, |entry| *entry, render_str);
+                    element.$method_name(self.0.iter(), |entry| *entry, render_str);
                 }
             }
 
@@ -916,11 +916,11 @@ mod keyed_list_with_render_tests {
 
     #[wasm_bindgen_test::wasm_bindgen_test]
     fn keyed_list_clone() {
-        make_keyed_list_test!(crate::ListElementCreation::Clone);
+        make_keyed_list_test!(keyed_list_clone);
     }
 
     #[wasm_bindgen_test::wasm_bindgen_test]
     fn keyed_list_new() {
-        make_keyed_list_test!(crate::ListElementCreation::New);
+        make_keyed_list_test!(keyed_list);
     }
 }

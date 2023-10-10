@@ -221,12 +221,12 @@ mod qr_list_tests {
     use crate::queue_render::vec::QrVec;
 
     macro_rules! make_queue_render_list_test {
-        ($mode:expr) => {
+        ($method_name:ident) => {
             make_a_test_component! {
                 type: QrVec<u32>;
                 init: QrVec::with_values(Vec::new());
                 render_fn: fn render(&self, element: crate::Element<Self>) {
-                    element.qr_list(&self.0, $mode, render_u32);
+                    element.$method_name(&self.0, render_u32);
                 }
             }
 
@@ -334,11 +334,11 @@ mod qr_list_tests {
 
     #[wasm_bindgen_test::wasm_bindgen_test]
     fn qr_list_clone() {
-        make_queue_render_list_test!(crate::ListElementCreation::Clone);
+        make_queue_render_list_test!(qr_list_clone);
     }
 
     #[wasm_bindgen_test::wasm_bindgen_test]
     fn qr_list_new() {
-        make_queue_render_list_test!(crate::ListElementCreation::New);
+        make_queue_render_list_test!(qr_list);
     }
 }
