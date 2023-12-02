@@ -22,7 +22,7 @@ mod queue_render;
 
 pub use application::Application;
 pub use component::{AsChildComp, Checklist, Child, ChildComp, Comp, Component, ShouldRender};
-pub use dom::TagName;
+pub use dom::{ComponentRef, TagName};
 #[cfg(feature = "queue-render")]
 pub use queue_render::{val::QrVal, vec::QrVec};
 pub use render::html::HtmlTag;
