@@ -158,5 +158,6 @@ impl<T: 'static + PartialEq> QrVal<T> {
 
 pub trait QueueRender<T> {
     fn render(&mut self, t: &T);
+    #[allow(dead_code)]
     fn unmounted(&self) -> bool;
 }

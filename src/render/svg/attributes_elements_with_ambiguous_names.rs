@@ -24,9 +24,9 @@ make_trait_for_same_name_attribute_and_element_methods! {
     ambiguous_attributes:
     // The names are also used to make methods for SVG elements
     //  type    name
-        str     clip_path :a:"clip-path" :e:"clipPath"
-        str     mask
-        str     path
+        str     _clip_path :a:"clip-path" :e:"clipPath"
+        str     _mask
+        str     _path
 }
 
 impl<'updater, C: Component> SemsSamsAmbiguous for SvgElementUpdater<'updater, C> {}

@@ -40,7 +40,7 @@ impl<C: Component> ChildComp<C> {
 
         let ws_node = instance.root_element.ws_element().ws_node().clone();
         Some(Box::new(CompRef {
-            comp: comp.into(),
+            _comp: comp.into(),
             ws_node,
         }))
     }

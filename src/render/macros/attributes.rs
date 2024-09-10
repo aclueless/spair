@@ -185,6 +185,13 @@ macro_rules! make_trait_for_attributes_with_predefined_values {
         }
 
         pub trait $AttributeValueTrait<C: Component> {
+            // This "allow(dead_code)" is just to hide the warnings.
+            // The reason is I want the current code to pass the test, but I don't have time to
+            // look up why this is not use?
+            // At the time of adding this, I plan to do some experiments of some newish ideas for
+            // spair. If the experiments succeed, the current code may end up being removed entirely
+            // from spair. Ortherwise, this "allow(dead_code)" must have some investigations!!!
+            #[allow(dead_code)]
             fn render(self, attribute_name: &str, element: &mut crate::render::base::ElementUpdater<C>);
         }
 

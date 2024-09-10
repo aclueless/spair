@@ -335,7 +335,7 @@ impl Nodes {
 
     #[cfg(feature = "queue-render")]
     pub fn add_qr_node(&mut self, qr: QrNode) {
-        self.0.push(Node::QrNode(qr));
+        self.0.push(Node::Qr(qr));
     }
 
     #[cfg(feature = "queue-render")]
@@ -345,7 +345,7 @@ impl Nodes {
             .get_mut(index)
             .expect_throw("dom::nodes::Nodes::get_qr_node get_mut")
         {
-            Node::QrNode(qr) => qr,
+            Node::Qr(qr) => qr,
             _ => panic!("dom::nodes::Nodes::get_qr_node expected Node::QrNode"),
         }
     }

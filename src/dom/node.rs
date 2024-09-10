@@ -20,7 +20,7 @@ pub enum Node {
     RefComponent(RefComponentNode),
     OwnedComponent(OwnedComponent),
     #[cfg(feature = "queue-render")]
-    QrNode(QrNode),
+    Qr(QrNode),
 }
 
 impl std::fmt::Debug for Node {
@@ -35,14 +35,14 @@ impl std::fmt::Debug for Node {
             Self::RefComponent(_) => "Node::RefComponent2",
             Self::OwnedComponent(_) => "Node::OwnedComponent",
             #[cfg(feature = "queue-render")]
-            Self::QrNode(_) => "Node::QrNode",
+            Self::Qr(_) => "Node::QrNode",
         };
         f.write_fmt(format_args!("[{name}]"))
     }
 }
 
 pub struct CompRef<C: Component> {
-    pub comp: ComponentHandle<C>,
+    pub _comp: ComponentHandle<C>,
     pub ws_node: web_sys::Node,
 }
 
@@ -205,7 +205,7 @@ impl Node {
                 }
             }
             #[cfg(feature = "queue-render")]
-            Self::QrNode(qr) => qr.remove_from(parent),
+            Self::Qr(qr) => qr.remove_from(parent),
         }
     }
 
@@ -224,7 +224,7 @@ impl Node {
                 }
             }
             #[cfg(feature = "queue-render")]
-            Self::QrNode(qr) => qr.append_to(parent),
+            Self::Qr(qr) => qr.append_to(parent),
         }
     }
 
@@ -239,7 +239,7 @@ impl Node {
             Self::RefComponent(_) => None,
             Self::OwnedComponent(_) => None,
             #[cfg(feature = "queue-render")]
-            Self::QrNode(qr) => qr.get_first_element(),
+            Self::Qr(qr) => qr.get_first_element(),
         }
     }
 
@@ -254,7 +254,7 @@ impl Node {
             Self::RefComponent(_) => None,
             Self::OwnedComponent(_) => None,
             #[cfg(feature = "queue-render")]
-            Self::QrNode(qr) => qr.get_last_element(),
+            Self::Qr(qr) => qr.get_last_element(),
         }
     }
 
@@ -277,7 +277,7 @@ impl Node {
                 }
             }
             #[cfg(feature = "queue-render")]
-            Self::QrNode(qr) => qr.insert_before_a_sibling(parent, next_sibling),
+            Self::Qr(qr) => qr.insert_before_a_sibling(parent, next_sibling),
         }
     }
 }

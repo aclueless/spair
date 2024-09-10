@@ -21,6 +21,7 @@ nightly-text-render = []
 [workspace]
 members = [
     "examples/*",
+    "crates/*"
 ]
 
 [dev-dependencies]

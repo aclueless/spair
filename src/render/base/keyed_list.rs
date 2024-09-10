@@ -148,7 +148,7 @@ where
 
     pub fn update<I, K>(
         &mut self,
-        entries_state_iter: impl Iterator<Item = I> + DoubleEndedIterator,
+        entries_state_iter: impl DoubleEndedIterator<Item = I>,
     ) -> super::RememberSettingSelectedOption
     where
         G: Fn(&I) -> &K,
@@ -235,9 +235,7 @@ where
 
     fn update_same_key_entries_from_end<I, K>(
         &mut self,
-        entries_state_iter: &mut PeekableDoubleEndedIterator<
-            impl Iterator<Item = I> + DoubleEndedIterator,
-        >,
+        entries_state_iter: &mut PeekableDoubleEndedIterator<impl DoubleEndedIterator<Item = I>>,
     ) -> usize
     where
         G: Fn(&I) -> &K,
@@ -328,9 +326,7 @@ where
 
     fn update_moved_backward_entry<I, K>(
         &mut self,
-        entries_state_iter: &mut PeekableDoubleEndedIterator<
-            impl Iterator<Item = I> + DoubleEndedIterator,
-        >,
+        entries_state_iter: &mut PeekableDoubleEndedIterator<impl DoubleEndedIterator<Item = I>>,
     ) -> usize
     where
         G: Fn(&I) -> &K,

@@ -64,14 +64,16 @@ pub mod prelude {
 
     #[cfg(feature = "queue-render")]
     pub use crate::queue_render::html::HemsForQrList;
+    #[cfg(all(feature = "queue-render", feature = "svg"))]
+    pub use crate::queue_render::svg::SemsForQrList;
 
     #[cfg(feature = "keyed-list")]
     pub use crate::render::html::HemsForKeyedList;
 
     #[cfg(feature = "svg")]
     pub use crate::render::svg::{
-        MethodsForSvgElementContent, SamsForDistinctNames, SamsHandMade, SemsForDistinctNames,
-        SemsForList, SemsForPartialList, SemsHandMade,
+        MethodsForSvgElementContent, SamsForAmbiguousNames, SamsForDistinctNames, SamsHandMade,
+        SemsForDistinctNames, SemsForList, SemsForPartialList, SemsHandMade, SemsSamsAmbiguous,
     };
 
     #[cfg(all(feature = "keyed-list", feature = "svg"))]

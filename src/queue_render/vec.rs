@@ -10,6 +10,7 @@ use super::val::{QrVal, QueueRender};
 
 pub trait ListRender<I: Clone> {
     fn render(&mut self, items: &[I], diffs: Vec<Diff<I>>);
+    #[allow(dead_code)]
     fn unmounted(&self) -> bool;
 }
 

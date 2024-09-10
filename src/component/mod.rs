@@ -362,9 +362,9 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    fn cb<Cl: 'static>(&self, f: impl Fn(&C) -> Cl + 'static) -> crate::callback::CallbackFn<C, ()>
+    fn cb<Cl>(&self, f: impl Fn(&C) -> Cl + 'static) -> crate::callback::CallbackFn<C, ()>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         crate::callback::CallbackFn {
             comp: self.clone(),
@@ -372,12 +372,9 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    fn cb_mut<Cl: 'static>(
-        &self,
-        f: impl Fn(&mut C) -> Cl + 'static,
-    ) -> crate::callback::CallbackFn<C, ()>
+    fn cb_mut<Cl>(&self, f: impl Fn(&mut C) -> Cl + 'static) -> crate::callback::CallbackFn<C, ()>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         crate::callback::CallbackFn {
             comp: self.clone(),
@@ -385,12 +382,12 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    fn cb_dropped_arg<Cl: 'static, A>(
+    fn cb_dropped_arg<Cl, A>(
         &self,
         f: impl Fn(&C) -> Cl + 'static,
     ) -> crate::callback::CallbackFn<C, A>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         crate::callback::CallbackFn {
             comp: self.clone(),
@@ -398,12 +395,12 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    fn cb_dropped_arg_mut<Cl: 'static, A>(
+    fn cb_dropped_arg_mut<Cl, A>(
         &self,
         f: impl Fn(&mut C) -> Cl + 'static,
     ) -> crate::callback::CallbackFn<C, A>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         crate::callback::CallbackFn {
             comp: self.clone(),
@@ -411,12 +408,12 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    fn cb_arg_mut<Cl: 'static, A>(
+    fn cb_arg_mut<Cl, A>(
         &self,
         f: impl Fn(&mut C, A) -> Cl + 'static,
     ) -> crate::callback::CallbackFn<C, A>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         crate::callback::CallbackFn {
             comp: self.clone(),
@@ -424,56 +421,56 @@ impl<C: Component> Comp<C> {
         }
     }
 
-    pub fn callback<Cl: 'static>(&self, f: impl Fn(&C) -> Cl + 'static) -> crate::Callback
+    pub fn callback<Cl>(&self, f: impl Fn(&C) -> Cl + 'static) -> crate::Callback
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         Box::new(self.cb(f))
     }
 
-    pub fn callback_mut<Cl: 'static>(&self, f: impl Fn(&mut C) -> Cl + 'static) -> crate::Callback
+    pub fn callback_mut<Cl>(&self, f: impl Fn(&mut C) -> Cl + 'static) -> crate::Callback
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         Box::new(self.cb_mut(f))
     }
 
-    pub fn callback_arg_mut<Cl: 'static, A: 'static>(
+    pub fn callback_arg_mut<Cl, A: 'static>(
         &self,
         f: impl Fn(&mut C, A) -> Cl + 'static,
     ) -> crate::CallbackArg<A>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         Box::new(self.cb_arg_mut(f))
     }
 
-    pub fn handler<Cl: 'static, A: 'static>(
+    pub fn handler<Cl, A: 'static>(
         &self,
         f: impl Fn(&C) -> Cl + 'static,
     ) -> impl crate::callback::CallbackArg<A>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         self.cb_dropped_arg(f)
     }
 
-    pub fn handler_mut<Cl: 'static, A: 'static>(
+    pub fn handler_mut<Cl, A: 'static>(
         &self,
         f: impl Fn(&mut C) -> Cl + 'static,
     ) -> impl crate::callback::CallbackArg<A>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         self.cb_dropped_arg_mut(f)
     }
 
-    pub fn handler_arg_mut<Cl: 'static, A: 'static>(
+    pub fn handler_arg_mut<Cl, A: 'static>(
         &self,
         f: impl Fn(&mut C, A) -> Cl + 'static,
     ) -> impl crate::callback::CallbackArg<A>
     where
-        Cl: Into<Checklist<C>>,
+        Cl: 'static + Into<Checklist<C>>,
     {
         self.cb_arg_mut(f)
     }

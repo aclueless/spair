@@ -1,9 +1,9 @@
 use wasm_bindgen::JsCast;
 
 pub struct EventTarget(pub(crate) Option<web_sys::EventTarget>);
-pub struct InputElement(pub(crate) web_sys::HtmlInputElement);
-pub struct SelectElement(pub(crate) web_sys::HtmlSelectElement);
-pub struct FormElement(pub(crate) web_sys::HtmlFormElement);
+// pub struct InputElement(pub(crate) web_sys::HtmlInputElement);
+// pub struct SelectElement(pub(crate) web_sys::HtmlSelectElement);
+// pub struct FormElement(pub(crate) web_sys::HtmlFormElement);
 
 duplicate::duplicate! {
     [
