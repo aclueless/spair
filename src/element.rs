@@ -11,6 +11,7 @@ duplicate::duplicate! {
         [HtmlInputElement]  [into_input_element];
         [HtmlSelectElement]  [into_select_element];
         [HtmlFormElement]   [into_form_element];
+        [HtmlTextAreaElement] [into_text_area_element];
     ]
     pub struct TypeName(pub(crate) web_sys::TypeName);
     impl TypeName {
