@@ -65,6 +65,7 @@ impl AChildNode for web_sys::Node {
     }
 }
 
+#[cfg(feature = "queue-render")]
 pub trait MaybeAChildNode {
     fn ws_node(&self) -> Option<&web_sys::Node>;
 

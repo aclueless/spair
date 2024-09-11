@@ -40,14 +40,14 @@ where
     T: Sized + Into<NodesOwned<'a, C>>,
 {
     let mut nodes_updater: NodesOwned<C> = updater.into();
-    let qr_list_render = match nodes_updater.nodes_updater_mut().create_qr_list_render(
-        true,
-        mode,
-        move |entry: I, nodes: NodesUpdater<C>| {
-            let mut nodes = HtmlNodesUpdater::new(nodes);
-            render(entry, Nodes::new(&mut nodes));
-        },
-    ) {
+    let fn_render = move |entry: I, nodes: NodesUpdater<C>| {
+        let mut nodes = HtmlNodesUpdater::new(nodes);
+        render(entry, Nodes::new(&mut nodes));
+    };
+    let qr_list_render = match nodes_updater
+        .nodes_updater_mut()
+        .create_qr_list_render(true, mode, fn_render)
+    {
         None => return,
         Some(render) => render,
     };
