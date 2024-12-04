@@ -1,0 +1,35 @@
+[package]
+name = "spairc"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+log="0.4"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "Window",
+  "Document",
+  "Element",
+  "HtmlTemplateElement",
+  "DocumentFragment",
+  "Event",
+  "MouseEvent",
+  "InputEvent",
+  "FocusEvent",
+  "KeyboardEvent",
+  "WheelEvent",
+  "EventTarget",
+  "PopStateEvent",
+  "HashChangeEvent",
+  "ClipboardEvent",
+  "DomTokenList",
+]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
