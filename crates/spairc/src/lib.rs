@@ -6,9 +6,14 @@ mod elements;
 mod events;
 mod keyed_list;
 
+mod helper;
+
+#[cfg(test)]
+mod test_helper;
+
 pub use wasm_bindgen;
 pub use web_sys;
 
 pub use component::{start_app, CallbackArg, Comp, Component, ComponentRoot, Context};
 pub use elements::{Element, TemplateElement, WsElement};
-pub use keyed_list::{KeyedItemRender, KeyedList};
+pub use keyed_list::{KeyedItemViewState, KeyedList};

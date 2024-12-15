@@ -3,18 +3,12 @@ use std::ops::{Deref, DerefMut};
 use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
 use web_sys::HtmlTemplateElement;
 
-use crate::{events::EventListener, CallbackArg};
-
-thread_local!(
-    static WINDOW: web_sys::Window = web_sys::window().expect_throw("No window found");
-    static DOCUMENT: web_sys::Document =
-        WINDOW.with(|window| window.document().expect_throw("No document found"));
-);
+use crate::{events::EventListener, helper, CallbackArg};
 
 pub struct TemplateElement(HtmlTemplateElement);
 impl TemplateElement {
     pub fn new(html: &str) -> Self {
-        let template = DOCUMENT
+        let template = crate::helper::DOCUMENT
             .with(|document| document.create_element("template"))
             .expect_throw("Error on creating a template node");
         let template: HtmlTemplateElement = template.unchecked_into();
@@ -75,7 +69,7 @@ impl WsElement {
     }
 
     pub fn replace_at_element_id(&self, element_id: &str) {
-        let Some(element) = DOCUMENT.with(|document| document.get_element_by_id(element_id)) else {
+        let Some(element) = helper::get_element_by_id(element_id) else {
             log::error!("Unable to find element by id: {element_id}");
             return;
         };
@@ -85,14 +79,9 @@ impl WsElement {
     }
 
     pub fn append_to_body(&self) {
-        DOCUMENT.with(|d| match d.body() {
-            Some(b) => {
-                if let Err(e) = b.append_with_node_1(&self.0) {
-                    log::error!("Error on appending to body: {e:?}");
-                }
-            }
-            None => log::error!("Error on appending to body: No body"),
-        })
+        if let Err(e) = crate::helper::get_body().append_with_node_1(&self.0) {
+            log::error!("Error on appending to body: {e:?}");
+        };
     }
 
     fn add_event_listener(&self, name: &str, listener: &dyn EventListener) {
@@ -219,7 +208,7 @@ pub enum Attribute {
 }
 
 impl Element {
-    pub fn new(html: &str, capacity: usize) -> Self {
+    pub fn with_html(html: &str, capacity: usize) -> Self {
         let template = TemplateElement::new(html);
         Self {
             element: WsElement(

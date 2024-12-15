@@ -1,5 +1,6 @@
 #![cfg_attr(feature = "nightly-text-render", feature(fn_traits))]
 #![cfg_attr(feature = "nightly-text-render", feature(unboxed_closures))]
+#![allow(clippy::needless_lifetimes)]
 
 #[cfg(test)]
 wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);

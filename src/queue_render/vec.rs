@@ -17,7 +17,6 @@ pub trait ListRender<I: Clone> {
 /// Currently, QrVec rendering is not flexible. For example,
 /// it is impossible for you to make use of QrVec as a list of items
 /// and render the items into multi-rows of <div>s.
-
 pub struct QrVec<I: Clone>(Rc<RefCell<QrVecContent<I>>>);
 
 impl<I: Clone> Clone for QrVec<I> {

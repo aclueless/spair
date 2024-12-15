@@ -3,7 +3,7 @@ use spairc::{Context, Element, TemplateElement};
 use crate::AppState;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RowData {
+pub struct RowItem {
     pub id: usize,
     pub label: String,
 }
@@ -16,8 +16,8 @@ pub struct RowRender {
     _delete_element: Element,
 }
 
-impl spairc::KeyedItemRender<AppState> for RowRender {
-    type Item = RowData;
+impl spairc::KeyedItemViewState<AppState> for RowRender {
+    type Item = RowItem;
     type Key = usize;
 
     fn template_string() -> &'static str {
@@ -29,7 +29,7 @@ impl spairc::KeyedItemRender<AppState> for RowRender {
         &self.key
     }
 
-    fn key_from_state(state: &Self::Item) -> &Self::Key {
+    fn key_from_item_state(state: &Self::Item) -> &Self::Key {
         &state.id
     }
 
@@ -37,7 +37,7 @@ impl spairc::KeyedItemRender<AppState> for RowRender {
         &self.root_element
     }
 
-    fn create(data: &RowData, template: &TemplateElement, context: &Context<AppState>) -> Self {
+    fn create(data: &RowItem, template: &TemplateElement, context: &Context<AppState>) -> Self {
         let element = template.create_element(0);
         let id_element = element.first_child();
         let label_td = id_element.next_sibling();
@@ -66,7 +66,7 @@ impl spairc::KeyedItemRender<AppState> for RowRender {
         }
     }
 
-    fn update(&mut self, data: &RowData, context: &Context<AppState>) {
+    fn update(&mut self, data: &RowItem, context: &Context<AppState>) {
         self.label_element
             .update_text_content_with_str(&mut self.label_string, &data.label);
         self.root_element

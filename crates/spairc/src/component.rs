@@ -42,6 +42,11 @@ use crate::elements::WsElement;
 // }
 
 pub fn start_app<C: Component>(state: C) {
+    let rc_comp = create_component(state);
+    std::mem::forget(rc_comp);
+}
+
+pub fn create_component<C: Component>(state: C) -> RcComp<C> {
     let comp_data = CompData(None);
     let rc_comp = Rc::new(RefCell::new(comp_data));
     let comp = Comp(Rc::downgrade(&rc_comp));
@@ -58,8 +63,7 @@ pub fn start_app<C: Component>(state: C) {
         }
         _ => log::error!("Internal error: unable to mutable borrow rc_comp to set store its data"),
     }
-
-    std::mem::forget(rc_comp);
+    RcComp(rc_comp)
 }
 
 thread_local! {
@@ -94,10 +98,10 @@ struct CompData<C: Component>(Option<CompDataInner<C>>);
 struct CompDataInner<C: Component> {
     _root: ComponentRoot,
     state: C,
-    updaters: C::Updater,
+    updaters: C::ViewState,
 }
 
-struct _RcComp<C: Component>(Rc<RefCell<CompData<C>>>);
+pub struct RcComp<C: Component>(Rc<RefCell<CompData<C>>>);
 pub struct Comp<C: Component>(Weak<RefCell<CompData<C>>>);
 
 pub struct Context<'a, C: Component> {
@@ -108,6 +112,13 @@ pub struct Context<'a, C: Component> {
 impl<C: Component> Clone for Comp<C> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
+    }
+}
+
+#[allow(dead_code)]
+impl<C: Component> RcComp<C> {
+    pub fn comp(&self) -> Comp<C> {
+        Comp(Rc::downgrade(&self.0))
     }
 }
 
@@ -168,9 +179,9 @@ where
 }
 
 pub trait Component: Sized {
-    type Updater;
-    fn init(&self, comp: &Comp<Self>) -> (ComponentRoot, Self::Updater);
-    fn render(&self, updater: &mut Self::Updater, comp: &Comp<Self>);
+    type ViewState;
+    fn init(&self, comp: &Comp<Self>) -> (ComponentRoot, Self::ViewState);
+    fn render(&self, updater: &mut Self::ViewState, comp: &Comp<Self>);
 }
 
 pub enum ComponentRoot {

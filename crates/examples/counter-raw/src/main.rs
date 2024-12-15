@@ -14,7 +14,7 @@ struct UpdownButtonGen {
 
 impl UpdownButtonGen {
     fn create(handler: CallbackArg<MouseEvent>, text: &str) -> Self {
-        let mut element = Element::new("<button>?</button>", 1);
+        let mut element = Element::with_html("<button>?</button>", 1);
         element.click(0, handler);
         let node = element.ws_element().first_child();
         node.set_text_content(text);
@@ -70,14 +70,14 @@ struct ComponentUpdater {
 }
 
 impl spairc::Component for AppState {
-    type Updater = ComponentUpdater;
+    type ViewState = ComponentUpdater;
 
-    fn init(&self, comp: &spairc::Comp<Self>) -> (spairc::ComponentRoot, Self::Updater) {
+    fn init(&self, comp: &spairc::Comp<Self>) -> (spairc::ComponentRoot, Self::ViewState) {
         let comp = Comp(comp.clone());
         let db = UpdownButtonGen::create(comp.decrease(), "-");
         let ub = UpdownButtonGen::create(comp.increase(), "+");
 
-        let element = Element::new("<div id='root'>???</div>", 0);
+        let element = Element::with_html("<div id='root'>???</div>", 0);
         let current_value = element.ws_element().first_child();
 
         element.insert_new_node_before_a_node(&db.element, Some(&current_value));
@@ -99,7 +99,7 @@ impl spairc::Component for AppState {
         )
     }
 
-    fn render(&self, updater: &mut Self::Updater, _comp: &spairc::Comp<Self>) {
+    fn render(&self, updater: &mut Self::ViewState, _comp: &spairc::Comp<Self>) {
         updater
             .current_value
             .update_text_content_with_string(&mut updater.value_string, self.value.to_string())
