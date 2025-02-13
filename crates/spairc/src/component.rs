@@ -41,16 +41,18 @@ use crate::elements::WsElement;
 //     std::mem::forget(rc_comp);
 // }
 
-pub fn start_app<C: Component>(state: C) {
-    let rc_comp = create_component(state);
+pub fn start_app<C: Component>(new_state: impl FnOnce(&Comp<C>) -> C) {
+    let rc_comp = create_component(new_state);
     std::mem::forget(rc_comp);
 }
 
-pub fn create_component<C: Component>(state: C) -> RcComp<C> {
+pub fn create_component<C: Component>(new_state: impl FnOnce(&Comp<C>) -> C) -> RcComp<C> {
     let comp_data = CompData(None);
     let rc_comp = Rc::new(RefCell::new(comp_data));
     let comp = Comp(Rc::downgrade(&rc_comp));
-    let (root, updaters) = state.init(&comp);
+    let state = new_state(&comp);
+    let (root, mut view_state) = C::create_view(&state, &comp);
+    C::update_view(&mut view_state, &state, &comp);
 
     match rc_comp.try_borrow_mut() {
         Ok(mut rc_comp) => {
@@ -58,7 +60,7 @@ pub fn create_component<C: Component>(state: C) -> RcComp<C> {
             rc_comp.0 = Some(CompDataInner {
                 _root: root,
                 state,
-                updaters,
+                updaters: view_state,
             });
         }
         _ => log::error!("Internal error: unable to mutable borrow rc_comp to set store its data"),
@@ -96,7 +98,7 @@ fn execute_update_queue() {
 struct CompData<C: Component>(Option<CompDataInner<C>>);
 
 struct CompDataInner<C: Component> {
-    _root: ComponentRoot,
+    _root: WsElement,
     state: C,
     updaters: C::ViewState,
 }
@@ -112,6 +114,15 @@ pub struct Context<'a, C: Component> {
 impl<C: Component> Clone for Comp<C> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
+    }
+}
+
+impl<C: Component> Clone for Context<'_, C> {
+    fn clone(&self) -> Self {
+        Self {
+            comp: self.comp,
+            state: self.state,
+        }
     }
 }
 
@@ -180,19 +191,18 @@ where
 
 pub trait Component: Sized {
     type ViewState;
-    fn init(&self, comp: &Comp<Self>) -> (ComponentRoot, Self::ViewState);
-    fn render(&self, updater: &mut Self::ViewState, comp: &Comp<Self>);
-}
-
-pub enum ComponentRoot {
-    Body,
-    Element(WsElement),
+    fn create_view(cstate: &Self, ccomp: &Comp<Self>) -> (WsElement, Self::ViewState);
+    fn update_view(view_state: &mut Self::ViewState, ustate: &Self, ucomp: &Comp<Self>);
 }
 
 impl<C: Component> Comp<C>
 where
     C: 'static + Component,
 {
+    pub fn context<'c>(&'c self, state: &'c C) -> Context<'c, C> {
+        Context { comp: self, state }
+    }
+
     pub fn callback<S>(&self, callback_fn: impl Fn(&mut C) -> S + 'static) -> CallbackFnArg<C, ()>
     where
         S: Into<ShouldRender>,
@@ -248,7 +258,7 @@ where
         };
         let should_render = (cb_fn.callback)(&mut comp_data.state, arg);
         if let ShouldRender::Yes = should_render {
-            comp_data.state.render(&mut comp_data.updaters, self);
+            C::update_view(&mut comp_data.updaters, &comp_data.state, self);
         }
     }
 }

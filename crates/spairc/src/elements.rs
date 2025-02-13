@@ -34,6 +34,188 @@ impl TemplateElement {
     }
 }
 
+pub struct WsNodeRef<'a>(&'a web_sys::Node);
+impl<'a> WsNodeRef<'a> {
+    fn first_node(&self) -> web_sys::Node {
+        self.0.first_child().expect_throw("No first child node")
+    }
+
+    fn next_sibling_node(&self) -> web_sys::Node {
+        self.0.next_sibling().expect_throw("No next sibling")
+    }
+
+    pub fn first_ws_node(&self) -> WsNode {
+        self.first_node().into()
+    }
+
+    pub fn next_sibling_ws_node(&self) -> WsNode {
+        self.next_sibling_node().into()
+    }
+
+    pub fn first_ws_text(&self) -> WsText {
+        self.first_node().into()
+    }
+
+    pub fn next_sibling_ws_text(&self) -> WsText {
+        self.next_sibling_node().into()
+    }
+
+    pub fn first_text(&self) -> Text {
+        self.first_node().into()
+    }
+
+    pub fn next_sibling_text(&self) -> Text {
+        self.next_sibling_node().into()
+    }
+
+    pub fn first_ws_element(&self) -> WsElement {
+        self.first_node().into()
+    }
+
+    pub fn next_sibling_ws_element(&self) -> WsElement {
+        self.next_sibling_node().into()
+    }
+}
+
+pub struct WsNode(web_sys::Node);
+
+impl From<web_sys::Node> for WsNode {
+    fn from(value: web_sys::Node) -> Self {
+        Self(value)
+    }
+}
+
+impl Deref for WsNode {
+    type Target = web_sys::Node;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl WsNode {
+    pub fn ws_node_ref(&self) -> WsNodeRef {
+        WsNodeRef(self.0.as_ref())
+    }
+}
+
+pub struct WsText(web_sys::Text);
+
+impl From<web_sys::Node> for WsText {
+    fn from(value: web_sys::Node) -> Self {
+        Self(value.unchecked_into())
+    }
+}
+
+impl WsText {
+    pub fn split_text(&self, off_set: u32) {
+        if let Err(e) = self.0.split_text(off_set) {
+            log::error!("{e:?}");
+        }
+    }
+
+    pub fn clear_text_content(&self) {
+        self.0.set_text_content(None);
+    }
+
+    pub fn set_text_content(&self, text: &str) {
+        self.0.set_text_content(Some(text));
+    }
+
+    pub fn ws_node_ref(&self) -> WsNodeRef {
+        WsNodeRef(self.0.as_ref())
+    }
+}
+
+pub struct Text {
+    ws_text: web_sys::Text,
+    text: String,
+}
+
+impl From<web_sys::Node> for Text {
+    fn from(value: web_sys::Node) -> Self {
+        Self {
+            ws_text: value.unchecked_into(),
+            text: String::new(),
+        }
+    }
+}
+
+impl Deref for Text {
+    type Target = web_sys::Text;
+
+    fn deref(&self) -> &Self::Target {
+        &self.ws_text
+    }
+}
+
+impl Text {
+    pub fn split_text(&self, off_set: u32) {
+        if let Err(e) = self.ws_text.split_text(off_set) {
+            log::error!("{e:?}");
+        }
+    }
+
+    fn update_with_str(&mut self, text: &str) {
+        if self.text != text {
+            self.ws_text.set_text_content(Some(text));
+            self.text = text.to_string();
+        }
+    }
+
+    fn update_with_string(&mut self, text: String) {
+        if self.text != text {
+            self.ws_text.set_text_content(Some(&text));
+            self.text = text;
+        }
+    }
+
+    pub fn update<T: RenderAsText>(&mut self, value: T) {
+        value.render(self);
+    }
+
+    pub fn ws_node_ref(&self) -> WsNodeRef {
+        WsNodeRef(self.ws_text.as_ref())
+    }
+}
+
+pub trait RenderAsText {
+    fn render(self, text: &mut Text);
+}
+
+impl RenderAsText for &str {
+    fn render(self, text: &mut Text) {
+        text.update_with_str(self);
+    }
+}
+
+impl RenderAsText for &String {
+    fn render(self, text: &mut Text) {
+        text.update_with_str(self);
+    }
+}
+
+impl RenderAsText for String {
+    fn render(self, text: &mut Text) {
+        text.update_with_string(self);
+    }
+}
+
+macro_rules! impl_render_as_text {
+    ($($type_name:ident)+) => {
+        $(
+            impl RenderAsText for $type_name {
+                fn render(self, text: &mut Text) {
+                    text.update_with_string(self.to_string());
+                }
+            }
+
+        )+
+    };
+}
+
+impl_render_as_text!(i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 bool char);
+
 #[derive(Clone)]
 pub struct WsElement(web_sys::Element);
 
@@ -45,27 +227,19 @@ impl Deref for WsElement {
     }
 }
 
+impl From<web_sys::Node> for WsElement {
+    fn from(value: web_sys::Node) -> Self {
+        Self(value.unchecked_into())
+    }
+}
+
 impl WsElement {
+    pub fn ws_element(&self) -> &Self {
+        self
+    }
+
     pub fn clear_text_content(&self) {
         self.0.set_text_content(None);
-    }
-
-    pub fn set_text_content(&self, text: &str) {
-        self.0.set_text_content(Some(text));
-    }
-
-    pub fn update_text_content_with_str(&mut self, old_value: &mut String, new_value: &str) {
-        if old_value != new_value {
-            self.0.set_text_content(Some(new_value));
-            *old_value = new_value.to_string();
-        }
-    }
-
-    pub fn update_text_content_with_string(&mut self, old_value: &mut String, new_value: String) {
-        if *old_value != new_value {
-            self.0.set_text_content(Some(&new_value));
-            *old_value = new_value;
-        }
     }
 
     pub fn replace_at_element_id(&self, element_id: &str) {
@@ -78,10 +252,12 @@ impl WsElement {
         }
     }
 
-    pub fn append_to_body(&self) {
-        if let Err(e) = crate::helper::get_body().append_with_node_1(&self.0) {
+    pub fn append_to_body(&self) -> WsElement {
+        let body = crate::helper::get_body();
+        if let Err(e) = body.append_with_node_1(&self.0) {
             log::error!("Error on appending to body: {e:?}");
         };
+        body.unchecked_into::<web_sys::Node>().into()
     }
 
     fn add_event_listener(&self, name: &str, listener: &dyn EventListener) {
@@ -121,26 +297,16 @@ impl WsElement {
         }
     }
 
-    pub fn first_child(&self) -> Self {
-        self.0
-            .first_child()
-            .expect_throw("No first child node")
-            .into()
-    }
-
-    pub fn next_sibling(&self) -> Self {
-        self.0.next_sibling().expect_throw("No next sibling").into()
+    pub fn ws_node_ref(&self) -> WsNodeRef {
+        WsNodeRef(self.0.as_ref())
     }
 
     pub fn insert_new_node_before_a_node(
         &self,
-        new_node: &WsElement,
-        next_sibling: Option<&WsElement>,
+        new_node: &web_sys::Node,
+        next_sibling: Option<&web_sys::Node>,
     ) {
-        if let Err(e) = self
-            .0
-            .insert_before(new_node, next_sibling.map(|v| v.0.unchecked_ref()))
-        {
+        if let Err(e) = self.0.insert_before(new_node, next_sibling) {
             log::error!("Error on inserting a new node into the child list: {e:?}");
         };
     }
@@ -168,16 +334,10 @@ impl WsElement {
         }
     }
 
-    pub(crate) fn remove_child(&self, child: &WsElement) {
+    pub(crate) fn remove_child(&self, child: &web_sys::Node) {
         if let Err(e) = self.0.remove_child(child) {
             log::error!("Error on removing child node: {e:?}");
         }
-    }
-}
-
-impl From<web_sys::Node> for WsElement {
-    fn from(value: web_sys::Node) -> Self {
-        Self(value.unchecked_into())
     }
 }
 
@@ -200,7 +360,7 @@ impl DerefMut for Element {
     }
 }
 
-pub enum Attribute {
+enum Attribute {
     Bool(bool),
     I32(i32),
     Str(String),

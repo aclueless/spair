@@ -3,10 +3,10 @@ use web_sys::Node;
 
 use crate::{
     component::{create_component, RcComp},
-    helper, CallbackArg, ComponentRoot, Context, Element,
+    helper, CallbackArg, Comp, Context, Element, WsElement,
 };
 
-pub trait TestDataInterface: Sized {
+pub trait TestDataInterface: Sized + 'static {
     type ViewState;
     fn init(&self, root: &Element, context: Context<TestComp<Self>>) -> Self::ViewState;
     fn update(&self, updater: &mut Self::ViewState, context: Context<TestComp<Self>>);
@@ -20,16 +20,16 @@ pub struct CompUpdater<T: TestDataInterface> {
     test_updater: T::ViewState,
 }
 
-impl<T: TestDataInterface> crate::Component for TestComp<T> {
+impl<T: 'static + TestDataInterface> crate::Component for TestComp<T> {
     type ViewState = CompUpdater<T>;
 
-    fn init(&self, comp: &crate::Comp<Self>) -> (crate::ComponentRoot, Self::ViewState) {
-        let context = crate::Context { comp, state: self };
+    fn create_view(cstate: &Self, ccomp: &Comp<Self>) -> (WsElement, Self::ViewState) {
+        let context = ccomp.context(cstate);
         let element = Element::with_html("<div id='spair_test'></div>", 0);
-        let test_updater = self.data.init(&element, context);
-        element.append_to_body();
+        let test_updater = cstate.data.init(&element, context);
+        let body = element.append_to_body();
         (
-            ComponentRoot::Body,
+            body,
             CompUpdater {
                 _root: element,
                 test_updater,
@@ -37,9 +37,9 @@ impl<T: TestDataInterface> crate::Component for TestComp<T> {
         )
     }
 
-    fn render(&self, updater: &mut Self::ViewState, comp: &crate::Comp<Self>) {
-        let context = crate::Context { comp, state: self };
-        self.data.update(&mut updater.test_updater, context);
+    fn update_view(updater: &mut Self::ViewState, ustate: &Self, ucomp: &crate::Comp<Self>) {
+        let context = ucomp.context(ustate);
+        ustate.data.update(&mut updater.test_updater, context);
     }
 }
 
@@ -49,14 +49,14 @@ impl<T> TestComp<T> {
     }
 }
 
-pub struct Test<T: TestDataInterface> {
+pub struct Test<T: 'static + TestDataInterface> {
     comp: RcComp<TestComp<T>>,
     callback: CallbackArg<T>,
 }
 
 impl<T: 'static + TestDataInterface> Test<T> {
     pub fn set_up(data: T) -> Test<T> {
-        let comp = create_component(TestComp { data });
+        let comp = create_component(|_| TestComp { data });
         let callback = comp.comp().callback_arg(TestComp::update);
         Self { comp, callback }
     }

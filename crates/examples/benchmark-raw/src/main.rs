@@ -1,6 +1,7 @@
 use header::HeaderViewState;
 use row_item::RowItem;
-use spairc::{Component, Context, Element, KeyedList};
+use spairc::prelude::*;
+use spairc::{Component, Element, KeyedList};
 
 mod header;
 mod row_item;
@@ -20,32 +21,33 @@ struct AppViewState {
 impl Component for AppState {
     type ViewState = AppViewState;
 
-    fn init(&self, comp: &spairc::Comp<Self>) -> (spairc::ComponentRoot, Self::ViewState) {
+    fn create_view(cstate: &Self, ccomp: &Comp<Self>) -> (spairc::WsElement, Self::ViewState) {
         const HTML: &str = "<div id='main'><div class='container'><table class='table table-hover table-striped test-data'><tbody id='tbody'></tbody></table><span class='preloadicon glyphicon glyphicon-remove' aria-hidden='true'></span></div></div>";
-        let context = Context { comp, state: self };
-        //
         let _root_element = Element::with_html(HTML, 0);
-        let container = _root_element.first_child();
-        let table_element = container.first_child();
+        let container = _root_element.ws_node_ref().first_ws_element();
+        let table_element = container.ws_node_ref().first_ws_element();
+        log::info!("before header");
+        let context = ccomp.context(cstate);
         let _header = HeaderViewState::create(&context);
         container.insert_new_node_before_a_node(&_header.root_element, Some(&table_element));
-        let tbody = table_element.first_child();
+        let tbody = table_element.ws_node_ref().first_ws_element();
+        log::info!("before list");
         let mut keyed_list = KeyedList::new(tbody);
-        keyed_list.update(self.rows.iter(), Context { comp, state: self });
+        keyed_list.update(cstate.rows.iter(), context);
         _root_element.append_to_body();
-        let updater = AppViewState {
+        let view_state = AppViewState {
             _root_element,
             _header,
             keyed_list,
         };
-        (spairc::ComponentRoot::Body, updater)
+        (view_state._root_element.clone(), view_state)
     }
 
-    fn render(&self, updater: &mut Self::ViewState, comp: &spairc::Comp<Self>) {
+    fn update_view(view_state: &mut Self::ViewState, ustate: &Self, ucomp: &Comp<Self>) {
         log::info!("running update");
-        updater
+        view_state
             .keyed_list
-            .update(self.rows.iter(), Context { comp, state: self });
+            .update(ustate.rows.iter(), ucomp.context(ustate));
     }
 }
 
@@ -150,7 +152,7 @@ static NOUNS: &[&str] = &[
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    spairc::start_app(AppState {
+    spairc::start_app(|_| AppState {
         next_id: 1,
         rows: Vec::new(),
         selected_id: None,

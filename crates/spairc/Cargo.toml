@@ -11,6 +11,8 @@ js-sys = "0.3"
 log="0.4"
 rustc-hash = "2"
 
+spair-macros = { path = "../spair-macros" }
+
 [dependencies.web-sys]
 version = "0.3"
 features = [
@@ -30,6 +32,7 @@ features = [
   "HashChangeEvent",
   "ClipboardEvent",
   "DomTokenList",
+  "Text",
 ]
 
 [dev-dependencies]

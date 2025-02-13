@@ -184,7 +184,10 @@ where
     ) {
         let mut old_item = old_item.unwrap_throw().1.take().unwrap_throw();
         if relocate_item {
-            parent_element.insert_new_node_before_a_node(old_item.root_element(), next_sibling);
+            parent_element.insert_new_node_before_a_node(
+                old_item.root_element(),
+                next_sibling.map(|v| &***v),
+            );
         }
         old_item.update(item_state, context);
         if let Some(new_item) = new_item {
@@ -348,8 +351,10 @@ where
 
             if !lis {
                 let next_sibling = self.end_flag_for_the_next_rendered_item_bottom_up.as_ref();
-                self.parent_element
-                    .insert_new_node_before_a_node(view_state.root_element(), next_sibling);
+                self.parent_element.insert_new_node_before_a_node(
+                    view_state.root_element(),
+                    next_sibling.map(|v| &***v),
+                );
             }
 
             self.end_flag_for_the_next_rendered_item_bottom_up =
@@ -395,7 +400,7 @@ where
 
         let next_sibling = self.end_flag_for_the_next_rendered_item_bottom_up.as_ref();
         self.parent_element
-            .insert_new_node_before_a_node(view_state.root_element(), next_sibling);
+            .insert_new_node_before_a_node(view_state.root_element(), next_sibling.map(|v| &***v));
 
         view_state
     }
@@ -676,6 +681,7 @@ pub mod keyed_list_tests {
     use web_sys::Node;
 
     use crate::{
+        prelude::Text,
         test_helper::{self, TestComp, TestDataInterface},
         Element,
     };
@@ -692,6 +698,7 @@ pub mod keyed_list_tests {
     struct TestItemViewState {
         data: &'static str,
         element: Element,
+        text: Text,
     }
 
     impl KeyedItemViewState<TestState> for TestItemViewState {
@@ -700,7 +707,7 @@ pub mod keyed_list_tests {
         type Key = &'static str;
 
         fn template_string() -> &'static str {
-            "<span></span>"
+            "<span>?</span>"
         }
 
         fn key(&self) -> &Self::Key {
@@ -717,15 +724,16 @@ pub mod keyed_list_tests {
             _context: &crate::Context<TestState>,
         ) -> Self {
             let element = template.create_element(0);
-            element.set_text_content(item);
+            let text = element.ws_node_ref().first_text();
             TestItemViewState {
                 data: item,
                 element,
+                text,
             }
         }
 
         fn update(&mut self, item: &Self::Item, _context: &crate::Context<TestState>) {
-            self.element.set_text_content(item);
+            self.text.update(*item);
         }
 
         fn root_element(&self) -> &crate::WsElement {

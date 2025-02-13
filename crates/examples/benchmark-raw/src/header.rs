@@ -9,14 +9,19 @@ pub struct ButtonViewState {
 
 impl ButtonViewState {
     pub fn create(id: &str, text: &str, callback: CallbackArg<MouseEvent>) -> Self {
-        const HTML:&str = "<div class='col-sm-6 smallpad'><button type='button' class='btn btn-primary btn-block'></button></div>";
+        const HTML:&str = "<div class='col-sm-6 smallpad'><button type='button' class='btn btn-primary btn-block'>?</button></div>";
         let root_element = Element::with_html(HTML, 0);
-        let mut button_element = root_element.first_child().create_element_with_capacity(1);
+        let mut button_element = root_element
+            .ws_node_ref()
+            .first_ws_element()
+            .create_element_with_capacity(1);
         // let mut button_element = button_element.first_child().create_element_with_capacity(1);
         button_element.set_id(id);
-        button_element.set_text_content(text);
         button_element.click(0, callback);
+        let text_node = button_element.ws_node_ref().first_ws_text();
+        text_node.set_text_content(text);
 
+        log::info!("end button view state");
         ButtonViewState {
             root_element,
             _button_element: button_element,
@@ -70,10 +75,14 @@ impl HeaderViewState {
             context.comp.callback_arg(|state, _| state.swap()),
         );
         let buttons = root_element
-            .first_child()
-            .first_child()
-            .next_sibling()
-            .first_child();
+            .ws_node_ref()
+            .first_ws_element()
+            .ws_node_ref()
+            .first_ws_element()
+            .ws_node_ref()
+            .next_sibling_ws_element()
+            .ws_node_ref()
+            .first_ws_element();
         buttons.insert_new_node_before_a_node(&run.root_element, None);
         buttons.insert_new_node_before_a_node(&runlots.root_element, None);
         buttons.insert_new_node_before_a_node(&add.root_element, None);
