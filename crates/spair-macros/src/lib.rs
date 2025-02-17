@@ -8,6 +8,7 @@ use syn::{parse_macro_input, Ident, ItemImpl};
 
 mod component;
 mod element;
+mod keyed_item_view;
 mod view;
 
 #[proc_macro_attribute]
@@ -30,6 +31,20 @@ pub fn component(args: TokenStream, input: TokenStream) -> TokenStream {
 
     let output = match view::View::with_item_impl(item_impl).map(component::Component::from_view) {
         Ok(component) => component.output(),
+        Err(error) => error.to_compile_error(),
+    };
+    if args.is_empty().not() {
+        panic!("{output}");
+    }
+    output.into()
+}
+
+#[proc_macro_attribute]
+pub fn keyed_item_view(args: TokenStream, input: TokenStream) -> TokenStream {
+    let item_impl: ItemImpl = parse_macro_input!(input);
+
+    let output = match keyed_item_view::KeyedItemView::with_item_impl(item_impl) {
+        Ok(keyed_item_view) => keyed_item_view.output(),
         Err(error) => error.to_compile_error(),
     };
     if args.is_empty().not() {

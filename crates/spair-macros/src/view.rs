@@ -10,7 +10,7 @@ use crate::element::{Element, HtmlElement};
 use crate::MultiErrors;
 
 pub(crate) struct View {
-    pub(crate) view_state_name: Ident,
+    pub(crate) view_state_type_name: Ident,
     pub(crate) item_impl: ItemImpl,
     pub(crate) element: HtmlElement,
 }
@@ -47,7 +47,7 @@ impl View {
         };
 
         let element = collect_view_element(view.block)?;
-        element.check_html()?;
+        element.validate_html()?;
 
         let view_state_name = match &*item_impl.self_ty {
             Type::Path(type_path) if type_path.path.get_ident().is_some() => {
@@ -62,7 +62,7 @@ impl View {
         };
 
         let mut view = View {
-            view_state_name,
+            view_state_type_name: view_state_name,
             item_impl,
             element,
         };
@@ -344,17 +344,17 @@ fn validate_view_fn(
     is_the_view_fn: bool,
     errors: &mut MultiErrors,
 ) {
-    let pub_fn_expected_name_message = format!("Expected `pub fn {expected_name}(...) `");
+    let message = format!("Expected `fn {expected_name}(...) `");
     let Some(impl_item) = impl_item else {
-        errors.add(brace.span.close(), &pub_fn_expected_name_message);
+        errors.add(brace.span.close(), &message);
         return;
     };
     let ImplItem::Fn(item_fn) = impl_item else {
-        errors.add(impl_item.span(), &pub_fn_expected_name_message);
+        errors.add(impl_item.span(), &message);
         return;
     };
     if item_fn.sig.ident != expected_name {
-        errors.add(item_fn.sig.ident.span(), &pub_fn_expected_name_message);
+        errors.add(item_fn.sig.ident.span(), &message);
         return;
     }
     if matches!(&item_fn.vis, Visibility::Inherited).not() {
@@ -431,7 +431,8 @@ fn validate_view_fn(
 
 impl View {
     fn generate_impl_view_state_fns(&self) -> TokenStream {
-        let generated_create_view_fn = self.generate_impl_create_view_fn(&self.view_state_name);
+        let generated_create_view_fn =
+            self.generate_impl_create_view_fn(&self.view_state_type_name);
         let generated_update_view_fn = self.generate_impl_update_view_fn();
 
         let impl_token = &self.item_impl.impl_token;
@@ -492,7 +493,7 @@ impl View {
 
 impl ToTokens for View {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let struct_name = &self.view_state_name;
+        let struct_name = &self.view_state_type_name;
         let struct_fields = self.element.generate_view_state_struct_fields();
         let view_state_struct = quote! {pub struct #struct_name{#struct_fields}};
         let impl_view_state = self.generate_impl_view_state_fns();

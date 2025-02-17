@@ -15,7 +15,7 @@ struct AppState {
 struct AppViewState {
     _root_element: Element,
     _header: HeaderViewState,
-    keyed_list: KeyedList<AppState, row_item::RowRender>,
+    keyed_list: KeyedList<AppState, row_item::RowItem>,
 }
 
 impl Component for AppState {

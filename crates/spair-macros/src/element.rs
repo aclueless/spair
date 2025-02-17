@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{punctuated::Punctuated, spanned::Spanned, token::Comma, Expr, ExprCall, Ident, Result};
@@ -431,7 +433,7 @@ impl HtmlElement {
         self.meta.spair_element_capacity = number_of_attribute_need_to_store;
     }
 
-    pub fn check_html(&self) -> Result<()> {
+    pub fn validate_html(&self) -> Result<()> {
         let mut errors = MultiErrors::default();
         self.check_html_multi_errors(&mut errors);
         errors.report_error()
@@ -700,6 +702,24 @@ impl HtmlElement {
         }
     }
 
+    pub fn generate_code_for_create_view_fn_of_a_keyed_item(
+        &self,
+        view_state_struct_name: &Ident,
+    ) -> TokenStream {
+        let root_element = &self.meta.spair_ident;
+        let capacity = self.meta.spair_element_capacity;
+        let attribute_setting = self.generate_attribute_code_for_create_view_fn();
+        let children = self.generate_children_code_for_create_view_fn();
+        let construct_view_state_instance =
+            self.generate_view_state_instance(view_state_struct_name);
+        quote! {
+            let #root_element = _keyed_view_state_template.create_element(#capacity);
+            #attribute_setting
+            #children
+            #construct_view_state_instance
+        }
+    }
+
     fn generate_code_for_create_view_fn(&self, html_string: &str) -> TokenStream {
         let root_element = &self.meta.spair_ident;
         let capacity = self.meta.spair_element_capacity;
@@ -718,7 +738,7 @@ impl HtmlElement {
 
         self.attributes
             .iter()
-            .map(|v| v.generate_attribute_setting(element))
+            .map(|v| v.generate_attribute_code_for_create_view_fn(element))
             .collect()
     }
 
@@ -775,9 +795,10 @@ impl HtmlElement {
     fn generate_attribute_code_for_update_view_fn(&self, view_state_ident: &Ident) -> TokenStream {
         let element = &self.meta.spair_ident;
 
+        let element = quote! {#view_state_ident.#element};
         self.attributes
             .iter()
-            .map(|v| v.generate_attribute_update_setting(element, view_state_ident))
+            .map(|v| v.generate_attribute_code_for_update_view_fn(&element))
             .collect()
     }
 
@@ -885,7 +906,23 @@ impl Attribute {
         if self.name_string.starts_with("data") {
             return;
         }
-        errors.add(self.name_ident.span(), "unknown attribute");
+        match self.name_string.as_str() {
+            "class_if" => {
+                let message = "`class_if` requires a tuple of 2 expressions as `(boolean_expr, some_class_name)`";
+                match &self.value {
+                    Expr::Tuple(expr) => {
+                        if expr.elems.len() < 2 {
+                            errors.add(expr.span(), message);
+                        }
+                        if let Some(third) = expr.elems.get(2) {
+                            errors.add(third.span(), "`class_if` requires exactly 2 expressions");
+                        }
+                    }
+                    other => errors.add(other.span(), message),
+                }
+            }
+            _ => errors.add(self.name_ident.span(), "unknown attribute"),
+        }
     }
 
     fn construct_html(&self, html_string: &mut String) {
@@ -898,34 +935,52 @@ impl Attribute {
         }
     }
 
-    fn generate_attribute_setting(&self, element: &Ident) -> TokenStream {
+    fn generate_attribute_code_for_create_view_fn(&self, element: &Ident) -> TokenStream {
+        if matches!(&self.stage, Stage::Creation).not() {
+            return quote! {};
+        }
         let name_ident = &self.name_ident;
         let index = self.spair_store_index;
-        let expr = match &self.value {
-            Expr::Closure(expr_closure) => quote! {context.comp.callback_arg_mut(#expr_closure)},
-            event_listener => quote! {#event_listener},
-        };
+        let attribute_value = &self.value;
         if self.is_event_listener {
-            return quote! {#element.#name_ident(#index, #expr);};
+            return quote! {#element.#name_ident(#index, #attribute_value);};
         }
         match self.name_string.as_str() {
-            "replace_at_element_id" => {
-                quote! {#element.#name_ident(#expr);}
-            }
+            "replace_at_element_id" => quote! {#element.#name_ident(#attribute_value);},
+            "id" => quote! {#element.set_id(#attribute_value);},
+            "class" => quote! {
+                #element.class(#attribute_value);
+            },
             "class_if" => quote! {},
             _other_name => quote! {},
         }
     }
 
-    fn generate_attribute_update_setting(
-        &self,
-        element: &Ident,
-        view_state_ident: &Ident,
-    ) -> TokenStream {
-        if let Stage::Update = &self.stage {
-            quote! { #view_state_ident.#element. update a attribute need implementation }
-        } else {
-            quote! {}
+    fn generate_attribute_code_for_update_view_fn(&self, element: &TokenStream) -> TokenStream {
+        if matches!(&self.stage, Stage::Update).not() {
+            return quote! {};
+        }
+        let name_ident = &self.name_ident;
+        let index = self.spair_store_index;
+        let attribute_value = &self.value;
+        if self.is_event_listener {
+            return quote! {#element.#name_ident(#index, #attribute_value);};
+        }
+        match self.name_string.as_str() {
+            "replace_at_element_id" => quote! {},
+            "class" => quote! {},
+            "class_if" => {
+                if let Expr::Tuple(expr) = attribute_value {
+                    let condition_expr = &expr.elems[0];
+                    let class_name = &expr.elems[1];
+                    quote! {
+                        #element.class_if(#index, #condition_expr, #class_name);
+                    }
+                } else {
+                    quote! {}
+                }
+            }
+            _other_name => quote! {},
         }
     }
 }

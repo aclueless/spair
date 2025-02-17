@@ -17,7 +17,7 @@ pub use web_sys;
 
 pub use component::{start_app, CallbackArg, Comp, Component, Context};
 pub use elements::{Element, TemplateElement, WsElement, WsNode};
-pub use keyed_list::{KeyedItemViewState, KeyedList};
+pub use keyed_list::{KeyedItemView, KeyedList};
 
 pub mod prelude {
     pub use crate::component::{Comp, Component, Context};

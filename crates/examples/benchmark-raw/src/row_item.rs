@@ -16,8 +16,8 @@ pub struct RowRender {
     _delete_element: Element,
 }
 
-impl spairc::KeyedItemViewState<AppState> for RowRender {
-    type Item = RowItem;
+impl spairc::KeyedItemView<AppState> for RowItem {
+    type ViewState = RowRender;
     type Key = usize;
 
     fn template_string() -> &'static str {
@@ -25,19 +25,23 @@ impl spairc::KeyedItemViewState<AppState> for RowRender {
         TEMPLATE
     }
 
-    fn key(&self) -> &Self::Key {
-        &self.key
+    fn get_key(&self) -> &Self::Key {
+        &self.id
     }
 
-    fn key_from_item_state(state: &Self::Item) -> &Self::Key {
-        &state.id
+    fn key_from_view_state(state: &Self::ViewState) -> &Self::Key {
+        &state.key
     }
 
-    fn root_element(&self) -> &spairc::WsElement {
-        &self.root_element
+    fn root_element(view_state: &Self::ViewState) -> &spairc::WsElement {
+        &view_state.root_element
     }
 
-    fn create(data: &RowItem, template: &TemplateElement, context: &Context<AppState>) -> Self {
+    fn create_view(
+        template: &TemplateElement,
+        data: &RowItem,
+        context: &Context<AppState>,
+    ) -> Self::ViewState {
         let element = template.create_element(0);
         let id_element = element.ws_node_ref().first_ws_element();
         let label_td = id_element.ws_node_ref().next_sibling_ws_element();
@@ -65,7 +69,7 @@ impl spairc::KeyedItemViewState<AppState> for RowRender {
             .comp
             .callback_arg(move |state, _| state.remove_by_id(id));
         delete_element.click(0, click_on_delete);
-        let mut view_state = Self {
+        let view_state = Self::ViewState {
             key: data.id,
             root_element: element,
             _label_element: label_element,
@@ -73,14 +77,13 @@ impl spairc::KeyedItemViewState<AppState> for RowRender {
             _delete_element: delete_element,
         };
 
-        view_state.update(&data, context);
-
         view_state
     }
 
-    fn update(&mut self, data: &RowItem, context: &Context<AppState>) {
-        self.label_text_node.update(&data.label);
-        self.root_element
+    fn update_view(view_state: &mut Self::ViewState, data: &RowItem, context: &Context<AppState>) {
+        view_state.label_text_node.update(&data.label);
+        view_state
+            .root_element
             .class_if(0, context.state.selected_id == Some(data.id), "danger");
     }
 }

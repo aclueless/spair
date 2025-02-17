@@ -339,6 +339,12 @@ impl WsElement {
             log::error!("Error on removing child node: {e:?}");
         }
     }
+
+    pub fn class(&self, class_name: &str) {
+        if let Err(e) = self.0.class_list().add_1(class_name) {
+            log::error!("Error on adding a class name: {e:?}");
+        }
+    }
 }
 
 pub struct Element {

@@ -13,7 +13,7 @@ pub struct Component {
 impl Component {
     pub fn from_view(view: View) -> Self {
         Self {
-            component_name: view.view_state_name,
+            component_name: view.view_state_type_name,
             item_impl: view.item_impl,
             element: view.element,
         }
@@ -27,8 +27,7 @@ impl Component {
         let struct_fields = self.element.generate_view_state_struct_fields();
         let view_state_struct =
             quote! {pub struct #component_view_state_struct_name{#struct_fields}};
-        let impl_component =
-            self.generate_impl_component_render_fns(&component_view_state_struct_name);
+        let impl_component = self.generate_impl_component(&component_view_state_struct_name);
 
         quote! {
             #view_state_struct
@@ -36,7 +35,7 @@ impl Component {
         }
     }
 
-    fn generate_impl_component_render_fns(&self, view_state_struct_name: &Ident) -> TokenStream {
+    fn generate_impl_component(&self, view_state_struct_name: &Ident) -> TokenStream {
         let generated_create_view_fn = self.generate_impl_create_view_fn(view_state_struct_name);
         let generated_update_view_fn = self.generate_impl_update_view_fn();
 
