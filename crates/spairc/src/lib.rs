@@ -20,7 +20,8 @@ pub use elements::{Element, TemplateElement, WsElement, WsNode};
 pub use keyed_list::{KeyedItemView, KeyedList};
 
 pub mod prelude {
-    pub use crate::component::{Comp, Component, Context};
-    pub use crate::elements::{Element, Text, WsElement, WsText};
+    pub use crate::component::{CallbackArg, Comp, Component, Context};
+    pub use crate::elements::{Element, TemplateElement, Text, WsElement, WsText};
+    pub use crate::{KeyedItemView, KeyedList};
     pub use spair_macros::*;
 }

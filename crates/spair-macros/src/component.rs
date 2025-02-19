@@ -56,11 +56,13 @@ impl Component {
         let fn_body = self
             .element
             .generate_code_for_create_view_fn_of_a_component(view_state_struct_name, &html_string);
-        let ImplItem::Fn(ImplItemFn { sig, .. }) = impl_item.unwrap() else {
+        let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
+        let block = &block.stmts;
         quote! {
             #sig -> (WsElement, Self::ViewState) {
+                #(#block)*
                 #fn_body
             }
         }
@@ -75,7 +77,7 @@ impl Component {
         let fn_body = self
             .element
             .generate_code_for_update_view_fn(&view_state_ident);
-        let ImplItem::Fn(ImplItemFn { sig, .. }) = impl_item.unwrap() else {
+        let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
         let Signature {
@@ -84,8 +86,10 @@ impl Component {
             inputs,
             ..
         } = sig;
+        let block = &block.stmts;
         quote! {
             #fn_token #ident(#view_state_ident: &mut Self::ViewState, #inputs) {
+                #(#block)*
                 #fn_body
             }
         }

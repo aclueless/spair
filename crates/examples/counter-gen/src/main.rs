@@ -4,16 +4,17 @@ use spairc::{web_sys::MouseEvent, CallbackArg, Element};
 struct AppState {
     value: i32,
 }
+
 pub struct UpdownButton {
     _element_1: Element,
 }
 impl UpdownButton {
     pub fn create_view(handler: CallbackArg<MouseEvent>, text: &str) -> Self {
-        const HTML_STRING: &str = "<button>?</button>";
+        const HTML_STRING: &str = "<button>&nbsp;</button>";
         let mut _element_1 = Element::with_html(HTML_STRING, 1usize);
         _element_1.click(0usize, handler);
         let _text_2 = _element_1.ws_node_ref().first_ws_text();
-        _text_2.set_text_content(text);
+        _text_2.set_text(text);
         UpdownButton { _element_1 }
     }
     pub fn update_view(&mut self) {
@@ -33,7 +34,6 @@ impl AppState {
         self.value -= 1;
     }
 }
-
 pub struct AppStateViewState {
     _element_1: Element,
     _view_2: UpdownButton,
@@ -43,7 +43,7 @@ pub struct AppStateViewState {
 impl Component for AppState {
     type ViewState = AppStateViewState;
     fn create_view(_cstate: &Self, ccomp: &Comp<Self>) -> (WsElement, Self::ViewState) {
-        const HTML_STRING: &str = "<div replace_at_element_id='root'><!--view-->?<!--view--></div>";
+        const HTML_STRING: &str = "<div><!--view-->&nbsp;<!--view--></div>";
         let mut _element_1 = Element::with_html(HTML_STRING, 0usize);
         _element_1.replace_at_element_id("root");
         let _view_2 =

@@ -1,4 +1,4 @@
-use header::HeaderViewState;
+use header::Header;
 use row_item::RowItem;
 use spairc::prelude::*;
 use spairc::{Component, Element, KeyedList};
@@ -12,42 +12,31 @@ struct AppState {
     selected_id: Option<usize>,
 }
 
-struct AppViewState {
-    _root_element: Element,
-    _header: HeaderViewState,
-    keyed_list: KeyedList<AppState, row_item::RowItem>,
-}
-
-impl Component for AppState {
-    type ViewState = AppViewState;
-
-    fn create_view(cstate: &Self, ccomp: &Comp<Self>) -> (spairc::WsElement, Self::ViewState) {
-        const HTML: &str = "<div id='main'><div class='container'><table class='table table-hover table-striped test-data'><tbody id='tbody'></tbody></table><span class='preloadicon glyphicon glyphicon-remove' aria-hidden='true'></span></div></div>";
-        let _root_element = Element::with_html(HTML, 0);
-        let container = _root_element.ws_node_ref().first_ws_element();
-        let table_element = container.ws_node_ref().first_ws_element();
-        log::info!("before header");
-        let context = ccomp.context(cstate);
-        let _header = HeaderViewState::create(&context);
-        container.insert_new_node_before_a_node(&_header.root_element, Some(&table_element));
-        let tbody = table_element.ws_node_ref().first_ws_element();
-        log::info!("before list");
-        let mut keyed_list = KeyedList::new(tbody);
-        keyed_list.update(cstate.rows.iter(), context);
-        _root_element.append_to_body();
-        let view_state = AppViewState {
-            _root_element,
-            _header,
-            keyed_list,
-        };
-        (view_state._root_element.clone(), view_state)
-    }
-
-    fn update_view(view_state: &mut Self::ViewState, ustate: &Self, ucomp: &Comp<Self>) {
-        log::info!("running update");
-        view_state
-            .keyed_list
-            .update(ustate.rows.iter(), ucomp.context(ustate));
+#[component(?)]
+impl AppState {
+    fn create_view(_cdata: &Self, ccomp: &Comp<Self>) {}
+    fn update_view(udata: &Self, ucomp: &Comp<Self>) {}
+    fn view() {
+        div(
+            replace_at_element_id = "main",
+            div(
+                class = "container",
+                view::Header(create_view(&ccomp), update_view()),
+                table(
+                    class = "table table-hover table-striped test-data",
+                    tbody(list_of(
+                        AppState,
+                        RowItem,
+                        ucomp.context(udata),
+                        udata.rows.iter(),
+                    )),
+                ),
+                span(
+                    class = "preloadicon glyphicon glyphicon-remove",
+                    aria_hidden = true,
+                ),
+            ),
+        )
     }
 }
 

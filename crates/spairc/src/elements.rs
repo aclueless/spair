@@ -118,8 +118,13 @@ impl WsText {
         self.0.set_text_content(None);
     }
 
-    pub fn set_text_content(&self, text: &str) {
+    fn set_text_content(&self, text: &str) {
         self.0.set_text_content(Some(text));
+    }
+
+    pub fn set_text(&self, text: impl RenderAsText) {
+        // self.0.set_text_content(Some(text));
+        text.create(self);
     }
 
     pub fn ws_node_ref(&self) -> WsNodeRef {
@@ -171,7 +176,7 @@ impl Text {
     }
 
     pub fn update<T: RenderAsText>(&mut self, value: T) {
-        value.render(self);
+        value.update(self);
     }
 
     pub fn ws_node_ref(&self) -> WsNodeRef {
@@ -180,23 +185,33 @@ impl Text {
 }
 
 pub trait RenderAsText {
-    fn render(self, text: &mut Text);
+    fn create(self, text: &WsText);
+    fn update(self, text: &mut Text);
 }
 
 impl RenderAsText for &str {
-    fn render(self, text: &mut Text) {
+    fn create(self, text: &WsText) {
+        text.set_text_content(self);
+    }
+    fn update(self, text: &mut Text) {
         text.update_with_str(self);
     }
 }
 
 impl RenderAsText for &String {
-    fn render(self, text: &mut Text) {
+    fn create(self, text: &WsText) {
+        text.set_text_content(self);
+    }
+    fn update(self, text: &mut Text) {
         text.update_with_str(self);
     }
 }
 
 impl RenderAsText for String {
-    fn render(self, text: &mut Text) {
+    fn create(self, text: &WsText) {
+        text.set_text_content(&self);
+    }
+    fn update(self, text: &mut Text) {
         text.update_with_string(self);
     }
 }
@@ -205,7 +220,10 @@ macro_rules! impl_render_as_text {
     ($($type_name:ident)+) => {
         $(
             impl RenderAsText for $type_name {
-                fn render(self, text: &mut Text) {
+                fn create(self, text: &WsText) {
+                    text.set_text_content(&self.to_string());
+                }
+                fn update(self, text: &mut Text) {
                     text.update_with_string(self.to_string());
                 }
             }
@@ -214,7 +232,7 @@ macro_rules! impl_render_as_text {
     };
 }
 
-impl_render_as_text!(i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 bool char);
+impl_render_as_text!(isize i8 i16 i32 i64 i128 usize u8 u16 u32 u64 u128 f32 f64 bool char);
 
 #[derive(Clone)]
 pub struct WsElement(web_sys::Element);
@@ -238,6 +256,10 @@ impl WsElement {
         self
     }
 
+    pub fn web_sys_node(&self) -> &web_sys::Node {
+        &self.0
+    }
+
     pub fn clear_text_content(&self) {
         self.0.set_text_content(None);
     }
@@ -250,6 +272,7 @@ impl WsElement {
         if let Err(e) = element.replace_with_with_node_1(&self.0) {
             log::error!("Error on replacing at element id: {element_id}: {e:?}");
         }
+        self.set_id(element_id);
     }
 
     pub fn append_to_body(&self) -> WsElement {

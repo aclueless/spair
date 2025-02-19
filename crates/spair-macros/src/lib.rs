@@ -1,4 +1,3 @@
-use core::panic;
 use std::ops::Not;
 
 use proc_macro::TokenStream;
@@ -20,7 +19,7 @@ pub fn view(args: TokenStream, input: TokenStream) -> TokenStream {
         Err(error) => error.to_compile_error(),
     };
     if args.is_empty().not() {
-        panic!("{output}");
+        println!("{output}");
     }
     output.into()
 }
@@ -34,7 +33,7 @@ pub fn component(args: TokenStream, input: TokenStream) -> TokenStream {
         Err(error) => error.to_compile_error(),
     };
     if args.is_empty().not() {
-        panic!("{output}");
+        println!("{output}");
     }
     output.into()
 }
@@ -48,7 +47,7 @@ pub fn keyed_item_view(args: TokenStream, input: TokenStream) -> TokenStream {
         Err(error) => error.to_compile_error(),
     };
     if args.is_empty().not() {
-        panic!("{output}");
+        println!("{output}");
     }
     output.into()
 }

@@ -79,7 +79,6 @@ impl View {
                 .iter()
                 .map(|v| v.to_string())
                 .collect();
-        dbg!(&update_stage_variables);
 
         let _ = self
             .element
@@ -300,25 +299,18 @@ fn collect_view_element(mut block: Block) -> Result<HtmlElement> {
     if let Some(second_stmt) = block.stmts.get(1) {
         return Err(syn::Error::new(second_stmt.span(), "This is the second statement. Spair requires the HTML construction statement is the only and last statement a view or component"));
     }
+    let message = "Spair view only supports HTML element as root node";
     match block.stmts.remove(0) {
         Stmt::Expr(expr, _) => match Element::with_expr(expr)? {
-            Element::Text(text) => Err(syn::Error::new(
-                text.shared_name.span(),
-                "Spair view only supports HTML element as root node",
-            )),
+            Element::Text(text) => Err(syn::Error::new(text.shared_name.span(), message)),
             Element::HtmlElement(mut html_element) => {
                 html_element.root_element = true;
                 Ok(html_element)
             }
-            Element::View(view) => Err(syn::Error::new(
-                view.name.span(),
-                "Spair view only supports HTML element as root node",
-            )),
+            Element::View(view) => Err(syn::Error::new(view.name.span(), message)),
+            Element::KeyedList(list) => Err(syn::Error::new(list.name.span(), message)),
         },
-        stmt => Err(syn::Error::new(
-            stmt.span(),
-            "Expected an expresstion constructing HTML",
-        )),
+        stmt => Err(syn::Error::new(stmt.span(), message)),
     }
 }
 
@@ -456,11 +448,13 @@ impl View {
         let fn_body = self
             .element
             .generate_code_for_create_view_fn_of_a_view(view_state_struct_name, &html_string);
-        let ImplItem::Fn(ImplItemFn { sig, .. }) = impl_item.unwrap() else {
+        let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
+        let block = &block.stmts;
         quote! {
             pub #sig -> Self {
+                #(#block)*
                 #fn_body
             }
         }
@@ -473,7 +467,7 @@ impl View {
         let fn_body = self
             .element
             .generate_code_for_update_view_fn(&view_state_ident);
-        let ImplItem::Fn(ImplItemFn { sig, .. }) = impl_item.unwrap() else {
+        let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
         let Signature {
@@ -482,8 +476,10 @@ impl View {
             inputs,
             ..
         } = sig;
+        let block = &block.stmts;
         quote! {
             pub #fn_token #ident(&mut self, #inputs) {
+                #(#block)*
                 let #view_state_ident = self;
                 #fn_body
             }

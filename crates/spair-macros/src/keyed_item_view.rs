@@ -89,7 +89,7 @@ impl KeyedItemView {
         let root_element_ident = self.element.root_element_ident();
         let html_string = self.element.construct_html_string();
         quote! {
-            #impl_token KeyedListView<#component_type> for #self_type {
+            #impl_token KeyedItemView<#component_type> for #self_type {
                 type ViewState = #keyed_item_view_state_struct_name;
                 type Key = #key_type;
                 #get_key
@@ -110,10 +110,7 @@ impl KeyedItemView {
 
     fn generate_impl_create_view_fn(&self, view_state_struct_name: &Ident) -> TokenStream {
         let impl_item = self.item_impl.items.get(0);
-        let fn_body = self
-            .element
-            .generate_code_for_create_view_fn_of_a_keyed_item(view_state_struct_name);
-        let ImplItem::Fn(ImplItemFn { sig, .. }) = impl_item.unwrap() else {
+        let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
         let Signature {
@@ -122,8 +119,23 @@ impl KeyedItemView {
             inputs,
             ..
         } = sig;
+        let key_field = match inputs.first() {
+            Some(FnArg::Typed(pt)) => match pt.pat.as_ref() {
+                Pat::Ident(pat_ident) => quote! {key: #pat_ident.get_key().clone(),},
+                _ => quote! {},
+            },
+            _ => quote! {},
+        };
+        let fn_body = self
+            .element
+            .generate_code_for_create_view_fn_of_a_keyed_item_view(
+                view_state_struct_name,
+                key_field,
+            );
+        let block = &block.stmts;
         quote! {
             #fn_token #ident(_keyed_view_state_template: &TemplateElement, #inputs) -> Self::ViewState {
+                #(#block)*
                 #fn_body
             }
         }
@@ -138,7 +150,7 @@ impl KeyedItemView {
         let fn_body = self
             .element
             .generate_code_for_update_view_fn(&view_state_ident);
-        let ImplItem::Fn(ImplItemFn { sig, .. }) = impl_item.unwrap() else {
+        let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
         let Signature {
@@ -147,8 +159,10 @@ impl KeyedItemView {
             inputs,
             ..
         } = sig;
+        let block = &block.stmts;
         quote! {
             #fn_token #ident(#view_state_ident: &mut Self::ViewState, #inputs) {
+                #(#block)*
                 #fn_body
             }
         }

@@ -50,7 +50,7 @@ impl<T> TestComp<T> {
 }
 
 pub struct Test<T: 'static + TestDataInterface> {
-    comp: RcComp<TestComp<T>>,
+    _comp: RcComp<TestComp<T>>,
     callback: CallbackArg<T>,
 }
 
@@ -58,7 +58,10 @@ impl<T: 'static + TestDataInterface> Test<T> {
     pub fn set_up(data: T) -> Test<T> {
         let comp = create_component(|_| TestComp { data });
         let callback = comp.comp().callback_arg(TestComp::update);
-        Self { comp, callback }
+        Self {
+            _comp: comp,
+            callback,
+        }
     }
 
     pub fn update(&self, new_value: T) {
