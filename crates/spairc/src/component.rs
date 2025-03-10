@@ -4,59 +4,43 @@ use std::{
     rc::{Rc, Weak},
 };
 
+use crate::routing::{get_current_location, setup_routing, Route};
+
 use crate::elements::WsElement;
 
-// pub fn mount_to_body<C: Component>(state: C) {
-//     let Some(window) = web_sys::window() else {
-//         log::error!("No window found. Can not mount to document body");
-//         return;
-//     };
-//     let Some(document) = window.document() else {
-//         log::error!("No document found. Can not mount to document body");
-//         return;
-//     };
-//     let Some(body) = document.body() else {
-//         log::error!("No body found. Can not mount to document body");
-//         return;
-//     };
-
-//     mount_to(state, body.into())
-// }
-
-// pub fn mount_to<C: Component>(state: C, root: web_sys::Element) {
-//     let comp_data = CompData {
-//         root: Element::new(root, 0),
-//         state_n_updaters: None,
-//     };
-//     let rc_comp = Rc::new(RefCell::new(comp_data));
-//     let comp = Comp(Rc::downgrade(&rc_comp));
-//     let (root, mut updater) = C::init(&comp);
-
-//     if let Ok(mut rc_comp) = rc_comp.try_borrow_mut() {
-//         root.merge_to(&mut rc_comp.root);
-//         state.render(&mut updater, &comp);
-//         rc_comp.state_n_updaters = Some((state, updater));
-//     }
-
-//     std::mem::forget(rc_comp);
-// }
-
-pub fn start_app<C: Component>(new_state: impl FnOnce(&Comp<C>) -> C) {
-    let rc_comp = create_component(new_state);
+pub fn start_app<C: Component + 'static>(new_state: impl FnOnce(&Comp<C>) -> C) {
+    let rc_comp = create_component(new_state, |_, _: ()| {}, |_, _| {});
     std::mem::forget(rc_comp);
 }
 
-pub fn create_component<C: Component>(new_state: impl FnOnce(&Comp<C>) -> C) -> RcComp<C> {
+pub fn start_app_with_routing<C: Component + 'static, R: Route + 'static>(
+    new_state: impl FnOnce(&Comp<C>) -> C,
+    set_route: fn(&mut C, R),
+) {
+    let rc_comp = create_component(new_state, set_route, setup_routing);
+    std::mem::forget(rc_comp);
+}
+
+pub(crate) fn create_component<C: Component + 'static, R: Route>(
+    new_state: impl FnOnce(&Comp<C>) -> C,
+    set_route: fn(&mut C, R),
+    setup_routing: impl FnOnce(fn(&mut C, R), &Comp<C>),
+) -> RcComp<C> {
     let comp_data = CompData(None);
     let rc_comp = Rc::new(RefCell::new(comp_data));
     let comp = Comp(Rc::downgrade(&rc_comp));
-    let state = new_state(&comp);
-    let (root, mut view_state) = C::create_view(&state, &comp);
-    C::update_view(&mut view_state, &state, &comp);
+    let mut state = new_state(&comp);
+
+    let route = R::from_location(&get_current_location());
+    set_route(&mut state, route);
+    setup_routing(set_route, &comp);
+
+    let context = comp.context(&state);
+    let (root, mut view_state) = C::create_view(&context);
+    C::update_view(&mut view_state, &context);
 
     match rc_comp.try_borrow_mut() {
         Ok(mut rc_comp) => {
-            // state.render(&mut updaters, &comp);
             rc_comp.0 = Some(CompDataInner {
                 _root: root,
                 state,
@@ -191,8 +175,8 @@ where
 
 pub trait Component: Sized {
     type ViewState;
-    fn create_view(cstate: &Self, ccomp: &Comp<Self>) -> (WsElement, Self::ViewState);
-    fn update_view(view_state: &mut Self::ViewState, ustate: &Self, ucomp: &Comp<Self>);
+    fn create_view(ccontext: &Context<Self>) -> (WsElement, Self::ViewState);
+    fn update_view(view_state: &mut Self::ViewState, ucontext: &Context<Self>);
 }
 
 impl<C: Component> Comp<C>
@@ -258,7 +242,7 @@ where
         };
         let should_render = (cb_fn.callback)(&mut comp_data.state, arg);
         if let ShouldRender::Yes = should_render {
-            C::update_view(&mut comp_data.updaters, &comp_data.state, self);
+            C::update_view(&mut comp_data.updaters, &self.context(&comp_data.state));
         }
     }
 }

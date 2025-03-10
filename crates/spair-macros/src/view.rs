@@ -7,7 +7,7 @@ use syn::*;
 use token::Brace;
 
 use crate::element::{Element, HtmlElement};
-use crate::MultiErrors;
+use crate::{ItemCounter, MultiErrors};
 
 pub(crate) struct View {
     pub(crate) view_state_type_name: Ident,
@@ -46,9 +46,6 @@ impl View {
             unreachable!("Checked by the last call to validate_view_fn above");
         };
 
-        let element = collect_view_element(view.block)?;
-        element.validate_html()?;
-
         let view_state_name = match &*item_impl.self_ty {
             Type::Path(type_path) if type_path.path.get_ident().is_some() => {
                 type_path.path.get_ident().unwrap().clone()
@@ -60,6 +57,18 @@ impl View {
                 ));
             }
         };
+
+        let update_stage_variables: Vec<_> =
+            collect_variables_from_fn_sig_n_let_bindings(item_impl.items.get(1))
+                .iter()
+                .map(|v| v.to_string())
+                .collect();
+        let element = collect_view_element(
+            view.block,
+            view_state_name.to_string(),
+            &update_stage_variables,
+        )?;
+        element.validate_html()?;
 
         let mut view = View {
             view_state_type_name: view_state_name,
@@ -74,22 +83,14 @@ impl View {
     // which will be in update stage, which will be in create stage
     // should a variable be generated
     fn prepare_items_for_generating_code(&mut self) {
-        let update_stage_variables: Vec<_> =
-            collect_variables_from_let_bindings(self.item_impl.items.get(1))
-                .iter()
-                .map(|v| v.to_string())
-                .collect();
-
-        let _ = self
-            .element
-            .prepare_items_for_generating_code(&update_stage_variables);
+        let _ = self.element.prepare_items_for_generating_code();
     }
 
     fn check_create_variables_vs_update_variables(&self) -> Result<()> {
         let create_stage_variables: Vec<_> =
-            collect_variables_from_let_bindings(self.item_impl.items.get(0));
+            collect_variables_from_fn_sig_n_let_bindings(self.item_impl.items.get(0));
         let update_stage_variables: Vec<_> =
-            collect_variables_from_let_bindings(self.item_impl.items.get(1));
+            collect_variables_from_fn_sig_n_let_bindings(self.item_impl.items.get(1));
         for create_variable in create_stage_variables.iter() {
             for update_variable in update_stage_variables.iter() {
                 if create_variable == update_variable {
@@ -104,7 +105,7 @@ impl View {
     }
 }
 
-fn collect_variables_from_let_bindings(impl_item: Option<&ImplItem>) -> Vec<Ident> {
+fn collect_variables_from_fn_sig_n_let_bindings(impl_item: Option<&ImplItem>) -> Vec<Ident> {
     fn collect_from_pat(pat: &Pat, update_stage_variables: &mut Vec<Ident>) {
         match pat {
             Pat::Ident(pat_ident) => update_stage_variables.push(pat_ident.ident.clone()),
@@ -292,25 +293,61 @@ fn block_has_ref_to(block: &Block, update_stage_variables: &[String]) -> bool {
     false
 }
 
-fn collect_view_element(mut block: Block) -> Result<HtmlElement> {
+fn collect_view_element(
+    mut block: Block,
+    match_view_state_prefix: String,
+    update_stage_variables: &[String],
+) -> Result<HtmlElement> {
     if block.stmts.is_empty() {
         return Err(Error::new(block.span(), "A view can not be empty"));
     }
+    let message_one_element_only = "This is the second statement. Spair requires the HTML construction statement is the only and last statement a view or component";
     if let Some(second_stmt) = block.stmts.get(1) {
-        return Err(syn::Error::new(second_stmt.span(), "This is the second statement. Spair requires the HTML construction statement is the only and last statement a view or component"));
+        return Err(syn::Error::new(
+            second_stmt.span(),
+            message_one_element_only,
+        ));
     }
-    let message = "Spair view only supports HTML element as root node";
+    let message_html_element_only = "Spair view only supports an HTML element as root node";
+    let mut item_counter = ItemCounter::new(match_view_state_prefix);
     match block.stmts.remove(0) {
-        Stmt::Expr(expr, _) => match Element::with_expr(expr)? {
-            Element::Text(text) => Err(syn::Error::new(text.shared_name.span(), message)),
-            Element::HtmlElement(mut html_element) => {
-                html_element.root_element = true;
-                Ok(html_element)
+        Stmt::Expr(expr, _) => {
+            let span = expr.span();
+            let mut elements =
+                Element::with_expr(expr, &mut item_counter, Some(update_stage_variables))?;
+            if elements.is_empty() {
+                return Err(Error::new(span, "A view can not be empty"));
             }
-            Element::View(view) => Err(syn::Error::new(view.name.span(), message)),
-            Element::KeyedList(list) => Err(syn::Error::new(list.name.span(), message)),
-        },
-        stmt => Err(syn::Error::new(stmt.span(), message)),
+            let element = elements.remove(0);
+            let html_element = match element {
+                Element::Text(text) => Err(syn::Error::new(
+                    text.shared_name.span(),
+                    message_html_element_only,
+                )),
+                Element::HtmlElement(mut html_element) => {
+                    html_element.root_element = true;
+                    Ok(html_element)
+                }
+                Element::View(view) => {
+                    Err(syn::Error::new(view.name.span(), message_html_element_only))
+                }
+                Element::KeyedList(list) => {
+                    Err(syn::Error::new(list.name.span(), message_html_element_only))
+                }
+                Element::Match(m) => Err(syn::Error::new(
+                    m.match_keyword.span(),
+                    message_html_element_only,
+                )),
+            }?;
+            if let Some(second) = elements.first() {
+                return Err(syn::Error::new(
+                    second.name_or_text_expr_span(),
+                    message_one_element_only,
+                ));
+            }
+            return Ok(html_element);
+        }
+        stmt => Err(syn::Error::new(stmt.span(), message_html_element_only)),
     }
 }
 
@@ -444,10 +481,9 @@ impl View {
 
     fn generate_impl_create_view_fn(&self, view_state_struct_name: &Ident) -> TokenStream {
         let impl_item = self.item_impl.items.get(0);
-        let html_string = self.element.construct_html_string();
         let fn_body = self
             .element
-            .generate_code_for_create_view_fn_of_a_view(view_state_struct_name, &html_string);
+            .generate_code_for_create_view_fn_of_a_view(view_state_struct_name);
         let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
@@ -492,7 +528,8 @@ impl ToTokens for View {
         let struct_name = &self.view_state_type_name;
         let struct_fields = self.element.generate_view_state_struct_fields();
         let view_state_struct = quote! {pub struct #struct_name{#struct_fields}};
+        let match_view_state_types = self.element.collect_match_view_state_types();
         let impl_view_state = self.generate_impl_view_state_fns();
-        tokens.append_all([view_state_struct, impl_view_state]);
+        tokens.append_all([view_state_struct, match_view_state_types, impl_view_state]);
     }
 }

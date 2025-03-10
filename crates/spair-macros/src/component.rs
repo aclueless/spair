@@ -27,10 +27,12 @@ impl Component {
         let struct_fields = self.element.generate_view_state_struct_fields();
         let view_state_struct =
             quote! {pub struct #component_view_state_struct_name{#struct_fields}};
+        let match_view_state_types = self.element.collect_match_view_state_types();
         let impl_component = self.generate_impl_component(&component_view_state_struct_name);
 
         quote! {
             #view_state_struct
+            #match_view_state_types
             #impl_component
         }
     }
@@ -52,10 +54,9 @@ impl Component {
 
     fn generate_impl_create_view_fn(&self, view_state_struct_name: &Ident) -> TokenStream {
         let impl_item = self.item_impl.items.get(0);
-        let html_string = self.element.construct_html_string();
         let fn_body = self
             .element
-            .generate_code_for_create_view_fn_of_a_component(view_state_struct_name, &html_string);
+            .generate_code_for_create_view_fn_of_a_component(view_state_struct_name);
         let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };

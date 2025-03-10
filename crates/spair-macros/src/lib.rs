@@ -78,16 +78,22 @@ impl MultiErrors {
     }
 }
 
-struct ItemCounter(u32);
+struct ItemCounter {
+    namespace: String,
+    counter: u32,
+}
 impl ItemCounter {
-    fn new() -> Self {
-        Self(1)
+    fn new(namespace: String) -> Self {
+        Self {
+            namespace,
+            counter: 1,
+        }
     }
 
     fn new_ident(&mut self, name: &str) -> Ident {
         let mut name = name.to_string();
-        name.push_str(&self.0.to_string());
-        self.0 += 1;
+        name.push_str(&self.counter.to_string());
+        self.counter += 1;
         Ident::new(&name, Span::call_site())
     }
 
@@ -101,5 +107,13 @@ impl ItemCounter {
 
     fn new_ident_view(&mut self) -> Ident {
         self.new_ident("_view_")
+    }
+
+    fn new_match_view_state(&mut self) -> Ident {
+        let mut name = self.namespace.clone();
+        name.push_str("MatchViewState");
+        name.push_str(&self.counter.to_string());
+        self.counter += 1;
+        Ident::new(&name, Span::call_site())
     }
 }

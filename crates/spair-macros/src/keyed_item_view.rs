@@ -64,11 +64,13 @@ impl KeyedItemView {
             key: #key_type,
             #struct_fields
         }};
+        let match_view_state_types = self.element.collect_match_view_state_types();
         let impl_keyed_item_view =
             self.generate_impl_keyed_item_view(&keyed_item_view_state_struct_name);
 
         quote! {
             #view_state_struct
+            #match_view_state_types
             #impl_keyed_item_view
         }
     }

@@ -42,17 +42,17 @@ pub struct AppStateViewState {
 }
 impl Component for AppState {
     type ViewState = AppStateViewState;
-    fn create_view(_cstate: &Self, ccomp: &Comp<Self>) -> (WsElement, Self::ViewState) {
+    fn create_view(ccontext: &Context<Self>) -> (WsElement, Self::ViewState) {
         const HTML_STRING: &str = "<div><!--view-->&nbsp;<!--view--></div>";
         let mut _element_1 = Element::with_html(HTML_STRING, 0usize);
         _element_1.replace_at_element_id("root");
         let _view_2 =
-            UpdownButton::create_view(ccomp.callback_arg(|state, _| state.decrease()), "-");
+            UpdownButton::create_view(ccontext.comp.callback_arg(|state, _| state.decrease()), "-");
         let _view_marker3 = _element_1.ws_node_ref().first_ws_node();
         _element_1.insert_new_node_before_a_node(_view_2.root_element(), Some(&_view_marker3));
         let _text_4 = _view_marker3.ws_node_ref().next_sibling_text();
         let _view_5 =
-            UpdownButton::create_view(ccomp.callback_arg(|state, _| state.increase()), "+");
+            UpdownButton::create_view(ccontext.comp.callback_arg(|state, _| state.increase()), "+");
         let _view_marker6 = _text_4.ws_node_ref().next_sibling_ws_node();
         _element_1.insert_new_node_before_a_node(_view_5.root_element(), Some(&_view_marker6));
         (
@@ -67,15 +67,14 @@ impl Component for AppState {
     }
     fn update_view(
         _spair_component_view_state_for_updating_: &mut Self::ViewState,
-        ustate: &Self,
-        _ucomp: &Comp<Self>,
+        ucontext: &Context<Self>,
     ) {
         _spair_component_view_state_for_updating_
             ._view_2
             .update_view();
         _spair_component_view_state_for_updating_
             ._text_4
-            .update(ustate.value);
+            .update(ucontext.state.value);
         _spair_component_view_state_for_updating_
             ._view_5
             .update_view();

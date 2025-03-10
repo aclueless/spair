@@ -12,8 +12,8 @@ TARGET="--target=wasm32-unknown-unknown"
 wasm-pack test --headless --firefox
 # wasm-pack test --headless --chrome -- --features=svg,queue-render,keyed-list
 
-# for x in ./examples/*; do
-#     if [ -f $x/Cargo.toml ]; then
-#         cargo build $TARGET --manifest-path=$x/Cargo.toml
-#     fi
-# done
+for x in ../examples/*; do
+    if [ -f $x/Cargo.toml ]; then
+        cargo build $TARGET --manifest-path=$x/Cargo.toml
+    fi
+done

@@ -1,9 +1,12 @@
 use std::ops::{Deref, DerefMut};
 
 use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
-use web_sys::HtmlTemplateElement;
+use web_sys::{
+    HtmlInputElement, HtmlOptionElement, HtmlSelectElement, HtmlTemplateElement,
+    HtmlTextAreaElement,
+};
 
-use crate::{events::EventListener, helper, CallbackArg};
+use crate::{events::EventListener, helper, routing::Route, CallbackArg};
 
 pub struct TemplateElement(HtmlTemplateElement);
 impl TemplateElement {
@@ -283,10 +286,11 @@ impl WsElement {
         body.unchecked_into::<web_sys::Node>().into()
     }
 
-    fn add_event_listener(&self, name: &str, listener: &dyn EventListener) {
+    pub(crate) fn add_event_listener(&self, name: &str, listener: &dyn EventListener) {
         let name = wasm_bindgen::intern(name);
-        let event_target: &web_sys::EventTarget = self.0.as_ref();
-        if let Err(e) = event_target.add_event_listener_with_callback(name, listener.js_function())
+        if let Err(e) = self
+            .0
+            .add_event_listener_with_callback(name, listener.js_function())
         {
             log::error!("Error on adding event listener for `{name}`: {e:?}");
         }
@@ -294,15 +298,15 @@ impl WsElement {
 
     fn remove_event_listener(&self, name: &str, listener: &dyn EventListener) {
         let name = wasm_bindgen::intern(name);
-        let event_target: &web_sys::EventTarget = self.0.as_ref();
-        if let Err(e) =
-            event_target.remove_event_listener_with_callback(name, listener.js_function())
+        if let Err(e) = self
+            .0
+            .remove_event_listener_with_callback(name, listener.js_function())
         {
             log::error!("Error on removing event listener for `{name}`: {e:?}");
         }
     }
 
-    fn set_bool_attribute(&self, name: &str, value: bool) {
+    pub fn set_bool_attribute(&self, name: &str, value: bool) {
         let name = wasm_bindgen::intern(name);
         if value {
             if let Err(e) = self.0.remove_attribute(name) {
@@ -313,7 +317,7 @@ impl WsElement {
         }
     }
 
-    fn set_str_attribute(&self, name: &str, value: &str) {
+    pub fn set_str_attribute(&self, name: &str, value: &str) {
         let name = wasm_bindgen::intern(name);
         if let Err(e) = self.0.set_attribute(name, value) {
             log::error!("Error on setting an attributel {name}={value}: {e:?}");
@@ -340,7 +344,7 @@ impl WsElement {
         };
     }
 
-    fn set_or_remove_class(&self, condition: bool, class_name: &str) {
+    fn add_or_remove_class(&self, condition: bool, class_name: &str) {
         if condition {
             if let Err(e) = self.0.class_list().add_1(class_name) {
                 log::error!("Error on adding a class named `{class_name}`: {e:?}");
@@ -357,7 +361,7 @@ impl WsElement {
         }
     }
 
-    pub(crate) fn remove_child(&self, child: &web_sys::Node) {
+    pub fn remove_child(&self, child: &web_sys::Node) {
         if let Err(e) = self.0.remove_child(child) {
             log::error!("Error on removing child node: {e:?}");
         }
@@ -367,6 +371,14 @@ impl WsElement {
         if let Err(e) = self.0.class_list().add_1(class_name) {
             log::error!("Error on adding a class name: {e:?}");
         }
+    }
+
+    pub fn href_with_routing(&self, route: &impl Route) {
+        self.set_str_attribute("href", &route.url());
+    }
+
+    pub fn add_click_event_to_handle_routing(&self) {
+        crate::routing::add_routing_handler(self);
     }
 }
 
@@ -461,13 +473,39 @@ impl Element {
         }
     }
 
-    pub fn set_bool_attribute(&mut self, index: usize, name: &str, new_value: bool) {
+    fn is_new_str_value(&mut self, index: usize, new_value: &str) -> bool {
+        match self.attributes.get_mut(index) {
+            Some(Attribute::Str(current_value)) => {
+                if *current_value != new_value {
+                    *current_value = new_value.to_string();
+                    true
+                } else {
+                    false
+                }
+            }
+            None => {
+                if self.attributes.len() == index {
+                    self.attributes.push(Attribute::Str(new_value.to_string()));
+                    true
+                } else {
+                    log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
+                    false
+                }
+            }
+            _ => {
+                log::error!("Internal error: Attribute at index = {index} is not a String");
+                false
+            }
+        }
+    }
+
+    pub fn set_bool_attribute_with_index(&mut self, index: usize, name: &str, new_value: bool) {
         if self.is_new_bool_value(index, new_value) {
             self.element.set_bool_attribute(name, new_value);
         }
     }
 
-    pub fn set_i32_attribute(&mut self, index: usize, name: &str, value: i32) {
+    pub fn set_i32_attribute_with_index(&mut self, index: usize, name: &str, value: i32) {
         match self.attributes.get_mut(index) {
             Some(Attribute::I32(current_value)) => {
                 if *current_value != value {
@@ -489,18 +527,43 @@ impl Element {
         }
     }
 
-    pub fn set_str_attribute(&mut self, index: usize, name: &str, value: &str) {
+    pub fn set_str_attribute_with_index(&mut self, index: usize, name: &str, value: &str) {
+        // match self.attributes.get_mut(index) {
+        //     Some(Attribute::Str(current_value)) => {
+        //         if *current_value != value {
+        //             *current_value = value.to_string();
+        //             self.element.set_str_attribute(name, value);
+        //         }
+        //     }
+        //     None => {
+        //         if self.attributes.len() == index {
+        //             self.attributes.push(Attribute::Str(value.to_string()));
+        //             self.element.set_str_attribute(name, value);
+        //         } else {
+        //             log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
+        //         }
+        //     }
+        //     _ => {
+        //         log::error!("Internal error: Attribute at index = {index} is not a i32")
+        //     }
+        // }
+        if self.is_new_str_value(index, value) {
+            self.element.set_str_attribute(name, value);
+        }
+    }
+
+    pub fn set_string_attribute_with_index(&mut self, index: usize, name: &str, value: String) {
         match self.attributes.get_mut(index) {
             Some(Attribute::Str(current_value)) => {
                 if *current_value != value {
-                    *current_value = value.to_string();
-                    self.element.set_str_attribute(name, value);
+                    *current_value = value;
+                    self.element.set_str_attribute(name, &current_value);
                 }
             }
             None => {
                 if self.attributes.len() == index {
-                    self.attributes.push(Attribute::Str(value.to_string()));
-                    self.element.set_str_attribute(name, value);
+                    self.element.set_str_attribute(name, &value);
+                    self.attributes.push(Attribute::Str(value));
                 } else {
                     log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
                 }
@@ -515,27 +578,98 @@ impl Element {
         &self.element
     }
 
-    pub fn class_if(&mut self, index: usize, condition: bool, class_name: &str) {
+    pub fn class_if_with_index(&mut self, index: usize, condition: bool, class_name: &str) {
         if self.is_new_bool_value(index, condition) {
-            self.element.set_or_remove_class(condition, class_name);
+            self.element.add_or_remove_class(condition, class_name);
+        }
+    }
+
+    pub fn href_with_routing_with_index(&mut self, index: usize, route: &impl Route) {
+        self.set_string_attribute_with_index(index, "href", route.url());
+    }
+
+    pub fn set_input_checked_with_index(&mut self, index: usize, value: bool) {
+        if self.is_new_bool_value(index, value) {
+            self.0
+                .unchecked_ref::<HtmlInputElement>()
+                .set_checked(value);
+        }
+    }
+
+    pub fn set_input_value_with_index(&mut self, index: usize, value: &str) {
+        if self.is_new_str_value(index, value) {
+            self.0.unchecked_ref::<HtmlInputElement>().set_value(value);
+        }
+    }
+
+    pub fn set_textarea_value_with_index(&mut self, index: usize, value: &str) {
+        if self.is_new_str_value(index, value) {
+            self.0
+                .unchecked_ref::<HtmlTextAreaElement>()
+                .set_value(value);
+        }
+    }
+
+    pub fn set_select_value_with_index(&mut self, index: usize, value: &str) {
+        if self.is_new_str_value(index, value) {
+            self.0.unchecked_ref::<HtmlSelectElement>().set_value(value);
+        }
+    }
+
+    pub fn set_option_value_with_index(&mut self, index: usize, value: &str) {
+        if self.is_new_str_value(index, value) {
+            self.0.unchecked_ref::<HtmlOptionElement>().set_value(value);
         }
     }
 }
 
 macro_rules! create_event_methods {
-    ($EventArgType:ident: $($event_name:ident)+) => {
-        impl Element { $(
-            pub fn $event_name(&mut self, index: usize, callback: CallbackArg<web_sys::$EventArgType>) {
+    ($($EventArgType:ident { $($event_name:ident)+ })+) => {$(
+        impl Element {
+            #[allow(non_snake_case)]
+            fn $EventArgType(&mut self, index: usize, event_name: &str, callback: CallbackArg<web_sys::$EventArgType>) {
                 self.add_event_listener(
                     index,
-                    stringify!($event_name),
+                    event_name,
                     Box::new(Closure::<dyn Fn(web_sys::$EventArgType)>::new(move |arg| callback.call(arg)))
                 )
             }
-        )+ }
-    };
+            $(
+            pub fn $event_name(&mut self, index: usize, callback: CallbackArg<web_sys::$EventArgType>) {
+                // self.add_event_listener(
+                //     index,
+                //     stringify!($event_name),
+                //     Box::new(Closure::<dyn Fn(web_sys::$EventArgType)>::new(move |arg| callback.call(arg)))
+                // )
+                self.$EventArgType(index, stringify!($event_name), callback);
+            }
+            )+
+        }
+    )+};
 }
 
 create_event_methods! {
-    MouseEvent: click dblclick mousedown mouseup mouseenter mouseleave mousemove mouseover
+    Event { change }
+    FocusEvent { focus blur focusin focusout }
+    KeyboardEvent { keydown }
+    MouseEvent { click dblclick mousedown mouseup mouseenter mouseleave mousemove mouseover }
+}
+
+impl Element {
+    pub fn input_string(&mut self, index: usize, callback: CallbackArg<String>) {
+        self.add_event_listener(
+            index,
+            "input",
+            Box::new(Closure::<dyn Fn(web_sys::InputEvent)>::new(
+                move |input_event: web_sys::InputEvent| {
+                    if let Some(input_element) = input_event
+                        .current_target()
+                        .map(|v| v.unchecked_into::<HtmlInputElement>())
+                    {
+                        callback.call(input_element.value());
+                    };
+                },
+            )),
+        );
+    }
 }

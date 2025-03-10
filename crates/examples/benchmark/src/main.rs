@@ -12,24 +12,19 @@ struct AppState {
     selected_id: Option<usize>,
 }
 
-#[component(?)]
+#[component]
 impl AppState {
-    fn create_view(_cdata: &Self, ccomp: &Comp<Self>) {}
-    fn update_view(udata: &Self, ucomp: &Comp<Self>) {}
+    fn create_view(ccontext: &Context<Self>) {}
+    fn update_view(ucontext: &Context<Self>) {}
     fn view() {
         div(
             replace_at_element_id = "main",
             div(
                 class = "container",
-                view::Header(create_view(&ccomp), update_view()),
+                v.Header(&ccontext.comp),
                 table(
                     class = "table table-hover table-striped test-data",
-                    tbody(list_of(
-                        AppState,
-                        RowItem,
-                        ucomp.context(udata),
-                        udata.rows.iter(),
-                    )),
+                    tbody(l.RowItem.AppState(ucontext, ucontext.state.rows.iter())),
                 ),
                 span(
                     class = "preloadicon glyphicon glyphicon-remove",

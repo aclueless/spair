@@ -75,7 +75,7 @@ impl KeyedItemView<AppState> for RowItem {
     ) {
         _spair_keyed_item_view_state_for_updating_
             ._element_1
-            .class_if(
+            .class_if_with_index(
                 0usize,
                 Some(udata.id) == ucontext.state.selected_id,
                 "danger",

@@ -13,7 +13,7 @@ impl Button {
                 id = id,
                 class = "btn btn-primary btn-block",
                 r#type = "button",
-                click = callback,
+                on_click = callback,
                 text(text),
             ),
         )
@@ -34,53 +34,35 @@ impl Header {
                     class = "col-md-6",
                     div(
                         class = "row",
-                        view::Button(
-                            create_view(
-                                "run",
-                                "Create 1,000 rows",
-                                comp.callback_arg(|state, _| state.create(1000)),
-                            ),
-                            update_view(),
+                        v.Button(
+                            "run",
+                            "Create 1,000 rows",
+                            comp.callback_arg(|state, _| state.create(1000)),
                         ),
-                        view::Button(
-                            create_view(
-                                "runlots",
-                                "Create 10,000 rows",
-                                comp.callback_arg(|state, _| state.create(10000)),
-                            ),
-                            update_view(),
+                        v.Button(
+                            "runlots",
+                            "Create 10,000 rows",
+                            comp.callback_arg(|state, _| state.create(10000)),
                         ),
-                        view::Button(
-                            create_view(
-                                "add",
-                                "Append 1,000 rows",
-                                comp.callback_arg(|state, _| state.append(1000)),
-                            ),
-                            update_view(),
+                        v.Button(
+                            "add",
+                            "Append 1,000 rows",
+                            comp.callback_arg(|state, _| state.append(1000)),
                         ),
-                        view::Button(
-                            create_view(
-                                "update",
-                                "Update every 10th row",
-                                comp.callback_arg(|state, _| state.update()),
-                            ),
-                            update_view(),
+                        v.Button(
+                            "update",
+                            "Update every 10th row",
+                            comp.callback_arg(|state, _| state.update()),
                         ),
-                        view::Button(
-                            create_view(
-                                "clear",
-                                "Clear",
-                                comp.callback_arg(|state, _| state.clear()),
-                            ),
-                            update_view(),
+                        v.Button(
+                            "clear",
+                            "Clear",
+                            comp.callback_arg(|state, _| state.clear()),
                         ),
-                        view::Button(
-                            create_view(
-                                "swaprows",
-                                "Swap Rows",
-                                comp.callback_arg(|state, _| state.swap()),
-                            ),
-                            update_view(),
+                        v.Button(
+                            "swaprows",
+                            "Swap Rows",
+                            comp.callback_arg(|state, _| state.swap()),
                         ),
                     ),
                 ),

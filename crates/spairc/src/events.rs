@@ -24,4 +24,5 @@ impl_event_listener_trait! {
     InputEvent
     KeyboardEvent
     WheelEvent
+    PopStateEvent
 }

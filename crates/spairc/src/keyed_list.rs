@@ -70,7 +70,7 @@ where
         }
     }
 
-    pub fn update<'a>(&mut self, item_data: impl Iterator<Item = &'a I>, context: Context<C>) {
+    pub fn update<'a>(&mut self, item_data: impl Iterator<Item = &'a I>, context: &Context<C>) {
         // Current implementation requires knowing the exact number in advance.
         let item_data: Vec<_> = item_data.collect();
         let new_count = item_data.len();
@@ -89,12 +89,6 @@ where
             return;
         }
 
-        log::info!(
-            "old list {}, new list {}",
-            self.buffer_items.len(),
-            self.active_items.len()
-        );
-
         let mut keyed_list_updater = KeyedListUpdater {
             parent_element: &self.parent_element,
             template: &self.template,
@@ -110,11 +104,6 @@ where
                 .clone(),
         };
         keyed_list_updater.update(item_data, context);
-        log::info!(
-            "old list {}, new list {}",
-            self.buffer_items.len(),
-            self.active_items.len()
-        );
     }
 
     fn remove_all_old_items(&mut self) {
@@ -138,7 +127,7 @@ where
     I: KeyedItemView<C> + 'static,
     C: Component + 'static,
 {
-    fn update(&mut self, item_data: Vec<&I>, context: Context<C>) {
+    fn update(&mut self, item_data: Vec<&I>, context: &Context<C>) {
         let mut item_data = item_data.into_iter().peekable_double_ended();
         loop {
             let mut count = self.update_same_items_from_start(&mut item_data, &context);
@@ -773,14 +762,14 @@ pub mod keyed_list_tests {
     impl TestDataInterface for TestData {
         type ViewState = TestDataViewState;
 
-        fn init(&self, root: &Element, context: crate::Context<TestState>) -> Self::ViewState {
+        fn init(&self, root: &Element, context: &crate::Context<TestState>) -> Self::ViewState {
             let mut keyed_list = KeyedList::new(root.ws_element().clone(), None);
-            keyed_list.update(self.iter(), context);
+            keyed_list.update(self.iter(), &context);
             TestDataViewState { keyed_list }
         }
 
-        fn update(&self, view_state: &mut Self::ViewState, context: crate::Context<TestState>) {
-            view_state.keyed_list.update(self.iter(), context);
+        fn update(&self, view_state: &mut Self::ViewState, context: &crate::Context<TestState>) {
+            view_state.keyed_list.update(self.iter(), &context);
         }
     }
 

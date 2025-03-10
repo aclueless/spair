@@ -1,31 +1,51 @@
 use std::ops::Not;
 
+use match_expr::Match;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{
     punctuated::Punctuated,
     spanned::Spanned,
     token::{Comma, Paren},
-    Expr, ExprCall, Ident, Result,
+    Expr, ExprCall, ExprMethodCall, Ident, Result,
 };
 
-use crate::{
-    view::{self, expr_has_ref_to},
-    ItemCounter, MultiErrors,
-};
+use crate::{view::expr_has_ref_to, ItemCounter, MultiErrors};
+
+mod match_expr;
 
 const REPLACE_AT_ELEMENT_ID: &str = "replace_at_element_id";
+const HREF_WITH_ROUTING: &str = "href_with_routing";
+const HREF_STR: &str = "href_str";
+
+const VIEW_EXPRESSION_SYNTAX: &str = "div(
+    class = \"all class names\",
+    class_if = (bool_expression, class_name),
+    button(
+        on_click = callback,
+        text(\"Click me\"),
+    )
+    v.ViewName(...).update(...),
+    l.ListItem.AppState(...),
+    c.ComponentName(),
+    match expr {
+        Pat1 => {}, // can be empty
+        Pat2 => div(..., span(...)), // only allow a html element
+        Pat3 => v.ViewName(...), // or a child view as a root of a match arm
+    }
+)";
+const CHILD_VIEW_LIST_COMP_SYNTAX: &str = "Expected one of `v.`, `l.`, and `c.` as in v.ViewName(...), l.ListItemTypeName.AppStateTypeName(...), c.ComponentTypeName(...)";
 
 pub(crate) enum Element {
     Text(Text),
     HtmlElement(HtmlElement),
     View(View),
     KeyedList(KeyedList),
+    Match(Match),
     // Component(Component),
 }
 
 pub(crate) struct KeyedList {
-    // list(AppState, Item, ustate.data.iter())
     pub(crate) name: Ident,
     stage: Stage,
     partial_list: bool,
@@ -63,15 +83,12 @@ pub(crate) struct HtmlElement {
 
 pub(crate) struct View {
     pub(crate) name: Ident,
-    create_view: Call,
-    update_view: Call,
+    create_view_args: Punctuated<Expr, Comma>,
+    update_view_method_name: Option<Ident>,
+    update_view_args: Option<Punctuated<Expr, Comma>>,
+
     spair_ident: Ident,
     spair_ident_marker: Ident,
-}
-
-struct Call {
-    name: Ident,
-    args: Punctuated<Expr, Comma>,
 }
 
 // pub struct Component {
@@ -81,14 +98,16 @@ struct Call {
 
 struct Attribute {
     stage: Stage,
-    name_string: String,
-    name_ident: Ident,
+    key_rust: Ident,
+    key_html: Option<Ident>,
+    key_html_string: String,
     value: Expr,
 
     spair_store_index: usize,
-    is_event_listener: bool,
+    is_html_event: bool,
 }
 
+#[derive(PartialEq, Eq)]
 enum Stage {
     HtmlString(String),
     Creation,
@@ -97,39 +116,28 @@ enum Stage {
 
 impl Element {
     // Collecting element stops on the first error. It is a bit difficult to collect all the errors at the same time.
-    pub fn with_expr(expr: Expr) -> Result<Self> {
-        const EXPECTED_HTML_CONSTRUCTION_EXPR: &str = r#"Expected an HTML construction expression that looks like:
-div(
-    id = "some_id",
-    class = "some_class_name",
-    button(
-        click = some_handler,
-        text("some text", some_text),
-    ),
-    div(
-       text("some text"),
-    )
-)"#;
-        let expr = match expr {
-            Expr::Call(expr_call) => expr_call,
-            other_expr => {
-                return Err(syn::Error::new(
-                    other_expr.span(),
-                    EXPECTED_HTML_CONSTRUCTION_EXPR,
-                ));
+    pub fn with_expr(
+        expr: Expr,
+        item_counter: &mut ItemCounter,
+        update_stage_variables: Option<&[String]>,
+    ) -> Result<Vec<Self>> {
+        match expr {
+            Expr::Call(expr_call) => {
+                Self::with_expr_call(expr_call, item_counter, update_stage_variables)
             }
-        };
-        let mut item_counter = ItemCounter::new();
-        let element = Self::with_expr_call(expr, &mut item_counter)?
-            .pop()
-            .unwrap();
-        Ok(element)
+            Expr::MethodCall(mcall) => {
+                Self::with_expr_method_call(mcall, item_counter, update_stage_variables)
+                    .map(|v| vec![v])
+            }
+            other_expr => Err(syn::Error::new(other_expr.span(), VIEW_EXPRESSION_SYNTAX)),
+        }
     }
 
-    fn with_expr_call(expr: ExprCall, item_counter: &mut ItemCounter) -> Result<Vec<Self>> {
-        // div(a=b, c=d, span(...), ...), or
-        // view::ViewName(...), or
-        // comp::ComponentName(...)
+    fn with_expr_call(
+        expr: ExprCall,
+        item_counter: &mut ItemCounter,
+        update_stage_variables: Option<&[String]>,
+    ) -> Result<Vec<Self>> {
         let span = expr.span();
         let ExprCall {
             func,
@@ -137,41 +145,77 @@ div(
             args,
             ..
         } = expr;
-        if let Expr::Path(mut expr_path) = *func {
-            if expr_path.path.segments.len() == 1 {
-                // Don't expect PathSegment.arguments, just ignore it now, should report an error?
-                let html_tag = expr_path.path.segments.pop().unwrap().into_value().ident;
-                return if html_tag == "text" {
-                    text_elements(args, paren_token, &html_tag, item_counter)
-                } else if html_tag == "list_of" {
-                    list_element(args, paren_token, &html_tag, item_counter).map(|v| vec![v])
-                } else {
-                    HtmlElement::with_name_n_args(html_tag, args, item_counter)
-                        .map(|v| vec![Element::HtmlElement(v)])
-                };
-            } else if expr_path.path.segments.len() == 2 {
-                // Don't expect PathSegment.arguments, just ignore it now, should report an error?
-                let name = expr_path.path.segments.pop().unwrap().into_value().ident;
-                let type_ident = expr_path.path.segments.pop().unwrap().into_value().ident;
-                if type_ident == "view" {
-                    let view = View::collect(name, args, item_counter)?;
-                    return Ok(vec![Element::View(view)]);
-                } else if type_ident != "comp" {
-                    // let comp = Component::collect(name, expr.args)?;
-                    // Element::Component(comp)
-                    todo!()
-                } else {
-                    return Err(syn::Error::new(
-                        type_ident.span(),
-                        "Expected 'view' or 'comp'",
-                    ));
-                }
-            }
+        if let Expr::Path(expr_path) = *func {
+            let html_tag = expr_path.path.require_ident()?;
+            return if html_tag == "text" {
+                text_elements(
+                    args,
+                    paren_token,
+                    &html_tag,
+                    item_counter,
+                    update_stage_variables,
+                )
+            } else {
+                HtmlElement::with_name_n_args(
+                    html_tag.clone(),
+                    args,
+                    item_counter,
+                    update_stage_variables,
+                )
+                .map(|v| vec![Element::HtmlElement(v)])
+            };
         }
         Err(syn::Error::new(
             span,
-            "Expected HTML tags (div, input...), view::ViewName, or comp::ComponentName",
+            "Expected HTML tags (div, input...), v.ViewName, or c.ComponentName",
         ))
+    }
+
+    fn with_expr_method_call(
+        expr: ExprMethodCall,
+        item_counter: &mut ItemCounter,
+        update_stage_variables: Option<&[String]>,
+    ) -> Result<Self> {
+        let span = expr.span();
+        let ExprMethodCall {
+            receiver,
+            method,
+            paren_token,
+            args,
+            ..
+        } = expr;
+        match *receiver {
+            Expr::Field(expr_field) => keyed_list(
+                expr_field,
+                method,
+                paren_token,
+                args,
+                item_counter,
+                update_stage_variables,
+            ),
+            Expr::Path(expr_path) => {
+                let name = expr_path.path.require_ident()?;
+                if name == "v" {
+                    Ok(Element::View(View {
+                        name: method,
+                        create_view_args: args,
+                        update_view_method_name: None,
+                        update_view_args: None,
+                        spair_ident: item_counter.new_ident_view(),
+                        spair_ident_marker: item_counter.new_ident("_view_marker"),
+                    }))
+                } else {
+                    Err(syn::Error::new(name.span(), CHILD_VIEW_LIST_COMP_SYNTAX))
+                }
+            }
+            Expr::MethodCall(first_call) => {
+                Element::with_double_method_calls(first_call, method, args, item_counter)
+            }
+            x => Err(syn::Error::new(
+                span,
+                format!("{} Found {}", CHILD_VIEW_LIST_COMP_SYNTAX, expr_name(&x)),
+            )),
+        }
     }
 
     fn span_to_report_error_on_attribute_after_child_node(&self) -> Span {
@@ -180,6 +224,7 @@ div(
             Element::Text(text) => text.shared_name.span(),
             Element::View(view) => view.name.span(),
             Element::KeyedList(list) => list.name.span(),
+            Element::Match(m) => m.match_keyword.span(),
             // Element::Component(component) => component.name.span(),
         }
     }
@@ -190,6 +235,7 @@ div(
             Element::HtmlElement(html_element) => html_element.check_html_multi_errors(errors),
             Element::View(_view) => {}
             Element::KeyedList(_list) => {}
+            Element::Match(m) => m.check_html_multi_errors(errors),
         }
     }
 
@@ -211,24 +257,23 @@ div(
                     html_string.push_str("<!--plist-->");
                 }
             }
+            Element::Match(m) => {
+                if m.parent_has_only_one_child.not() {
+                    html_string.push_str("<!--mi-->")
+                }
+            }
         }
     }
 
-    pub(crate) fn prepare_items_for_generating_code(
-        &mut self,
-        update_stage_variables: &[String],
-        parent_has_only_one_child: bool,
-    ) {
+    pub(crate) fn prepare_items_for_generating_code(&mut self, parent_has_only_one_child: bool) {
         match self {
-            Element::Text(text) => text.prepare_items_for_generating_code(update_stage_variables),
-            Element::HtmlElement(html_element) => {
-                html_element.prepare_items_for_generating_code(update_stage_variables)
-            }
+            Element::Text(_) => {}
+            Element::HtmlElement(html_element) => html_element.prepare_items_for_generating_code(),
             Element::View(_) => {}
-            Element::KeyedList(list) => list.prepare_items_for_generating_code(
-                update_stage_variables,
-                parent_has_only_one_child,
-            ),
+            Element::KeyedList(list) => {
+                list.prepare_items_for_generating_code(parent_has_only_one_child)
+            }
+            Element::Match(m) => m.prepare_items_for_generating_code(parent_has_only_one_child),
         }
     }
 
@@ -238,6 +283,72 @@ div(
             Element::HtmlElement(html_element) => html_element.generate_view_state_struct_fields(),
             Element::View(view) => view.generate_view_state_struct_fields(),
             Element::KeyedList(list) => list.generate_view_state_struct_fields(),
+            Element::Match(m) => m.generate_view_state_struct_fields(),
+        }
+    }
+
+    fn generate_match_view_state_types_n_struct_fields(
+        &self,
+        inner_types: &mut Vec<TokenStream>,
+    ) -> TokenStream {
+        match self {
+            Element::Text(text) => text.generate_match_view_state_types_n_struct_fields(),
+            Element::HtmlElement(html_element) => {
+                html_element.generate_match_view_state_types_n_struct_fields(inner_types)
+            }
+            Element::View(view) => view.generate_match_view_state_types_n_struct_fields(),
+            Element::KeyedList(list) => list.generate_match_view_state_types_n_struct_fields(),
+            Element::Match(m) => m.generate_match_view_state_types_n_struct_fields(inner_types),
+        }
+    }
+
+    fn generate_get_root_ws_element_4_match_arm(&self, view_state: &Ident) -> TokenStream {
+        match self {
+            Element::Text(_) => quote! {},
+            Element::HtmlElement(html_element) => {
+                let ident = &html_element.meta.spair_ident;
+                quote! {Some(&#view_state.#ident)}
+            }
+            Element::View(view) => {
+                let ident = &view.spair_ident;
+                quote! {Some(#view_state.#ident.root_element())}
+            }
+            Element::KeyedList(_list) => quote! {None},
+            Element::Match(m) => {
+                let ident = &m.spair_ident;
+                quote! {
+                    #view_state.#ident.root_element()
+                }
+            }
+        }
+    }
+
+    fn generate_remove_child_b4_changing_to_other_match_arm(
+        &self,
+        view_state: &Ident,
+    ) -> TokenStream {
+        match self {
+            Element::Text(_) => quote! {},
+            Element::HtmlElement(html_element) => {
+                let ident = &html_element.meta.spair_ident;
+                quote! {parent.remove_child(&#view_state.#ident);}
+            }
+            Element::View(view) => {
+                let ident = &view.spair_ident;
+                quote! {parent.remove_child(#view_state.#ident.root_element());}
+            }
+            Element::KeyedList(list) => {
+                let ident = &list.spair_ident;
+                quote! {#view_state.#ident.remove_from_parent(parent);}
+            }
+            Element::Match(m) => {
+                let ident = &m.spair_ident;
+                quote! {
+                    if let Some(child_element) = #view_state.#ident.root_element() {
+                        parent.remove_child(child_element);
+                    }
+                }
+            }
         }
     }
 
@@ -249,6 +360,7 @@ div(
             }
             Element::View(view) => view.generate_fields_for_view_state_instance(),
             Element::KeyedList(list) => list.generate_fields_for_view_state_instance(),
+            Element::Match(m) => m.generate_fields_for_view_state_instance(),
         }
     }
 
@@ -270,6 +382,7 @@ div(
             Element::KeyedList(list) => {
                 list.generate_code_for_create_view_fn_as_child_node(parent, previous)
             }
+            Element::Match(m) => m.generate_code_for_create_view_fn_as_child_node(parent, previous),
         }
     }
 
@@ -279,10 +392,15 @@ div(
             Element::HtmlElement(html_element) => &html_element.meta.spair_ident,
             Element::View(view) => &view.spair_ident_marker,
             Element::KeyedList(list) => &list.spair_ident_marker,
+            Element::Match(m) => &m.spair_ident_marker,
         }
     }
 
-    fn generate_code_for_update_view_fn(&self, view_state_ident: &Ident) -> TokenStream {
+    fn generate_code_for_update_view_fn(
+        &self,
+        parent: &Ident,
+        view_state_ident: &Ident,
+    ) -> TokenStream {
         match self {
             Element::Text(text) => {
                 text.generate_code_for_update_view_fn_as_child_node(view_state_ident)
@@ -296,39 +414,102 @@ div(
             Element::KeyedList(list) => {
                 list.generate_code_for_update_view_fn_as_child_node(view_state_ident)
             }
+            Element::Match(m) => {
+                m.generate_code_for_update_view_fn_as_child_node(parent, view_state_ident)
+            }
+        }
+    }
+
+    pub fn name_or_text_expr_span(&self) -> Span {
+        match self {
+            Element::Text(text) => text.value.span(),
+            Element::HtmlElement(html_element) => html_element.name.span(),
+            Element::View(view) => view.name.span(),
+            Element::KeyedList(keyed_list) => keyed_list.name.span(),
+            Element::Match(m) => m.match_keyword.span,
+        }
+    }
+
+    fn collect_match_view_state_types(&self) -> TokenStream {
+        match self {
+            Element::HtmlElement(html_element) => html_element.collect_match_view_state_types(),
+            Element::Match(m) => m.generate_match_view_state_types(),
+            _ => quote! {},
+        }
+    }
+
+    fn with_double_method_calls(
+        first_call: ExprMethodCall,
+        second_method_name: Ident,
+        second_args: Punctuated<Expr, Comma>,
+        item_counter: &mut ItemCounter,
+    ) -> Result<Element> {
+        let ExprMethodCall {
+            receiver,
+            method,
+            args,
+            ..
+        } = first_call;
+        let ep = match *receiver {
+            Expr::Path(ep) => ep,
+            other_expr => {
+                return Err(syn::Error::new(
+                    other_expr.span(),
+                    format!(
+                        "{CHILD_VIEW_LIST_COMP_SYNTAX} Found {}",
+                        expr_name(&other_expr)
+                    ),
+                ));
+            }
+        };
+        let keyword = ep.path.require_ident()?;
+        if keyword == "v" {
+            Ok(Element::View(View {
+                name: method,
+                create_view_args: args,
+                update_view_method_name: Some(second_method_name),
+                update_view_args: Some(second_args),
+                spair_ident: item_counter.new_ident_view(),
+                spair_ident_marker: item_counter.new_ident("_view_marker"),
+            }))
+        } else {
+            Err(syn::Error::new(keyword.span(), CHILD_VIEW_LIST_COMP_SYNTAX))
         }
     }
 }
-fn list_element(
-    args: Punctuated<Expr, Comma>,
+
+fn keyed_list(
+    expr_field: syn::ExprField,
+    component_type_name: Ident,
     paren: Paren,
-    html_tag: &Ident,
+    args: Punctuated<Expr, Comma>,
     item_counter: &mut ItemCounter,
+    update_stage_variables: Option<&[String]>,
 ) -> Result<Element> {
-    if args.len() != 4 {
+    if args.len() != 2 {
         return Err(syn::Error::new(
             paren.span.span(),
-            "Expected 4 args: `(ComponentTypeName, KeyedListItemTypeName, context, items_iterator)`",
+            "Expected 2 args: `(context, items_iterator)`",
         ));
     }
     let mut args = args.into_pairs();
-    let component_type_name = expr_as_ident(
-        args.next().unwrap().into_value(),
-        "Expected an identifer for component type name",
-    )?;
-    let keyed_item_type_name = expr_as_ident(
-        args.next().unwrap().into_value(),
-        "Expected an identifer for keyed list item type name",
-    )?;
-
+    let name = expr_as_ident(*expr_field.base, "Expected a KeyedItemTypeName")?;
+    let keyed_item_type_name = match expr_field.member {
+        syn::Member::Named(ident) => ident,
+        syn::Member::Unnamed(index) => {
+            return Err(syn::Error::new(index.span(), "Expected KeyedItemTypeName`"));
+        }
+    };
+    let context = args.next().unwrap().into_value();
+    let keyed_item_iter = args.next().unwrap().into_value();
     Ok(Element::KeyedList(KeyedList {
-        name: html_tag.clone(),
-        stage: Stage::Update,
+        name,
+        stage: is_expr_in_create_or_update_stage(&keyed_item_iter, update_stage_variables),
         partial_list: false,
         component_type_name,
         keyed_item_type_name,
-        context: args.next().unwrap().into_value(),
-        keyed_item_iter: args.next().unwrap().into_value(),
+        context,
+        keyed_item_iter,
         spair_ident: item_counter.new_ident("_keyed_list"),
         spair_ident_marker: item_counter.new_ident("_keyed_list_end_flag"),
     }))
@@ -339,6 +520,7 @@ fn text_elements(
     paren: Paren,
     html_tag: &Ident,
     item_counter: &mut ItemCounter,
+    update_stage_variables: Option<&[String]>,
 ) -> Result<Vec<Element>> {
     if args.is_empty() {
         return Err(syn::Error::new(paren.span.span(), "Empty text?"));
@@ -346,7 +528,7 @@ fn text_elements(
     let mut text_nodes = Vec::new();
     let text_node_count = args.len();
     for (index, expr) in args.into_iter().enumerate() {
-        let next_node_is_text = index + 1 < text_node_count;
+        let this_is_the_last_text = index + 1 == text_node_count;
         let text_node = match expr {
             Expr::Lit(expr_lit) => {
                 let text_value = get_static_string(&expr_lit)?;
@@ -355,15 +537,15 @@ fn text_elements(
                     stage: Stage::HtmlString(text_value),
                     value: Expr::Lit(expr_lit),
                     spair_ident: item_counter.new_ident_text(),
-                    next_node_is_a_text: next_node_is_text,
+                    next_node_is_a_text: this_is_the_last_text.not(),
                 }
             }
             other_expr => Text {
                 shared_name: html_tag.clone(),
-                stage: Stage::Update,
+                stage: is_expr_in_create_or_update_stage(&other_expr, update_stage_variables),
                 value: other_expr,
                 spair_ident: item_counter.new_ident_text(),
-                next_node_is_a_text: next_node_is_text,
+                next_node_is_a_text: this_is_the_last_text.not(),
             },
         };
         text_nodes.push(text_node);
@@ -372,17 +554,6 @@ fn text_elements(
 }
 
 impl Text {
-    fn prepare_items_for_generating_code(&mut self, update_stage_variables: &[String]) {
-        if let Stage::HtmlString(_) = &self.stage {
-            return;
-        };
-        if view::expr_has_ref_to(&self.value, update_stage_variables) {
-            self.stage = Stage::Update;
-        } else {
-            self.stage = Stage::Creation;
-        }
-    }
-
     fn generate_view_state_struct_fields(&self) -> TokenStream {
         if matches!(self.stage, Stage::Update) {
             let ident = &self.spair_ident;
@@ -390,6 +561,14 @@ impl Text {
         } else {
             quote! {}
         }
+    }
+
+    fn generate_match_view_state_types_n_struct_fields(&self) -> TokenStream {
+        if matches!(self.stage, Stage::HtmlString(_)) {
+            return quote! {};
+        }
+        let ident = &self.spair_ident;
+        quote! {#ident: Text,}
     }
 
     fn generate_fields_for_view_state_instance(&self) -> TokenStream {
@@ -408,7 +587,7 @@ impl Text {
     ) -> TokenStream {
         let text_node = &self.spair_ident;
         let offset = match &self.stage {
-            Stage::HtmlString(s) => s.chars().count(),
+            Stage::HtmlString(s) => s.chars().count() as u32,
             Stage::Creation => 1,
             Stage::Update => 1,
         };
@@ -416,20 +595,21 @@ impl Text {
         let get_text_node = |first_text_method_name, next_text_method_name| {
             let first_text_method_name = Ident::new(first_text_method_name, Span::call_site());
             let next_text_method_name = Ident::new(next_text_method_name, Span::call_site());
-            match previous {
+            let get_text_node = match previous {
                 None => {
                     quote! { let #text_node = #parent.ws_node_ref().#first_text_method_name(); }
                 }
                 Some(previous) => {
-                    if self.next_node_is_a_text {
-                        quote! {
-                            let #text_node = #previous.ws_node_ref().#next_text_method_name();
-                            #text_node.split_text(#offset);
-                        }
-                    } else {
-                        quote! { let #text_node = #previous.ws_node_ref().#next_text_method_name(); }
-                    }
+                    quote! { let #text_node = #previous.ws_node_ref().#next_text_method_name(); }
                 }
+            };
+            if self.next_node_is_a_text {
+                quote! {
+                    #get_text_node
+                    #text_node.split_text(#offset);
+                }
+            } else {
+                get_text_node
             }
         };
         match self.stage {
@@ -476,7 +656,9 @@ impl HtmlElement {
         name: Ident,
         args: Punctuated<Expr, syn::token::Comma>,
         item_counter: &mut ItemCounter,
+        update_stage_variables: Option<&[String]>,
     ) -> Result<HtmlElement> {
+        let element_name = name.to_string();
         let spair_ident = item_counter.new_ident_element();
         let mut attributes = Vec::new();
         let mut children: Vec<Element> = Vec::new();
@@ -489,19 +671,50 @@ impl HtmlElement {
                             "An attribute can not appear after a text or child node",
                         ));
                     }
-                    attributes.push(Attribute::with_expr_assign(expr_assign)?)
+                    let attribute = Attribute::with_expr_assign(
+                        expr_assign,
+                        &element_name,
+                        update_stage_variables,
+                    )?;
+                    if attribute.is_html_event && attribute.stage == Stage::Creation {
+                        attributes.insert(0, attribute);
+                    } else {
+                        attributes.push(attribute);
+                    }
                 }
                 Expr::Call(expr_call) => {
-
-                    let vec = Element::with_expr_call(expr_call, item_counter)?;
+                    let vec =
+                        Element::with_expr_call(expr_call, item_counter, update_stage_variables)?;
                     if let Some(Element::Text(_)) = vec.first() {
-                        if let Some(Element::Text(last))=children.last_mut() {
+                        if let Some(Element::Text(last)) = children.last_mut() {
                             last.next_node_is_a_text = true;
                         }
                     }
-                    children.extend(vec)
-                },
-                other_expr => return Err(syn::Error::new(other_expr.span(), "Expected an attribute assignment `class = some_value` or child element as `text(some_value)`, `div(...)`, `view::ViewName(...)`, `comp::ComponentName(...)`")),
+                    children.extend(vec);
+                }
+                Expr::Match(expr_match) => {
+                    children.push(
+                        Match::with_expr_match(expr_match, item_counter)
+                            .map(|v| Element::Match(v))?,
+                    );
+                }
+                Expr::MethodCall(mcall) => {
+                    let item = Element::with_expr_method_call(
+                        mcall,
+                        item_counter,
+                        update_stage_variables,
+                    )?;
+                    children.push(item);
+                }
+                other_expr => {
+                    return Err(syn::Error::new(
+                        other_expr.span(),
+                        format!(
+                            "Expected {VIEW_EXPRESSION_SYNTAX}, found {}",
+                            expr_name(&other_expr)
+                        ),
+                    ));
+                }
             }
         }
         Ok(HtmlElement {
@@ -519,7 +732,7 @@ impl HtmlElement {
     fn count_spair_element_capacity(&mut self) {
         let mut store_index = 0;
         for attribute in self.attributes.iter_mut().filter(|attribute| {
-            attribute.is_event_listener || matches!(&attribute.stage, Stage::Update)
+            attribute.is_html_event || matches!(&attribute.stage, Stage::Update)
         }) {
             attribute.spair_store_index = store_index;
             store_index += 1;
@@ -537,7 +750,7 @@ impl HtmlElement {
     fn check_html_multi_errors(&self, errors: &mut MultiErrors) {
         self.check_html_tag(errors);
         for attribute in self.attributes.iter() {
-            attribute.check_html(errors);
+            attribute.check_html(&self.name.to_string(), errors);
         }
         for child in self.children.iter() {
             child.check_html_multi_errors(errors);
@@ -695,39 +908,45 @@ impl HtmlElement {
         }
     }
 
-    pub(crate) fn prepare_items_for_generating_code(&mut self, update_stage_variables: &[String]) {
-        let mut spair_store_index = 0;
-        for attribute in self.attributes.iter_mut() {
-            if let Stage::HtmlString(_) = &attribute.stage {
-                continue;
-            }
-            if view::expr_has_ref_to(&attribute.value, update_stage_variables) {
-                attribute.stage = Stage::Update;
-                attribute.spair_store_index = spair_store_index;
-                spair_store_index += 1;
-            } else {
-                attribute.stage = Stage::Creation;
-            }
-        }
+    pub(crate) fn prepare_items_for_generating_code(&mut self) {
         let me_has_only_one_child = self.children.len() == 1;
         for element in self.children.iter_mut() {
-            element
-                .prepare_items_for_generating_code(update_stage_variables, me_has_only_one_child);
+            element.prepare_items_for_generating_code(me_has_only_one_child);
         }
         self.count_spair_element_capacity();
     }
 
-    pub fn generate_view_state_struct_fields(&self) -> TokenStream {
+    fn generate_view_state_struct_field(&self) -> TokenStream {
         let ident = &self.meta.spair_ident;
-        let self_element = if self.root_element || self.meta.spair_element_capacity > 0 {
+        if self.root_element || self.meta.spair_element_capacity > 0 {
             quote! {#ident: Element, }
         } else {
             quote! {}
-        };
+        }
+    }
+
+    pub fn generate_view_state_struct_fields(&self) -> TokenStream {
+        let self_element = self.generate_view_state_struct_field();
         let children: TokenStream = self
             .children
             .iter()
             .map(|v| v.generate_view_state_struct_fields())
+            .collect();
+        quote! {
+            #self_element
+            #children
+        }
+    }
+
+    fn generate_match_view_state_types_n_struct_fields(
+        &self,
+        inner_types: &mut Vec<TokenStream>,
+    ) -> TokenStream {
+        let self_element = self.generate_view_state_struct_field();
+        let children: TokenStream = self
+            .children
+            .iter()
+            .map(|v| v.generate_match_view_state_types_n_struct_fields(inner_types))
             .collect();
         quote! {
             #self_element
@@ -779,13 +998,6 @@ impl HtmlElement {
         }
     }
 
-    // fn generate_fields_for_view_state_instance(&self) -> TokenStream {
-    //     self.children
-    //         .iter()
-    //         .map(|v| v.generate_fields_for_view_state_instance())
-    //         .collect();
-    // }
-
     pub(crate) fn root_element_type(&self) -> Ident {
         Ident::new("Element", Span::call_site())
     }
@@ -797,9 +1009,8 @@ impl HtmlElement {
     pub fn generate_code_for_create_view_fn_of_a_view(
         &self,
         view_state_struct_name: &Ident,
-        html_string: &str,
     ) -> TokenStream {
-        let first_part = self.generate_code_for_create_view_fn(html_string);
+        let first_part = self.generate_code_for_create_view_fn();
         let construct_view_state_instance =
             self.generate_view_state_instance_construction(view_state_struct_name);
         quote! {
@@ -811,10 +1022,9 @@ impl HtmlElement {
     pub fn generate_code_for_create_view_fn_of_a_component(
         &self,
         view_state_struct_name: &Ident,
-        html_string: &str,
     ) -> TokenStream {
         let root_element = &self.meta.spair_ident;
-        let first_part = self.generate_code_for_create_view_fn(html_string);
+        let first_part = self.generate_code_for_create_view_fn();
         let construct_view_state_instance =
             self.generate_view_state_instance_construction(view_state_struct_name);
         quote! {
@@ -845,7 +1055,8 @@ impl HtmlElement {
         }
     }
 
-    fn generate_code_for_create_view_fn(&self, html_string: &str) -> TokenStream {
+    fn generate_code_for_create_view_fn(&self) -> TokenStream {
+        let html_string = self.construct_html_string();
         let root_element = &self.meta.spair_ident;
         let capacity = self.meta.spair_element_capacity;
         let attribute_setting = self.generate_attribute_code_for_create_view_fn();
@@ -924,16 +1135,17 @@ impl HtmlElement {
         let element = &self.meta.spair_ident;
 
         let element = quote! {#view_state_ident.#element};
+        let element_name = self.name.to_string();
         self.attributes
             .iter()
-            .map(|v| v.generate_attribute_code_for_update_view_fn(&element))
+            .map(|v| v.generate_attribute_code_for_update_view_fn(&element_name, &element))
             .collect()
     }
 
     fn generate_children_code_for_update_view_fn(&self, view_state_ident: &Ident) -> TokenStream {
         self.children
             .iter()
-            .map(|v| v.generate_code_for_update_view_fn(view_state_ident))
+            .map(|v| v.generate_code_for_update_view_fn(&self.meta.spair_ident, view_state_ident))
             .collect()
     }
 
@@ -948,46 +1160,83 @@ impl HtmlElement {
             #children
         }
     }
+
+    pub(crate) fn collect_match_view_state_types(&self) -> TokenStream {
+        self.children
+            .iter()
+            .map(|v| v.collect_match_view_state_types())
+            .collect()
+    }
 }
 
 impl Attribute {
-    fn with_expr_assign(expr: syn::ExprAssign) -> Result<Self> {
-        let name_ident = expr_as_ident(
+    fn with_expr_assign(
+        expr: syn::ExprAssign,
+        element_name: &str,
+        update_stage_variables: Option<&[String]>,
+    ) -> Result<Self> {
+        let key_rust = expr_as_ident(
             *expr.left,
             "Expected a single identifier as an HTML attribute name",
         )?;
+        let key_rust_string = key_rust.to_string();
+        let mut is_html_event = false;
+        let (key_html, key_html_string) =
+            if let Some(key_html_string) = key_rust_string.strip_prefix("on_") {
+                is_html_event = is_html_event_name(key_html_string, element_name);
+                if !is_html_event {
+                    return Err(syn::Error::new(key_rust.span(), format!("Unknown event")));
+                }
+                (
+                    Some(Ident::new(key_html_string, Span::call_site())),
+                    key_html_string.to_string(),
+                )
+            } else if let Some(key) = key_rust_string.strip_prefix("r#") {
+                (None, key.to_string())
+            } else if key_rust_string.starts_with("data_") {
+                (None, key_rust_string.replace("_", "-"))
+            } else if key_rust_string.starts_with("aria_") {
+                (None, key_rust_string.replacen("aria_", "aria-", 1))
+            } else {
+                (Some(key_rust.clone()), key_rust_string)
+            };
         let stage = match &*expr.right {
             Expr::Lit(expr_lit) => {
                 let s = get_static_string(expr_lit)?;
+                if is_html_event {
+                    return Err(syn::Error::new(
+                        expr_lit.span(),
+                        "An event cannot have a literal value. An event value must be a callback.",
+                    ));
+                }
                 Stage::HtmlString(s)
             }
-            _ => Stage::Update,
+            other_expr => is_expr_in_create_or_update_stage(other_expr, update_stage_variables),
         };
-        let name_string = name_ident.to_string();
-        let is_event_listener = is_html_event_name(&name_string);
         let attribute = Attribute {
             stage,
-            name_string,
-            name_ident,
+            key_rust,
+            key_html,
+            key_html_string,
             value: *expr.right,
 
-            is_event_listener,
+            is_html_event,
             spair_store_index: 0,
         };
         Ok(attribute)
     }
 
-    fn check_html(&self, errors: &mut MultiErrors) {
-        if self.is_event_listener || is_html_attribute_name(&self.name_string) {
+    fn check_html(&self, element_name: &str, errors: &mut MultiErrors) {
+        if self.is_html_event {
             return;
         }
-        if self.name_string.starts_with("data_") {
+        if self.key_html_string.starts_with("data-") {
             return;
         }
-        if self.name_string.starts_with("aria_") {
+        if self.key_html_string.starts_with("aria-") {
             return;
         }
-        match self.name_string.as_str() {
+        match self.key_html_string.as_str() {
             "class_if" => {
                 let message = "`class_if` requires a tuple of 2 expressions as `(boolean_expr, some_class_name)`";
                 match &self.value {
@@ -1002,84 +1251,154 @@ impl Attribute {
                     other => errors.add(other.span(), message),
                 }
             }
-            name => errors.add(self.name_ident.span(), &format!("unknown attribute {name}")),
+            _ => {
+                check_html_attribute_name(
+                    &self.key_rust,
+                    &self.key_html_string,
+                    element_name,
+                    errors,
+                );
+            }
         }
     }
 
     fn construct_html_string(&self, html_string: &mut String) {
-        if self.name_string == REPLACE_AT_ELEMENT_ID {
-            return;
-        }
-        if let Stage::HtmlString(value) = &self.stage {
-            html_string.push(' ');
-            if self.name_string.starts_with("aria_") {
-                html_string.push_str("aria-");
-                html_string.push_str(self.name_string.trim_start_matches("aria_"));
-            } else {
-                html_string.push_str(&self.name_string);
-            };
-            html_string.push_str("='");
-            html_string.push_str(value);
-            html_string.push_str("'");
+        match self.key_html_string.as_str() {
+            REPLACE_AT_ELEMENT_ID | HREF_WITH_ROUTING => return,
+            other_attribute => {
+                if let Stage::HtmlString(value) = &self.stage {
+                    html_string.push(' ');
+                    match other_attribute {
+                        HREF_STR => html_string.push_str("href"),
+                        other_attribute => html_string.push_str(other_attribute),
+                    }
+                    html_string.push_str("='");
+                    html_string.push_str(value);
+                    html_string.push_str("'");
+                }
+            }
         }
     }
 
     fn generate_attribute_code_for_create_view_fn(&self, element: &Ident) -> TokenStream {
-        let name_ident = &self.name_ident;
         let attribute_value = &self.value;
-        if matches!(&self.stage, Stage::Creation).not() {
-            if self.name_string == REPLACE_AT_ELEMENT_ID {
-                return quote! {#element.replace_at_element_id(#attribute_value);};
+        if self.key_html_string == REPLACE_AT_ELEMENT_ID {
+            // REPLACE_AT_ELEMENT_ID is a special attribute that always executes in create_view stage to attach the component to DOM
+            return quote! {#element.replace_at_element_id(#attribute_value);};
+        }
+        let is_in_create_mode = matches!(&self.stage, Stage::Creation);
+        if is_in_create_mode.not() {
+            return if self.key_html_string == HREF_WITH_ROUTING {
+                quote! {#element.add_click_event_to_handle_routing();}
+            } else {
+                quote! {}
+            };
+        }
+        if self.is_html_event {
+            return self.generate_attribute_code_for_event_listener(&quote! {#element});
+        }
+        match self.key_html_string.as_str() {
+            REPLACE_AT_ELEMENT_ID => {
+                unreachable!("Already handle this case before checking for creation mode")
             }
-            return quote! {};
-        }
-        if self.name_string.starts_with("aria_") || self.name_string.starts_with("data_") {
-            return quote! {compiler_error!("{} in create view not implemented yet.", self.name_string);};
-        }
-        if self.is_event_listener {
-            let index = self.spair_store_index;
-            return quote! {#element.#name_ident(#index, #attribute_value);};
-        }
-        match self.name_string.as_str() {
-            REPLACE_AT_ELEMENT_ID => quote! {#element.#name_ident(#attribute_value);},
-            "id" => quote! {#element.set_id(#attribute_value);},
-            "class" => quote! {
-                #element.class(#attribute_value);
+            HREF_STR => quote! {#element.set_str_attribute("href",#attribute_value);},
+            HREF_WITH_ROUTING => quote! {
+                #element.href_with_routing(#attribute_value);
+                #element.add_click_event_to_handle_routing();
             },
-            "class_if" => quote! {},
-            _other_name => quote! {},
+            "id" => quote! {#element.set_id(#attribute_value);},
+            "class" => quote! {#element.class(#attribute_value);},
+            _other_name => {
+                let message = format!(
+                    "`{}` attribute in create view not implemented yet.",
+                    self.key_html_string
+                );
+                quote! {compile_error!(#message);}
+            }
         }
     }
 
-    fn generate_attribute_code_for_update_view_fn(&self, element: &TokenStream) -> TokenStream {
-        if matches!(&self.stage, Stage::Update).not() {
-            return quote! {};
-        }
-        if self.name_string.starts_with("aria_") || self.name_string.starts_with("data_") {
-            return quote! {compiler_error!("{} in update view not implemented yet.", self.name_string);};
-        }
-        let name_ident = &self.name_ident;
+    fn key(&self) -> &Ident {
+        self.key_html.as_ref().unwrap_or(&self.key_rust)
+    }
+
+    fn generate_attribute_code_for_event_listener(&self, element: &TokenStream) -> TokenStream {
         let index = self.spair_store_index;
         let attribute_value = &self.value;
-        if self.is_event_listener {
-            return quote! {#element.#name_ident(#index, #attribute_value);};
+        let key = self.key();
+        return quote! {#element.#key(#index, #attribute_value);};
+    }
+
+    fn generate_attribute_code_for_update_view_fn(
+        &self,
+        element_name: &str,
+        element: &TokenStream,
+    ) -> TokenStream {
+        let is_in_update_mode = matches!(&self.stage, Stage::Update);
+        if is_in_update_mode.not() {
+            return quote! {};
         }
-        match self.name_string.as_str() {
+        let index = self.spair_store_index;
+        let attribute_value = &self.value;
+        if self.is_html_event {
+            return self.generate_attribute_code_for_event_listener(element);
+        }
+        match self.key_html_string.as_str() {
             REPLACE_AT_ELEMENT_ID => quote! {},
+            HREF_WITH_ROUTING => {
+                quote! {#element.href_with_routing_with_index(#index,#attribute_value);}
+            }
             "class" => quote! {},
             "class_if" => {
                 if let Expr::Tuple(expr) = attribute_value {
                     let condition_expr = &expr.elems[0];
                     let class_name = &expr.elems[1];
                     quote! {
-                        #element.class_if(#index, #condition_expr, #class_name);
+                        #element.class_if_with_index(#index, #condition_expr, #class_name);
                     }
                 } else {
                     quote! {}
                 }
             }
-            _other_name => quote! {},
+            "value" => match element_name {
+                "input" => quote! {#element.set_input_value_with_index(#index, #attribute_value);},
+                "textarea" => {
+                    quote! {#element.set_textarea_value_with_index(#index, #attribute_value);}
+                }
+                "select" => {
+                    quote! {#element.set_select_value_with_index(#index, #attribute_value);}
+                }
+                "option" => {
+                    quote! {#element.set_option_value_with_index(#index, #attribute_value);}
+                }
+                _ => {
+                    let message = format!("`value` is not an attribute of `{element_name}`. Actually, Spair's proc-macros must be update to the report error earlier and at the exact location of the code.");
+                    quote! {comple_error(#message);}
+                }
+            },
+            "checked" => quote! {#element.set_input_checked_with_index(#index, #attribute_value);},
+            _other_name => {
+                let message = format!(
+                    "`{}` attribute in update view not implemented yet.",
+                    self.key_html_string
+                );
+                quote! {compile_error!(#message);}
+            }
         }
+    }
+}
+
+fn is_expr_in_create_or_update_stage(
+    expr: &Expr,
+    update_stage_variables: Option<&[String]>,
+) -> Stage {
+    if update_stage_variables
+        .map(|update_stage_variables| expr_has_ref_to(expr, update_stage_variables))
+        .unwrap_or(true)
+    {
+        Stage::Update
+    } else {
+        Stage::Creation
     }
 }
 
@@ -1089,68 +1408,64 @@ fn expr_as_ident(expr: Expr, message: &str) -> Result<Ident> {
             return Ok(expr_path.path.segments.pop().unwrap().into_value().ident)
         }
         other_expr => {
-            let name = match &other_expr {
-                Expr::Array(_) => "expr_array",
-                Expr::Assign(_) => "expr_assign",
-                Expr::Async(_) => "expr_async",
-                Expr::Await(_) => "expr_await",
-                Expr::Binary(_) => "expr_binary",
-                Expr::Block(_) => "expr_block",
-                Expr::Break(_) => "expr_break",
-                Expr::Call(_) => "expr_call",
-                Expr::Cast(_) => "expr_cast",
-                Expr::Closure(_) => "expr_closure",
-                Expr::Const(_) => "expr_const",
-                Expr::Continue(_) => "expr_continue",
-                Expr::Field(_) => "expr_field",
-                Expr::ForLoop(_) => "expr_for_loop",
-                Expr::Group(_) => "expr_group",
-                Expr::If(_) => "expr_if",
-                Expr::Index(_) => "expr_index",
-                Expr::Infer(_) => "expr_infer",
-                Expr::Let(_) => "expr_let",
-                Expr::Lit(_) => "expr_lit",
-                Expr::Loop(_) => "expr_loop",
-                Expr::Macro(_) => "expr_macro",
-                Expr::Match(_) => "expr_match",
-                Expr::MethodCall(_) => "expr_method_call",
-                Expr::Paren(_) => "expr_paren",
-                Expr::Path(_) => "expr_path",
-                Expr::Range(_) => "expr_range",
-                Expr::RawAddr(_) => "expr_raw_addr",
-                Expr::Reference(_) => "expr_reference",
-                Expr::Repeat(_) => "expr_repeat",
-                Expr::Return(_) => "expr_return",
-                Expr::Struct(_) => "expr_struct",
-                Expr::Try(_) => "expr_try",
-                Expr::TryBlock(_) => "expr_try_block",
-                Expr::Tuple(_) => "expr_tuple",
-                Expr::Unary(_) => "expr_unary",
-                Expr::Unsafe(_) => "expr_unsafe",
-                Expr::Verbatim(_) => "token_stream",
-                Expr::While(_) => "expr_while",
-                Expr::Yield(_) => "expr_yield",
-                _ => "other",
-            };
             return Err(syn::Error::new(
                 other_expr.span(),
-                &format!("{message}, found expression type: {name}"),
+                &format!(
+                    "{message}, found expression type: {}",
+                    expr_name(&other_expr)
+                ),
             ));
         }
     }
 }
 
+fn expr_name(expr: &Expr) -> &str {
+    match expr {
+        Expr::Array(_) => "expr_array",
+        Expr::Assign(_) => "expr_assign",
+        Expr::Async(_) => "expr_async",
+        Expr::Await(_) => "expr_await",
+        Expr::Binary(_) => "expr_binary",
+        Expr::Block(_) => "expr_block",
+        Expr::Break(_) => "expr_break",
+        Expr::Call(_) => "expr_call",
+        Expr::Cast(_) => "expr_cast",
+        Expr::Closure(_) => "expr_closure",
+        Expr::Const(_) => "expr_const",
+        Expr::Continue(_) => "expr_continue",
+        Expr::Field(_) => "expr_field",
+        Expr::ForLoop(_) => "expr_for_loop",
+        Expr::Group(_) => "expr_group",
+        Expr::If(_) => "expr_if",
+        Expr::Index(_) => "expr_index",
+        Expr::Infer(_) => "expr_infer",
+        Expr::Let(_) => "expr_let",
+        Expr::Lit(_) => "expr_lit",
+        Expr::Loop(_) => "expr_loop",
+        Expr::Macro(_) => "expr_macro",
+        Expr::Match(_) => "expr_match",
+        Expr::MethodCall(_) => "expr_method_call",
+        Expr::Paren(_) => "expr_paren",
+        Expr::Path(_) => "expr_path",
+        Expr::Range(_) => "expr_range",
+        Expr::RawAddr(_) => "expr_raw_addr",
+        Expr::Reference(_) => "expr_reference",
+        Expr::Repeat(_) => "expr_repeat",
+        Expr::Return(_) => "expr_return",
+        Expr::Struct(_) => "expr_struct",
+        Expr::Try(_) => "expr_try",
+        Expr::TryBlock(_) => "expr_try_block",
+        Expr::Tuple(_) => "expr_tuple",
+        Expr::Unary(_) => "expr_unary",
+        Expr::Unsafe(_) => "expr_unsafe",
+        Expr::Verbatim(_) => "token_stream",
+        Expr::While(_) => "expr_while",
+        Expr::Yield(_) => "expr_yield",
+        _ => "unknown expr type",
+    }
+}
 impl KeyedList {
-    fn prepare_items_for_generating_code(
-        &mut self,
-        update_stage_variables: &[String],
-        parent_has_only_one_child: bool,
-    ) {
-        self.stage = if expr_has_ref_to(&self.keyed_item_iter, update_stage_variables) {
-            Stage::Update
-        } else {
-            Stage::Creation
-        };
+    fn prepare_items_for_generating_code(&mut self, parent_has_only_one_child: bool) {
         self.partial_list = parent_has_only_one_child.not();
     }
 
@@ -1159,6 +1474,10 @@ impl KeyedList {
         let component_type_name = &self.component_type_name;
         let keyed_item_type_name = &self.keyed_item_type_name;
         quote! {#ident: KeyedList<#component_type_name,#keyed_item_type_name>,}
+    }
+
+    fn generate_match_view_state_types_n_struct_fields(&self) -> TokenStream {
+        self.generate_view_state_struct_fields()
     }
 
     fn generate_fields_for_view_state_instance(&self) -> TokenStream {
@@ -1187,9 +1506,17 @@ impl KeyedList {
         } else {
             quote! {let #marker_ident = None;}
         };
+        let items_iter = &self.keyed_item_iter;
+        let context = &self.context;
+        let render_on_creation = if matches!(&self.stage, Stage::Creation) {
+            quote! {#ident.update(#items_iter, #context);}
+        } else {
+            quote! {}
+        };
         quote! {
             #end_node
             let #ident = KeyedList::new(#parent, #marker_ident.clone());
+            #render_on_creation
         }
     }
 
@@ -1197,6 +1524,9 @@ impl KeyedList {
         &self,
         view_state_ident: &Ident,
     ) -> TokenStream {
+        if matches!(&self.stage, Stage::Update).not() {
+            return quote! {};
+        }
         let ident = &self.spair_ident;
         let items_iter = &self.keyed_item_iter;
         let context = &self.context;
@@ -1206,131 +1536,169 @@ impl KeyedList {
     }
 }
 
-fn is_html_attribute_name(name: &str) -> bool {
-    match name {
-            REPLACE_AT_ELEMENT_ID | // spair attribute: there is an element (element A) given in html document (which has `id` given by this attribute). Spair will put this element (created in spair component) in place of the element A. 
-            "accept" | // form, input
-            "accept_charset" | // form
-            "accesskey" | // global attribute
-            "action" | // form
-            "allow" | // iframe
-            "alt" | // area, img, input
-            "as" | // link
-            "async" | // script
-            "autocapitalize" | // global
-            "autocomplete" | // form, input, select, textarea
-            "autoplay" | // audio, video
-            "capture" | // input
-            "charset" | // meta
-            "checked" | // input
-            "cite" | // blockquote, del, ins, q
-            "class" | // global
-            "cols" | // textarea
-            "colspan" | // td, th
-            "content" | // meta
-            "contenteditable" | // global
-            "controls" | // audio, video
-            "coords" | // area
-            "crossorigin" | // audio, img, link, script, video
-            "csp" | // iframe
-            "data" | // object
-//            "data-" | // global
-            "datetime" | // del, ins, time
-            "decoding" | // img
-            "default" | // track
-            "defer" | // script
-            "dir" | // global
-            "dirname" | // input, textarea
-            "disabled" | // button, fieldset, input, optgroup, option, select, textarea
-            "download" | // a, area
-            "draggable" | // global
-            "enctype" | // form
-            "enterkeyhint" | // textarea, contenteditable
-            "for" | // label, output
-            "form" | // button, fieldset, input, label, meter, object, output, progress, select, textarea
-            "formaction" | // input, button
-            "formenctype" | // input, button
-            "formmethod" | // input, button
-            "formnovalidate" | // input, button
-            "formtarget" | // input, button
-            "headers" | // td, th
-            "height" | // canvas, embed, iframe, img, input, object, video
-            "hidden" | // golbal
-            "high" | // meter
-            "href" | // a, area, base, link
-            "hreflang" | // a, link
-            "http-equiv" | // meta
-            "id" | // global
-            "integrity" | // link, script
-            "inputmode" | // textarea, contenteditable
-            "ismap" | // img
-            "itemprop" | // global
-            "kind" | // track
-            "label" | // optgroup, option, track
-            "lang" | // global
-            "loading" | // img, iframe
-            "list" | // input
-            "loop" | // audio, video
-            "low" | // meter
-            "max" | // input, meter, progress
-            "maxlength" | // input, textarea
-            "minlength" | // input, textarea
-            "media" | // a, area, link, source, style
-            "method" | // form
-            "min" | // input, meter
-            "multiple" | // input, select
-            "muted" | // audio, video
-            "name" | // button, form, fieldset, iframe, input, object, output, select, textarea, map, meta, param
-            "novalidate" | // form
-            "open" | // details, dialog
-            "optimum" | // meter
-            "pattern" | // output
-            "ping" | // a, area
-            "placeholder" | // input, textarea
-            "playsinline" | // video
-            "poster" | // video
-            "preload" | // audio, video
-            "readonly" | // input, textarea
-            "referrerpolicy" | // a, area, iframe, img, link, script
-            "rel" | // a, area, link
-            "required" | // input, select, textarea
-            "reversed" | // ol
-            "role" | // global
-            "rows" | // textarea
-            "rowspan" | // td, th
-            "sandbox" | // iframe
-            "scope" | // th
-            "selected" | // option
-            "shape" | // a, area
-            "size" | // input, select
-            "sizes" | // link, img, source
-            "slot" | // global
-            "span" | // col, colgroup
-            "spellcheck" | // global
-            "src" | // audio, embed, iframe, img, input, script, source, track, video
-            "srcdoc" | // iframe
-            "srclang" | // track
-            "srcset" | // img, source
-            "start" | // ol
-            "step" | // input
-            "style" | // global
-            "tableindex" | // global
-            "target" | // a, area, base, form
-            "title" | // global
-            "translate" | // global
-            "type" | // button, input, embed, object, ol, script, source, style, menu, link
-            "r#type" | // button, input, embed, object, ol, script, source, style, menu, link
-            "usemap" | // img, input, object
-            "value" | // button, data, input, li, meter, option, progress, param
-            "width" | // canvas, embed, iframe, img, input, object, video
-            "wrap"  // textarea
-            => true,
-            _ => false,
-            }
+fn check_html_attribute_name(
+    ident: &Ident,
+    attribute_name: &str,
+    element_name: &str,
+    errors: &mut MultiErrors,
+) {
+    let elements: &[&str] = match attribute_name {
+        REPLACE_AT_ELEMENT_ID => return, // spair attribute: there is an element (element A) given in html document (which has `id` given by this attribute). Spair will put this element (created in spair component) in place of the element A.
+        "accept" => &["form", "input"],
+        "accept_charset" => &["form"],
+        "accesskey" => return, // global attribute
+        "action" => &["form"],
+        "allow" => &["iframe"],
+        "alt" => &["area", "img", "input"],
+        "as" => &["link"],
+        "async" => &["script"],
+        "autocapitalize" => return, // global
+        "autocomplete" => &["form", "input", "select", "textarea"],
+        "autofocus" => return, // global
+        "autoplay" => &["audio", "video"],
+        "capture" => &["input"],
+        "charset" => &["meta"],
+        "checked" => &["input"],
+        "cite" => &["blockquote", "del", "ins", "q"],
+        "class" => return, // global
+        "cols" => &["textarea"],
+        "colspan" => &["td", "th"],
+        "content" => &["meta"],
+        "contenteditable" => return, // global
+        "controls" => &["audio", "video"],
+        "coords" => &["area"],
+        "crossorigin" => &["audio", "img", "link", "script", "video"],
+        "csp" => &["iframe"],
+        "data" => &["object"],
+        "datetime" => &["del", "ins", "time"],
+        "decoding" => &["img"],
+        "default" => &["track"],
+        "defer" => &["script"],
+        "dir" => return, // global
+        "dirname" => &["input", "textarea"],
+        "disabled" => &[
+            "button", "fieldset", "input", "optgroup", "option", "select", "textarea",
+        ],
+        "download" => &["a", "area"],
+        "draggable" => return, // global
+        "enctype" => &["form"],
+        "enterkeyhint" => &["textarea", "contenteditable"],
+        "for" => &["label", "output"],
+        "form" => &[
+            "button", "fieldset", "input", "label", "meter", "object", "output", "progress",
+            "select", "textarea",
+        ],
+        "formaction" => &["input", "button"],
+        "formenctype" => &["input", "button"],
+        "formmethod" => &["input", "button"],
+        "formnovalidate" => &["input", "button"],
+        "formtarget" => &["input", "button"],
+        "headers" => &["td", "th"],
+        "height" => &[
+            "canvas", "embed", "iframe", "img", "input", "object", "video",
+        ],
+        "hidden" => return, // global
+        "high" => &["meter"],
+        "href" => {
+            errors.add(
+                ident.span(),
+                &format!(
+                    "Explicitly use `{HREF_WITH_ROUTING}` or `{HREF_STR}` instead of just `href`"
+                ),
+            );
+            return;
+        }
+        HREF_STR => &["a", "area", "base", "link"],
+        HREF_WITH_ROUTING => &["a", "area"], // Will be handled by router
+        "hreflang" => &["a", "link"],
+        "http-equiv" => &["meta"],
+        "id" => return, // global
+        "integrity" => &["link", "script"],
+        "inputmode" => &["textarea", "contenteditable"],
+        "ismap" => &["img"],
+        "itemprop" => return, // global
+        "kind" => &["track"],
+        "label" => &["optgroup", "option", "track"],
+        "lang" => return, // global
+        "loading" => &["img", "iframe"],
+        "list" => &["input"],
+        "loop" => &["audio", "video"],
+        "low" => &["meter"],
+        "max" => &["input", "meter", "progress"],
+        "maxlength" => &["input", "textarea"],
+        "minlength" => &["input", "textarea"],
+        "media" => &["a", "area", "link", "source", "style"],
+        "method" => &["form"],
+        "min" => &["input", "meter"],
+        "multiple" => &["input", "select"],
+        "muted" => &["audio", "video"],
+        "name" => &[
+            "button", "form", "fieldset", "iframe", "input", "object", "output", "select",
+            "textarea", "map", "meta", "param",
+        ],
+        "novalidate" => &["form"],
+        "open" => &["details", "dialog"],
+        "optimum" => &["meter"],
+        "pattern" => &["output"],
+        "ping" => &["a", "area"],
+        "placeholder" => &["input", "textarea"],
+        "playsinline" => &["video"],
+        "poster" => &["video"],
+        "preload" => &["audio", "video"],
+        "readonly" => &["input", "textarea"],
+        "referrerpolicy" => &["a", "area", "iframe", "img", "link", "script"],
+        "rel" => &["a", "area", "link"],
+        "required" => &["input", "select", "textarea"],
+        "reversed" => &["ol"],
+        "role" => return, // global
+        "rows" => &["textarea"],
+        "rowspan" => &["td", "th"],
+        "sandbox" => &["iframe"],
+        "scope" => &["th"],
+        "selected" => &["option"],
+        "shape" => &["a", "area"],
+        "size" => &["input", "select"],
+        "sizes" => &["link", "img", "source"],
+        "slot" => return, // global
+        "span" => &["col", "colgroup"],
+        "spellcheck" => return, // global
+        "src" => &[
+            "audio", "embed", "iframe", "img", "input", "script", "source", "track", "video",
+        ],
+        "srcdoc" => &["iframe"],
+        "srclang" => &["track"],
+        "srcset" => &["img", "source"],
+        "start" => &["ol"],
+        "step" => &["input"],
+        "style" => return,      // global
+        "tableindex" => return, // global
+        "target" => &["a", "area", "base", "form"],
+        "title" => return,     // global
+        "translate" => return, // global
+        "type" => &[
+            "button", "input", "embed", "object", "ol", "script", "source", "style", "menu", "link",
+        ],
+        "usemap" => &["img", "input", "object"],
+        "value" => &[
+            "button", "data", "input", "li", "meter", "option", "progress", "param",
+        ],
+        "width" => &[
+            "canvas", "embed", "iframe", "img", "input", "object", "video",
+        ],
+        "wrap" => &["textarea"],
+        _ => &[],
+    };
+    if elements.contains(&element_name).not() {
+        errors.add(
+            ident.span(),
+            &format!("Unknown attribute for `<{element_name}>`"),
+        );
+    }
 }
 
-fn is_html_event_name(name: &str) -> bool {
-    match name{
+fn is_html_event_name(event_name: &str, element_name: &str) -> bool {
+    match event_name{
+            "input_string" => element_name == "input",
             "abort" | // HTMLMediaElement
             "afterprint" | // body
             "animationcancel" | // Element 
@@ -1469,37 +1837,14 @@ fn get_static_string(expr_lit: &syn::PatLit) -> Result<String> {
 }
 
 impl View {
-    fn collect(
-        name: Ident,
-        args: Punctuated<Expr, syn::token::Comma>,
-        item_counter: &mut ItemCounter,
-    ) -> Result<Self> {
-        let mut args = args.into_iter();
-        let create_view = collect_call(
-            &name,
-            "create_view",
-            &mut args,
-            "Expected `create_view` to be given like `ViewName(create_view(arg1, arg2, ...))`",
-        )?;
-        let update_view = collect_call(
-            &name,
-            "update_view",
-            &mut args,
-            "Expected `update_view` (after `create_view`) to be given like `ViewName(create_view(...), update_view(arg1, arg2, ...))`",
-        )?;
-        Ok(View {
-            name,
-            create_view,
-            update_view,
-            spair_ident: item_counter.new_ident_view(),
-            spair_ident_marker: item_counter.new_ident("_view_marker"),
-        })
-    }
-
     fn generate_view_state_struct_fields(&self) -> TokenStream {
         let ident = &self.spair_ident;
         let type_name = &self.name;
         quote! {#ident: #type_name,}
+    }
+
+    fn generate_match_view_state_types_n_struct_fields(&self) -> TokenStream {
+        self.generate_view_state_struct_fields()
     }
 
     fn generate_fields_for_view_state_instance(&self) -> TokenStream {
@@ -1515,10 +1860,7 @@ impl View {
         let view_state = &self.spair_ident;
         let view_name = &self.name;
         let view_marker = &self.spair_ident_marker;
-        let Call {
-            name: create_view,
-            args: create_view_args,
-        } = &self.create_view;
+        let create_view_args = &self.create_view_args;
         let get_marker = match previous {
             Some(previous) => {
                 quote! {let #view_marker = #previous.ws_node_ref().next_sibling_ws_node(); }
@@ -1526,7 +1868,7 @@ impl View {
             None => quote! {let #view_marker= #parent.ws_node_ref().first_ws_node();},
         };
         quote! {
-            let #view_state = #view_name::#create_view(#create_view_args);
+            let #view_state = #view_name::create_view(#create_view_args);
             #get_marker
             #parent.insert_new_node_before_a_node(#view_state.root_element(), Some(&#view_marker));
         }
@@ -1537,34 +1879,13 @@ impl View {
         self_view_state_ident: &Ident,
     ) -> TokenStream {
         let view_state = &self.spair_ident;
-        let Call { name, args } = &self.update_view;
-        quote! {
-            #self_view_state_ident.#view_state.#name(#args);
+        if self.update_view_method_name.is_some() {
+            let update_view_args = &self.update_view_args;
+            quote! {
+                #self_view_state_ident.#view_state.update_view(#update_view_args);
+            }
+        } else {
+            quote! {}
         }
     }
-}
-
-fn collect_call(
-    view_name: &Ident,
-    func_name: &str,
-    args: &mut syn::punctuated::IntoIter<Expr>,
-    error_message: &str,
-) -> std::result::Result<Call, syn::Error> {
-    let Some(create_view) = args.next() else {
-        return Err(syn::Error::new(view_name.span(), error_message));
-    };
-    let create_view = match create_view {
-        Expr::Call(expr) => expr,
-        other_expr => return Err(syn::Error::new(other_expr.span(), error_message)),
-    };
-    let ident = match *create_view.func {
-        Expr::Path(mut expr_path) if expr_path.path.is_ident(func_name) => {
-            expr_path.path.segments.pop().unwrap().into_value().ident
-        }
-        other_expr => return Err(syn::Error::new(other_expr.span(), error_message)),
-    };
-    Ok(Call {
-        name: ident,
-        args: create_view.args,
-    })
 }

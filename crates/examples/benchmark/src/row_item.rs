@@ -23,7 +23,7 @@ impl RowItem {
             td(
                 class = "col-md-4",
                 a(
-                    click = ccontext
+                    on_click = ccontext
                         .comp
                         .callback_arg(move |state, _| state.set_selected_id(id)),
                     text(udata.label.as_str()),
@@ -32,7 +32,7 @@ impl RowItem {
             td(
                 class = "col-md-1",
                 a(
-                    click = ccontext
+                    on_click = ccontext
                         .comp
                         .callback_arg(move |state, _| state.remove_by_id(id)),
                     span(class = "glyphicon glyphicon-remove", aria_hidden = true),
