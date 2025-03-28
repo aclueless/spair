@@ -1,4 +1,4 @@
-use spairc::prelude::*;
+use spair::prelude::*;
 
 use crate::AppState;
 

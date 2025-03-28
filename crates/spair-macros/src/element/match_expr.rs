@@ -114,7 +114,7 @@ impl Match {
                 #variants
             }
             impl #match_view_state_enum_type_name {
-                fn root_element(&self) -> Option<&WsElement> {
+                fn root_element(&self) -> Option<&::spair::WsElement> {
                     match self {
                         #get_root_element
                         #match_view_state_enum_type_name::NotRenderYet => None,
@@ -123,7 +123,7 @@ impl Match {
             }
             struct #match_view_state_struct_type_name {
                 match_arm_view_state: #match_view_state_enum_type_name,
-                marker: Option<WsNode>,
+                marker: Option<::spair::WsNode>,
             }
         };
         let match_arm_types: TokenStream = self
@@ -252,7 +252,7 @@ impl MatchArm {
         };
         let mut elements = Element::with_expr(first_expr, item_counter, None)?;
         match elements.first_mut() {
-            Some(Element::HtmlElement(html)) => html.root_element = true,
+            Some(Element::Html(html)) => html.root_element = true,
             Some(Element::View(_)) => {}
             Some(other) => {
                 return Err(syn::Error::new(
@@ -282,11 +282,11 @@ impl MatchArm {
                     #fields
                 }
                 impl #struct_name {
-                    fn root_element(&self) -> Option<&WsElement> {
+                    fn root_element(&self) -> Option<&::spair::WsElement> {
                         let #view_state = self;
                         #get_root_element
                     }
-                    fn remove_from_parent(&self, parent: &WsElement) {
+                    fn remove_from_parent(&self, parent: &::spair::WsElement) {
                         let #view_state = self;
                         #remove_from_parent
                     }
@@ -296,10 +296,10 @@ impl MatchArm {
             quote! {
                 struct #struct_name;
                 impl #struct_name {
-                    fn root_element(&self) -> Option<&WsElement> {
+                    fn root_element(&self) -> Option<&::spair::WsElement> {
                         None
                     }
-                    fn remove_from_parent(&self, _parent: &WsElement) {}
+                    fn remove_from_parent(&self, _parent: &::spair::WsElement) {}
                 }
             }
         }
@@ -380,7 +380,7 @@ impl MatchArm {
             }
             Some(element) => match element {
                 Element::Text(_) => quote! {},
-                Element::HtmlElement(html_element) => {
+                Element::Html(html_element) => {
                     let create_view = html_element.generate_code_for_create_view_fn();
                     let construct_view_state_instance = html_element
                         .generate_view_state_instance_construction(view_state_struct_name);
@@ -422,7 +422,7 @@ impl MatchArm {
             }
             Some(mvs) => match mvs {
                 Element::Text(_) => quote! {},
-                Element::HtmlElement(html_element) => {
+                Element::Html(html_element) => {
                     html_element.generate_code_for_update_view_fn_as_child_node(view_state)
                 }
                 Element::View(view) => {

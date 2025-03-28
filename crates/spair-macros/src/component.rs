@@ -44,7 +44,7 @@ impl Component {
         let impl_token = &self.item_impl.impl_token;
         let self_type = &self.item_impl.self_ty;
         quote! {
-            #impl_token Component for #self_type {
+            #impl_token ::spair::Component for #self_type {
                 type ViewState = #view_state_struct_name;
                 #generated_create_view_fn
                 #generated_update_view_fn
@@ -53,7 +53,7 @@ impl Component {
     }
 
     fn generate_impl_create_view_fn(&self, view_state_struct_name: &Ident) -> TokenStream {
-        let impl_item = self.item_impl.items.get(0);
+        let impl_item = self.item_impl.items.first();
         let fn_body = self
             .element
             .generate_code_for_create_view_fn_of_a_component(view_state_struct_name);
@@ -62,7 +62,7 @@ impl Component {
         };
         let block = &block.stmts;
         quote! {
-            #sig -> (WsElement, Self::ViewState) {
+            #sig -> (::spair::WsElement, Self::ViewState) {
                 #(#block)*
                 #fn_body
             }

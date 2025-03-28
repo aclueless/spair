@@ -1,5 +1,5 @@
-use spairc::prelude::*;
-use spairc::{web_sys::MouseEvent, CallbackArg, Element};
+use spair::{prelude::*, Text, WsElement};
+use spair::{web_sys::MouseEvent, CallbackArg, Element};
 
 struct AppState {
     value: i32,
@@ -40,7 +40,7 @@ pub struct AppStateViewState {
     _text_4: Text,
     _view_5: UpdownButton,
 }
-impl Component for AppState {
+impl ::spair::Component for AppState {
     type ViewState = AppStateViewState;
     fn create_view(ccontext: &Context<Self>) -> (WsElement, Self::ViewState) {
         const HTML_STRING: &str = "<div><!--view-->&nbsp;<!--view--></div>";
@@ -83,5 +83,5 @@ impl Component for AppState {
 
 fn main() {
     // wasm_logger::init(wasm_logger::Config::default());
-    spairc::start_app(|_| AppState { value: 42 });
+    spair::start_app(|_| AppState { value: 42 });
 }

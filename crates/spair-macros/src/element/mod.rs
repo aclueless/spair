@@ -38,7 +38,7 @@ const CHILD_VIEW_LIST_COMP_SYNTAX: &str = "Expected one of `v.`, `l.`, and `c.` 
 
 pub(crate) enum Element {
     Text(Text),
-    HtmlElement(HtmlElement),
+    Html(HtmlElement),
     View(View),
     KeyedList(KeyedList),
     Match(Match),
@@ -151,7 +151,7 @@ impl Element {
                 text_elements(
                     args,
                     paren_token,
-                    &html_tag,
+                    html_tag,
                     item_counter,
                     update_stage_variables,
                 )
@@ -162,7 +162,7 @@ impl Element {
                     item_counter,
                     update_stage_variables,
                 )
-                .map(|v| vec![Element::HtmlElement(v)])
+                .map(|v| vec![Element::Html(v)])
             };
         }
         Err(syn::Error::new(
@@ -220,7 +220,7 @@ impl Element {
 
     fn span_to_report_error_on_attribute_after_child_node(&self) -> Span {
         match self {
-            Element::HtmlElement(html_element) => html_element.name.span(),
+            Element::Html(html_element) => html_element.name.span(),
             Element::Text(text) => text.shared_name.span(),
             Element::View(view) => view.name.span(),
             Element::KeyedList(list) => list.name.span(),
@@ -232,7 +232,7 @@ impl Element {
     pub fn check_html_multi_errors(&self, errors: &mut MultiErrors) {
         match self {
             Element::Text(_text) => {}
-            Element::HtmlElement(html_element) => html_element.check_html_multi_errors(errors),
+            Element::Html(html_element) => html_element.check_html_multi_errors(errors),
             Element::View(_view) => {}
             Element::KeyedList(_list) => {}
             Element::Match(m) => m.check_html_multi_errors(errors),
@@ -243,12 +243,12 @@ impl Element {
         match self {
             Element::Text(text) => {
                 if let Stage::HtmlString(text_value) = &text.stage {
-                    html_string.push_str(&text_value);
+                    html_string.push_str(text_value);
                 } else {
                     html_string.push_str("&nbsp;");
                 }
             }
-            Element::HtmlElement(html_element) => html_element.append_html_string(html_string),
+            Element::Html(html_element) => html_element.append_html_string(html_string),
             Element::View(_view) => {
                 html_string.push_str("<!--view-->");
             }
@@ -268,7 +268,7 @@ impl Element {
     pub(crate) fn prepare_items_for_generating_code(&mut self, parent_has_only_one_child: bool) {
         match self {
             Element::Text(_) => {}
-            Element::HtmlElement(html_element) => html_element.prepare_items_for_generating_code(),
+            Element::Html(html_element) => html_element.prepare_items_for_generating_code(),
             Element::View(_) => {}
             Element::KeyedList(list) => {
                 list.prepare_items_for_generating_code(parent_has_only_one_child)
@@ -280,7 +280,7 @@ impl Element {
     pub(crate) fn generate_view_state_struct_fields(&self) -> TokenStream {
         match self {
             Element::Text(text) => text.generate_view_state_struct_fields(),
-            Element::HtmlElement(html_element) => html_element.generate_view_state_struct_fields(),
+            Element::Html(html_element) => html_element.generate_view_state_struct_fields(),
             Element::View(view) => view.generate_view_state_struct_fields(),
             Element::KeyedList(list) => list.generate_view_state_struct_fields(),
             Element::Match(m) => m.generate_view_state_struct_fields(),
@@ -293,7 +293,7 @@ impl Element {
     ) -> TokenStream {
         match self {
             Element::Text(text) => text.generate_match_view_state_types_n_struct_fields(),
-            Element::HtmlElement(html_element) => {
+            Element::Html(html_element) => {
                 html_element.generate_match_view_state_types_n_struct_fields(inner_types)
             }
             Element::View(view) => view.generate_match_view_state_types_n_struct_fields(),
@@ -305,7 +305,7 @@ impl Element {
     fn generate_get_root_ws_element_4_match_arm(&self, view_state: &Ident) -> TokenStream {
         match self {
             Element::Text(_) => quote! {},
-            Element::HtmlElement(html_element) => {
+            Element::Html(html_element) => {
                 let ident = &html_element.meta.spair_ident;
                 quote! {Some(&#view_state.#ident)}
             }
@@ -329,7 +329,7 @@ impl Element {
     ) -> TokenStream {
         match self {
             Element::Text(_) => quote! {},
-            Element::HtmlElement(html_element) => {
+            Element::Html(html_element) => {
                 let ident = &html_element.meta.spair_ident;
                 quote! {parent.remove_child(&#view_state.#ident);}
             }
@@ -355,7 +355,7 @@ impl Element {
     fn generate_fields_for_view_state_instance(&self) -> TokenStream {
         match self {
             Element::Text(text) => text.generate_fields_for_view_state_instance(),
-            Element::HtmlElement(html_element) => {
+            Element::Html(html_element) => {
                 html_element.generate_fields_for_view_state_instance_construction()
             }
             Element::View(view) => view.generate_fields_for_view_state_instance(),
@@ -373,7 +373,7 @@ impl Element {
             Element::Text(text) => {
                 text.generate_code_for_create_view_fn_as_child_node(parent, previous)
             }
-            Element::HtmlElement(html_element) => {
+            Element::Html(html_element) => {
                 html_element.generate_code_for_create_view_fn_as_child_node(parent, previous)
             }
             Element::View(view) => {
@@ -389,7 +389,7 @@ impl Element {
     fn spair_ident_to_get_next_node(&self) -> &Ident {
         match self {
             Element::Text(text) => &text.spair_ident,
-            Element::HtmlElement(html_element) => &html_element.meta.spair_ident,
+            Element::Html(html_element) => &html_element.meta.spair_ident,
             Element::View(view) => &view.spair_ident_marker,
             Element::KeyedList(list) => &list.spair_ident_marker,
             Element::Match(m) => &m.spair_ident_marker,
@@ -405,7 +405,7 @@ impl Element {
             Element::Text(text) => {
                 text.generate_code_for_update_view_fn_as_child_node(view_state_ident)
             }
-            Element::HtmlElement(html_element) => {
+            Element::Html(html_element) => {
                 html_element.generate_code_for_update_view_fn_as_child_node(view_state_ident)
             }
             Element::View(view) => {
@@ -423,7 +423,7 @@ impl Element {
     pub fn name_or_text_expr_span(&self) -> Span {
         match self {
             Element::Text(text) => text.value.span(),
-            Element::HtmlElement(html_element) => html_element.name.span(),
+            Element::Html(html_element) => html_element.name.span(),
             Element::View(view) => view.name.span(),
             Element::KeyedList(keyed_list) => keyed_list.name.span(),
             Element::Match(m) => m.match_keyword.span,
@@ -432,7 +432,7 @@ impl Element {
 
     fn collect_match_view_state_types(&self) -> TokenStream {
         match self {
-            Element::HtmlElement(html_element) => html_element.collect_match_view_state_types(),
+            Element::Html(html_element) => html_element.collect_match_view_state_types(),
             Element::Match(m) => m.generate_match_view_state_types(),
             _ => quote! {},
         }
@@ -557,7 +557,7 @@ impl Text {
     fn generate_view_state_struct_fields(&self) -> TokenStream {
         if matches!(self.stage, Stage::Update) {
             let ident = &self.spair_ident;
-            quote! {#ident: Text,}
+            quote! {#ident: ::spair::Text,}
         } else {
             quote! {}
         }
@@ -568,7 +568,7 @@ impl Text {
             return quote! {};
         }
         let ident = &self.spair_ident;
-        quote! {#ident: Text,}
+        quote! {#ident: ::spair::Text,}
     }
 
     fn generate_fields_for_view_state_instance(&self) -> TokenStream {
@@ -694,8 +694,7 @@ impl HtmlElement {
                 }
                 Expr::Match(expr_match) => {
                     children.push(
-                        Match::with_expr_match(expr_match, item_counter)
-                            .map(|v| Element::Match(v))?,
+                        Match::with_expr_match(expr_match, item_counter).map(Element::Match)?,
                     );
                 }
                 Expr::MethodCall(mcall) => {
@@ -889,11 +888,11 @@ impl HtmlElement {
         html_string.push('<');
         html_string.push_str(&html_tag);
         self.append_html_string_attributes(html_string);
-        html_string.push_str(&open_closing);
+        html_string.push_str(open_closing);
         self.append_html_string_children(html_string);
-        html_string.push_str(&close_1);
-        html_string.push_str(&close_2);
-        html_string.push_str(&close_3);
+        html_string.push_str(close_1);
+        html_string.push_str(close_2);
+        html_string.push_str(close_3);
     }
 
     fn append_html_string_attributes(&self, html_string: &mut String) {
@@ -919,7 +918,7 @@ impl HtmlElement {
     fn generate_view_state_struct_field(&self) -> TokenStream {
         let ident = &self.meta.spair_ident;
         if self.root_element || self.meta.spair_element_capacity > 0 {
-            quote! {#ident: Element, }
+            quote! {#ident: ::spair::Element, }
         } else {
             quote! {}
         }
@@ -1063,7 +1062,7 @@ impl HtmlElement {
         let children = self.generate_children_code_for_create_view_fn();
         quote! {
             const HTML_STRING: &str = #html_string;
-            let mut #root_element = Element::with_html(HTML_STRING, #capacity);
+            let mut #root_element = ::spair::Element::with_html(HTML_STRING, #capacity);
             #attribute_setting
             #children
         }
@@ -1084,7 +1083,7 @@ impl HtmlElement {
         self.children
             .iter()
             .map(|v| {
-                let code = v.generate_code_for_create_view_fn(&element, previous);
+                let code = v.generate_code_for_create_view_fn(element, previous);
                 previous = Some(v.spair_ident_to_get_next_node());
                 code
             })
@@ -1185,7 +1184,10 @@ impl Attribute {
             if let Some(key_html_string) = key_rust_string.strip_prefix("on_") {
                 is_html_event = is_html_event_name(key_html_string, element_name);
                 if !is_html_event {
-                    return Err(syn::Error::new(key_rust.span(), format!("Unknown event")));
+                    return Err(syn::Error::new(
+                        key_rust.span(),
+                        format!("Unknown event `{key_html_string}`"),
+                    ));
                 }
                 (
                     Some(Ident::new(key_html_string, Span::call_site())),
@@ -1264,7 +1266,7 @@ impl Attribute {
 
     fn construct_html_string(&self, html_string: &mut String) {
         match self.key_html_string.as_str() {
-            REPLACE_AT_ELEMENT_ID | HREF_WITH_ROUTING => return,
+            REPLACE_AT_ELEMENT_ID | HREF_WITH_ROUTING => {}
             other_attribute => {
                 if let Stage::HtmlString(value) = &self.stage {
                     html_string.push(' ');
@@ -1274,7 +1276,7 @@ impl Attribute {
                     }
                     html_string.push_str("='");
                     html_string.push_str(value);
-                    html_string.push_str("'");
+                    html_string.push('\'');
                 }
             }
         }
@@ -1326,7 +1328,7 @@ impl Attribute {
         let index = self.spair_store_index;
         let attribute_value = &self.value;
         let key = self.key();
-        return quote! {#element.#key(#index, #attribute_value);};
+        quote! {#element.#key(#index, #attribute_value);}
     }
 
     fn generate_attribute_code_for_update_view_fn(
@@ -1405,17 +1407,15 @@ fn is_expr_in_create_or_update_stage(
 fn expr_as_ident(expr: Expr, message: &str) -> Result<Ident> {
     match expr {
         Expr::Path(mut expr_path) if expr_path.path.segments.len() == 1 => {
-            return Ok(expr_path.path.segments.pop().unwrap().into_value().ident)
+            Ok(expr_path.path.segments.pop().unwrap().into_value().ident)
         }
-        other_expr => {
-            return Err(syn::Error::new(
-                other_expr.span(),
-                &format!(
-                    "{message}, found expression type: {}",
-                    expr_name(&other_expr)
-                ),
-            ));
-        }
+        other_expr => Err(syn::Error::new(
+            other_expr.span(),
+            format!(
+                "{message}, found expression type: {}",
+                expr_name(&other_expr)
+            ),
+        )),
     }
 }
 
@@ -1473,7 +1473,7 @@ impl KeyedList {
         let ident = &self.spair_ident;
         let component_type_name = &self.component_type_name;
         let keyed_item_type_name = &self.keyed_item_type_name;
-        quote! {#ident: KeyedList<#component_type_name,#keyed_item_type_name>,}
+        quote! {#ident: ::spair::KeyedList<#component_type_name,#keyed_item_type_name>,}
     }
 
     fn generate_match_view_state_types_n_struct_fields(&self) -> TokenStream {
@@ -1515,7 +1515,7 @@ impl KeyedList {
         };
         quote! {
             #end_node
-            let #ident = KeyedList::new(#parent, #marker_ident.clone());
+            let #ident = ::spair::KeyedList::new(#parent, #marker_ident.clone());
             #render_on_creation
         }
     }

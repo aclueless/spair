@@ -20,7 +20,7 @@ impl View {
         let mut errors = MultiErrors::default();
         validate_view_impl(&item_impl, &mut errors);
         validate_view_fn(
-            item_impl.items.get(0),
+            item_impl.items.first(),
             "create_view",
             &item_impl.brace_token,
             false,
@@ -83,12 +83,12 @@ impl View {
     // which will be in update stage, which will be in create stage
     // should a variable be generated
     fn prepare_items_for_generating_code(&mut self) {
-        let _ = self.element.prepare_items_for_generating_code();
+        self.element.prepare_items_for_generating_code();
     }
 
     fn check_create_variables_vs_update_variables(&self) -> Result<()> {
         let create_stage_variables: Vec<_> =
-            collect_variables_from_fn_sig_n_let_bindings(self.item_impl.items.get(0));
+            collect_variables_from_fn_sig_n_let_bindings(self.item_impl.items.first());
         let update_stage_variables: Vec<_> =
             collect_variables_from_fn_sig_n_let_bindings(self.item_impl.items.get(1));
         for create_variable in create_stage_variables.iter() {
@@ -229,12 +229,12 @@ pub(crate) fn expr_has_ref_to(expr: &Expr, variable_names: &[String]) -> bool {
         }
         Expr::Range(expr_range) => {
             if let Some(expr) = expr_range.start.as_ref() {
-                if expr_has_ref_to(&expr, variable_names) {
+                if expr_has_ref_to(expr, variable_names) {
                     return true;
                 }
             }
             if let Some(expr) = expr_range.end.as_ref() {
-                if expr_has_ref_to(&expr, variable_names) {
+                if expr_has_ref_to(expr, variable_names) {
                     return true;
                 }
             }
@@ -324,7 +324,7 @@ fn collect_view_element(
                     text.shared_name.span(),
                     message_html_element_only,
                 )),
-                Element::HtmlElement(mut html_element) => {
+                Element::Html(mut html_element) => {
                     html_element.root_element = true;
                     Ok(html_element)
                 }
@@ -345,7 +345,7 @@ fn collect_view_element(
                     message_one_element_only,
                 ));
             }
-            return Ok(html_element);
+            Ok(html_element)
         }
         stmt => Err(syn::Error::new(stmt.span(), message_html_element_only)),
     }
@@ -355,7 +355,7 @@ fn validate_view_impl(item_impl: &ItemImpl, errors: &mut MultiErrors) {
     if let Some(u) = item_impl.unsafety.as_ref() {
         errors.add(u.span(), "Spair view does not support unsafe");
     }
-    if let Some(_) = item_impl.generics.lt_token.as_ref() {
+    if item_impl.generics.lt_token.as_ref().is_some() {
         errors.add(
             item_impl.generics.span(),
             "Spair view does not support generics",
@@ -422,7 +422,7 @@ fn validate_view_fn(
             "Spair does not support views on functions with receiver parameters",
         );
     }
-    if let Some(_) = item_fn.sig.generics.lt_token.as_ref() {
+    if item_fn.sig.generics.lt_token.as_ref().is_some() {
         errors.add(
             item_fn.sig.generics.span(),
             "Spair does not support views on functions with generics",
@@ -472,7 +472,7 @@ impl View {
             #impl_token #self_type {
                 #generated_create_view_fn
                 #generated_update_view_fn
-                pub fn root_element(&self) -> &#root_element_type {
+                pub fn root_element(&self) -> &::spair::#root_element_type {
                     &self.#root_element_ident
                 }
             }
@@ -480,7 +480,7 @@ impl View {
     }
 
     fn generate_impl_create_view_fn(&self, view_state_struct_name: &Ident) -> TokenStream {
-        let impl_item = self.item_impl.items.get(0);
+        let impl_item = self.item_impl.items.first();
         let fn_body = self
             .element
             .generate_code_for_create_view_fn_of_a_view(view_state_struct_name);

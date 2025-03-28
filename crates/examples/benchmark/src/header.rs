@@ -1,4 +1,4 @@
-use spairc::{prelude::*, web_sys::MouseEvent};
+use spair::{prelude::*, web_sys::MouseEvent};
 
 use crate::AppState;
 

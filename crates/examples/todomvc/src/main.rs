@@ -2,7 +2,7 @@ use std::ops::Not;
 
 use gloo_storage::{LocalStorage, Storage};
 use serde::{Deserialize, Serialize};
-use spairc::{
+use spair::{
     prelude::*,
     web_sys::{EventTarget, FocusEvent, HtmlInputElement, KeyboardEvent},
 };
@@ -152,8 +152,8 @@ pub(crate) fn read_data_from_storage() -> TodoList {
     LocalStorage::get(TODO_DATA_KEY).unwrap_or_default()
 }
 
-impl spairc::Route for Filter {
-    fn from_location(location: &spairc::web_sys::Location) -> Self {
+impl spair::Route for Filter {
+    fn from_location(location: &spair::web_sys::Location) -> Self {
         if let Ok(hash) = location.hash() {
             match hash.as_str() {
                 "#/all" => Self::All,
@@ -349,7 +349,7 @@ impl TodoItem {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    spairc::start_app_with_routing(
+    spair::start_app_with_routing(
         |_| App {
             filter: Filter::All,
             editing_id: None,

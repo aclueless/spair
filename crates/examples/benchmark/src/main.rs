@@ -1,7 +1,6 @@
 use header::Header;
 use row_item::RowItem;
-use spairc::prelude::*;
-use spairc::{Component, Element, KeyedList};
+use spair::prelude::*;
 
 mod header;
 mod row_item;
@@ -21,7 +20,7 @@ impl AppState {
             replace_at_element_id = "main",
             div(
                 class = "container",
-                v.Header(&ccontext.comp),
+                v.Header(ccontext.comp),
                 table(
                     class = "table table-hover table-striped test-data",
                     tbody(l.RowItem.AppState(ucontext, ucontext.state.rows.iter())),
@@ -92,7 +91,7 @@ impl AppState {
 
 fn select_random<'a>(data: &[&'a str]) -> &'a str {
     let item_count = data.len();
-    let index = (spairc::web_sys::js_sys::Math::random() * 1000.0) as usize % item_count;
+    let index = (spair::web_sys::js_sys::Math::random() * 1000.0) as usize % item_count;
     data[index]
 }
 
@@ -136,7 +135,7 @@ static NOUNS: &[&str] = &[
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    spairc::start_app(|_| AppState {
+    spair::start_app(|_| AppState {
         next_id: 1,
         rows: Vec::new(),
         selected_id: None,

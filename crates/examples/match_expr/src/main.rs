@@ -1,5 +1,5 @@
-use spairc::prelude::*;
-use spairc::{web_sys::MouseEvent, CallbackArg, Element};
+use spair::prelude::*;
+use spair::{web_sys::MouseEvent, CallbackArg};
 
 struct AppState {
     mode: Mode,
@@ -62,5 +62,5 @@ impl AppState {
 
 fn main() {
     // wasm_logger::init(wasm_logger::Config::default());
-    spairc::start_app(|_| AppState { mode: Mode::None });
+    spair::start_app(|_| AppState { mode: Mode::None });
 }

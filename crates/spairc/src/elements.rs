@@ -38,7 +38,7 @@ impl TemplateElement {
 }
 
 pub struct WsNodeRef<'a>(&'a web_sys::Node);
-impl<'a> WsNodeRef<'a> {
+impl WsNodeRef<'_> {
     fn first_node(&self) -> web_sys::Node {
         self.0.first_child().expect_throw("No first child node")
     }
@@ -557,7 +557,7 @@ impl Element {
             Some(Attribute::Str(current_value)) => {
                 if *current_value != value {
                     *current_value = value;
-                    self.element.set_str_attribute(name, &current_value);
+                    self.element.set_str_attribute(name, current_value);
                 }
             }
             None => {

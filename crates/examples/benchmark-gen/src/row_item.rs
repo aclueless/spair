@@ -1,4 +1,5 @@
-use spairc::prelude::*;
+#![allow(clippy::all)]
+use spair::{prelude::*, Element, Text, WsElement};
 
 use crate::AppState;
 
@@ -14,7 +15,7 @@ pub struct RowItemViewState {
     _text_6: Text,
     _element_8: Element,
 }
-impl KeyedItemView<AppState> for RowItem {
+impl ::spair::KeyedItemView<AppState> for RowItem {
     type ViewState = RowItemViewState;
     type Key = usize;
     fn get_key(&self) -> &usize {
@@ -30,7 +31,7 @@ impl KeyedItemView<AppState> for RowItem {
         "<tr><td class='col-md-1'>&nbsp;</td><td class='col-md-4'><a>&nbsp;</a></td><td class='col-md-1'><a><span class='glyphicon glyphicon-remove' aria-hidden='true'></span></a></td><td class='col-md-6'></td></tr>"
     }
     fn create_view(
-        _keyed_view_state_template: &TemplateElement,
+        _keyed_view_state_template: &::spair::TemplateElement,
         cdata: &Self,
         ccontext: &Context<AppState>,
     ) -> Self::ViewState {

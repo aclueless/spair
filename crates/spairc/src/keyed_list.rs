@@ -130,15 +130,15 @@ where
     fn update(&mut self, item_data: Vec<&I>, context: &Context<C>) {
         let mut item_data = item_data.into_iter().peekable_double_ended();
         loop {
-            let mut count = self.update_same_items_from_start(&mut item_data, &context);
-            count += self.update_same_items_from_end(&mut item_data, &context);
-            count += self.update_moved_forward_item(&mut item_data, &context);
-            count += self.update_moved_backward_item(&mut item_data, &context);
+            let mut count = self.update_same_items_from_start(&mut item_data, context);
+            count += self.update_same_items_from_end(&mut item_data, context);
+            count += self.update_moved_forward_item(&mut item_data, context);
+            count += self.update_moved_backward_item(&mut item_data, context);
             if count == 0 {
                 break;
             }
         }
-        self.update_items_in_the_middle(&mut item_data, &context);
+        self.update_items_in_the_middle(&mut item_data, context);
     }
 
     fn update_same_items_from_start(
@@ -268,7 +268,7 @@ where
         let next_sibling = self.old_list.peek().and_then(|item| {
             item.1
                 .as_ref()
-                .map(|view_state| I::root_element(&view_state).web_sys_node())
+                .map(|view_state| I::root_element(view_state).web_sys_node())
         });
         Self::update_existing_item(
             self.parent_element,
@@ -298,7 +298,7 @@ where
                 // No entry moved backward
                 return 0;
             }
-            I::root_element(&old_view_state).web_sys_node().clone()
+            I::root_element(old_view_state).web_sys_node().clone()
         } else {
             return 0;
         };
@@ -695,9 +695,8 @@ pub mod keyed_list_tests {
     use web_sys::Node;
 
     use crate::{
-        prelude::Text,
         test_helper::{self, TestComp, TestDataInterface},
-        Element,
+        Element, Text,
     };
 
     use super::{KeyedItemView, KeyedList};
@@ -764,7 +763,7 @@ pub mod keyed_list_tests {
 
         fn init(&self, root: &Element, context: &crate::Context<TestState>) -> Self::ViewState {
             let mut keyed_list = KeyedList::new(root.ws_element().clone(), None);
-            keyed_list.update(self.iter(), &context);
+            keyed_list.update(self.iter(), context);
             TestDataViewState { keyed_list }
         }
 

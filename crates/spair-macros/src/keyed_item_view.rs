@@ -91,14 +91,14 @@ impl KeyedItemView {
         let root_element_ident = self.element.root_element_ident();
         let html_string = self.element.construct_html_string();
         quote! {
-            #impl_token KeyedItemView<#component_type> for #self_type {
+            #impl_token ::spair::KeyedItemView<#component_type> for #self_type {
                 type ViewState = #keyed_item_view_state_struct_name;
                 type Key = #key_type;
                 #get_key
                 fn key_from_view_state(view_state: &Self::ViewState) -> &Self::Key {
                     &view_state.key
                 }
-                fn root_element(view_state: &Self::ViewState) -> &WsElement {
+                fn root_element(view_state: &Self::ViewState) -> &::spair::WsElement {
                     &view_state.#root_element_ident
                 }
                 fn template_string() -> &'static str {
@@ -111,7 +111,7 @@ impl KeyedItemView {
     }
 
     fn generate_impl_create_view_fn(&self, view_state_struct_name: &Ident) -> TokenStream {
-        let impl_item = self.item_impl.items.get(0);
+        let impl_item = self.item_impl.items.first();
         let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
@@ -136,7 +136,7 @@ impl KeyedItemView {
             );
         let block = &block.stmts;
         quote! {
-            #fn_token #ident(_keyed_view_state_template: &TemplateElement, #inputs) -> Self::ViewState {
+            #fn_token #ident(_keyed_view_state_template: &::spair::TemplateElement, #inputs) -> Self::ViewState {
                 #(#block)*
                 #fn_body
             }
@@ -247,7 +247,7 @@ fn validate_get_fn(item_fn: &ImplItemFn, expected_name: &str) -> Result<()> {
             "Do not give `pub` here, the macro will add it if it is required",
         );
     }
-    if let Some(_) = item_fn.sig.generics.lt_token.as_ref() {
+    if item_fn.sig.generics.lt_token.as_ref().is_some() {
         errors.add(
             item_fn.sig.generics.span(),
             "Spair does not support generics",

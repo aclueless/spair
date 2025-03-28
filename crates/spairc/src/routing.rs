@@ -16,9 +16,7 @@ pub trait Route: Sized {
 }
 
 impl Route for () {
-    fn from_location(_location: &Location) -> Self {
-        ()
-    }
+    fn from_location(_location: &Location) -> Self {}
     fn url(&self) -> String {
         String::new()
     }
@@ -66,7 +64,10 @@ pub fn setup_routing<C: 'static + Component, R: 'static + Route>(
         });
         do_routing()
     });
-    if let Err(_) = HREF_ELEMENT_CLICK_HANDLER.with(|value| value.set(closure)) {
+    if HREF_ELEMENT_CLICK_HANDLER
+        .with(|value| value.set(closure))
+        .is_err()
+    {
         log::error!("Error on storing HREF_ELEMENT_CLICK_HANDLER, why the value is already set?");
     };
     let do_routing = clone_routing;
@@ -90,7 +91,7 @@ pub(crate) fn add_routing_handler(target: &WsElement) {
 }
 
 thread_local! {
-    static LAST_HREF: RefCell<String> = RefCell::new(String::new());
+    static LAST_HREF: RefCell<String> = const{RefCell::new(String::new())};
     static HREF_ELEMENT_CLICK_HANDLER: OnceCell<Closure<dyn Fn(MouseEvent)>> = OnceCell::new();
 }
 
