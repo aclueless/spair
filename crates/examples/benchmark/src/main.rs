@@ -11,7 +11,7 @@ struct AppState {
     selected_id: Option<usize>,
 }
 
-#[component]
+#[component_for]
 impl AppState {
     fn create_view(ccontext: &Context<Self>) {}
     fn update_view(ucontext: &Context<Self>) {}
@@ -23,7 +23,7 @@ impl AppState {
                 v.Header(ccontext.comp),
                 table(
                     class = "table table-hover table-striped test-data",
-                    tbody(l.RowItem.AppState(ucontext, ucontext.state.rows.iter())),
+                    tbody(kl.RowItem.AppState(ucontext, ucontext.state.rows.iter())),
                 ),
                 span(
                     class = "preloadicon glyphicon glyphicon-remove",

@@ -331,7 +331,7 @@ fn collect_view_element(
                 Element::View(view) => {
                     Err(syn::Error::new(view.name.span(), message_html_element_only))
                 }
-                Element::KeyedList(list) => {
+                Element::List(list) => {
                     Err(syn::Error::new(list.name.span(), message_html_element_only))
                 }
                 Element::Match(m) => Err(syn::Error::new(

@@ -176,7 +176,7 @@ impl spair::Route for Filter {
     }
 }
 
-#[component]
+#[component_for]
 impl App {
     fn create_view(cc: &Context<Self>) {}
     fn update_view(uc: &Context<Self>) {}
@@ -198,7 +198,7 @@ impl App {
                 label(r#for = "toggle-all", text("Mark all as complete")),
                 ul(
                     class = "todo-list",
-                    l.TodoItem.App(uc, uc.state.visible_items()),
+                    kl.TodoItem.App(uc, uc.state.visible_items()),
                 ),
             ),
             v.Footer(cc.comp).update(uc.state),
@@ -209,7 +209,7 @@ impl App {
 const ESCAPE_KEY: &str = "Escape";
 const ENTER_KEY: &str = "Enter";
 
-#[view]
+#[new_view]
 impl Header {
     fn create_view(ccomp: &Comp<App>) {}
     fn update_view(new_todo_title: &str) {}
@@ -235,7 +235,7 @@ impl Header {
     }
 }
 
-#[view]
+#[new_view]
 impl Footer {
     fn create_view(ccomp: &Comp<App>) {}
     fn update_view(ustate: &App) {
@@ -288,7 +288,7 @@ impl Footer {
     }
 }
 
-#[keyed_item_view]
+#[keyed_list_item_for]
 impl TodoItem {
     fn get_key(&self) -> &u32 {
         &self.id

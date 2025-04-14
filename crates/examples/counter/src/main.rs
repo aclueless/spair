@@ -5,7 +5,7 @@ struct AppState {
     value: i32,
 }
 
-#[view]
+#[new_view]
 impl UpdownButton {
     fn create_view(handler: CallbackArg<MouseEvent>, text: &str) {}
     fn update_view() {}
@@ -23,7 +23,7 @@ impl AppState {
         self.value -= 1;
     }
 }
-#[component]
+#[component_for]
 impl AppState {
     fn create_view(ccontext: &Context<Self>) {}
     fn update_view(ucontext: &Context<Self>) {}

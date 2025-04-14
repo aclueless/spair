@@ -1,5 +1,9 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+    fmt::Display,
+    ops::{Deref, DerefMut, Not},
+};
 
+use values::{Value, ValueChanged};
 use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
 use web_sys::{
     HtmlInputElement, HtmlOptionElement, HtmlSelectElement, HtmlTemplateElement,
@@ -7,6 +11,8 @@ use web_sys::{
 };
 
 use crate::{events::EventListener, helper, routing::Route, CallbackArg};
+
+mod values;
 
 pub struct TemplateElement(HtmlTemplateElement);
 impl TemplateElement {
@@ -126,7 +132,6 @@ impl WsText {
     }
 
     pub fn set_text(&self, text: impl RenderAsText) {
-        // self.0.set_text_content(Some(text));
         text.create(self);
     }
 
@@ -136,15 +141,15 @@ impl WsText {
 }
 
 pub struct Text {
-    ws_text: web_sys::Text,
-    text: String,
+    ws_text: WsText,
+    value: Value,
 }
 
 impl From<web_sys::Node> for Text {
     fn from(value: web_sys::Node) -> Self {
         Self {
-            ws_text: value.unchecked_into(),
-            text: String::new(),
+            ws_text: WsText(value.unchecked_into()),
+            value: Value::None,
         }
     }
 }
@@ -153,28 +158,43 @@ impl Deref for Text {
     type Target = web_sys::Text;
 
     fn deref(&self) -> &Self::Target {
-        &self.ws_text
+        &self.ws_text.0
     }
 }
 
 impl Text {
     pub fn split_text(&self, off_set: u32) {
-        if let Err(e) = self.ws_text.split_text(off_set) {
-            log::error!("{e:?}");
-        }
+        self.ws_text.split_text(off_set);
     }
 
     fn update_with_str(&mut self, text: &str) {
-        if self.text != text {
-            self.ws_text.set_text_content(Some(text));
-            self.text = text.to_string();
+        if let Value::String(old_value) = &mut self.value {
+            if *old_value != text {
+                self.ws_text.set_text_content(text);
+                *old_value = text.to_string();
+            }
+        } else {
+            self.ws_text.set_text_content(text);
+            self.value = Value::String(text.to_string());
         }
     }
 
     fn update_with_string(&mut self, text: String) {
-        if self.text != text {
-            self.ws_text.set_text_content(Some(&text));
-            self.text = text;
+        if let Value::String(old_value) = &mut self.value {
+            if *old_value != text {
+                self.ws_text.set_text_content(&text);
+                *old_value = text;
+            }
+        } else {
+            self.ws_text.set_text_content(&text);
+            self.value = Value::String(text);
+        }
+    }
+
+    fn update_with_default(&mut self, default: &str) {
+        if matches!(&self.value, Value::Default).not() {
+            self.value = Value::Default;
+            self.ws_text.set_text_content(default);
         }
     }
 
@@ -183,7 +203,7 @@ impl Text {
     }
 
     pub fn ws_node_ref(&self) -> WsNodeRef {
-        WsNodeRef(self.ws_text.as_ref())
+        WsNodeRef(self.ws_text.0.as_ref())
     }
 }
 
@@ -219,6 +239,82 @@ impl RenderAsText for String {
     }
 }
 
+impl<T: ValueChanged + Display> RenderAsText for (Option<T>, &str) {
+    fn create(self, text: &WsText) {
+        if let Some(value) = self.0 {
+            text.set_text_content(&value.to_string());
+        } else {
+            text.set_text_content(self.1);
+        }
+    }
+
+    fn update(self, text: &mut Text) {
+        if let Some(value) = self.0 {
+            if value.check_value_changed(&mut text.value) {
+                text.ws_text.set_text_content(&value.to_string());
+            }
+        } else {
+            text.update_with_default(self.1);
+        }
+    }
+}
+
+impl RenderAsText for (Option<&str>, &str) {
+    fn create(self, text: &WsText) {
+        if let Some(value) = self.0 {
+            text.set_text_content(value);
+        } else {
+            text.set_text_content(self.1);
+        }
+    }
+
+    fn update(self, text: &mut Text) {
+        if let Some(value) = self.0 {
+            text.update_with_str(value);
+        } else {
+            text.update_with_default(self.1);
+        }
+    }
+}
+
+impl RenderAsText for (Option<&String>, &str) {
+    fn create(self, text: &WsText) {
+        (self.0.map(|v| v.as_str()), self.1).create(text);
+    }
+
+    fn update(self, text: &mut Text) {
+        (self.0.map(|v| v.as_str()), self.1).update(text);
+    }
+}
+
+impl RenderAsText for (Option<String>, &str) {
+    fn create(self, text: &WsText) {
+        if let Some(value) = self.0 {
+            text.set_text_content(&value);
+        } else {
+            text.set_text_content(self.1);
+        }
+    }
+
+    fn update(self, text: &mut Text) {
+        if let Some(value) = self.0 {
+            text.update_with_string(value);
+        } else {
+            text.update_with_default(self.1);
+        }
+    }
+}
+
+pub trait RenderOptionWithDefault<T> {
+    fn or_default(self, default: &str) -> (Option<T>, &str);
+}
+
+impl<T> RenderOptionWithDefault<T> for Option<T> {
+    fn or_default(self, default: &str) -> (Option<T>, &str) {
+        (self, default)
+    }
+}
+
 macro_rules! impl_render_as_text {
     ($($type_name:ident)+) => {
         $(
@@ -227,7 +323,9 @@ macro_rules! impl_render_as_text {
                     text.set_text_content(&self.to_string());
                 }
                 fn update(self, text: &mut Text) {
-                    text.update_with_string(self.to_string());
+                    if self.check_value_changed(&mut text.value) {
+                        text.ws_text.set_text_content(&self.to_string());
+                    }
                 }
             }
 

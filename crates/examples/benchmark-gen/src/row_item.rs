@@ -15,7 +15,7 @@ pub struct RowItemViewState {
     _text_6: Text,
     _element_8: Element,
 }
-impl ::spair::KeyedItemView<AppState> for RowItem {
+impl ::spair::KeyedListItemView<AppState> for RowItem {
     type ViewState = RowItemViewState;
     type Key = usize;
     fn get_key(&self) -> &usize {

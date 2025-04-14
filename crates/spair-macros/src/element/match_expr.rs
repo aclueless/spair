@@ -407,7 +407,7 @@ impl MatchArm {
                         #view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#match_arm_view_state);
                     }
                 }
-                Element::KeyedList(_keyed_list) => todo!(),
+                Element::List(_keyed_list) => todo!(),
                 Element::Match(_) => todo!(),
             },
         }
@@ -435,7 +435,7 @@ impl MatchArm {
                         quote! {}
                     }
                 }
-                Element::KeyedList(_keyed_list) => todo!(),
+                Element::List(_keyed_list) => todo!(),
                 Element::Match(_) => todo!(),
             },
         }

@@ -7,7 +7,7 @@ pub struct RowItem {
     pub id: usize,
     pub label: String,
 }
-#[keyed_item_view]
+#[keyed_list_item_for]
 impl RowItem {
     fn get_key(&self) -> &usize {
         &self.id

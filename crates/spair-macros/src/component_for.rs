@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{Ident, ImplItem, ImplItemFn, ItemImpl, Signature};
 
-use crate::{element::HtmlElement, view::View};
+use crate::{element::HtmlElement, new_view::View};
 
 pub struct Component {
     component_name: Ident,

@@ -2,7 +2,7 @@ use spair::{prelude::*, web_sys::MouseEvent};
 
 use crate::AppState;
 
-#[view]
+#[new_view]
 impl Button {
     fn create_view(id: &str, text: &str, callback: CallbackArg<MouseEvent>) {}
     fn update_view() {}
@@ -20,7 +20,7 @@ impl Button {
     }
 }
 
-#[view]
+#[new_view]
 impl Header {
     fn create_view(comp: &Comp<AppState>) {}
     fn update_view() {}

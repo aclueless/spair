@@ -6,7 +6,7 @@ use std::{
 
 use crate::routing::{get_current_location, setup_routing, Route};
 
-use crate::elements::WsElement;
+use crate::element::WsElement;
 
 pub fn start_app<C: Component + 'static>(new_state: impl FnOnce(&Comp<C>) -> C) {
     let rc_comp = create_component(new_state, |_, _: ()| {}, |_, _| {});

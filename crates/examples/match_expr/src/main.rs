@@ -11,7 +11,7 @@ enum Mode {
     View,
 }
 
-#[view]
+#[new_view]
 impl Button {
     fn create_view(handler: CallbackArg<MouseEvent>, text: &str) {}
     fn update_view() {}
@@ -19,7 +19,7 @@ impl Button {
         button(on_click = handler, text(text))
     }
 }
-#[component]
+#[component_for]
 impl AppState {
     fn create_view(ccontext: &Context<Self>) {}
     fn update_view(ucontext: &Context<Self>) {}

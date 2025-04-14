@@ -5,7 +5,7 @@ use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{Component, Context, TemplateElement, WsElement};
 
-pub trait KeyedItemView<C: Component> {
+pub trait KeyedListItemView<C: Component> {
     type ViewState;
     type Key: Clone + Eq + Hash;
     fn template_string() -> &'static str;
@@ -22,7 +22,7 @@ pub trait KeyedItemView<C: Component> {
 
 pub struct KeyedList<C, I>
 where
-    I: KeyedItemView<C>,
+    I: KeyedListItemView<C>,
     C: Component,
 {
     parent_element: WsElement,
@@ -35,7 +35,7 @@ where
 
 struct KeyedListUpdater<'a, C, I>
 where
-    I: KeyedItemView<C>,
+    I: KeyedListItemView<C>,
     C: Component,
 {
     parent_element: &'a WsElement,
@@ -53,7 +53,7 @@ pub struct OldItem<VS> {
 
 impl<C, I> KeyedList<C, I>
 where
-    I: KeyedItemView<C> + 'static,
+    I: KeyedListItemView<C> + 'static,
     C: Component + 'static,
 {
     pub fn new(
@@ -124,7 +124,7 @@ where
 
 impl<C, I> KeyedListUpdater<'_, C, I>
 where
-    I: KeyedItemView<C> + 'static,
+    I: KeyedListItemView<C> + 'static,
     C: Component + 'static,
 {
     fn update(&mut self, item_data: Vec<&I>, context: &Context<C>) {
@@ -699,7 +699,7 @@ pub mod keyed_list_tests {
         Element, Text,
     };
 
-    use super::{KeyedItemView, KeyedList};
+    use super::{KeyedList, KeyedListItemView};
 
     type TestData = Vec<&'static str>;
     type TestState = TestComp<TestData>;
@@ -714,7 +714,7 @@ pub mod keyed_list_tests {
         text: Text,
     }
 
-    impl KeyedItemView<TestState> for &'static str {
+    impl KeyedListItemView<TestState> for &'static str {
         type ViewState = TestItemViewState;
 
         type Key = &'static str;
