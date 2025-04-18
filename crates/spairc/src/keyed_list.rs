@@ -57,11 +57,11 @@ where
     C: Component + 'static,
 {
     pub fn new(
-        parent_element: WsElement,
+        parent_element: &WsElement,
         end_node_marker_for_partial_list: Option<web_sys::Node>,
     ) -> Self {
         Self {
-            parent_element,
+            parent_element: parent_element.clone(),
             template: TemplateElement::new(I::template_string()),
             end_node_marker_for_partial_list,
             active_items: Vec::new(),
@@ -762,7 +762,7 @@ pub mod keyed_list_tests {
         type ViewState = TestDataViewState;
 
         fn init(&self, root: &Element, context: &crate::Context<TestState>) -> Self::ViewState {
-            let mut keyed_list = KeyedList::new(root.ws_element().clone(), None);
+            let mut keyed_list = KeyedList::new(&root.ws_element(), None);
             keyed_list.update(self.iter(), context);
             TestDataViewState { keyed_list }
         }

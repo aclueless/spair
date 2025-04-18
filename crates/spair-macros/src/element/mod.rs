@@ -1529,7 +1529,7 @@ impl List {
         };
         quote! {
             #end_node
-            let #ident = #list_type::new(#parent, #marker_ident.clone());
+            let #ident = #list_type::new(&#parent, #marker_ident.clone());
             #render_on_creation
         }
     }

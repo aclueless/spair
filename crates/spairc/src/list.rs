@@ -29,11 +29,11 @@ where
     C: Component + 'static,
 {
     pub fn new(
-        parent_element: WsElement,
+        parent_element: &WsElement,
         end_node_marker_for_partial_list: Option<web_sys::Node>,
     ) -> Self {
         Self {
-            parent_element,
+            parent_element: parent_element.clone(),
             template: TemplateElement::new(I::template_string()),
             end_node_marker_for_partial_list,
             items: Vec::new(),
