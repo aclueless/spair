@@ -1,4 +1,4 @@
-use spair::{prelude::*, web_sys::MouseEvent, Element};
+use spair::{Element, prelude::*, web_sys::MouseEvent};
 
 use crate::AppState;
 
@@ -8,8 +8,7 @@ pub struct Button {
 }
 impl Button {
     pub fn create_view(id: &str, text: &str, callback: CallbackArg<MouseEvent>) -> Self {
-        const HTML_STRING : & str =
-        "<div class='col-sm-6 smallpad'><button class='btn btn-primary btn-block' r#type='button'>&nbsp;</button></div>";
+        const HTML_STRING: &str = "<div class='col-sm-6 smallpad'><button class='btn btn-primary btn-block' r#type='button'>&nbsp;</button></div>";
         let mut _element_1 = Element::with_html(HTML_STRING, 0usize);
         let _element_2 = _element_1.ws_node_ref().first_ws_element();
         let mut _element_2 = _element_2.create_element_with_capacity(1usize);
@@ -40,8 +39,7 @@ pub struct Header {
 }
 impl Header {
     pub fn create_view(comp: &Comp<AppState>) -> Self {
-        const HTML_STRING : & str =
-        "<div class='jumbotron'><div class='row'><div class='col-md-6'><h1>Spair Keyed</h1></div><div class='col-md-6'><div class='row'><!--view--><!--view--><!--view--><!--view--><!--view--><!--view--></div></div></div></div>";
+        const HTML_STRING: &str = "<div class='jumbotron'><div class='row'><div class='col-md-6'><h1>Spair Keyed</h1></div><div class='col-md-6'><div class='row'><!--view--><!--view--><!--view--><!--view--><!--view--><!--view--></div></div></div></div>";
         let mut _element_1 = Element::with_html(HTML_STRING, 0usize);
         let _element_2 = _element_1.ws_node_ref().first_ws_element();
         let _element_3 = _element_2.ws_node_ref().first_ws_element();

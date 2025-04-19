@@ -695,8 +695,8 @@ pub mod keyed_list_tests {
     use web_sys::Node;
 
     use crate::{
-        test_helper::{self, TestComp, TestDataInterface},
         Element, Text,
+        test_helper::{self, TestComp, TestDataInterface},
     };
 
     use super::{KeyedList, KeyedListItemView};

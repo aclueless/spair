@@ -2,8 +2,9 @@ use wasm_bindgen::UnwrapThrowExt;
 use web_sys::Node;
 
 use crate::{
-    component::{create_component, RcComp},
-    helper, CallbackArg, Context, Element, WsElement,
+    CallbackArg, Context, Element, WsElement,
+    component::{RcComp, create_component},
+    helper,
 };
 
 pub trait TestDataInterface: Sized + 'static {

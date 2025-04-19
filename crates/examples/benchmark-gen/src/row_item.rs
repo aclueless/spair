@@ -1,5 +1,5 @@
 #![allow(clippy::all)]
-use spair::{prelude::*, Element, Text, WsElement};
+use spair::{Element, Text, WsElement, prelude::*};
 
 use crate::AppState;
 

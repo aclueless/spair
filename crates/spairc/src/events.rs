@@ -1,5 +1,5 @@
 use js_sys::Function;
-use wasm_bindgen::{closure::Closure, JsCast};
+use wasm_bindgen::{JsCast, closure::Closure};
 
 pub trait EventListener {
     fn js_function(&self) -> &Function;

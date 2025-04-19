@@ -1,5 +1,5 @@
 use spair::prelude::*;
-use spair::{web_sys::MouseEvent, CallbackArg};
+use spair::{CallbackArg, web_sys::MouseEvent};
 
 struct AppState {
     mode: Mode,

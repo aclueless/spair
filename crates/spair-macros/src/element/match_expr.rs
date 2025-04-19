@@ -108,6 +108,12 @@ impl Match {
                 quote! {#match_view_state_enum_type_name::#variant_name(value) => value.root_element(),}
             })
             .collect();
+        let marker = match self.parent_has_only_one_child {
+            true => quote! {},
+            false => {
+                quote! { marker: ::spair::WsNode, }
+            }
+        };
         let match_view_state_types = quote! {
             enum #match_view_state_enum_type_name {
                 NotRenderYet,
@@ -123,7 +129,8 @@ impl Match {
             }
             struct #match_view_state_struct_type_name {
                 match_arm_view_state: #match_view_state_enum_type_name,
-                marker: Option<::spair::WsNode>,
+                #marker
+                //marker: Option<::spair::WsNode>,
             }
         };
         let match_arm_types: TokenStream = self
@@ -147,13 +154,13 @@ impl Match {
         let match_view_state_struct_type_name = &self.match_view_state_struct_type_name;
         let marker = &self.spair_ident_marker;
         let get_marker = if self.parent_has_only_one_child {
-            quote! {let #marker = None;}
+            quote! {}
         } else {
             match previous {
                 Some(previous) => {
-                    quote! {let #marker = Some(#previous.ws_node_ref().next_sibling_ws_node());}
+                    quote! {let #marker = #previous.ws_node_ref().next_sibling_ws_node();}
                 }
-                None => quote! {let #marker = Some(#parent.ws_node_ref().first_ws_node());},
+                None => quote! {let #marker = #parent.ws_node_ref().first_ws_node();},
             }
         };
         quote! {
@@ -162,6 +169,7 @@ impl Match {
                 match_arm_view_state: #match_view_state_enum_type_name::NotRenderYet,
                 marker: #marker,
             };
+            let #marker = &#ident.marker;
         }
     }
 
@@ -374,6 +382,10 @@ impl MatchArm {
         let match_enum_type_name = &m.match_view_state_enum_type_name;
         let arm_variant = &self.match_arm_variant_name;
         let view_state_struct_name = &self.match_arm_struct_type_name;
+        let end_flag = match m.parent_has_only_one_child {
+            true => quote! { None },
+            false => quote! {Some(&#view_state.#match_view_state.marker)},
+        };
         match self.element.as_ref() {
             None => {
                 quote! {#view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#view_state_struct_name{});}
@@ -390,7 +402,7 @@ impl MatchArm {
                     quote! {
                         #create_view
                         let #match_arm_view_state = #construct_view_state_instance;
-                        #view_state.#parent.insert_new_node_before_a_node(&#match_arm_view_state.#root_element,#view_state.#match_view_state.marker.as_deref());
+                        #view_state.#parent.insert_new_node_before_a_node(&#match_arm_view_state.#root_element, #end_flag);
                         #view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#match_arm_view_state);
                     }
                 }
@@ -402,7 +414,7 @@ impl MatchArm {
                         Ident::new("_match_arm_view_state", Span::call_site());
                     quote! {
                         let #match_arm_view_state = #view_name::create_view(#create_view_args);
-                        #view_state.#parent.insert_new_node_before_a_node(#match_arm_view_state.root_element(), #view_state.#match_view_state.marker.as_deref());
+                        #view_state.#parent.insert_new_node_before_a_node(#match_arm_view_state.root_element(), #end_flag);
                         let #match_arm_view_state = #view_state_struct_name{#view_ident: #match_arm_view_state};
                         #view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#match_arm_view_state);
                     }

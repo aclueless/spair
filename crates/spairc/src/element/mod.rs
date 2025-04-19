@@ -4,13 +4,13 @@ use std::{
 };
 
 use values::{Value, ValueChanged};
-use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, UnwrapThrowExt, closure::Closure};
 use web_sys::{
     HtmlInputElement, HtmlOptionElement, HtmlSelectElement, HtmlTemplateElement,
     HtmlTextAreaElement,
 };
 
-use crate::{events::EventListener, helper, routing::Route, CallbackArg};
+use crate::{CallbackArg, events::EventListener, helper, routing::Route};
 
 mod values;
 
@@ -541,7 +541,10 @@ impl Element {
             self.element.add_event_listener(name, listener.as_ref());
             self.attributes.push(Attribute::EventListener(listener));
         } else {
-            log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
+            log::error!(
+                "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+                self.attributes.len()
+            );
         }
     }
 
@@ -560,7 +563,10 @@ impl Element {
                     self.attributes.push(Attribute::Bool(new_value));
                     true
                 } else {
-                    log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
+                    log::error!(
+                        "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+                        self.attributes.len()
+                    );
                     false
                 }
             }
@@ -586,7 +592,10 @@ impl Element {
                     self.attributes.push(Attribute::Str(new_value.to_string()));
                     true
                 } else {
-                    log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
+                    log::error!(
+                        "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+                        self.attributes.len()
+                    );
                     false
                 }
             }
@@ -616,7 +625,10 @@ impl Element {
                     self.attributes.push(Attribute::I32(value));
                     self.element.set_str_attribute(name, &value.to_string());
                 } else {
-                    log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
+                    log::error!(
+                        "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+                        self.attributes.len()
+                    );
                 }
             }
             _ => {
@@ -663,7 +675,10 @@ impl Element {
                     self.element.set_str_attribute(name, &value);
                     self.attributes.push(Attribute::Str(value));
                 } else {
-                    log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
+                    log::error!(
+                        "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+                        self.attributes.len()
+                    );
                 }
             }
             _ => {

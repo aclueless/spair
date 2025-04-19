@@ -1,5 +1,5 @@
-use spair::{prelude::*, Text, WsElement};
-use spair::{web_sys::MouseEvent, CallbackArg, Element};
+use spair::{CallbackArg, Element, web_sys::MouseEvent};
+use spair::{Text, WsElement, prelude::*};
 
 struct AppState {
     value: i32,

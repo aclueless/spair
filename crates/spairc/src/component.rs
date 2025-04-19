@@ -4,7 +4,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use crate::routing::{get_current_location, setup_routing, Route};
+use crate::routing::{Route, get_current_location, setup_routing};
 
 use crate::element::WsElement;
 
@@ -245,4 +245,24 @@ where
             C::update_view(&mut comp_data.updaters, &self.context(&comp_data.state));
         }
     }
+}
+
+pub trait SpairSpawnFuture<T: 'static>: std::future::Future<Output = T> + Sized
+where
+    Self: 'static,
+{
+    fn spawn_local(self, callback: CallbackArg<T>) {
+        let f = async move {
+            let rs = self.await;
+            callback.call(rs);
+        };
+        wasm_bindgen_futures::spawn_local(f);
+    }
+}
+
+impl<T, F> SpairSpawnFuture<T> for F
+where
+    T: 'static,
+    F: 'static + std::future::Future<Output = T>,
+{
 }

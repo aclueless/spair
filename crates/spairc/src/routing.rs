@@ -3,10 +3,10 @@ use std::{
     rc::Rc,
 };
 
-use wasm_bindgen::{prelude::Closure, JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt, prelude::Closure};
 use web_sys::{HtmlAnchorElement, HtmlAreaElement, Location, MouseEvent};
 
-use crate::{events::EventListener, helper, WsElement};
+use crate::{WsElement, events::EventListener, helper};
 
 use super::{Comp, Component};
 

@@ -16,14 +16,14 @@ mod test_helper;
 pub use wasm_bindgen;
 pub use web_sys;
 
-pub use component::{start_app, start_app_with_routing, CallbackArg, Comp, Component, Context};
+pub use component::{CallbackArg, Comp, Component, Context, start_app, start_app_with_routing};
 pub use element::{Element, TemplateElement, Text, WsElement, WsNode, WsText};
 pub use keyed_list::{KeyedList, KeyedListItemView};
 pub use list::{List, ListItemView};
 pub use routing::Route;
 
 pub mod prelude {
-    pub use crate::component::{CallbackArg, Comp, Context};
+    pub use crate::component::{CallbackArg, Comp, Context, SpairSpawnFuture};
     pub use crate::element::RenderOptionWithDefault;
     pub use spair_macros::*;
 }
