@@ -25,14 +25,18 @@ const VIEW_EXPRESSION_SYNTAX: &str = "div(
     v.ViewName(...).update(...),
     l.ListItemName.CompName(...),
     kl.KeyedListItemName.CompName(...),
-    c.ComponentName(),
+    websys.node(),
     match expr {
-        Pat1 => {}, // can be empty
+        Pat1 => {}, // can be empty: no content rendered
         Pat2 => div(..., span(...)), // only allow a html element
         Pat3 => v.ViewName(...), // or a child view as a root of a match arm
     }
 )";
-const CHILD_VIEW_LIST_COMP_SYNTAX: &str = "Expected one of `v.`, `l.`, 'kl.', or `c.` as in v.ViewName(...), l.ListItemName.AppStateName(...), kl.KeyedListItemName(...), c.ComponentName(...)";
+const CHILD_VIEW_LIST_COMP_SYNTAX: &str = "Expected one of `v.`, `l.`, 'kl.', or `websys.` as in
+v.ViewName(...),
+l.ListItemName.CompName(...),
+kl.KeyedListItemName.CompName(...),
+websys.node(...)";
 
 pub(crate) enum Element {
     Text(Text),
@@ -40,7 +44,8 @@ pub(crate) enum Element {
     View(View),
     List(List),
     Match(Match),
-    // Component(Component),
+    #[allow(clippy::enum_variant_names)]
+    WsElement(WsElement),
 }
 
 pub(crate) struct List {
@@ -90,10 +95,13 @@ pub(crate) struct View {
     spair_ident_marker: Ident,
 }
 
-// pub struct Component {
-//     name: Ident,
-//     props: Punctuated<Expr, Token![,]>,
-// }
+pub struct WsElement {
+    pub(crate) name: Ident,
+    ws_element: Expr,
+
+    spair_ident: Ident,
+    spair_ident_marker: Ident,
+}
 
 struct Attribute {
     stage: Stage,
@@ -180,7 +188,7 @@ impl Element {
             receiver,
             method,
             paren_token,
-            args,
+            mut args,
             ..
         } = expr;
         match *receiver {
@@ -203,6 +211,28 @@ impl Element {
                         spair_ident: item_counter.new_ident_view(),
                         spair_ident_marker: item_counter.new_ident("_view_marker"),
                     }))
+                } else if name == "ws" {
+                    if method != "element" {
+                        return Err(syn::Error::new(
+                            method.span(),
+                            "Expected `element` after a `ws.`",
+                        ));
+                    }
+                    let Some(ws_element) = args.pop() else {
+                        return Err(syn::Error::new(method.span(), "Expected a WsElement"));
+                    };
+                    if args.is_empty().not() {
+                        return Err(syn::Error::new(
+                            args.iter().nth(1).unwrap_or(ws_element.value()).span(),
+                            "Expected exactly one arg for the ws.element. This is the second arg.",
+                        ));
+                    }
+                    Ok(Element::WsElement(WsElement {
+                        name: name.clone(),
+                        ws_element: ws_element.into_value(),
+                        spair_ident: item_counter.new_ident("_ws_element"),
+                        spair_ident_marker: item_counter.new_ident("_ws_element_marker"),
+                    }))
                 } else {
                     Err(syn::Error::new(name.span(), CHILD_VIEW_LIST_COMP_SYNTAX))
                 }
@@ -224,7 +254,7 @@ impl Element {
             Element::View(view) => view.name.span(),
             Element::List(list) => list.name.span(),
             Element::Match(m) => m.match_keyword.span(),
-            // Element::Component(component) => component.name.span(),
+            Element::WsElement(component) => component.name.span(),
         }
     }
 
@@ -235,6 +265,7 @@ impl Element {
             Element::View(_view) => {}
             Element::List(_list) => {}
             Element::Match(m) => m.check_html_multi_errors(errors),
+            Element::WsElement(_child_comp) => {}
         }
     }
 
@@ -261,6 +292,7 @@ impl Element {
                     html_string.push_str("<!--mi-->")
                 }
             }
+            Element::WsElement(_child_comp) => html_string.push_str("<!--wse-->"),
         }
     }
 
@@ -273,6 +305,7 @@ impl Element {
                 list.prepare_items_for_generating_code(parent_has_only_one_child)
             }
             Element::Match(m) => m.prepare_items_for_generating_code(parent_has_only_one_child),
+            Element::WsElement(_) => {}
         }
     }
 
@@ -283,6 +316,7 @@ impl Element {
             Element::View(view) => view.generate_view_state_struct_fields(),
             Element::List(list) => list.generate_view_state_struct_fields(),
             Element::Match(m) => m.generate_view_state_struct_fields(),
+            Element::WsElement(cr) => cr.generate_view_state_struct_fields(),
         }
     }
 
@@ -295,13 +329,14 @@ impl Element {
             Element::Html(html_element) => {
                 html_element.generate_match_view_state_types_n_struct_fields(inner_types)
             }
-            Element::View(view) => view.generate_match_view_state_types_n_struct_fields(),
-            Element::List(list) => list.generate_match_view_state_types_n_struct_fields(),
+            Element::View(view) => view.generate_view_state_struct_fields(),
+            Element::List(list) => list.generate_view_state_struct_fields(),
             Element::Match(m) => m.generate_match_view_state_types_n_struct_fields(inner_types),
+            Element::WsElement(cr) => cr.generate_view_state_struct_fields(),
         }
     }
 
-    fn generate_get_root_ws_element_4_match_arm(&self, view_state: &Ident) -> TokenStream {
+    fn generate_get_root_ws_element_for_match_arm(&self, view_state: &Ident) -> TokenStream {
         match self {
             Element::Text(_) => quote! {},
             Element::Html(html_element) => {
@@ -317,6 +352,12 @@ impl Element {
                 let ident = &m.spair_ident;
                 quote! {
                     #view_state.#ident.root_element()
+                }
+            }
+            Element::WsElement(cr) => {
+                let ws_element = &cr.spair_ident;
+                quote! {
+                    Some(&#view_state.#ws_element)
                 }
             }
         }
@@ -338,6 +379,7 @@ impl Element {
             }
             Element::List(list) => {
                 let ident = &list.spair_ident;
+                // A list may have many children. The list, itself, has to remove them from the parent.
                 quote! {#view_state.#ident.remove_from_parent(parent);}
             }
             Element::Match(m) => {
@@ -346,6 +388,12 @@ impl Element {
                     if let Some(child_element) = #view_state.#ident.root_element() {
                         parent.remove_child(child_element);
                     }
+                }
+            }
+            Element::WsElement(cr) => {
+                let ws_element = &cr.spair_ident;
+                quote! {
+                    parent.remove_child(&view_state.#ws_element);
                 }
             }
         }
@@ -360,6 +408,10 @@ impl Element {
             Element::View(view) => view.generate_fields_for_view_state_instance(),
             Element::List(list) => list.generate_fields_for_view_state_instance(),
             Element::Match(m) => m.generate_fields_for_view_state_instance(),
+            Element::WsElement(cr) => {
+                let ident = &cr.spair_ident;
+                quote! {#ident,}
+            }
         }
     }
 
@@ -382,6 +434,21 @@ impl Element {
                 list.generate_code_for_create_view_fn_as_child_node(parent, previous)
             }
             Element::Match(m) => m.generate_code_for_create_view_fn_as_child_node(parent, previous),
+            Element::WsElement(cr) => {
+                let ident = &cr.spair_ident;
+                let marker = &cr.spair_ident_marker;
+                let get_marker = if let Some(previous) = previous {
+                    quote! {let #marker = #previous.ws_node_ref().next_sibling_ws_node();}
+                } else {
+                    quote! {let #marker = #parent.ws_node_ref().first_ws_node();}
+                };
+                let ws_element = &cr.ws_element;
+                quote! {
+                    #get_marker
+                    let #ident: ::spair::WsElement = #ws_element;
+                    #parent.insert_new_node_before_a_node(&#ident, Some(&#marker));
+                }
+            }
         }
     }
 
@@ -392,6 +459,7 @@ impl Element {
             Element::View(view) => &view.spair_ident_marker,
             Element::List(list) => &list.spair_ident_marker,
             Element::Match(m) => &m.spair_ident_marker,
+            Element::WsElement(cr) => &cr.spair_ident_marker,
         }
     }
 
@@ -416,6 +484,7 @@ impl Element {
             Element::Match(m) => {
                 m.generate_code_for_update_view_fn_as_child_node(parent, view_state_ident)
             }
+            Element::WsElement(_) => quote! {},
         }
     }
 
@@ -426,6 +495,7 @@ impl Element {
             Element::View(view) => view.name.span(),
             Element::List(keyed_list) => keyed_list.name.span(),
             Element::Match(m) => m.match_keyword.span,
+            Element::WsElement(cr) => cr.name.span(),
         }
     }
 
@@ -1485,10 +1555,6 @@ impl List {
         }
     }
 
-    fn generate_match_view_state_types_n_struct_fields(&self) -> TokenStream {
-        self.generate_view_state_struct_fields()
-    }
-
     fn generate_fields_for_view_state_instance(&self) -> TokenStream {
         let ident = &self.spair_ident;
         quote! {#ident,}
@@ -1546,6 +1612,15 @@ impl List {
         let context = &self.context;
         quote! {
             #view_state_ident.#ident.update(#items_iter, #context);
+        }
+    }
+}
+
+impl WsElement {
+    fn generate_view_state_struct_fields(&self) -> TokenStream {
+        let spair_ident = &self.spair_ident;
+        quote! {
+            #spair_ident: ::spair::WsElement,
         }
     }
 }
@@ -1855,10 +1930,6 @@ impl View {
         let ident = &self.spair_ident;
         let type_name = &self.name;
         quote! {#ident: #type_name,}
-    }
-
-    fn generate_match_view_state_types_n_struct_fields(&self) -> TokenStream {
-        self.generate_view_state_struct_fields()
     }
 
     fn generate_fields_for_view_state_instance(&self) -> TokenStream {

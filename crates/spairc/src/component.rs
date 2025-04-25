@@ -4,17 +4,19 @@ use std::{
     rc::{Rc, Weak},
 };
 
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::routing::{Route, get_current_location, setup_routing};
 
 use crate::element::WsElement;
 
-pub fn start_app<C: Component + 'static>(new_state: impl FnOnce(&Comp<C>) -> C) {
+pub fn start_app<C: Component + 'static>(new_state: impl FnOnce(Comp<C>) -> C) {
     let rc_comp = create_component(new_state, |_, _: ()| {}, |_, _| {});
     std::mem::forget(rc_comp);
 }
 
 pub fn start_app_with_routing<C: Component + 'static, R: Route + 'static>(
-    new_state: impl FnOnce(&Comp<C>) -> C,
+    new_state: impl FnOnce(Comp<C>) -> C,
     set_route: fn(&mut C, R),
 ) {
     let rc_comp = create_component(new_state, set_route, setup_routing);
@@ -22,34 +24,38 @@ pub fn start_app_with_routing<C: Component + 'static, R: Route + 'static>(
 }
 
 pub(crate) fn create_component<C: Component + 'static, R: Route>(
-    new_state: impl FnOnce(&Comp<C>) -> C,
+    new_state: impl FnOnce(Comp<C>) -> C,
     set_route: fn(&mut C, R),
-    setup_routing: impl FnOnce(fn(&mut C, R), &Comp<C>),
+    setup_routing: impl FnOnce(fn(&mut C, R), Comp<C>),
 ) -> RcComp<C> {
     let comp_data = CompData(None);
-    let rc_comp = Rc::new(RefCell::new(comp_data));
-    let comp = Comp(Rc::downgrade(&rc_comp));
-    let mut state = new_state(&comp);
+    let rc_comp = RcComp(Rc::new(RefCell::new(comp_data)));
+    let mut state = new_state(rc_comp.comp());
 
     let route = R::from_location(&get_current_location());
     set_route(&mut state, route);
-    setup_routing(set_route, &comp);
+    setup_routing(set_route, rc_comp.comp());
 
+    finalize_rc_comp(rc_comp, state)
+}
+
+fn finalize_rc_comp<C: Component + 'static>(rc_comp: RcComp<C>, state: C) -> RcComp<C> {
+    let comp = rc_comp.comp();
     let context = comp.context(&state);
     let (root, mut view_state) = C::create_view(&context);
     C::update_view(&mut view_state, &context);
 
-    match rc_comp.try_borrow_mut() {
+    match rc_comp.0.try_borrow_mut() {
         Ok(mut rc_comp) => {
             rc_comp.0 = Some(CompDataInner {
-                _root: root,
+                root,
                 state,
-                updaters: view_state,
+                view_state,
             });
         }
         _ => log::error!("Internal error: unable to mutable borrow rc_comp to set store its data"),
     }
-    RcComp(rc_comp)
+    rc_comp
 }
 
 thread_local! {
@@ -58,7 +64,11 @@ thread_local! {
 }
 
 fn is_update_queue_executing() -> bool {
-    UPDATE_QUEUE_IS_IN_EXECUTING.with(|executing| executing.replace(true))
+    UPDATE_QUEUE_IS_IN_EXECUTING.with(|executing| executing.get())
+}
+
+fn update_queue_will_be_executing() -> bool {
+    UPDATE_QUEUE_IS_IN_EXECUTING.with(|executing| !executing.replace(true))
 }
 
 fn put_callback_on_update_queue(callback: impl FnOnce() + 'static) {
@@ -82,9 +92,9 @@ fn execute_update_queue() {
 struct CompData<C: Component>(Option<CompDataInner<C>>);
 
 struct CompDataInner<C: Component> {
-    _root: WsElement,
+    root: WsElement,
     state: C,
-    updaters: C::ViewState,
+    view_state: C::ViewState,
 }
 
 pub struct RcComp<C: Component>(Rc<RefCell<CompData<C>>>);
@@ -110,10 +120,27 @@ impl<C: Component> Clone for Context<'_, C> {
     }
 }
 
-#[allow(dead_code)]
-impl<C: Component> RcComp<C> {
+impl<C: Component + 'static> RcComp<C> {
     pub fn comp(&self) -> Comp<C> {
         Comp(Rc::downgrade(&self.0))
+    }
+
+    pub fn new(new_state: impl FnOnce(&Comp<C>) -> C) -> Self {
+        let comp_data = CompData(None);
+        let rc_comp = RcComp(Rc::new(RefCell::new(comp_data)));
+        let comp = rc_comp.comp();
+        finalize_rc_comp(rc_comp, new_state(&comp))
+    }
+
+    pub fn root_element(&self) -> WsElement {
+        self.0
+            .try_borrow()
+            .expect_throw("Error on borrowing RcComp content to get the component's root element")
+            .0
+            .as_ref()
+            .expect_throw("RcComp CompData is empty")
+            .root
+            .clone()
     }
 }
 
@@ -147,8 +174,17 @@ where
         }
     }
 
-    pub fn execute(&self, arg: A) {
-        self.comp.execute_or_queue_callback(arg, self);
+    pub fn execute_or_queue(&self, arg: A) {
+        if is_update_queue_executing() {
+            self.queue(arg);
+            return;
+        }
+        self.execute(arg);
+    }
+
+    fn execute(&self, arg: A) {
+        self.comp
+            .execute_given_callback_then_the_update_queue(arg, self);
     }
 
     fn queue(&self, arg: A) {
@@ -169,7 +205,7 @@ where
     A: 'static,
 {
     fn call(&self, arg: A) {
-        self.execute(arg)
+        self.execute_or_queue(arg)
     }
 }
 
@@ -211,16 +247,16 @@ where
         })
     }
 
-    fn execute_or_queue_callback<A: 'static>(&self, arg: A, cb_fn: &CallbackFnArg<C, A>) {
-        let executing = is_update_queue_executing();
-        if executing {
-            cb_fn.queue(arg);
-            return;
-        }
+    fn execute_given_callback_then_the_update_queue<A: 'static>(
+        &self,
+        arg: A,
+        cb_fn: &CallbackFnArg<C, A>,
+    ) {
+        let need_to_execute_the_update_queue = update_queue_will_be_executing();
 
         self.execute_callback(arg, cb_fn);
 
-        if !executing {
+        if need_to_execute_the_update_queue {
             execute_update_queue();
         }
     }
@@ -242,12 +278,12 @@ where
         };
         let should_render = (cb_fn.callback)(&mut comp_data.state, arg);
         if let ShouldRender::Yes = should_render {
-            C::update_view(&mut comp_data.updaters, &self.context(&comp_data.state));
+            C::update_view(&mut comp_data.view_state, &self.context(&comp_data.state));
         }
     }
 }
 
-pub trait SpairSpawnFuture<T: 'static>: std::future::Future<Output = T> + Sized
+pub trait SpairSpawnLocal<T: 'static>: std::future::Future<Output = T> + Sized
 where
     Self: 'static,
 {
@@ -260,7 +296,7 @@ where
     }
 }
 
-impl<T, F> SpairSpawnFuture<T> for F
+impl<T, F> SpairSpawnLocal<T> for F
 where
     T: 'static,
     F: 'static + std::future::Future<Output = T>,

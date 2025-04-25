@@ -262,10 +262,11 @@ impl MatchArm {
         match elements.first_mut() {
             Some(Element::Html(html)) => html.root_element = true,
             Some(Element::View(_)) => {}
+            Some(Element::WsElement(_)) => {}
             Some(other) => {
                 return Err(syn::Error::new(
                     other.name_or_text_expr_span(),
-                    "Only an HTML element or a view are allowed in a match-arm HTML expression",
+                    "Only an HTML element, a view or a ws.element allowed in a match-arm HTML expression",
                 ))
             }
             None => {}
@@ -281,7 +282,7 @@ impl MatchArm {
             let fields = element.generate_match_view_state_types_n_struct_fields(&mut inner_types);
 
             let view_state = Ident::new("_local_self_view_state_", Span::call_site());
-            let get_root_element = element.generate_get_root_ws_element_4_match_arm(&view_state);
+            let get_root_element = element.generate_get_root_ws_element_for_match_arm(&view_state);
             let remove_from_parent =
                 element.generate_remove_child_b4_changing_to_other_match_arm(&view_state);
             quote! {
@@ -419,8 +420,17 @@ impl MatchArm {
                         #view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#match_arm_view_state);
                     }
                 }
-                Element::List(_keyed_list) => todo!(),
-                Element::Match(_) => todo!(),
+                Element::List(_keyed_list) => unreachable!(),
+                Element::Match(_) => unreachable!(),
+                Element::WsElement(wse) => {
+                    let ident = &wse.spair_ident;
+                    let ws_element = &wse.ws_element;
+                    quote! {
+                        let #ident: ::spair::WsElement = #ws_element;
+                        #view_state.#parent.insert_new_node_before_a_node(&#ident, #end_flag);
+                        #view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#view_state_struct_name{#ident});
+                    }
+                }
             },
         }
     }
@@ -447,8 +457,9 @@ impl MatchArm {
                         quote! {}
                     }
                 }
-                Element::List(_keyed_list) => todo!(),
-                Element::Match(_) => todo!(),
+                Element::List(_keyed_list) => unreachable!(),
+                Element::Match(_) => unreachable!(),
+                Element::WsElement(_) => quote! {},
             },
         }
     }

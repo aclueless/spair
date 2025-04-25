@@ -24,7 +24,7 @@ impl Route for () {
 
 pub fn setup_routing<C: 'static + Component, R: 'static + Route>(
     set_route: impl Fn(&mut C, R) + 'static,
-    comp: &Comp<C>,
+    comp: Comp<C>,
 ) {
     LAST_HREF.set(get_current_location().href().unwrap_throw());
 

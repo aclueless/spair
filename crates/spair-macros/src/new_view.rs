@@ -319,26 +319,36 @@ fn collect_view_element(
                 return Err(Error::new(span, "A view can not be empty"));
             }
             let element = elements.remove(0);
-            let html_element = match element {
-                Element::Text(text) => Err(syn::Error::new(
-                    text.shared_name.span(),
+            // let html_element = match element {
+            //     Element::Text(text) => Err(syn::Error::new(
+            //         text.shared_name.span(),
+            //         message_html_element_only,
+            //     )),
+            //     Element::Html(mut html_element) => {
+            //         html_element.root_element = true;
+            //         Ok(html_element)
+            //     }
+            //     Element::View(view) => {
+            //         Err(syn::Error::new(view.name.span(), message_html_element_only))
+            //     }
+            //     Element::List(list) => {
+            //         Err(syn::Error::new(list.name.span(), message_html_element_only))
+            //     }
+            //     Element::Match(m) => Err(syn::Error::new(
+            //         m.match_keyword.span(),
+            //         message_html_element_only,
+            //     )),
+            // }?;
+
+            // let s = element.name_or_text_expr_span();
+
+            let Element::Html(mut html_element) = element else {
+                return Err(syn::Error::new(
+                    element.name_or_text_expr_span(),
                     message_html_element_only,
-                )),
-                Element::Html(mut html_element) => {
-                    html_element.root_element = true;
-                    Ok(html_element)
-                }
-                Element::View(view) => {
-                    Err(syn::Error::new(view.name.span(), message_html_element_only))
-                }
-                Element::List(list) => {
-                    Err(syn::Error::new(list.name.span(), message_html_element_only))
-                }
-                Element::Match(m) => Err(syn::Error::new(
-                    m.match_keyword.span(),
-                    message_html_element_only,
-                )),
-            }?;
+                ));
+            };
+            html_element.root_element = true;
             if let Some(second) = elements.first() {
                 return Err(syn::Error::new(
                     second.name_or_text_expr_span(),

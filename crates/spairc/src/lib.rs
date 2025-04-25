@@ -23,7 +23,7 @@ pub use list::{List, ListItemView};
 pub use routing::Route;
 
 pub mod prelude {
-    pub use crate::component::{CallbackArg, Comp, Context, SpairSpawnFuture};
+    pub use crate::component::{CallbackArg, Comp, Context, RcComp, ShouldRender, SpairSpawnLocal};
     pub use crate::element::RenderOptionWithDefault;
     pub use spair_macros::*;
 }
