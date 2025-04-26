@@ -107,7 +107,7 @@ struct Attribute {
     stage: Stage,
     key_rust: Ident,
     key_html: Option<Ident>,
-    key_html_string: String,
+    key_attr_string: String,
     value: Expr,
 
     spair_store_index: usize,
@@ -1145,10 +1145,11 @@ impl HtmlElement {
 
     fn generate_attribute_code_for_create_view_fn(&self) -> TokenStream {
         let element = &self.meta.spair_ident;
+        let element_name = self.name.to_string();
 
         self.attributes
             .iter()
-            .map(|v| v.generate_attribute_code_for_create_view_fn(element))
+            .map(|v| v.generate_attribute_code_for_create_view_fn(&element_name, element))
             .collect()
     }
 
@@ -1294,7 +1295,7 @@ impl Attribute {
             stage,
             key_rust,
             key_html,
-            key_html_string,
+            key_attr_string: key_html_string,
             value: *expr.right,
 
             is_html_event,
@@ -1307,13 +1308,13 @@ impl Attribute {
         if self.is_html_event {
             return;
         }
-        if self.key_html_string.starts_with("data-") {
+        if self.key_attr_string.starts_with("data-") {
             return;
         }
-        if self.key_html_string.starts_with("aria-") {
+        if self.key_attr_string.starts_with("aria-") {
             return;
         }
-        match self.key_html_string.as_str() {
+        match self.key_attr_string.as_str() {
             "class_if" => {
                 let message = "`class_if` requires a tuple of 2 expressions as `(boolean_expr, some_class_name)`";
                 match &self.value {
@@ -1331,7 +1332,7 @@ impl Attribute {
             _ => {
                 check_html_attribute_name(
                     &self.key_rust,
-                    &self.key_html_string,
+                    &self.key_attr_string,
                     element_name,
                     errors,
                 );
@@ -1340,7 +1341,7 @@ impl Attribute {
     }
 
     fn construct_html_string(&self, html_string: &mut String) {
-        match self.key_html_string.as_str() {
+        match self.key_attr_string.as_str() {
             REPLACE_AT_ELEMENT_ID | HREF_WITH_ROUTING => {}
             other_attribute => {
                 if let Stage::HtmlString(value) = &self.stage {
@@ -1357,15 +1358,19 @@ impl Attribute {
         }
     }
 
-    fn generate_attribute_code_for_create_view_fn(&self, element: &Ident) -> TokenStream {
+    fn generate_attribute_code_for_create_view_fn(
+        &self,
+        element_name: &str,
+        element: &Ident,
+    ) -> TokenStream {
         let attribute_value = &self.value;
-        if self.key_html_string == REPLACE_AT_ELEMENT_ID {
+        if self.key_attr_string == REPLACE_AT_ELEMENT_ID {
             // REPLACE_AT_ELEMENT_ID is a special attribute that always executes in create_view stage to attach the component to DOM
             return quote! {#element.replace_at_element_id(#attribute_value);};
         }
         let is_in_create_mode = matches!(&self.stage, Stage::Creation);
         if is_in_create_mode.not() {
-            return if self.key_html_string == HREF_WITH_ROUTING {
+            return if self.key_attr_string == HREF_WITH_ROUTING {
                 quote! {#element.add_click_event_to_handle_routing();}
             } else {
                 quote! {}
@@ -1374,7 +1379,7 @@ impl Attribute {
         if self.is_html_event {
             return self.generate_attribute_code_for_event_listener(&quote! {#element});
         }
-        match self.key_html_string.as_str() {
+        match self.key_attr_string.as_str() {
             REPLACE_AT_ELEMENT_ID => {
                 unreachable!("Already handle this case before checking for creation mode")
             }
@@ -1385,10 +1390,20 @@ impl Attribute {
             },
             "id" => quote! {#element.set_id(#attribute_value);},
             "class" => quote! {#element.class(#attribute_value);},
+            "value" => match element_name {
+                "select" => quote! {#element.set_select_value(#attribute_value);},
+                "input" => quote! {#element.set_input_value(#attribute_value);},
+                "textarea" => quote! {#element.set_textarea_value(#attribute_value);},
+                "option" => quote! {#element.set_option_value(#attribute_value);},
+                _ => {
+                    let message = format!("`value` is not an attribute or property of `{element_name}`. Actually, Spair's proc-macros must be update to the report error earlier and at the exact location of the code.");
+                    quote! {comple_error(#message);}
+                }
+            },
             _other_name => {
                 let message = format!(
                     "`{}` attribute in create view not implemented yet.",
-                    self.key_html_string
+                    self.key_attr_string
                 );
                 quote! {compile_error!(#message);}
             }
@@ -1420,7 +1435,7 @@ impl Attribute {
         if self.is_html_event {
             return self.generate_attribute_code_for_event_listener(element);
         }
-        match self.key_html_string.as_str() {
+        match self.key_attr_string.as_str() {
             REPLACE_AT_ELEMENT_ID => quote! {},
             HREF_WITH_ROUTING => {
                 quote! {#element.href_with_routing_with_index(#index,#attribute_value);}
@@ -1449,7 +1464,7 @@ impl Attribute {
                     quote! {#element.set_option_value_with_index(#index, #attribute_value);}
                 }
                 _ => {
-                    let message = format!("`value` is not an attribute of `{element_name}`. Actually, Spair's proc-macros must be update to the report error earlier and at the exact location of the code.");
+                    let message = format!("`value` is not an attribute or property of `{element_name}`. Actually, Spair's proc-macros must be update to the report error earlier and at the exact location of the code.");
                     quote! {comple_error(#message);}
                 }
             },
@@ -1457,7 +1472,7 @@ impl Attribute {
             _other_name => {
                 let message = format!(
                     "`{}` attribute in update view not implemented yet.",
-                    self.key_html_string
+                    self.key_attr_string
                 );
                 quote! {compile_error!(#message);}
             }

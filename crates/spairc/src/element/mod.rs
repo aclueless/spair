@@ -478,6 +478,23 @@ impl WsElement {
     pub fn add_click_event_to_handle_routing(&self) {
         crate::routing::add_routing_handler(self);
     }
+
+    fn set_select_value(&self, value: &str) {
+        self.0.unchecked_ref::<HtmlSelectElement>().set_value(value);
+    }
+
+    fn set_select_selected_index(&self, index: i32) {
+        self.0
+            .unchecked_ref::<HtmlSelectElement>()
+            .set_selected_index(index);
+    }
+
+    fn set_select_option_value(&self, value: Option<&str>) {
+        match value {
+            Some(value) => self.set_select_value(value),
+            None => self.set_select_selected_index(-1),
+        }
+    }
 }
 
 pub struct Element {
@@ -503,6 +520,7 @@ enum Attribute {
     Bool(bool),
     I32(i32),
     Str(String),
+    OptionString(Option<String>),
     EventListener(Box<dyn EventListener>),
 }
 
@@ -606,6 +624,36 @@ impl Element {
         }
     }
 
+    fn is_new_option_str_value(&mut self, index: usize, new_value: Option<&str>) -> bool {
+        match self.attributes.get_mut(index) {
+            Some(Attribute::OptionString(current_value)) => {
+                if current_value.as_deref() != new_value {
+                    *current_value = new_value.map(|v| v.to_string());
+                    true
+                } else {
+                    false
+                }
+            }
+            None => {
+                if self.attributes.len() == index {
+                    self.attributes
+                        .push(Attribute::OptionString(new_value.map(|v| v.to_string())));
+                    true
+                } else {
+                    log::error!(
+                        "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+                        self.attributes.len()
+                    );
+                    false
+                }
+            }
+            _ => {
+                log::error!("Internal error: Attribute at index = {index} is not an OptionString");
+                false
+            }
+        }
+    }
+
     pub fn set_bool_attribute_with_index(&mut self, index: usize, name: &str, new_value: bool) {
         if self.is_new_bool_value(index, new_value) {
             self.element.set_bool_attribute(name, new_value);
@@ -638,25 +686,6 @@ impl Element {
     }
 
     pub fn set_str_attribute_with_index(&mut self, index: usize, name: &str, value: &str) {
-        // match self.attributes.get_mut(index) {
-        //     Some(Attribute::Str(current_value)) => {
-        //         if *current_value != value {
-        //             *current_value = value.to_string();
-        //             self.element.set_str_attribute(name, value);
-        //         }
-        //     }
-        //     None => {
-        //         if self.attributes.len() == index {
-        //             self.attributes.push(Attribute::Str(value.to_string()));
-        //             self.element.set_str_attribute(name, value);
-        //         } else {
-        //             log::error!("Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}", self.attributes.len());
-        //         }
-        //     }
-        //     _ => {
-        //         log::error!("Internal error: Attribute at index = {index} is not a i32")
-        //     }
-        // }
         if self.is_new_str_value(index, value) {
             self.element.set_str_attribute(name, value);
         }
@@ -703,36 +732,151 @@ impl Element {
 
     pub fn set_input_checked_with_index(&mut self, index: usize, value: bool) {
         if self.is_new_bool_value(index, value) {
-            self.0
+            self.element
                 .unchecked_ref::<HtmlInputElement>()
                 .set_checked(value);
         }
     }
 
+    pub fn set_input_value(&mut self, value: &str) {
+        self.element
+            .unchecked_ref::<HtmlInputElement>()
+            .set_value(value);
+    }
+
     pub fn set_input_value_with_index(&mut self, index: usize, value: &str) {
         if self.is_new_str_value(index, value) {
-            self.0.unchecked_ref::<HtmlInputElement>().set_value(value);
+            self.set_input_value(value);
         }
+    }
+
+    pub fn set_textarea_value(&mut self, value: &str) {
+        self.element
+            .unchecked_ref::<HtmlTextAreaElement>()
+            .set_value(value);
     }
 
     pub fn set_textarea_value_with_index(&mut self, index: usize, value: &str) {
         if self.is_new_str_value(index, value) {
-            self.0
-                .unchecked_ref::<HtmlTextAreaElement>()
-                .set_value(value);
+            self.set_textarea_value(value);
         }
     }
 
-    pub fn set_select_value_with_index(&mut self, index: usize, value: &str) {
-        if self.is_new_str_value(index, value) {
-            self.0.unchecked_ref::<HtmlSelectElement>().set_value(value);
+    fn set_str_as_select_value_with_index(&mut self, index: usize, value: Option<&str>) {
+        if self.is_new_option_str_value(index, value) {
+            self.element.set_select_option_value(value);
         }
+    }
+
+    fn set_string_as_select_value_with_index(&mut self, index: usize, new_value: Option<String>) {
+        match self.attributes.get_mut(index) {
+            Some(Attribute::OptionString(current_value)) => {
+                if *current_value != new_value {
+                    *current_value = new_value;
+                    self.element
+                        .set_select_option_value(current_value.as_deref());
+                }
+            }
+            None => {
+                if self.attributes.len() == index {
+                    self.element.set_select_option_value(new_value.as_deref());
+                    self.attributes.push(Attribute::OptionString(new_value));
+                } else {
+                    log::error!(
+                        "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+                        self.attributes.len()
+                    );
+                }
+            }
+            _ => {
+                log::error!("Internal error: Attribute at index = {index} is not an OptionString");
+            }
+        }
+    }
+
+    pub fn set_select_value(&mut self, value: impl SelectElementValue) {
+        value.create(self);
+    }
+
+    pub fn set_select_value_with_index(&mut self, index: usize, value: impl SelectElementValue) {
+        value.update(index, self);
+    }
+
+    pub fn set_option_value(&mut self, value: &str) {
+        self.element
+            .unchecked_ref::<HtmlOptionElement>()
+            .set_value(value);
     }
 
     pub fn set_option_value_with_index(&mut self, index: usize, value: &str) {
         if self.is_new_str_value(index, value) {
-            self.0.unchecked_ref::<HtmlOptionElement>().set_value(value);
+            self.set_option_value(value);
         }
+    }
+}
+
+pub trait SelectElementValue {
+    fn create(self, element: &Element);
+    fn update(self, index: usize, element: &mut Element);
+}
+
+impl SelectElementValue for &str {
+    fn create(self, element: &Element) {
+        element.element.set_select_value(self);
+    }
+    fn update(self, index: usize, element: &mut Element) {
+        element.set_str_as_select_value_with_index(index, Some(self));
+    }
+}
+
+impl SelectElementValue for &String {
+    fn create(self, element: &Element) {
+        element.element.set_select_value(self);
+    }
+    fn update(self, index: usize, element: &mut Element) {
+        element.set_str_as_select_value_with_index(index, Some(self));
+    }
+}
+
+impl SelectElementValue for String {
+    fn create(self, element: &Element) {
+        element.element.set_select_value(&self);
+    }
+    fn update(self, index: usize, element: &mut Element) {
+        element.set_string_as_select_value_with_index(index, Some(self));
+    }
+}
+
+impl SelectElementValue for Option<&str> {
+    fn create(self, element: &Element) {
+        if let Some(value) = self {
+            element.element.set_select_value(value);
+        }
+    }
+    fn update(self, index: usize, element: &mut Element) {
+        element.set_str_as_select_value_with_index(index, self);
+    }
+}
+
+impl SelectElementValue for Option<&String> {
+    fn create(self, element: &Element) {
+        if let Some(value) = self {
+            element.element.set_select_value(value);
+        }
+    }
+    fn update(self, index: usize, element: &mut Element) {
+        element.set_str_as_select_value_with_index(index, self.map(|v| v.as_str()));
+    }
+}
+
+impl SelectElementValue for Option<String> {
+    fn create(self, element: &Element) {
+        if let Some(value) = self {
+            element.element.set_select_value(value.as_str());
+        }
+    }
+    fn update(self, index: usize, element: &mut Element) {
+        element.set_string_as_select_value_with_index(index, self);
     }
 }
 
@@ -749,11 +893,6 @@ macro_rules! create_event_methods {
             }
             $(
             pub fn $event_name(&mut self, index: usize, callback: CallbackArg<web_sys::$EventArgType>) {
-                // self.add_event_listener(
-                //     index,
-                //     stringify!($event_name),
-                //     Box::new(Closure::<dyn Fn(web_sys::$EventArgType)>::new(move |arg| callback.call(arg)))
-                // )
                 self.$EventArgType(index, stringify!($event_name), callback);
             }
             )+
