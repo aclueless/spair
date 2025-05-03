@@ -81,6 +81,7 @@ pub(crate) struct HtmlElement {
     attributes: Vec<Attribute>,
     children: Vec<Element>,
     pub(crate) root_element: bool,
+    has_match_element: bool,
 
     meta: HtmlElementMeta,
 }
@@ -796,6 +797,7 @@ impl HtmlElement {
             attributes,
             children,
             root_element: false,
+            has_match_element: false,
             meta: HtmlElementMeta {
                 spair_element_capacity: 0,
                 spair_ident,
@@ -984,9 +986,12 @@ impl HtmlElement {
 
     pub(crate) fn prepare_items_for_generating_code(&mut self) {
         let me_has_only_one_child = self.children.len() == 1;
+        let mut has_match_element = false;
         for element in self.children.iter_mut() {
             element.prepare_items_for_generating_code(me_has_only_one_child);
+            has_match_element = matches!(element, Element::Match(_));
         }
+        self.has_match_element = has_match_element;
         self.count_spair_element_capacity();
     }
 
@@ -994,6 +999,8 @@ impl HtmlElement {
         let ident = &self.meta.spair_ident;
         if self.root_element || self.meta.spair_element_capacity > 0 {
             quote! {#ident: ::spair::Element, }
+        } else if self.has_match_element {
+            quote! {#ident: ::spair::WsElement, }
         } else {
             quote! {}
         }
@@ -1030,7 +1037,10 @@ impl HtmlElement {
 
     fn generate_fields_for_view_state_instance_construction(&self) -> TokenStream {
         let ident = &self.meta.spair_ident;
-        let self_element = if self.root_element || self.meta.spair_element_capacity > 0 {
+        let self_element = if self.root_element
+            || self.has_match_element
+            || self.meta.spair_element_capacity > 0
+        {
             quote! {#ident,}
         } else {
             quote! {}
@@ -1390,6 +1400,8 @@ impl Attribute {
             },
             "id" => quote! {#element.set_id(#attribute_value);},
             "class" => quote! {#element.class(#attribute_value);},
+            "disabled" => quote! {#element.set_bool_attribute("disabled", #attribute_value);},
+            "enabled" => quote! {#element.set_bool_attribute("disabled", !(#attribute_value));},
             "value" => match element_name {
                 "select" => quote! {#element.set_select_value(#attribute_value);},
                 "input" => quote! {#element.set_input_value(#attribute_value);},
@@ -1451,6 +1463,12 @@ impl Attribute {
                 } else {
                     quote! {}
                 }
+            }
+            "disabled" => {
+                quote! {#element.set_bool_attribute_with_index(#index, "disabled", #attribute_value);}
+            }
+            "enabled" => {
+                quote! {#element.set_bool_attribute_with_index(#index, "disabled", !#attribute_value);}
             }
             "value" => match element_name {
                 "input" => quote! {#element.set_input_value_with_index(#index, #attribute_value);},
@@ -1683,6 +1701,9 @@ fn check_html_attribute_name(
         "disabled" => &[
             "button", "fieldset", "input", "optgroup", "option", "select", "textarea",
         ],
+        "enabled" => &[
+            "button", "fieldset", "input", "optgroup", "option", "select", "textarea",
+        ],
         "download" => &["a", "area"],
         "draggable" => return, // global
         "enctype" => &["form"],
@@ -1785,6 +1806,7 @@ fn check_html_attribute_name(
         "usemap" => &["img", "input", "object"],
         "value" => &[
             "button", "data", "input", "li", "meter", "option", "progress", "param",
+            "select", // `value` a property of <select>
         ],
         "width" => &[
             "canvas", "embed", "iframe", "img", "input", "object", "video",
@@ -1967,8 +1989,9 @@ impl View {
             }
             None => quote! {let #view_marker= #parent.ws_node_ref().first_ws_node();},
         };
+        let create_method_name = Ident::new("create", self.name.span());
         quote! {
-            let #view_state = #view_name::create_view(#create_view_args);
+            let #view_state = #view_name::#create_method_name(#create_view_args);
             #get_marker
             #parent.insert_new_node_before_a_node(#view_state.root_element(), Some(&#view_marker));
         }
@@ -1981,8 +2004,9 @@ impl View {
         let view_state = &self.spair_ident;
         if self.update_view_method_name.is_some() {
             let update_view_args = &self.update_view_args;
+            let update_method_name = &self.update_view_method_name;
             quote! {
-                #self_view_state_ident.#view_state.update_view(#update_view_args);
+                #self_view_state_ident.#view_state.#update_method_name(#update_view_args);
             }
         } else {
             quote! {}

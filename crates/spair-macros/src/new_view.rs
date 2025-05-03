@@ -21,14 +21,14 @@ impl View {
         validate_view_impl(&item_impl, &mut errors);
         validate_view_fn(
             item_impl.items.first(),
-            "create_view",
+            "create",
             &item_impl.brace_token,
             false,
             &mut errors,
         );
         validate_view_fn(
             item_impl.items.get(1),
-            "update_view",
+            "update",
             &item_impl.brace_token,
             false,
             &mut errors,
@@ -94,8 +94,8 @@ impl View {
         for create_variable in create_stage_variables.iter() {
             for update_variable in update_stage_variables.iter() {
                 if create_variable == update_variable {
-                    let mut error_in_update = syn::Error::new(update_variable.span(), "variable names in `fn create_with` must have names different from variable names in `fn update_with`");
-                    let error_in_create= syn::Error::new(create_variable.span(), "variable names in `fn create_with` must have names different from variable names in `fn update_with`");
+                    let mut error_in_update = syn::Error::new(update_variable.span(), "variable names in `fn create` must have names different from variable names in `fn update`");
+                    let error_in_create= syn::Error::new(create_variable.span(), "variable names in `fn create` must have names different from variable names in `fn update`");
                     error_in_update.combine(error_in_create);
                     return Err(error_in_update);
                 }
@@ -448,7 +448,7 @@ fn validate_view_fn(
         if let Some(first) = item_fn.sig.inputs.first() {
             errors.add(
                 first.span(),
-                "Spair expects args on `fn create_with` or `fn update_with`, don't put args on `fn view`.",
+                "Spair expects args on `fn create` or `fn update`, don't put args on `fn view`.",
             );
         }
     } else {

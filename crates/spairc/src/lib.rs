@@ -25,5 +25,6 @@ pub use routing::Route;
 pub mod prelude {
     pub use crate::component::{CallbackArg, Comp, Context, RcComp, ShouldRender, SpairSpawnLocal};
     pub use crate::element::RenderOptionWithDefault;
+    pub use crate::helper::ElementFromCurrentEventTarget;
     pub use spair_macros::*;
 }

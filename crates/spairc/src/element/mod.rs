@@ -479,7 +479,7 @@ impl WsElement {
         crate::routing::add_routing_handler(self);
     }
 
-    fn set_select_value(&self, value: &str) {
+    fn set_select_value_str(&self, value: &str) {
         self.0.unchecked_ref::<HtmlSelectElement>().set_value(value);
     }
 
@@ -491,9 +491,31 @@ impl WsElement {
 
     fn set_select_option_value(&self, value: Option<&str>) {
         match value {
-            Some(value) => self.set_select_value(value),
+            Some(value) => self.set_select_value_str(value),
             None => self.set_select_selected_index(-1),
         }
+    }
+
+    pub fn set_input_checked(&self, value: bool) {
+        self.0
+            .unchecked_ref::<HtmlInputElement>()
+            .set_checked(value);
+    }
+
+    pub fn set_input_value(&self, value: &str) {
+        self.0.unchecked_ref::<HtmlInputElement>().set_value(value);
+    }
+    pub fn set_textarea_value(&self, value: &str) {
+        self.0
+            .unchecked_ref::<HtmlTextAreaElement>()
+            .set_value(value);
+    }
+    pub fn set_select_value(&self, value: impl SelectElementValue) {
+        value.create(self);
+    }
+
+    pub fn set_option_value(&self, value: &str) {
+        self.0.unchecked_ref::<HtmlOptionElement>().set_value(value);
     }
 }
 
@@ -732,28 +754,14 @@ impl Element {
 
     pub fn set_input_checked_with_index(&mut self, index: usize, value: bool) {
         if self.is_new_bool_value(index, value) {
-            self.element
-                .unchecked_ref::<HtmlInputElement>()
-                .set_checked(value);
+            self.set_input_checked(value);
         }
-    }
-
-    pub fn set_input_value(&mut self, value: &str) {
-        self.element
-            .unchecked_ref::<HtmlInputElement>()
-            .set_value(value);
     }
 
     pub fn set_input_value_with_index(&mut self, index: usize, value: &str) {
         if self.is_new_str_value(index, value) {
             self.set_input_value(value);
         }
-    }
-
-    pub fn set_textarea_value(&mut self, value: &str) {
-        self.element
-            .unchecked_ref::<HtmlTextAreaElement>()
-            .set_value(value);
     }
 
     pub fn set_textarea_value_with_index(&mut self, index: usize, value: &str) {
@@ -794,18 +802,8 @@ impl Element {
         }
     }
 
-    pub fn set_select_value(&mut self, value: impl SelectElementValue) {
-        value.create(self);
-    }
-
     pub fn set_select_value_with_index(&mut self, index: usize, value: impl SelectElementValue) {
         value.update(index, self);
-    }
-
-    pub fn set_option_value(&mut self, value: &str) {
-        self.element
-            .unchecked_ref::<HtmlOptionElement>()
-            .set_value(value);
     }
 
     pub fn set_option_value_with_index(&mut self, index: usize, value: &str) {
@@ -816,13 +814,13 @@ impl Element {
 }
 
 pub trait SelectElementValue {
-    fn create(self, element: &Element);
+    fn create(self, element: &WsElement);
     fn update(self, index: usize, element: &mut Element);
 }
 
 impl SelectElementValue for &str {
-    fn create(self, element: &Element) {
-        element.element.set_select_value(self);
+    fn create(self, element: &WsElement) {
+        element.set_select_value_str(self);
     }
     fn update(self, index: usize, element: &mut Element) {
         element.set_str_as_select_value_with_index(index, Some(self));
@@ -830,8 +828,8 @@ impl SelectElementValue for &str {
 }
 
 impl SelectElementValue for &String {
-    fn create(self, element: &Element) {
-        element.element.set_select_value(self);
+    fn create(self, element: &WsElement) {
+        element.set_select_value_str(self);
     }
     fn update(self, index: usize, element: &mut Element) {
         element.set_str_as_select_value_with_index(index, Some(self));
@@ -839,8 +837,8 @@ impl SelectElementValue for &String {
 }
 
 impl SelectElementValue for String {
-    fn create(self, element: &Element) {
-        element.element.set_select_value(&self);
+    fn create(self, element: &WsElement) {
+        element.set_select_value_str(&self);
     }
     fn update(self, index: usize, element: &mut Element) {
         element.set_string_as_select_value_with_index(index, Some(self));
@@ -848,9 +846,9 @@ impl SelectElementValue for String {
 }
 
 impl SelectElementValue for Option<&str> {
-    fn create(self, element: &Element) {
+    fn create(self, element: &WsElement) {
         if let Some(value) = self {
-            element.element.set_select_value(value);
+            element.set_select_value_str(value);
         }
     }
     fn update(self, index: usize, element: &mut Element) {
@@ -859,9 +857,9 @@ impl SelectElementValue for Option<&str> {
 }
 
 impl SelectElementValue for Option<&String> {
-    fn create(self, element: &Element) {
+    fn create(self, element: &WsElement) {
         if let Some(value) = self {
-            element.element.set_select_value(value);
+            element.set_select_value_str(value);
         }
     }
     fn update(self, index: usize, element: &mut Element) {
@@ -870,9 +868,9 @@ impl SelectElementValue for Option<&String> {
 }
 
 impl SelectElementValue for Option<String> {
-    fn create(self, element: &Element) {
+    fn create(self, element: &WsElement) {
         if let Some(value) = self {
-            element.element.set_select_value(value.as_str());
+            element.set_select_value_str(value.as_str());
         }
     }
     fn update(self, index: usize, element: &mut Element) {

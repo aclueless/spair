@@ -74,8 +74,8 @@ async fn fetch_repo_metadata() -> Result<Branch, gloo_net::Error> {
 
 #[component_for]
 impl State {
-    fn create_view(_ccontext: &Context<State>) {}
-    fn update_view(ucontext: &Context<State>) {}
+    fn create(_ccontext: &Context<State>) {}
+    fn update(ucontext: &Context<State>) {}
     fn view() {
         div(
             replace_at_element_id = "root",
@@ -101,8 +101,8 @@ impl State {
 
 #[new_view]
 impl BranchView {
-    fn create_view(branch: &Branch) {}
-    fn update_view() {}
+    fn create(branch: &Branch) {}
+    fn update() {}
     fn view() {
         p(text(
             "The latest commit to the wasm-bindgen ",

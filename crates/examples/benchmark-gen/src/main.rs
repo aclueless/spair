@@ -18,7 +18,7 @@ pub struct AppStateViewState {
 }
 impl Component for AppState {
     type ViewState = AppStateViewState;
-    fn create_view(ccontext: &Context<Self>) -> (::spair::WsElement, Self::ViewState) {
+    fn create(ccontext: &Context<Self>) -> (::spair::WsElement, Self::ViewState) {
         const HTML_STRING: &str = "<div><div class='container'><!--view--><table class='table table-hover table-striped test-data'><tbody></tbody></table><span class='preloadicon glyphicon glyphicon-remove' aria-hidden='true'></span></div></div>";
         let mut _element_1 = Element::with_html(HTML_STRING, 0usize);
         _element_1.replace_at_element_id("main");
@@ -40,7 +40,7 @@ impl Component for AppState {
             },
         )
     }
-    fn update_view(
+    fn update(
         _spair_component_view_state_for_updating_: &mut Self::ViewState,
         ucontext: &Context<Self>,
     ) {

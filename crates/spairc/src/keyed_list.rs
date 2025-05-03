@@ -11,12 +11,8 @@ pub trait KeyedListItemView<C: Component> {
     fn template_string() -> &'static str;
     fn get_key(&self) -> &Self::Key;
     fn key_from_view_state(state: &Self::ViewState) -> &Self::Key;
-    fn create_view(
-        template: &TemplateElement,
-        cdata: &Self,
-        ccontext: &Context<C>,
-    ) -> Self::ViewState;
-    fn update_view(view_state: &mut Self::ViewState, udata: &Self, ucontext: &Context<C>);
+    fn create(template: &TemplateElement, cdata: &Self, ccontext: &Context<C>) -> Self::ViewState;
+    fn update(view_state: &mut Self::ViewState, udata: &Self, ucontext: &Context<C>);
     fn root_element(view_state: &Self::ViewState) -> &WsElement;
 }
 
@@ -197,7 +193,7 @@ where
             parent_element
                 .insert_new_node_before_a_node(I::root_element(&old_view_state), next_sibling);
         }
-        I::update_view(&mut old_view_state, item_data, context);
+        I::update(&mut old_view_state, item_data, context);
         if let Some(new_view_state) = new_view_state {
             *new_view_state = Some(old_view_state);
         }
@@ -355,7 +351,7 @@ where
             let view_state = match old_view_state {
                 Some(old) => {
                     let mut view_state = old.view_state;
-                    I::update_view(&mut view_state, item_data, context);
+                    I::update(&mut view_state, item_data, context);
                     view_state
                 }
                 None => self.render_new_item(item_data, context),
@@ -406,8 +402,8 @@ where
     }
 
     fn render_new_item(&self, item_data: &I, context: &Context<C>) -> I::ViewState {
-        let mut view_state = I::create_view(self.template, item_data, context);
-        I::update_view(&mut view_state, item_data, context);
+        let mut view_state = I::create(self.template, item_data, context);
+        I::update(&mut view_state, item_data, context);
 
         let next_sibling = self.end_flag_for_the_next_rendered_item_bottom_up.as_ref();
         self.parent_element
@@ -731,7 +727,7 @@ pub mod keyed_list_tests {
             &view_state.data
         }
 
-        fn create_view(
+        fn create(
             template: &crate::TemplateElement,
             item_data: &Self,
             _context: &crate::Context<TestState>,
@@ -745,7 +741,7 @@ pub mod keyed_list_tests {
             }
         }
 
-        fn update_view(
+        fn update(
             view_state: &mut Self::ViewState,
             item_data: &Self,
             _context: &crate::Context<TestState>,

@@ -12,10 +12,10 @@ impl RowItem {
     fn get_key(&self) -> &usize {
         &self.id
     }
-    fn create_view(cdata: &Self, ccontext: &Context<AppState>) {
+    fn create(cdata: &Self, ccontext: &Context<AppState>) {
         let id = cdata.id;
     }
-    fn update_view(udata: &Self, ucontext: &Context<AppState>) {}
+    fn update(udata: &Self, ucontext: &Context<AppState>) {}
     fn view() {
         tr(
             class_if = (Some(udata.id) == ucontext.state.selected_id, "danger"),

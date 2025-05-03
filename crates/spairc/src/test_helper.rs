@@ -24,7 +24,7 @@ pub struct CompUpdater<T: TestDataInterface> {
 impl<T: 'static + TestDataInterface> crate::Component for TestComp<T> {
     type ViewState = CompUpdater<T>;
 
-    fn create_view(ccontext: &Context<Self>) -> (WsElement, Self::ViewState) {
+    fn create(ccontext: &Context<Self>) -> (WsElement, Self::ViewState) {
         let element = Element::with_html("<div id='spair_test'></div>", 0);
         let test_updater = ccontext.state.data.init(&element, ccontext);
         let body = element.append_to_body();
@@ -37,7 +37,7 @@ impl<T: 'static + TestDataInterface> crate::Component for TestComp<T> {
         )
     }
 
-    fn update_view(updater: &mut Self::ViewState, ucontext: &crate::Context<Self>) {
+    fn update(updater: &mut Self::ViewState, ucontext: &crate::Context<Self>) {
         ucontext
             .state
             .data

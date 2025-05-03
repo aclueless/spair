@@ -42,7 +42,7 @@ pub struct AppStateViewState {
 }
 impl ::spair::Component for AppState {
     type ViewState = AppStateViewState;
-    fn create_view(ccontext: &Context<Self>) -> (WsElement, Self::ViewState) {
+    fn create(ccontext: &Context<Self>) -> (WsElement, Self::ViewState) {
         const HTML_STRING: &str = "<div><!--view-->&nbsp;<!--view--></div>";
         let mut _element_1 = Element::with_html(HTML_STRING, 0usize);
         _element_1.replace_at_element_id("root");
@@ -65,7 +65,7 @@ impl ::spair::Component for AppState {
             },
         )
     }
-    fn update_view(
+    fn update(
         _spair_component_view_state_for_updating_: &mut Self::ViewState,
         ucontext: &Context<Self>,
     ) {

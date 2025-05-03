@@ -178,8 +178,8 @@ impl spair::Route for Filter {
 
 #[component_for]
 impl App {
-    fn create_view(cc: &Context<Self>) {}
-    fn update_view(uc: &Context<Self>) {}
+    fn create(cc: &Context<Self>) {}
+    fn update(uc: &Context<Self>) {}
     fn view() {
         section(
             replace_at_element_id = "root",
@@ -211,8 +211,8 @@ const ENTER_KEY: &str = "Enter";
 
 #[new_view]
 impl Header {
-    fn create_view(ccomp: &Comp<App>) {}
-    fn update_view(new_todo_title: &str) {}
+    fn create(ccomp: &Comp<App>) {}
+    fn update(new_todo_title: &str) {}
     fn view() {
         header(
             class = "header",
@@ -237,8 +237,8 @@ impl Header {
 
 #[new_view]
 impl Footer {
-    fn create_view(ccomp: &Comp<App>) {}
-    fn update_view(ustate: &App) {
+    fn create(ccomp: &Comp<App>) {}
+    fn update(ustate: &App) {
         let is_empty_list = ustate.data.items.is_empty();
         let item_left = ustate
             .data
@@ -294,10 +294,10 @@ impl TodoItem {
         &self.id
     }
 
-    fn create_view(cdata: &Self, cc: &Context<App>) {
+    fn create(cdata: &Self, cc: &Context<App>) {
         let id = cdata.id;
     }
-    fn update_view(udata: &Self, uc: &Context<App>) {
+    fn update(udata: &Self, uc: &Context<App>) {
         let state = uc.state;
         let is_editing_me = state.editing_id == Some(udata.id);
     }

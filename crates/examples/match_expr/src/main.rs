@@ -13,16 +13,16 @@ enum Mode {
 
 #[new_view]
 impl Button {
-    fn create_view(handler: CallbackArg<MouseEvent>, text: &str) {}
-    fn update_view() {}
+    fn create(handler: CallbackArg<MouseEvent>, text: &str) {}
+    fn update() {}
     fn view() {
         button(on_click = handler, text(text))
     }
 }
 #[component_for]
 impl AppState {
-    fn create_view(ccontext: &Context<Self>) {}
-    fn update_view(ucontext: &Context<Self>) {}
+    fn create(ccontext: &Context<Self>) {}
+    fn update(ucontext: &Context<Self>) {}
     fn view() {
         div(
             replace_at_element_id = "root",

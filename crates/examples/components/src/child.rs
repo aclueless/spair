@@ -36,8 +36,8 @@ impl Child {
 
 #[component_for]
 impl Child {
-    fn create_view(cc: &Context<Self>) {}
-    fn update_view(uc: &Context<Self>) {}
+    fn create(cc: &Context<Self>) {}
+    fn update(uc: &Context<Self>) {}
     fn view() {
         div(
             text("In child component: "),

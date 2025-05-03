@@ -33,8 +33,8 @@ impl State {
 
 #[component_for]
 impl State {
-    fn create_view(cc: &Context<Self>) {}
-    fn update_view(uc: &Context<Self>) {}
+    fn create(cc: &Context<Self>) {}
+    fn update(uc: &Context<Self>) {}
     fn view() {
         div(
             replace_at_element_id = "root",

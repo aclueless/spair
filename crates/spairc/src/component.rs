@@ -42,8 +42,8 @@ pub(crate) fn create_component<C: Component + 'static, R: Route>(
 fn finalize_rc_comp<C: Component + 'static>(rc_comp: RcComp<C>, state: C) -> RcComp<C> {
     let comp = rc_comp.comp();
     let context = comp.context(&state);
-    let (root, mut view_state) = C::create_view(&context);
-    C::update_view(&mut view_state, &context);
+    let (root, mut view_state) = C::create(&context);
+    C::update(&mut view_state, &context);
 
     match rc_comp.0.try_borrow_mut() {
         Ok(mut rc_comp) => {
@@ -211,8 +211,8 @@ where
 
 pub trait Component: Sized {
     type ViewState;
-    fn create_view(ccontext: &Context<Self>) -> (WsElement, Self::ViewState);
-    fn update_view(view_state: &mut Self::ViewState, ucontext: &Context<Self>);
+    fn create(ccontext: &Context<Self>) -> (WsElement, Self::ViewState);
+    fn update(view_state: &mut Self::ViewState, ucontext: &Context<Self>);
 }
 
 impl<C: Component> Comp<C>
@@ -278,7 +278,7 @@ where
         };
         let should_render = (cb_fn.callback)(&mut comp_data.state, arg);
         if let ShouldRender::Yes = should_render {
-            C::update_view(&mut comp_data.view_state, &self.context(&comp_data.state));
+            C::update(&mut comp_data.view_state, &self.context(&comp_data.state));
         }
     }
 }

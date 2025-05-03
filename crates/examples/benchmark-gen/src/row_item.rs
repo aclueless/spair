@@ -30,7 +30,7 @@ impl ::spair::KeyedListItemView<AppState> for RowItem {
     fn template_string() -> &'static str {
         "<tr><td class='col-md-1'>&nbsp;</td><td class='col-md-4'><a>&nbsp;</a></td><td class='col-md-1'><a><span class='glyphicon glyphicon-remove' aria-hidden='true'></span></a></td><td class='col-md-6'></td></tr>"
     }
-    fn create_view(
+    fn create(
         _keyed_view_state_template: &::spair::TemplateElement,
         cdata: &Self,
         ccontext: &Context<AppState>,
@@ -69,7 +69,7 @@ impl ::spair::KeyedListItemView<AppState> for RowItem {
             _element_8,
         }
     }
-    fn update_view(
+    fn update(
         _spair_keyed_item_view_state_for_updating_: &mut Self::ViewState,
         udata: &Self,
         ucontext: &Context<AppState>,

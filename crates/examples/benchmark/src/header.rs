@@ -4,8 +4,8 @@ use crate::AppState;
 
 #[new_view]
 impl Button {
-    fn create_view(id: &str, text: &str, callback: CallbackArg<MouseEvent>) {}
-    fn update_view() {}
+    fn create(id: &str, text: &str, callback: CallbackArg<MouseEvent>) {}
+    fn update() {}
     fn view() {
         div(
             class = "col-sm-6 smallpad",
@@ -22,8 +22,8 @@ impl Button {
 
 #[new_view]
 impl Header {
-    fn create_view(comp: &Comp<AppState>) {}
-    fn update_view() {}
+    fn create(comp: &Comp<AppState>) {}
+    fn update() {}
     fn view() {
         div(
             class = "jumbotron",

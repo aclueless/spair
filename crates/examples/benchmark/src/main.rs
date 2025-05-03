@@ -13,8 +13,8 @@ struct AppState {
 
 #[component_for]
 impl AppState {
-    fn create_view(ccontext: &Context<Self>) {}
-    fn update_view(ucontext: &Context<Self>) {}
+    fn create(ccontext: &Context<Self>) {}
+    fn update(ucontext: &Context<Self>) {}
     fn view() {
         div(
             replace_at_element_id = "main",

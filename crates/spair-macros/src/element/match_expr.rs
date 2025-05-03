@@ -153,23 +153,26 @@ impl Match {
         let match_view_state_enum_type_name = &self.match_view_state_enum_type_name;
         let match_view_state_struct_type_name = &self.match_view_state_struct_type_name;
         let marker = &self.spair_ident_marker;
-        let get_marker = if self.parent_has_only_one_child {
-            quote! {}
+        let (get_marker, marker_field_init, reborrow_marker) = if self.parent_has_only_one_child {
+            (quote! {}, quote! {}, quote! {})
         } else {
-            match previous {
+            let get_markder = match previous {
                 Some(previous) => {
                     quote! {let #marker = #previous.ws_node_ref().next_sibling_ws_node();}
                 }
                 None => quote! {let #marker = #parent.ws_node_ref().first_ws_node();},
-            }
+            };
+            let marker_field_init = quote! {marker:#marker,};
+            let reborrow_marker = quote! {let #marker = &#ident.marker;};
+            (get_markder, marker_field_init, reborrow_marker)
         };
         quote! {
             #get_marker
             let #ident = #match_view_state_struct_type_name {
                 match_arm_view_state: #match_view_state_enum_type_name::NotRenderYet,
-                marker: #marker,
+                #marker_field_init
             };
-            let #marker = &#ident.marker;
+            #reborrow_marker
         }
     }
 
@@ -413,8 +416,9 @@ impl MatchArm {
                     let create_view_args = &view.create_view_args;
                     let match_arm_view_state =
                         Ident::new("_match_arm_view_state", Span::call_site());
+                    let create_method_name = Ident::new("create", view.name.span());
                     quote! {
-                        let #match_arm_view_state = #view_name::create_view(#create_view_args);
+                        let #match_arm_view_state = #view_name::#create_method_name(#create_view_args);
                         #view_state.#parent.insert_new_node_before_a_node(#match_arm_view_state.root_element(), #end_flag);
                         let #match_arm_view_state = #view_state_struct_name{#view_ident: #match_arm_view_state};
                         #view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#match_arm_view_state);
@@ -449,9 +453,10 @@ impl MatchArm {
                 }
                 Element::View(view) => {
                     let ident = &view.spair_ident;
+                    let update_method_name = &view.update_view_method_name;
                     if let Some(update_view_args) = view.update_view_args.as_ref() {
                         quote! {
-                            #view_state.#ident.update_view(#update_view_args);
+                            #view_state.#ident.#update_method_name(#update_view_args);
                         }
                     } else {
                         quote! {}
