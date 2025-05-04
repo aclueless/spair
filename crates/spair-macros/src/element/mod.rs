@@ -1582,9 +1582,20 @@ impl List {
         let component_type_name = &self.component_type_name;
         let keyed_item_type_name = &self.item_type_name;
         if self.keyed_list {
-            quote! {#ident: ::spair::KeyedList<#component_type_name,#keyed_item_type_name>,}
+            quote! {#ident: ::spair::KeyedList<
+                    #component_type_name,
+                    #keyed_item_type_name,
+                    <#keyed_item_type_name as ::spair::KeyedListItemView<#component_type_name>>::Key,
+                    <#keyed_item_type_name as ::spair::KeyedListItemView<#component_type_name>>::ViewState,
+                >,
+            }
         } else {
-            quote! {#ident: ::spair::List<#component_type_name,#keyed_item_type_name>,}
+            quote! {#ident: ::spair::List<
+                    #component_type_name,
+                    #keyed_item_type_name,
+                    <#keyed_item_type_name as ::spair::ListItemView<#component_type_name>>::ViewState,
+                >,
+            }
         }
     }
 
@@ -1614,10 +1625,27 @@ impl List {
         } else {
             quote! {let #marker_ident = None;}
         };
-        let list_type = if self.keyed_list {
-            quote! {::spair::KeyedList}
+        let item_type_name = &self.item_type_name;
+        let create_list = if self.keyed_list {
+            quote! {::spair::KeyedList::new(
+                &#parent,
+                #marker_ident.clone(),
+                #item_type_name::template_string(),
+                #item_type_name::get_key,
+                #item_type_name::key_from_view_state,
+                #item_type_name::create,
+                #item_type_name::update,
+                #item_type_name::root_element,
+            )}
         } else {
-            quote! {::spair::List}
+            quote! {::spair::List::new(
+                &#parent,
+                #marker_ident.clone(),
+                #item_type_name::template_string(),
+                #item_type_name::create,
+                #item_type_name::update,
+                #item_type_name::root_element,
+            )}
         };
         let items_iter = &self.item_iterator;
         let context = &self.context;
@@ -1628,7 +1656,7 @@ impl List {
         };
         quote! {
             #end_node
-            let #ident = #list_type::new(&#parent, #marker_ident.clone());
+            let #ident = #create_list;
             #render_on_creation
         }
     }

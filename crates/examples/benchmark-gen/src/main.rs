@@ -14,7 +14,12 @@ struct AppState {
 pub struct AppStateViewState {
     _element_1: Element,
     _view_3: Header,
-    _keyed_list7: ::spair::KeyedList<AppState, RowItem>,
+    _keyed_list7: ::spair::KeyedList<
+        AppState,
+        RowItem,
+        <RowItem as spair::KeyedListItemView<AppState>>::Key,
+        <RowItem as spair::KeyedListItemView<AppState>>::ViewState,
+    >,
 }
 impl Component for AppState {
     type ViewState = AppStateViewState;
@@ -29,7 +34,16 @@ impl Component for AppState {
         let _element_5 = _view_marker4.ws_node_ref().next_sibling_ws_element();
         let _element_6 = _element_5.ws_node_ref().first_ws_element();
         let _keyed_list_end_flag8 = None;
-        let _keyed_list7 = KeyedList::new(&_element_6, _keyed_list_end_flag8.clone());
+        let _keyed_list7 = KeyedList::new(
+            &_element_6,
+            _keyed_list_end_flag8.clone(),
+            RowItem::template_string(),
+            RowItem::get_key,
+            RowItem::key_from_view_state,
+            RowItem::create,
+            RowItem::update,
+            RowItem::root_element,
+        );
         let _element_9 = _element_5.ws_node_ref().next_sibling_ws_element();
         (
             _element_1.ws_element().clone(),

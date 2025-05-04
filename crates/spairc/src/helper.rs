@@ -7,6 +7,7 @@ thread_local!(
         WINDOW.with(|window| window.document().expect_throw("No document found"));
 );
 
+#[allow(dead_code)]
 pub fn get_body() -> HtmlElement {
     DOCUMENT.with(|d| d.body()).expect_throw("No body")
 }

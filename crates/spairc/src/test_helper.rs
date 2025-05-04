@@ -1,4 +1,4 @@
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::Node;
 
 use crate::{
@@ -27,7 +27,7 @@ impl<T: 'static + TestDataInterface> crate::Component for TestComp<T> {
     fn create(ccontext: &Context<Self>) -> (WsElement, Self::ViewState) {
         let element = Element::with_html("<div id='spair_test'></div>", 0);
         let test_updater = ccontext.state.data.init(&element, ccontext);
-        let body = element.append_to_body();
+        let body = append_to_body(&element);
         (
             body,
             CompUpdater {
@@ -43,6 +43,20 @@ impl<T: 'static + TestDataInterface> crate::Component for TestComp<T> {
             .data
             .update(&mut updater.test_updater, ucontext);
     }
+}
+
+pub(crate) fn append_to_body(element: &Element) -> WsElement {
+    let body = crate::helper::get_body();
+    // body.set_text_content(None);
+    let s = helper::get_element_by_id("spair_test");
+    if let Some(_) = s {
+        element.replace_at_element_id("spair_test");
+    } else {
+        if let Err(e) = body.append_with_node_1(&element) {
+            log::error!("Error on appending to body: {e:?}");
+        };
+    }
+    body.unchecked_into::<web_sys::Node>().into()
 }
 
 impl<T> TestComp<T> {

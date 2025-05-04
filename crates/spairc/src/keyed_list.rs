@@ -5,41 +5,25 @@ use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{Component, Context, TemplateElement, WsElement};
 
-pub trait KeyedListItemView<C: Component> {
-    type ViewState;
-    type Key: Clone + Eq + Hash;
-    fn template_string() -> &'static str;
-    fn get_key(&self) -> &Self::Key;
-    fn key_from_view_state(state: &Self::ViewState) -> &Self::Key;
-    fn create(template: &TemplateElement, cdata: &Self, ccontext: &Context<C>) -> Self::ViewState;
-    fn update(view_state: &mut Self::ViewState, udata: &Self, ucontext: &Context<C>);
-    fn root_element(view_state: &Self::ViewState) -> &WsElement;
-}
-
-pub struct KeyedList<C, I>
+pub struct KeyedList<C, I, K, VS>
 where
-    I: KeyedListItemView<C>,
     C: Component,
+    K: Clone + Eq + Hash,
 {
     parent_element: WsElement,
     template: TemplateElement,
-    end_node_marker_for_partial_list: Option<web_sys::Node>,
-    active_items: Vec<Option<I::ViewState>>,
-    buffer_items: Vec<Option<I::ViewState>>,
-    active_items_map: HashMap<I::Key, OldItem<I::ViewState>>,
-}
 
-struct KeyedListUpdater<'a, C, I>
-where
-    I: KeyedListItemView<C>,
-    C: Component,
-{
-    parent_element: &'a WsElement,
-    template: &'a TemplateElement,
-    old_list: PeekableDoubleEndedIterator<Enumerate<IterMut<'a, Option<I::ViewState>>>>,
-    new_list: PeekableDoubleEndedIterator<IterMut<'a, Option<I::ViewState>>>,
-    old_items_map: &'a mut HashMap<I::Key, OldItem<I::ViewState>>,
-    end_flag_for_the_next_rendered_item_bottom_up: Option<web_sys::Node>,
+    get_key_fn: fn(&I) -> &K,
+    get_view_state_key_fn: fn(&VS) -> &K,
+    create_view_fn: fn(&TemplateElement, &I, &Context<C>) -> VS,
+    update_view_fn: fn(&mut VS, &I, &Context<C>),
+    get_view_state_root_element_fn: fn(&VS) -> &WsElement,
+
+    active_items: Vec<Option<VS>>,
+    buffer_items: Vec<Option<VS>>,
+    active_items_map: HashMap<K, OldItem<VS>>,
+
+    end_node_marker_for_partial_list: Option<web_sys::Node>,
 }
 
 pub struct OldItem<VS> {
@@ -47,19 +31,55 @@ pub struct OldItem<VS> {
     pub view_state: VS,
 }
 
-impl<C, I> KeyedList<C, I>
+struct KeyedListUpdater<'a, C, I, K, VS>
 where
-    I: KeyedListItemView<C> + 'static,
-    C: Component + 'static,
+    C: Component,
+    K: Clone + Eq + Hash,
 {
+    parent_element: &'a WsElement,
+    template: &'a TemplateElement,
+
+    get_key_fn: fn(&I) -> &K,
+    get_view_state_key_fn: fn(&VS) -> &K,
+    create_view_fn: fn(&TemplateElement, &I, &Context<C>) -> VS,
+    update_view_fn: fn(&mut VS, &I, &Context<C>),
+    get_view_state_root_element_fn: fn(&VS) -> &WsElement,
+
+    old_list: PeekableDoubleEndedIterator<Enumerate<IterMut<'a, Option<VS>>>>,
+    new_list: PeekableDoubleEndedIterator<IterMut<'a, Option<VS>>>,
+    old_items_map: &'a mut HashMap<K, OldItem<VS>>,
+    end_flag_for_the_next_rendered_item_bottom_up: Option<web_sys::Node>,
+}
+
+impl<C, I, K, VS> KeyedList<C, I, K, VS>
+where
+    C: Component + 'static,
+    I: 'static,
+    K: Clone + Eq + Hash,
+{
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         parent_element: &WsElement,
         end_node_marker_for_partial_list: Option<web_sys::Node>,
+        template_string: &str,
+
+        get_key_fn: fn(&I) -> &K,
+        get_vs_key_fn: fn(&VS) -> &K,
+        create_view_fn: fn(&TemplateElement, &I, &Context<C>) -> VS,
+        update_view_fn: fn(&mut VS, &I, &Context<C>),
+        get_vs_root_element_fn: fn(&VS) -> &WsElement,
     ) -> Self {
         Self {
             parent_element: parent_element.clone(),
-            template: TemplateElement::new(I::template_string()),
+            template: TemplateElement::new(template_string),
             end_node_marker_for_partial_list,
+
+            get_key_fn,
+            get_view_state_key_fn: get_vs_key_fn,
+            create_view_fn,
+            update_view_fn,
+            get_view_state_root_element_fn: get_vs_root_element_fn,
+
             active_items: Vec::new(),
             buffer_items: Vec::new(),
             active_items_map: HashMap::default(),
@@ -95,6 +115,13 @@ where
                 .peekable_double_ended(),
             new_list: self.active_items.iter_mut().peekable_double_ended(),
             old_items_map: &mut self.active_items_map,
+
+            get_key_fn: self.get_key_fn,
+            get_view_state_key_fn: self.get_view_state_key_fn,
+            create_view_fn: self.create_view_fn,
+            update_view_fn: self.update_view_fn,
+            get_view_state_root_element_fn: self.get_view_state_root_element_fn,
+
             end_flag_for_the_next_rendered_item_bottom_up: self
                 .end_node_marker_for_partial_list
                 .clone(),
@@ -111,17 +138,19 @@ where
         } else {
             for item in self.active_items.iter_mut() {
                 if let Some(item) = item.take() {
-                    self.parent_element.remove_child(I::root_element(&item));
+                    self.parent_element
+                        .remove_child((self.get_view_state_root_element_fn)(&item));
                 };
             }
         }
     }
 }
 
-impl<C, I> KeyedListUpdater<'_, C, I>
+impl<C, I, K, VS> KeyedListUpdater<'_, C, I, K, VS>
 where
-    I: KeyedListItemView<C> + 'static,
     C: Component + 'static,
+    I: 'static,
+    K: Clone + Eq + Hash,
 {
     fn update(&mut self, item_data: Vec<&I>, context: &Context<C>) {
         let mut item_data = item_data.into_iter().peekable_double_ended();
@@ -152,7 +181,7 @@ where
                     .1
                     .as_ref()
                     .expect_throw("keyed_list::KeyedListUpdater::update_same_items_from_start");
-                if !I::key_from_view_state(old_view_state).eq(item_data.get_key()) {
+                if !(self.get_view_state_key_fn)(old_view_state).eq((self.get_key_fn)(item_data)) {
                     return count;
                 }
             } else {
@@ -163,37 +192,38 @@ where
             count += 1;
             Self::update_existing_item(
                 self.parent_element,
+                self.get_view_state_root_element_fn,
+                self.update_view_fn,
                 item_data.next().unwrap_throw(),
                 self.old_list.next(),
                 self.new_list.next(),
                 None,
-                // self.old_list.peek().and_then(|next_old_item| {
-                //     next_old_item
-                //         .1
-                //         .as_ref()
-                //         .map(|updater| updater.root_element())
-                // }),
                 false,
                 context,
             );
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn update_existing_item(
         parent_element: &WsElement,
+        get_view_state_root_element_fn: fn(&VS) -> &WsElement,
+        update_view_fn: fn(&mut VS, &I, &Context<C>),
         item_data: &I,
-        old_view_state: Option<(usize, &mut Option<I::ViewState>)>,
-        new_view_state: Option<&mut Option<I::ViewState>>,
+        old_view_state: Option<(usize, &mut Option<VS>)>,
+        new_view_state: Option<&mut Option<VS>>,
         next_sibling: Option<&web_sys::Node>,
         relocating_item: bool,
         context: &Context<C>,
     ) {
         let mut old_view_state = old_view_state.unwrap_throw().1.take().unwrap_throw();
         if relocating_item {
-            parent_element
-                .insert_new_node_before_a_node(I::root_element(&old_view_state), next_sibling);
+            parent_element.insert_new_node_before_a_node(
+                get_view_state_root_element_fn(&old_view_state),
+                next_sibling,
+            );
         }
-        I::update(&mut old_view_state, item_data, context);
+        update_view_fn(&mut old_view_state, item_data, context);
         if let Some(new_view_state) = new_view_state {
             *new_view_state = Some(old_view_state);
         }
@@ -214,25 +244,28 @@ where
                     .as_ref()
                     .expect_throw("keyed_list::KeyedListUpdater::update_same_items_from_end");
 
-                if !I::key_from_view_state(old_view_state).eq(item_data.get_key()) {
+                if !(self.get_view_state_key_fn)(old_view_state).eq((self.get_key_fn)(item_data)) {
                     return count;
                 }
                 // The keys are the same, so we need to continue the loop.
                 // The proccessed item  will be upped by one from the bottom.
                 // And we will need to update `end_flag_for_the_next_entry_bottom_up`
                 // with this value
-                I::root_element(old_view_state).web_sys_node().clone()
+                (self.get_view_state_root_element_fn)(old_view_state)
+                    .web_sys_node()
+                    .clone()
             } else {
                 return count;
             };
             count += 1;
             Self::update_existing_item(
                 self.parent_element,
+                self.get_view_state_root_element_fn,
+                self.update_view_fn,
                 item_data.next_back().unwrap_throw(),
                 self.old_list.next_back(),
                 self.new_list.next_back(),
                 None,
-                // self.end_flag_for_the_next_entry_bottom_up.as_ref(),
                 false,
                 context,
             );
@@ -252,7 +285,7 @@ where
                 .1
                 .as_ref()
                 .expect_throw("keyed_list::KeyedListUpdater::update_moved_forward_item");
-            if !I::key_from_view_state(old_view_state).eq(item_data.get_key()) {
+            if !(self.get_view_state_key_fn)(old_view_state).eq((self.get_key_fn)(item_data)) {
                 // No entry moved forward
                 return 0;
             }
@@ -264,10 +297,12 @@ where
         let next_sibling = self.old_list.peek().and_then(|item| {
             item.1
                 .as_ref()
-                .map(|view_state| I::root_element(view_state).web_sys_node())
+                .map(|view_state| (self.get_view_state_root_element_fn)(view_state).web_sys_node())
         });
         Self::update_existing_item(
             self.parent_element,
+            self.get_view_state_root_element_fn,
+            self.update_view_fn,
             item_data.next().unwrap_throw(),
             moved,
             self.new_list.next(),
@@ -290,16 +325,20 @@ where
                 .1
                 .as_ref()
                 .expect_throw("keyed_list::KeyedListUpdater::update_moved_backward_item");
-            if !I::key_from_view_state(old_view_state).eq(item_data.get_key()) {
+            if !(self.get_view_state_key_fn)(old_view_state).eq((self.get_key_fn)(item_data)) {
                 // No entry moved backward
                 return 0;
             }
-            I::root_element(old_view_state).web_sys_node().clone()
+            (self.get_view_state_root_element_fn)(old_view_state)
+                .web_sys_node()
+                .clone()
         } else {
             return 0;
         };
         Self::update_existing_item(
             self.parent_element,
+            self.get_view_state_root_element_fn,
+            self.update_view_fn,
             item_data.next_back().unwrap_throw(),
             self.old_list.next(),
             self.new_list.next_back(),
@@ -332,7 +371,7 @@ where
         // and which should be stay still
         let mut item_data_with_lis: Vec<_> = item_data
             .map(|item_data| {
-                let key = item_data.get_key();
+                let key = (self.get_key_fn)(item_data);
                 let old_view_state = self.old_items_map.remove(key);
                 ItemWithLis::new(item_data, old_view_state)
             })
@@ -351,7 +390,7 @@ where
             let view_state = match old_view_state {
                 Some(old) => {
                     let mut view_state = old.view_state;
-                    I::update(&mut view_state, item_data, context);
+                    (self.update_view_fn)(&mut view_state, item_data, context);
                     view_state
                 }
                 None => self.render_new_item(item_data, context),
@@ -359,12 +398,17 @@ where
 
             if !lis {
                 let next_sibling = self.end_flag_for_the_next_rendered_item_bottom_up.as_ref();
-                self.parent_element
-                    .insert_new_node_before_a_node(I::root_element(&view_state), next_sibling);
+                self.parent_element.insert_new_node_before_a_node(
+                    (self.get_view_state_root_element_fn)(&view_state),
+                    next_sibling,
+                );
             }
 
-            self.end_flag_for_the_next_rendered_item_bottom_up =
-                Some(I::root_element(&view_state).web_sys_node().clone());
+            self.end_flag_for_the_next_rendered_item_bottom_up = Some(
+                (self.get_view_state_root_element_fn)(&view_state)
+                    .web_sys_node()
+                    .clone(),
+            );
             *self
                 .new_list
                 .next_back()
@@ -379,7 +423,7 @@ where
             let element = old_view_state
                 .take()
                 .expect_throw("keyed_list::KeyedListUpdater::remove_items_still_in_old_list");
-            parent.remove_child(I::root_element(&element));
+            parent.remove_child((self.get_view_state_root_element_fn)(&element));
         }
     }
 
@@ -394,20 +438,22 @@ where
         }
     }
 
-    fn store_item_view_state(&mut self, view_state: I::ViewState) {
+    fn store_item_view_state(&mut self, view_state: VS) {
         *self
             .new_list
             .next()
             .expect_throw("keyed_list::KeyedListUpdater::store_item_view_state") = Some(view_state);
     }
 
-    fn render_new_item(&self, item_data: &I, context: &Context<C>) -> I::ViewState {
-        let mut view_state = I::create(self.template, item_data, context);
-        I::update(&mut view_state, item_data, context);
+    fn render_new_item(&self, item_data: &I, context: &Context<C>) -> VS {
+        let mut view_state = (self.create_view_fn)(self.template, item_data, context);
+        (self.update_view_fn)(&mut view_state, item_data, context);
 
         let next_sibling = self.end_flag_for_the_next_rendered_item_bottom_up.as_ref();
-        self.parent_element
-            .insert_new_node_before_a_node(I::root_element(&view_state), next_sibling);
+        self.parent_element.insert_new_node_before_a_node(
+            (self.get_view_state_root_element_fn)(&view_state),
+            next_sibling,
+        );
 
         view_state
     }
@@ -418,7 +464,7 @@ where
             let view_state = view_state.take().expect_throw(
                 "keyed_list::KeyedListUpdater::construct_old_entries_map_from_remaining_old_entries",
             );
-            let key = I::key_from_view_state(&view_state).clone();
+            let key = (self.get_view_state_key_fn)(&view_state).clone();
             self.old_items_map
                 .insert(key, OldItem { index, view_state });
         }
@@ -427,7 +473,7 @@ where
     fn remove_old_items_that_still_in_old_items_map(&mut self) {
         let parent = self.parent_element;
         self.old_items_map.drain().for_each(|(_, item)| {
-            parent.remove_child(I::root_element(&item.view_state));
+            parent.remove_child((self.get_view_state_root_element_fn)(&item.view_state));
         })
     }
 }
@@ -695,13 +741,13 @@ pub mod keyed_list_tests {
         test_helper::{self, TestComp, TestDataInterface},
     };
 
-    use super::{KeyedList, KeyedListItemView};
+    use super::KeyedList;
 
     type TestData = Vec<&'static str>;
     type TestState = TestComp<TestData>;
 
     pub struct TestDataViewState {
-        keyed_list: KeyedList<TestState, &'static str>,
+        keyed_list: KeyedList<TestState, &'static str, &'static str, TestItemViewState>,
     }
 
     pub struct TestItemViewState {
@@ -710,55 +756,56 @@ pub mod keyed_list_tests {
         text: Text,
     }
 
-    impl KeyedListItemView<TestState> for &'static str {
-        type ViewState = TestItemViewState;
+    const TEMPLATE_STRING: &str = "<span>?</span>";
 
-        type Key = &'static str;
+    fn get_key<'a>(item: &'a &'static str) -> &'a &'static str {
+        item
+    }
 
-        fn template_string() -> &'static str {
-            "<span>?</span>"
+    fn get_vs_key(vs: &TestItemViewState) -> &&'static str {
+        &vs.data
+    }
+
+    fn create_view(
+        template: &crate::TemplateElement,
+        item_data: &&'static str,
+        _context: &crate::Context<TestState>,
+    ) -> TestItemViewState {
+        let element = template.create_element(0);
+        let text = element.ws_node_ref().first_text();
+        TestItemViewState {
+            data: item_data,
+            element,
+            text,
         }
+    }
 
-        fn get_key(&self) -> &Self::Key {
-            &self
-        }
+    fn update_view(
+        view_state: &mut TestItemViewState,
+        item_data: &&'static str,
+        _context: &crate::Context<TestState>,
+    ) {
+        view_state.text.update(*item_data);
+    }
 
-        fn key_from_view_state(view_state: &Self::ViewState) -> &Self::Key {
-            &view_state.data
-        }
-
-        fn create(
-            template: &crate::TemplateElement,
-            item_data: &Self,
-            _context: &crate::Context<TestState>,
-        ) -> Self::ViewState {
-            let element = template.create_element(0);
-            let text = element.ws_node_ref().first_text();
-            TestItemViewState {
-                data: item_data,
-                element,
-                text,
-            }
-        }
-
-        fn update(
-            view_state: &mut Self::ViewState,
-            item_data: &Self,
-            _context: &crate::Context<TestState>,
-        ) {
-            view_state.text.update(*item_data);
-        }
-
-        fn root_element(view_state: &Self::ViewState) -> &crate::WsElement {
-            &view_state.element
-        }
+    fn root_element(view_state: &TestItemViewState) -> &crate::WsElement {
+        &view_state.element
     }
 
     impl TestDataInterface for TestData {
         type ViewState = TestDataViewState;
 
         fn init(&self, root: &Element, context: &crate::Context<TestState>) -> Self::ViewState {
-            let mut keyed_list = KeyedList::new(&root.ws_element(), None);
+            let mut keyed_list = KeyedList::new(
+                &root.ws_element(),
+                None,
+                TEMPLATE_STRING,
+                get_key,
+                get_vs_key,
+                create_view,
+                update_view,
+                root_element,
+            );
             keyed_list.update(self.iter(), context);
             TestDataViewState { keyed_list }
         }

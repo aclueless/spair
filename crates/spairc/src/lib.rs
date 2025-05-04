@@ -5,6 +5,7 @@ mod component;
 mod element;
 mod events;
 mod keyed_list;
+mod keyed_list_via_trait;
 mod list;
 mod routing;
 
@@ -18,7 +19,8 @@ pub use web_sys;
 
 pub use component::{CallbackArg, Comp, Component, Context, start_app, start_app_with_routing};
 pub use element::{Element, TemplateElement, Text, WsElement, WsNode, WsText};
-pub use keyed_list::{KeyedList, KeyedListItemView};
+pub use keyed_list::KeyedList;
+pub use keyed_list_via_trait::KeyedListItemView;
 pub use list::{List, ListItemView};
 pub use routing::Route;
 
@@ -26,5 +28,7 @@ pub mod prelude {
     pub use crate::component::{CallbackArg, Comp, Context, RcComp, ShouldRender, SpairSpawnLocal};
     pub use crate::element::RenderOptionWithDefault;
     pub use crate::helper::ElementFromCurrentEventTarget;
+    pub use crate::keyed_list_via_trait::KeyedListItemView;
+    pub use crate::list::ListItemView;
     pub use spair_macros::*;
 }

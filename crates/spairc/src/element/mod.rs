@@ -376,14 +376,6 @@ impl WsElement {
         self.set_id(element_id);
     }
 
-    pub fn append_to_body(&self) -> WsElement {
-        let body = crate::helper::get_body();
-        if let Err(e) = body.append_with_node_1(&self.0) {
-            log::error!("Error on appending to body: {e:?}");
-        };
-        body.unchecked_into::<web_sys::Node>().into()
-    }
-
     pub(crate) fn add_event_listener(&self, name: &str, listener: &dyn EventListener) {
         let name = wasm_bindgen::intern(name);
         if let Err(e) = self

@@ -8,30 +8,44 @@ pub trait ListItemView<C: Component> {
     fn root_element(view_state: &Self::ViewState) -> &WsElement;
 }
 
-pub struct List<C, I>
+pub struct List<C, I, VS>
 where
-    I: ListItemView<C>,
     C: Component,
 {
     parent_element: WsElement,
     template: TemplateElement,
     end_node_marker_for_partial_list: Option<web_sys::Node>,
-    items: Vec<I::ViewState>,
+
+    create_view_fn: fn(&TemplateElement, &I, &Context<C>) -> VS,
+    update_view_fn: fn(&mut VS, &I, &Context<C>),
+    get_view_state_root_element_fn: fn(&VS) -> &WsElement,
+
+    items: Vec<VS>,
 }
 
-impl<C, I> List<C, I>
+impl<C, I, VS> List<C, I, VS>
 where
-    I: ListItemView<C> + 'static,
+    I: 'static,
     C: Component + 'static,
 {
     pub fn new(
         parent_element: &WsElement,
         end_node_marker_for_partial_list: Option<web_sys::Node>,
+        template_string: &str,
+
+        create_view_fn: fn(&TemplateElement, &I, &Context<C>) -> VS,
+        update_view_fn: fn(&mut VS, &I, &Context<C>),
+        get_view_state_root_element_fn: fn(&VS) -> &WsElement,
     ) -> Self {
         Self {
             parent_element: parent_element.clone(),
-            template: TemplateElement::new(I::template_string()),
+            template: TemplateElement::new(template_string),
             end_node_marker_for_partial_list,
+
+            create_view_fn,
+            update_view_fn,
+            get_view_state_root_element_fn,
+
             items: Vec::new(),
         }
     }
@@ -40,16 +54,16 @@ where
         let mut index = 0;
         for item_data in item_data {
             if index >= self.items.len() {
-                let mut new_item = I::create(&self.template, item_data, context);
-                I::update(&mut new_item, item_data, context);
+                let mut new_item = (self.create_view_fn)(&self.template, item_data, context);
+                (self.update_view_fn)(&mut new_item, item_data, context);
                 self.parent_element.insert_new_node_before_a_node(
-                    I::root_element(&new_item),
+                    (self.get_view_state_root_element_fn)(&new_item),
                     self.end_node_marker_for_partial_list.as_ref(),
                 );
                 self.items.push(new_item);
             } else {
                 let old_item = unsafe { self.items.get_unchecked_mut(index) };
-                I::update(old_item, item_data, context);
+                (self.update_view_fn)(old_item, item_data, context);
             }
             index += 1;
         }
@@ -62,7 +76,8 @@ where
             self.items.clear();
         } else {
             for item in self.items.drain(index..) {
-                self.parent_element.remove_child(I::root_element(&item));
+                self.parent_element
+                    .remove_child((self.get_view_state_root_element_fn)(&item));
             }
         }
     }
