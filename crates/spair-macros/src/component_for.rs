@@ -27,7 +27,7 @@ impl Component {
         let struct_fields = self.element.generate_view_state_struct_fields();
         let view_state_struct =
             quote! {pub struct #component_view_state_struct_name{#struct_fields}};
-        let match_view_state_types = self.element.collect_match_view_state_types();
+        let match_view_state_types = self.element.collect_match_n_inlined_list_view_state_types();
         let impl_component = self.generate_impl_component(&component_view_state_struct_name);
 
         quote! {

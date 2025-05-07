@@ -319,29 +319,6 @@ fn collect_view_element(
                 return Err(Error::new(span, "A view can not be empty"));
             }
             let element = elements.remove(0);
-            // let html_element = match element {
-            //     Element::Text(text) => Err(syn::Error::new(
-            //         text.shared_name.span(),
-            //         message_html_element_only,
-            //     )),
-            //     Element::Html(mut html_element) => {
-            //         html_element.root_element = true;
-            //         Ok(html_element)
-            //     }
-            //     Element::View(view) => {
-            //         Err(syn::Error::new(view.name.span(), message_html_element_only))
-            //     }
-            //     Element::List(list) => {
-            //         Err(syn::Error::new(list.name.span(), message_html_element_only))
-            //     }
-            //     Element::Match(m) => Err(syn::Error::new(
-            //         m.match_keyword.span(),
-            //         message_html_element_only,
-            //     )),
-            // }?;
-
-            // let s = element.name_or_text_expr_span();
-
             let Element::Html(mut html_element) = element else {
                 return Err(syn::Error::new(
                     element.name_or_text_expr_span(),
@@ -493,7 +470,7 @@ impl View {
         let impl_item = self.item_impl.items.first();
         let fn_body = self
             .element
-            .generate_code_for_create_view_fn_of_a_view(view_state_struct_name);
+            .generate_fn_body_for_create_view_fn_of_a_view(view_state_struct_name);
         let ImplItem::Fn(ImplItemFn { sig, block, .. }) = impl_item.unwrap() else {
             unreachable!("There must be an fn")
         };
@@ -538,7 +515,7 @@ impl ToTokens for View {
         let struct_name = &self.view_state_type_name;
         let struct_fields = self.element.generate_view_state_struct_fields();
         let view_state_struct = quote! {pub struct #struct_name{#struct_fields}};
-        let match_view_state_types = self.element.collect_match_view_state_types();
+        let match_view_state_types = self.element.collect_match_n_inlined_list_view_state_types();
         let impl_view_state = self.generate_impl_view_state_fns();
         tokens.append_all([view_state_struct, match_view_state_types, impl_view_state]);
     }

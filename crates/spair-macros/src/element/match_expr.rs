@@ -79,7 +79,7 @@ impl Match {
         &self,
         inner_types: &mut Vec<TokenStream>,
     ) -> TokenStream {
-        inner_types.push(self.generate_match_view_state_types());
+        inner_types.push(self.generate_match_n_inlined_list_view_state_types());
         self.generate_view_state_struct_fields()
     }
 
@@ -88,7 +88,7 @@ impl Match {
         quote! {#spair_ident,}
     }
 
-    pub fn generate_match_view_state_types(&self) -> TokenStream {
+    pub fn generate_match_n_inlined_list_view_state_types(&self) -> TokenStream {
         let match_view_state_enum_type_name = &self.match_view_state_enum_type_name;
         let match_view_state_struct_type_name = &self.match_view_state_struct_type_name;
         let variants: TokenStream = self
@@ -424,7 +424,8 @@ impl MatchArm {
                         #view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#match_arm_view_state);
                     }
                 }
-                Element::List(_keyed_list) => unreachable!(),
+                Element::List(_list) => unreachable!(),
+                Element::InlinedList(_list) => unreachable!(),
                 Element::Match(_) => unreachable!(),
                 Element::WsElement(wse) => {
                     let ident = &wse.spair_ident;
@@ -462,7 +463,8 @@ impl MatchArm {
                         quote! {}
                     }
                 }
-                Element::List(_keyed_list) => unreachable!(),
+                Element::List(_list) => unreachable!(),
+                Element::InlinedList(_list) => unreachable!(),
                 Element::Match(_) => unreachable!(),
                 Element::WsElement(_) => quote! {},
             },

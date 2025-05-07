@@ -45,7 +45,7 @@ impl ListItemView {
         let view_state_struct = quote! {pub struct #list_item_view_state_struct_name{
             #struct_fields
         }};
-        let match_view_state_types = self.element.collect_match_view_state_types();
+        let match_view_state_types = self.element.collect_match_n_inlined_list_view_state_types();
         let impl_list_item_view =
             self.generate_impl_list_item_view(&list_item_view_state_struct_name);
 
@@ -65,12 +65,13 @@ impl ListItemView {
         let generated_update_view_fn = self.generate_impl_update_view_fn();
 
         let impl_token = &self.item_impl.impl_token;
+        let (ig, tg, wg) = &self.item_impl.generics.split_for_impl();
         let self_type = &self.item_impl.self_ty;
         let component_type = &self.component_type_name;
         let root_element_ident = self.element.root_element_ident();
         let html_string = self.element.construct_html_string();
         quote! {
-            #impl_token ::spair::ListItemView<#component_type> for #self_type {
+            #impl_token #ig ::spair::ListItemView<#component_type> for #self_type #tg #wg {
                 type ViewState = #keyed_item_view_state_struct_name;
                 fn root_element(view_state: &Self::ViewState) -> &::spair::WsElement {
                     &view_state.#root_element_ident

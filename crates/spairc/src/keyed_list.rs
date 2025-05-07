@@ -758,39 +758,39 @@ pub mod keyed_list_tests {
 
     const TEMPLATE_STRING: &str = "<span>?</span>";
 
-    fn get_key<'a>(item: &'a &'static str) -> &'a &'static str {
-        item
-    }
+    // fn get_key<'a>(item: &'a &'static str) -> &'a &'static str {
+    //     item
+    // }
 
-    fn get_vs_key(vs: &TestItemViewState) -> &&'static str {
-        &vs.data
-    }
+    // fn get_vs_key(vs: &TestItemViewState) -> &&'static str {
+    //     &vs.data
+    // }
 
-    fn create_view(
-        template: &crate::TemplateElement,
-        item_data: &&'static str,
-        _context: &crate::Context<TestState>,
-    ) -> TestItemViewState {
-        let element = template.create_element(0);
-        let text = element.ws_node_ref().first_text();
-        TestItemViewState {
-            data: item_data,
-            element,
-            text,
-        }
-    }
+    // fn create_view(
+    //     template: &crate::TemplateElement,
+    //     item_data: &&'static str,
+    //     _context: &crate::Context<TestState>,
+    // ) -> TestItemViewState {
+    //     let element = template.create_element(0);
+    //     let text = element.ws_node_ref().first_text();
+    //     TestItemViewState {
+    //         data: item_data,
+    //         element,
+    //         text,
+    //     }
+    // }
 
-    fn update_view(
-        view_state: &mut TestItemViewState,
-        item_data: &&'static str,
-        _context: &crate::Context<TestState>,
-    ) {
-        view_state.text.update(*item_data);
-    }
+    // fn update_view(
+    //     view_state: &mut TestItemViewState,
+    //     item_data: &&'static str,
+    //     _context: &crate::Context<TestState>,
+    // ) {
+    //     view_state.text.update(*item_data);
+    // }
 
-    fn root_element(view_state: &TestItemViewState) -> &crate::WsElement {
-        &view_state.element
-    }
+    // fn root_element(view_state: &TestItemViewState) -> &crate::WsElement {
+    //     &view_state.element
+    // }
 
     impl TestDataInterface for TestData {
         type ViewState = TestDataViewState;
@@ -800,11 +800,26 @@ pub mod keyed_list_tests {
                 &root.ws_element(),
                 None,
                 TEMPLATE_STRING,
-                get_key,
-                get_vs_key,
-                create_view,
-                update_view,
-                root_element,
+                // get_key,
+                // get_vs_key,
+                // create_view,
+                // update_view,
+                // root_element,
+                |item| item,
+                |vs: &TestItemViewState| &vs.data,
+                |template, item_data, _context| {
+                    let element = template.create_element(0);
+                    let text = element.ws_node_ref().first_text();
+                    TestItemViewState {
+                        data: item_data,
+                        element,
+                        text,
+                    }
+                },
+                |view_state, item_data, _context| {
+                    view_state.text.update(*item_data);
+                },
+                |vs: &TestItemViewState| &vs.element,
             );
             keyed_list.update(self.iter(), context);
             TestDataViewState { keyed_list }
