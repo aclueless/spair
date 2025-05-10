@@ -2,21 +2,18 @@ use std::ops::Not;
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::ToTokens;
 use syn::{parse_macro_input, Ident, ItemImpl};
 
 mod component_for;
 mod element;
-mod keyed_list_item_for;
-mod list_item_for;
 mod new_view;
 
 #[proc_macro_attribute]
 pub fn new_view(args: TokenStream, input: TokenStream) -> TokenStream {
     let item_impl: ItemImpl = parse_macro_input!(input);
 
-    let output = match new_view::View::with_item_impl(item_impl) {
-        Ok(view) => view.into_token_stream(),
+    let output = match new_view::View::with_item_impl(item_impl, false) {
+        Ok(view) => view.output(),
         Err(error) => error.to_compile_error(),
     };
     if args.is_empty().not() {
@@ -29,37 +26,10 @@ pub fn new_view(args: TokenStream, input: TokenStream) -> TokenStream {
 pub fn component_for(args: TokenStream, input: TokenStream) -> TokenStream {
     let item_impl: ItemImpl = parse_macro_input!(input);
 
-    let output =
-        match new_view::View::with_item_impl(item_impl).map(component_for::Component::from_view) {
-            Ok(component) => component.output(),
-            Err(error) => error.to_compile_error(),
-        };
-    if args.is_empty().not() {
-        println!("{output}");
-    }
-    output.into()
-}
-
-#[proc_macro_attribute]
-pub fn keyed_list_item_for(args: TokenStream, input: TokenStream) -> TokenStream {
-    let item_impl: ItemImpl = parse_macro_input!(input);
-
-    let output = match keyed_list_item_for::KeyedListItemView::with_item_impl(item_impl) {
-        Ok(keyed_item_view) => keyed_item_view.output(),
-        Err(error) => error.to_compile_error(),
-    };
-    if args.is_empty().not() {
-        println!("{output}");
-    }
-    output.into()
-}
-
-#[proc_macro_attribute]
-pub fn list_item_for(args: TokenStream, input: TokenStream) -> TokenStream {
-    let item_impl: ItemImpl = parse_macro_input!(input);
-
-    let output = match list_item_for::ListItemView::with_item_impl(item_impl) {
-        Ok(list_item_view) => list_item_view.output(),
+    let output = match new_view::View::with_item_impl(item_impl, false)
+        .map(component_for::Component::from_view)
+    {
+        Ok(component) => component.output(),
         Err(error) => error.to_compile_error(),
     };
     if args.is_empty().not() {
@@ -117,8 +87,8 @@ impl ItemCounter {
         self.new_ident("_text_")
     }
 
-    fn new_ident_element(&mut self) -> Ident {
-        self.new_ident("_element_")
+    fn new_ident_element(&mut self, element_name: &str) -> Ident {
+        self.new_ident(&format!("_el_{element_name}_"))
     }
 
     fn new_ident_view(&mut self) -> Ident {

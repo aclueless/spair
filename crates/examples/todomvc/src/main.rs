@@ -196,10 +196,7 @@ impl App {
                     on_change = cc.comp.callback_arg(|state, _| state.toggle_all()),
                 ),
                 label(r#for = "toggle-all", text("Mark all as complete")),
-                ul(
-                    class = "todo-list",
-                    kl.TodoItem.App(uc, uc.state.visible_items()),
-                ),
+                v.TodoListView().update(uc.state, uc),
             ),
             v.Footer(cc.comp).update(uc.state),
         )
@@ -288,61 +285,67 @@ impl Footer {
     }
 }
 
-#[keyed_list_item_for]
-impl TodoItem {
-    fn get_key(&self) -> &u32 {
-        &self.id
-    }
-
-    fn create(cdata: &Self, cc: &Context<App>) {
-        let id = cdata.id;
-    }
-    fn update(udata: &Self, uc: &Context<App>) {
-        let state = uc.state;
-        let is_editing_me = state.editing_id == Some(udata.id);
-    }
+#[new_view]
+impl TodoListView {
+    fn create() {}
+    fn update(udata: &App, uc: &Context<App>) {}
     fn view() {
-        li(
-            class_if = (udata.completed, "completed"),
-            class_if = (is_editing_me, "editing"),
-            div(
-                class = "view",
-                input(
-                    r#type = "checkbox",
-                    class = "toggle",
-                    checked = udata.completed,
-                    on_change = cc.comp.callback_arg(move |state, _| state.toggle(id)),
-                ),
-                label(
-                    on_dblclick = cc
-                        .comp
-                        .callback_arg(move |state, _| state.start_editing(id)),
-                    text(&udata.title),
-                ),
-                button(
-                    class = "destroy",
-                    on_click = cc.comp.callback_arg(move |state, _| state.remove(id)),
+        ul(
+            class = "todo-list",
+            inlined.list(
+                uc,
+                udata.visible_items(),
+                |item: &TodoItem| -> &u32 { &item.id },
+                |citem, cc| {
+                    let id = citem.id;
+                },
+                |uitem, uc| {
+                    let state = uc.state;
+                    let is_editing_me = state.editing_id == Some(uitem.id);
+                },
+                li(
+                    class_if = (uitem.completed, "completed"),
+                    class_if = (is_editing_me, "editing"),
+                    div(
+                        class = "view",
+                        input(
+                            r#type = "checkbox",
+                            class = "toggle",
+                            checked = uitem.completed,
+                            on_change = cc.comp.callback_arg(move |state, _| state.toggle(id)),
+                        ),
+                        label(
+                            on_dblclick = cc
+                                .comp
+                                .callback_arg(move |state, _| state.start_editing(id)),
+                            text(&uitem.title),
+                        ),
+                        button(
+                            class = "destroy",
+                            on_click = cc.comp.callback_arg(move |state, _| state.remove(id)),
+                        ),
+                    ),
+                    match is_editing_me {
+                        false => {}
+                        true => input(
+                            class = "edit",
+                            autofocus = true,
+                            value = &uitem.title,
+                            on_blur = uc.comp.callback_arg(move |state, event: FocusEvent| {
+                                state.end_editing(event.current_target())
+                            }),
+                            on_keydown = uc.comp.callback_arg(|state, event: KeyboardEvent| {
+                                let key_code = event.code();
+                                if key_code == ENTER_KEY {
+                                    state.end_editing(event.current_target());
+                                } else if key_code == ESCAPE_KEY {
+                                    state.cancel_editing();
+                                }
+                            }),
+                        ),
+                    },
                 ),
             ),
-            match is_editing_me {
-                false => {}
-                true => input(
-                    class = "edit",
-                    autofocus = true,
-                    value = &udata.title,
-                    on_blur = uc.comp.callback_arg(move |state, event: FocusEvent| {
-                        state.end_editing(event.current_target())
-                    }),
-                    on_keydown = uc.comp.callback_arg(|state, event: KeyboardEvent| {
-                        let key_code = event.code();
-                        if key_code == ENTER_KEY {
-                            state.end_editing(event.current_target());
-                        } else if key_code == ESCAPE_KEY {
-                            state.cancel_editing();
-                        }
-                    }),
-                ),
-            },
         )
     }
 }

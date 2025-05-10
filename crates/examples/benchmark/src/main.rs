@@ -1,9 +1,9 @@
 use header::Header;
-use row_item::RowItem;
 use spair::prelude::*;
+use table::{RowItem, Table};
 
 mod header;
-mod row_item;
+mod table;
 
 struct AppState {
     next_id: usize,
@@ -21,10 +21,7 @@ impl AppState {
             div(
                 class = "container",
                 v.Header(ccontext.comp),
-                table(
-                    class = "table table-hover table-striped test-data",
-                    tbody(kl.RowItem.AppState(ucontext, ucontext.state.rows.iter())),
-                ),
+                v.Table().update(ucontext.state, ucontext),
                 span(
                     class = "preloadicon glyphicon glyphicon-remove",
                     aria_hidden = true,

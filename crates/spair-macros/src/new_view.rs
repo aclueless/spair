@@ -1,7 +1,7 @@
 use std::ops::Not;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens, TokenStreamExt};
+use quote::quote;
 use syn::spanned::Spanned;
 use syn::*;
 use token::Brace;
@@ -16,9 +16,9 @@ pub(crate) struct View {
 }
 
 impl View {
-    pub(crate) fn with_item_impl(mut item_impl: ItemImpl) -> Result<Self> {
+    pub(crate) fn with_item_impl(mut item_impl: ItemImpl, list_item_view: bool) -> Result<Self> {
         let mut errors = MultiErrors::default();
-        validate_view_impl(&item_impl, &mut errors);
+        validate_view_impl(&item_impl, list_item_view, &mut errors);
         validate_view_fn(
             item_impl.items.first(),
             "create",
@@ -91,61 +91,71 @@ impl View {
             collect_variables_from_fn_sig_n_let_bindings(self.item_impl.items.first());
         let update_stage_variables: Vec<_> =
             collect_variables_from_fn_sig_n_let_bindings(self.item_impl.items.get(1));
-        for create_variable in create_stage_variables.iter() {
-            for update_variable in update_stage_variables.iter() {
-                if create_variable == update_variable {
-                    let mut error_in_update = syn::Error::new(update_variable.span(), "variable names in `fn create` must have names different from variable names in `fn update`");
-                    let error_in_create= syn::Error::new(create_variable.span(), "variable names in `fn create` must have names different from variable names in `fn update`");
-                    error_in_update.combine(error_in_create);
-                    return Err(error_in_update);
-                }
+        check_for_name_conflicting(&create_stage_variables, &update_stage_variables)
+    }
+}
+
+pub fn check_for_name_conflicting(
+    create_stage_variables: &[Ident],
+    update_stage_variables: &[Ident],
+) -> Result<()> {
+    for create_variable in create_stage_variables.iter() {
+        for update_variable in update_stage_variables.iter() {
+            if create_variable == update_variable {
+                let mut error_in_update = syn::Error::new(update_variable.span(), "variable names in `fn create` must have names different from variable names in `fn update`");
+                let error_in_create= syn::Error::new(create_variable.span(), "variable names in `fn create` must have names different from variable names in `fn update`");
+                error_in_update.combine(error_in_create);
+                return Err(error_in_update);
             }
         }
-        Ok(())
+    }
+    Ok(())
+}
+
+pub fn collect_variable_names_from_pat(pat: &Pat, update_stage_variables: &mut Vec<Ident>) {
+    match pat {
+        Pat::Ident(pat_ident) => update_stage_variables.push(pat_ident.ident.clone()),
+        Pat::Reference(pat_reference) => {
+            collect_variable_names_from_pat(&pat_reference.pat, update_stage_variables);
+        }
+        Pat::Struct(pat_struct) => {
+            for v in pat_struct.fields.iter() {
+                collect_variable_names_from_pat(&v.pat, update_stage_variables);
+            }
+        }
+        Pat::Tuple(pat_tuple) => {
+            for v in pat_tuple.elems.iter() {
+                collect_variable_names_from_pat(v, update_stage_variables);
+            }
+        }
+        Pat::TupleStruct(pat_tuple_struct) => {
+            for v in pat_tuple_struct.elems.iter() {
+                collect_variable_names_from_pat(v, update_stage_variables);
+            }
+        }
+        Pat::Type(pat_type) => {
+            collect_variable_names_from_pat(&pat_type.pat, update_stage_variables)
+        }
+        _ => {}
     }
 }
 
 fn collect_variables_from_fn_sig_n_let_bindings(impl_item: Option<&ImplItem>) -> Vec<Ident> {
-    fn collect_from_pat(pat: &Pat, update_stage_variables: &mut Vec<Ident>) {
-        match pat {
-            Pat::Ident(pat_ident) => update_stage_variables.push(pat_ident.ident.clone()),
-            Pat::Reference(pat_reference) => {
-                collect_from_pat(&pat_reference.pat, update_stage_variables);
-            }
-            Pat::Struct(pat_struct) => {
-                for v in pat_struct.fields.iter() {
-                    collect_from_pat(&v.pat, update_stage_variables);
-                }
-            }
-            Pat::Tuple(pat_tuple) => {
-                for v in pat_tuple.elems.iter() {
-                    collect_from_pat(v, update_stage_variables);
-                }
-            }
-            Pat::TupleStruct(pat_tuple_struct) => {
-                for v in pat_tuple_struct.elems.iter() {
-                    collect_from_pat(v, update_stage_variables);
-                }
-            }
-            Pat::Type(pat_type) => collect_from_pat(&pat_type.pat, update_stage_variables),
-            _ => {}
-        }
-    }
-    let mut update_stage_variables = Vec::new();
+    let mut variable_names = Vec::new();
     if let Some(ImplItem::Fn(impl_item_fn)) = impl_item {
         for input in impl_item_fn.sig.inputs.iter() {
             if let FnArg::Typed(pat_type) = input {
-                collect_from_pat(&pat_type.pat, &mut update_stage_variables);
+                collect_variable_names_from_pat(&pat_type.pat, &mut variable_names);
             }
         }
         for stmt in impl_item_fn.block.stmts.iter() {
             if let Stmt::Local(Local { pat, .. }) = stmt {
-                collect_from_pat(pat, &mut update_stage_variables);
+                collect_variable_names_from_pat(pat, &mut variable_names);
             }
         }
     }
 
-    update_stage_variables
+    variable_names
 }
 
 pub(crate) fn expr_has_ref_to(expr: &Expr, variable_names: &[String]) -> bool {
@@ -338,15 +348,23 @@ fn collect_view_element(
     }
 }
 
-fn validate_view_impl(item_impl: &ItemImpl, errors: &mut MultiErrors) {
+fn validate_view_impl(item_impl: &ItemImpl, list_item_view: bool, errors: &mut MultiErrors) {
     if let Some(u) = item_impl.unsafety.as_ref() {
         errors.add(u.span(), "Spair view does not support unsafe");
     }
     if item_impl.generics.lt_token.as_ref().is_some() {
-        errors.add(
-            item_impl.generics.span(),
-            "Spair view does not support generics",
-        );
+        if list_item_view {
+            errors.add(
+                item_impl.generics.span(),
+                "ListItemView or KeyedListItem view does not support generics or lifetime. Please use inlined list like:
+l.ListItem.ComponentName(context, item_iter, create_view_closure, update_view_closure, view_element)",
+            );
+        } else {
+            errors.add(
+                item_impl.generics.span(),
+                "Spair view does not support generics",
+            );
+        }
     }
     if let Some(t) = item_impl.trait_.as_ref() {
         errors.add(t.1.span(), "Spair view does not support trait impl");
@@ -508,15 +526,19 @@ impl View {
             }
         }
     }
-}
 
-impl ToTokens for View {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+    pub fn output(&self) -> TokenStream {
         let struct_name = &self.view_state_type_name;
         let struct_fields = self.element.generate_view_state_struct_fields();
         let view_state_struct = quote! {pub struct #struct_name{#struct_fields}};
-        let match_view_state_types = self.element.collect_match_n_inlined_list_view_state_types();
+        let match_view_state_types = self
+            .element
+            .generate_match_n_inlined_list_view_state_types();
         let impl_view_state = self.generate_impl_view_state_fns();
-        tokens.append_all([view_state_struct, match_view_state_types, impl_view_state]);
+        quote! {
+            #view_state_struct
+            #match_view_state_types
+            #impl_view_state
+        }
     }
 }

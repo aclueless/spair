@@ -7,7 +7,7 @@ use crate::{
     helper,
 };
 
-pub trait TestDataInterface: Sized + 'static {
+pub trait TestInterface: Sized + 'static {
     type ViewState;
     fn init(&self, root: &Element, context: &Context<TestComp<Self>>) -> Self::ViewState;
     fn update(&self, updater: &mut Self::ViewState, context: &Context<TestComp<Self>>);
@@ -16,13 +16,13 @@ pub struct TestComp<T> {
     data: T,
 }
 
-pub struct CompUpdater<T: TestDataInterface> {
+pub struct TestUpdater<T: TestInterface> {
     _root: Element,
     test_updater: T::ViewState,
 }
 
-impl<T: 'static + TestDataInterface> crate::Component for TestComp<T> {
-    type ViewState = CompUpdater<T>;
+impl<T: 'static + TestInterface> crate::Component for TestComp<T> {
+    type ViewState = TestUpdater<T>;
 
     fn create(ccontext: &Context<Self>) -> (WsElement, Self::ViewState) {
         let element = Element::with_html("<div id='spair_test'></div>", 0);
@@ -30,7 +30,7 @@ impl<T: 'static + TestDataInterface> crate::Component for TestComp<T> {
         let body = append_to_body(&element);
         (
             body,
-            CompUpdater {
+            TestUpdater {
                 _root: element,
                 test_updater,
             },
@@ -65,12 +65,12 @@ impl<T> TestComp<T> {
     }
 }
 
-pub struct Test<T: 'static + TestDataInterface> {
+pub struct Test<T: 'static + TestInterface> {
     _comp: RcComp<TestComp<T>>,
     callback: CallbackArg<T>,
 }
 
-impl<T: 'static + TestDataInterface> Test<T> {
+impl<T: 'static + TestInterface> Test<T> {
     pub fn set_up(data: T) -> Test<T> {
         let comp = create_component(|_| TestComp { data }, |_, _: ()| {}, |_, _| {});
         let callback = comp.comp().callback_arg(TestComp::update);

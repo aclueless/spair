@@ -7,10 +7,13 @@ use syn::{
     punctuated::Punctuated,
     spanned::Spanned,
     token::{Comma, Paren},
-    Expr, ExprCall, ExprClosure, ExprMethodCall, Ident, Pat, Result,
+    Expr, ExprCall, ExprClosure, ExprMethodCall, Ident, Local, Pat, Result, ReturnType, Stmt, Type,
 };
 
-use crate::{new_view::expr_has_ref_to, ItemCounter, MultiErrors};
+use crate::{
+    new_view::{check_for_name_conflicting, collect_variable_names_from_pat, expr_has_ref_to},
+    ItemCounter, MultiErrors,
+};
 
 mod match_expr;
 
@@ -23,26 +26,23 @@ const VIEW_EXPRESSION_SYNTAX: &str = "div(
     class_if = (bool_expression, class_name),
     button(on_click = callback, text(\"Click me\"))
     v.ViewName(...).update(...),
-    l.ListItemName.CompName(...),
-    kl.KeyedListItemName.CompName(...),
-    websys.node(),
+    inlined.list(...),
+    ws.element(),
     match expr {
         Pat1 => {}, // can be empty: no content rendered
         Pat2 => div(..., span(...)), // only allow a html element
         Pat3 => v.ViewName(...), // or a child view as a root of a match arm
     }
 )";
-const CHILD_VIEW_LIST_COMP_SYNTAX: &str = "Expected one of `v.`, `l.`, 'kl.', or `websys.` as in
+const CHILD_VIEW_LIST_COMP_SYNTAX: &str = "Expected one of `v.`, `inlined.`, or `ws.` as in
 v.ViewName(...),
-l.ListItemName.CompName(...),
-kl.KeyedListItemName.CompName(...),
-websys.node(...)";
+inlined.list(...),
+ws.element(...)";
 
 pub(crate) enum Element {
     Text(Text),
     Html(HtmlElement),
     View(View),
-    List(List),
     InlinedList(InlinedList),
     Match(Match),
     #[allow(clippy::enum_variant_names)]
@@ -53,13 +53,11 @@ pub(crate) struct InlinedList {
     pub(crate) name: Ident,
     stage: Stage,
     partial_list: bool,
-    component_type_name: Ident,
-    item_type_name: Ident,
-    key_items: Option<KeyListItems>,
+    keyed_list_items: Option<KeyedListItems>,
     context: Expr,
     item_iterator: Expr,
-    create_view_closure: ExprClosure,
-    update_view_closure: ExprClosure,
+    create_view_closure: ViewClosure,
+    update_view_closure: ViewClosure,
     element: HtmlElement,
 
     view_state_type_name: Ident,
@@ -67,24 +65,47 @@ pub(crate) struct InlinedList {
     spair_ident_marker: Ident,
 }
 
-pub(crate) struct KeyListItems {
-    key_type_name: Ident,
-    get_key_closure_ident: Ident,
-    get_key_closure: Expr,
+pub(crate) struct KeyedListItems {
+    key_type_name: Box<Type>,
+    get_key_closure: ExprClosure,
 }
 
-pub(crate) struct List {
-    pub(crate) name: Ident,
-    keyed_list: bool,
-    stage: Stage,
-    partial_list: bool,
-    component_type_name: Ident,
-    item_type_name: Ident,
-    context: Expr,
-    item_iterator: Expr,
+impl KeyedListItems {
+    fn from_get_key_closure(get_key_closure: Option<Expr>) -> Result<Option<KeyedListItems>> {
+        let Some(expr) = get_key_closure else {
+            return Ok(None);
+        };
+        let Expr::Closure(closure) = expr else {
+            return Err(syn::Error::new(
+                expr.span(),
+                "Expected a closure that returns the key of an item in the list",
+            ));
+        };
+        let return_type = match &closure.output {
+            ReturnType::Default => {
+                return                Err(syn::Error::new(
+                closure.span(),
+                "Please specify a return type for this closure. The return type of this closure is the type of item's key.",
+            ));
+            }
+            ReturnType::Type(_, type_name) => type_name.clone(),
+        };
 
-    spair_ident: Ident,
-    spair_ident_marker: Ident,
+        let return_type = match *return_type {
+            Type::Reference(type_reference) => type_reference.elem,
+            other => {
+                return Err(syn::Error::new(
+                    other.span(),
+                    "Return type of `get_key` closure must be a reference like `&TypeName`",
+                ));
+            }
+        };
+
+        Ok(Some(KeyedListItems {
+            key_type_name: return_type,
+            get_key_closure: closure,
+        }))
+    }
 }
 
 pub(crate) struct Text {
@@ -218,14 +239,6 @@ impl Element {
             ..
         } = expr;
         match *receiver {
-            Expr::Field(expr_field) => list(
-                expr_field,
-                method,
-                paren_token,
-                args,
-                item_counter,
-                update_stage_variables,
-            ),
             Expr::Path(expr_path) => {
                 let name = expr_path.path.require_ident()?;
                 if name == "v" {
@@ -237,6 +250,15 @@ impl Element {
                         spair_ident: item_counter.new_ident_view(),
                         spair_ident_marker: item_counter.new_ident("_view_marker"),
                     }))
+                } else if name == "inlined" {
+                    inlined_list(
+                        name.clone(),
+                        method,
+                        args,
+                        paren_token,
+                        item_counter,
+                        update_stage_variables,
+                    )
                 } else if name == "ws" {
                     if method != "element" {
                         return Err(syn::Error::new(
@@ -278,7 +300,6 @@ impl Element {
             Element::Html(html_element) => html_element.name.span(),
             Element::Text(text) => text.shared_name.span(),
             Element::View(view) => view.name.span(),
-            Element::List(list) => list.name.span(),
             Element::InlinedList(list) => list.name.span(),
             Element::Match(m) => m.match_keyword.span(),
             Element::WsElement(component) => component.name.span(),
@@ -290,8 +311,7 @@ impl Element {
             Element::Text(_text) => {}
             Element::Html(html_element) => html_element.check_html_multi_errors(errors),
             Element::View(_view) => {}
-            Element::List(_list) => {}
-            Element::InlinedList(_list) => {}
+            Element::InlinedList(list) => list.element.check_html_multi_errors(errors),
             Element::Match(m) => m.check_html_multi_errors(errors),
             Element::WsElement(_child_comp) => {}
         }
@@ -309,11 +329,6 @@ impl Element {
             Element::Html(html_element) => html_element.append_html_string(html_string),
             Element::View(_view) => {
                 html_string.push_str("<!--view-->");
-            }
-            Element::List(list) => {
-                if list.partial_list {
-                    html_string.push_str("<!--plist-->");
-                }
             }
             Element::InlinedList(list) => {
                 if list.partial_list {
@@ -334,8 +349,10 @@ impl Element {
             Element::Text(_) => {}
             Element::Html(html_element) => html_element.prepare_items_for_generating_code(),
             Element::View(_) => {}
-            Element::List(list) => list.partial_list = parent_has_only_one_child.not(),
-            Element::InlinedList(list) => list.partial_list = parent_has_only_one_child.not(),
+            Element::InlinedList(list) => {
+                list.partial_list = parent_has_only_one_child.not();
+                list.element.prepare_items_for_generating_code();
+            }
             Element::Match(m) => m.prepare_items_for_generating_code(parent_has_only_one_child),
             Element::WsElement(_) => {}
         }
@@ -346,7 +363,6 @@ impl Element {
             Element::Text(text) => text.generate_view_state_struct_fields(),
             Element::Html(html_element) => html_element.generate_view_state_struct_fields(),
             Element::View(view) => view.generate_view_state_struct_fields(),
-            Element::List(list) => list.generate_view_state_struct_fields(),
             Element::InlinedList(list) => list.generate_view_state_struct_fields(),
             Element::Match(m) => m.generate_view_state_struct_fields(),
             Element::WsElement(cr) => cr.generate_view_state_struct_fields(),
@@ -363,7 +379,6 @@ impl Element {
                 html_element.generate_match_view_state_types_n_struct_fields(inner_types)
             }
             Element::View(view) => view.generate_view_state_struct_fields(),
-            Element::List(list) => list.generate_view_state_struct_fields(),
             Element::InlinedList(list) => list.generate_view_state_struct_fields(),
             Element::Match(m) => m.generate_match_view_state_types_n_struct_fields(inner_types),
             Element::WsElement(cr) => cr.generate_view_state_struct_fields(),
@@ -381,7 +396,6 @@ impl Element {
                 let ident = &view.spair_ident;
                 quote! {Some(#view_state.#ident.root_element())}
             }
-            Element::List(_list) => quote! {None},
             Element::InlinedList(_list) => quote! {None},
             Element::Match(m) => {
                 let ident = &m.spair_ident;
@@ -412,11 +426,6 @@ impl Element {
                 let ident = &view.spair_ident;
                 quote! {parent.remove_child(#view_state.#ident.root_element());}
             }
-            Element::List(list) => {
-                let ident = &list.spair_ident;
-                // A list may have many children. The list, itself, has to remove them from the parent.
-                quote! {#view_state.#ident.remove_from_parent(parent);}
-            }
             Element::InlinedList(list) => {
                 let ident = &list.spair_ident;
                 // A list may have many children. The list, itself, has to remove them from the parent.
@@ -446,7 +455,6 @@ impl Element {
                 html_element.generate_fields_for_view_state_instance_construction()
             }
             Element::View(view) => view.generate_fields_for_view_state_instance(),
-            Element::List(list) => list.generate_fields_for_view_state_instance(),
             Element::InlinedList(list) => list.generate_fields_for_view_state_instance(),
             Element::Match(m) => m.generate_fields_for_view_state_instance(),
             Element::WsElement(cr) => {
@@ -470,9 +478,6 @@ impl Element {
             }
             Element::View(view) => {
                 view.generate_code_for_create_view_fn_as_child_node(parent, previous)
-            }
-            Element::List(list) => {
-                list.generate_code_for_create_view_fn_as_child_node(parent, previous)
             }
             Element::InlinedList(list) => {
                 list.generate_code_for_create_view_fn_as_child_node(parent, previous)
@@ -501,7 +506,6 @@ impl Element {
             Element::Text(text) => &text.spair_ident,
             Element::Html(html_element) => &html_element.meta.spair_ident,
             Element::View(view) => &view.spair_ident_marker,
-            Element::List(list) => &list.spair_ident_marker,
             Element::InlinedList(list) => &list.spair_ident_marker,
             Element::Match(m) => &m.spair_ident_marker,
             Element::WsElement(cr) => &cr.spair_ident_marker,
@@ -523,9 +527,6 @@ impl Element {
             Element::View(view) => {
                 view.generate_code_for_update_view_fn_as_child_node(view_state_ident)
             }
-            Element::List(list) => {
-                list.generate_code_for_update_view_fn_as_child_node(view_state_ident)
-            }
             Element::InlinedList(list) => {
                 list.generate_code_for_update_view_fn_as_child_node(view_state_ident)
             }
@@ -541,17 +542,16 @@ impl Element {
             Element::Text(text) => text.value.span(),
             Element::Html(html_element) => html_element.name.span(),
             Element::View(view) => view.name.span(),
-            Element::List(list) => list.name.span(),
             Element::InlinedList(list) => list.name.span(),
             Element::Match(m) => m.match_keyword.span,
             Element::WsElement(cr) => cr.name.span(),
         }
     }
 
-    fn collect_match_n_inlined_list_view_state_types(&self) -> TokenStream {
+    fn generate_match_n_inlined_list_view_state_types(&self) -> TokenStream {
         match self {
             Element::Html(html_element) => {
-                html_element.collect_match_n_inlined_list_view_state_types()
+                html_element.generate_match_n_inlined_list_view_state_types()
             }
             Element::Match(m) => m.generate_match_n_inlined_list_view_state_types(),
             Element::InlinedList(il) => il.generate_match_n_inlined_list_view_state_types(),
@@ -599,109 +599,136 @@ impl Element {
     }
 }
 
-fn list(
-    expr_field: syn::ExprField,
-    component_type_name: Ident,
-    paren: Paren,
-    args: Punctuated<Expr, Comma>,
-    item_counter: &mut ItemCounter,
-    update_stage_variables: Option<&[String]>,
-) -> Result<Element> {
-    match args.len() {
-        2 => list_via_trait(
-            expr_field,
-            component_type_name,
-            args,
-            item_counter,
-            update_stage_variables,
-        ),
-        5 => inlined_list(
-            expr_field,
-            component_type_name,
-            args,
-            item_counter,
-            update_stage_variables,
-        ),
-        // 6 => inlined_keyed_list(
-        //     expr_field,
-        //     component_type_name,
-        //     paren,
-        //     args,
-        //     item_counter,
-        //     update_stage_variables,
-        // ),
-        _ => Err(syn::Error::new(
-            paren.span.span(),
-            "Expected one of:
-            `(context, items_iterator)` - for a list via trait
-            `(context, items_iterator, create_view_closure, update_view_closure, view_element)` - for an inlined non-keyed list
-            `not implemented yet: (context, items_iterator, get_key_closure, create_view_closure, update_view_closure, view_element)` - for an inlined keyed list
-            ",
-        )),
-    }
+struct ViewClosure {
+    capture: Option<syn::token::Move>,
+    or1_token: syn::token::Or,
+    inputs: Punctuated<Pat, Comma>,
+    or2_token: syn::token::Or,
+    let_bindings: Vec<syn::Stmt>,
 }
 
-fn list_via_trait(
-    expr_field: syn::ExprField,
-    component_type_name: Ident,
-    args: Punctuated<Expr, Comma>,
-    item_counter: &mut ItemCounter,
-    update_stage_variables: Option<&[String]>,
-) -> Result<Element> {
-    let mut args = args.into_pairs();
-    let message_for_l_or_kl =
-        "Expected a keyword `l` or `kl` (which is short for `list` or `keyed_list`)";
-    let name = expr_as_ident(*expr_field.base, message_for_l_or_kl)?;
-    if name != "l" && name != "kl" {
-        return Err(syn::Error::new(name.span(), message_for_l_or_kl));
-    }
-    let keyed_item_type_name = match expr_field.member {
-        syn::Member::Named(ident) => ident,
-        syn::Member::Unnamed(index) => {
-            return Err(syn::Error::new(index.span(), "Expected KeyedItemName`"));
+impl ViewClosure {
+    fn from_expr(expr: Expr) -> Result<Self> {
+        let Expr::Closure(expr_closure) = expr else {
+            return Err(syn::Error::new(
+                expr.span(),
+                "Expected a closure for update view",
+            ));
+        };
+        let ExprClosure {
+            lifetimes,
+            asyncness,
+            capture,
+            or1_token,
+            inputs,
+            or2_token,
+            output,
+            body,
+            ..
+        } = expr_closure;
+
+        if let Some(lifetimes) = lifetimes.as_ref() {
+            return Err(syn::Error::new(
+                lifetimes.span(),
+                "Spair does not support this in view closure",
+            ));
         }
-    };
-    let context = args.next().unwrap().into_value();
-    let keyed_item_iter = args.next().unwrap().into_value();
-    Ok(Element::List(List {
-        keyed_list: name == "kl",
-        name,
-        stage: is_expr_in_create_or_update_stage(&keyed_item_iter, update_stage_variables),
-        partial_list: false,
-        component_type_name,
-        item_type_name: keyed_item_type_name,
-        context,
-        item_iterator: keyed_item_iter,
-        spair_ident: item_counter.new_ident("_list"),
-        spair_ident_marker: item_counter.new_ident("_list_end_flag"),
-    }))
+        if let Some(asyncness) = asyncness.as_ref() {
+            return Err(syn::Error::new(
+                asyncness.span(),
+                "Spair does not support this in view closure",
+            ));
+        }
+        if matches!(output, syn::ReturnType::Default).not() {
+            return Err(syn::Error::new(
+                output.span(),
+                "Spair does not support this in view closure",
+            ));
+        }
+        let stmts = match *body {
+            Expr::Block(expr_block) => expr_block.block.stmts,
+            other => {
+                return Err(syn::Error::new(
+                    other.span(),
+                    "Spair only support a block: { stmt_list } in view closure",
+                ));
+            }
+        };
+
+        Ok(ViewClosure {
+            capture,
+            or1_token,
+            inputs,
+            or2_token,
+            let_bindings: stmts,
+        })
+    }
+
+    fn collect_variable_names(&self) -> Vec<Ident> {
+        let mut variable_names = Vec::new();
+        for input in self.inputs.iter() {
+            collect_variable_names_from_pat(input, &mut variable_names);
+        }
+        for stmt in self.let_bindings.iter() {
+            if let Stmt::Local(Local { pat, .. }) = stmt {
+                collect_variable_names_from_pat(pat, &mut variable_names);
+            }
+        }
+        variable_names
+    }
 }
 
 fn inlined_list(
-    expr_field: syn::ExprField,
-    component_type_name: Ident,
+    name: Ident,
+    keyword_list: Ident,
     args: Punctuated<Expr, Comma>,
+    paren: Paren,
     item_counter: &mut ItemCounter,
     update_stage_variables: Option<&[String]>,
 ) -> Result<Element> {
     let mut args = args.into_pairs();
-    let message_for_lwa = "Expected a keyword `lwa` (which is short for `list with anotation`)";
-    let name = expr_as_ident(*expr_field.base, message_for_lwa)?;
-    if name != "lwa" {
-        return Err(syn::Error::new(name.span(), message_for_lwa));
+    if keyword_list != "list" {
+        return Err(syn::Error::new(
+            keyword_list.span(),
+            "Expected keyword `list`",
+        ));
     }
-    let keyed_item_type_name = match expr_field.member {
-        syn::Member::Named(ident) => ident,
-        syn::Member::Unnamed(index) => {
-            return Err(syn::Error::new(index.span(), "Expected KeyedItemName`"));
-        }
-    };
+
+    let len = args.len();
+    if len != 5 && len != 6 {
+        return Err(syn::Error::new(
+            args.last()
+                .map(|v| v.span())
+                .unwrap_or_else(|| paren.span.span()),
+            format!("Expected 5 args for a non-keyed list, or 6 args for a keyed list, but found {len} args"),
+        ));
+    }
+
     let context = args.next().unwrap().into_value();
     let keyed_item_iter = args.next().unwrap().into_value();
+    let get_key_closure = if len == 6 {
+        args.next().map(|v| v.into_value())
+    } else {
+        None
+    };
     let create_view_closure = args.next().unwrap().into_value();
     let update_view_closure = args.next().unwrap().into_value();
     let element_expr = args.next().unwrap().into_value();
-    let element = Element::with_expr(element_expr, item_counter, update_stage_variables)?.remove(0);
+
+    let stage = is_expr_in_create_or_update_stage(&keyed_item_iter, update_stage_variables);
+    let create_view_closure = ViewClosure::from_expr(create_view_closure)?;
+    let update_view_closure = ViewClosure::from_expr(update_view_closure)?;
+
+    let create_stage_variables = create_view_closure.collect_variable_names();
+    let update_stage_variables = update_view_closure.collect_variable_names();
+    check_for_name_conflicting(&create_stage_variables, &update_stage_variables)?;
+
+    let update_stage_variables: Vec<_> = update_stage_variables
+        .iter()
+        .map(|v| v.to_string())
+        .collect();
+    let element =
+        Element::with_expr(element_expr, item_counter, Some(&update_stage_variables))?.remove(0);
     let Element::Html(mut html) = element else {
         return Err(syn::Error::new(
             element.name_or_text_expr_span(),
@@ -710,27 +737,11 @@ fn inlined_list(
     };
     html.root_element = true;
 
-    let Expr::Closure(create_view_closure) = create_view_closure else {
-        return Err(syn::Error::new(
-            create_view_closure.span(),
-            "Expected a closure here",
-        ));
-    };
-
-    let Expr::Closure(update_view_closure) = update_view_closure else {
-        return Err(syn::Error::new(
-            update_view_closure.span(),
-            "Expected a closure here",
-        ));
-    };
-
     Ok(Element::InlinedList(InlinedList {
         name,
-        stage: is_expr_in_create_or_update_stage(&keyed_item_iter, update_stage_variables),
+        stage,
         partial_list: false,
-        component_type_name,
-        item_type_name: keyed_item_type_name,
-        key_items: None,
+        keyed_list_items: KeyedListItems::from_get_key_closure(get_key_closure)?,
         context,
         item_iterator: keyed_item_iter,
         spair_ident: item_counter.new_ident("_ilist"),
@@ -738,7 +749,7 @@ fn inlined_list(
         create_view_closure,
         update_view_closure,
         element: html,
-        view_state_type_name: item_counter.new_ident("_InlinedListViewState"),
+        view_state_type_name: item_counter.new_ident("_InlinedListItemViewState"),
     }))
 }
 
@@ -886,7 +897,7 @@ impl HtmlElement {
         update_stage_variables: Option<&[String]>,
     ) -> Result<HtmlElement> {
         let element_name = name.to_string();
-        let spair_ident = item_counter.new_ident_element();
+        let spair_ident = item_counter.new_ident_element(&element_name);
         let mut attributes = Vec::new();
         let mut children: Vec<Element> = Vec::new();
         for expr in args.into_iter() {
@@ -1219,20 +1230,6 @@ impl HtmlElement {
         }
     }
 
-    fn generate_view_state_instance_construction_with_extra_field(
-        &self,
-        view_state_struct_name: &Ident,
-        extra_field: TokenStream,
-    ) -> TokenStream {
-        let fields = self.generate_fields_for_view_state_instance_construction();
-        quote! {
-            #view_state_struct_name{
-                #extra_field
-                #fields
-            }
-        }
-    }
-
     pub(crate) fn root_element_type(&self) -> Ident {
         Ident::new("Element", Span::call_site())
     }
@@ -1265,28 +1262,6 @@ impl HtmlElement {
         quote! {
             #first_part
             (#root_element.ws_element().clone(), #construct_view_state_instance)
-        }
-    }
-
-    pub fn generate_code_for_create_view_fn_of_a_keyed_item_view(
-        &self,
-        view_state_struct_name: &Ident,
-        key_for_view_state_instance: TokenStream,
-    ) -> TokenStream {
-        let root_element = &self.meta.spair_ident;
-        let capacity = self.meta.spair_element_capacity;
-        let attribute_setting = self.generate_attribute_code_for_create_view_fn();
-        let children = self.generate_children_code_for_create_view_fn();
-        let construct_view_state_instance = self
-            .generate_view_state_instance_construction_with_extra_field(
-                view_state_struct_name,
-                key_for_view_state_instance,
-            );
-        quote! {
-            let #root_element = _keyed_view_state_template.create_element(#capacity);
-            #attribute_setting
-            #children
-            #construct_view_state_instance
         }
     }
 
@@ -1397,10 +1372,10 @@ impl HtmlElement {
         }
     }
 
-    pub(crate) fn collect_match_n_inlined_list_view_state_types(&self) -> TokenStream {
+    pub(crate) fn generate_match_n_inlined_list_view_state_types(&self) -> TokenStream {
         self.children
             .iter()
-            .map(|v| v.collect_match_n_inlined_list_view_state_types())
+            .map(|v| v.generate_match_n_inlined_list_view_state_types())
             .collect()
     }
 }
@@ -1723,140 +1698,64 @@ fn expr_name(expr: &Expr) -> &str {
         _ => "unknown expr type",
     }
 }
-impl List {
-    fn generate_view_state_struct_fields(&self) -> TokenStream {
-        let ident = &self.spair_ident;
-        let component_type_name = &self.component_type_name;
-        let keyed_item_type_name = &self.item_type_name;
-        if self.keyed_list {
-            quote! {#ident: ::spair::KeyedList<
-                    #component_type_name,
-                    #keyed_item_type_name,
-                    <#keyed_item_type_name as ::spair::KeyedListItemView<#component_type_name>>::Key,
-                    <#keyed_item_type_name as ::spair::KeyedListItemView<#component_type_name>>::ViewState,
-                >,
-            }
-        } else {
-            quote! {#ident: ::spair::List<
-                    #component_type_name,
-                    #keyed_item_type_name,
-                    <#keyed_item_type_name as ::spair::ListItemView<#component_type_name>>::ViewState,
-                >,
-            }
-        }
-    }
-
-    fn generate_fields_for_view_state_instance(&self) -> TokenStream {
-        let ident = &self.spair_ident;
-        quote! {#ident,}
-    }
-
-    fn generate_code_for_create_view_fn_as_child_node(
-        &self,
-        parent: &Ident,
-        previous: Option<&Ident>,
-    ) -> TokenStream {
-        let ident = &self.spair_ident;
-        let marker_ident = &self.spair_ident_marker;
-        let end_node = if self.partial_list {
-            match previous {
-                Some(previous) => quote! {
-                    let #marker_ident = #previous.ws_node_ref().next_ws_node();
-                    let #parent = #parent.clone();
-                },
-                None => quote! {
-                    let #marker_ident = #parent.ws_node_ref().first_ws_node();
-                    let #parent = #parent.clone();
-                },
-            }
-        } else {
-            quote! {let #marker_ident = None;}
-        };
-        let item_type_name = &self.item_type_name;
-        let create_list = if self.keyed_list {
-            quote! {::spair::KeyedList::new(
-                &#parent,
-                #marker_ident.clone(),
-                #item_type_name::template_string(),
-                #item_type_name::get_key,
-                #item_type_name::key_from_view_state,
-                #item_type_name::create,
-                #item_type_name::update,
-                #item_type_name::root_element,
-            )}
-        } else {
-            quote! {::spair::List::new(
-                &#parent,
-                #marker_ident.clone(),
-                #item_type_name::template_string(),
-                #item_type_name::create,
-                #item_type_name::update,
-                #item_type_name::root_element,
-            )}
-        };
-        let items_iter = &self.item_iterator;
-        let context = &self.context;
-        let render_on_creation = if matches!(&self.stage, Stage::Creation) {
-            quote! {#ident.update(#items_iter, #context);}
-        } else {
-            quote! {}
-        };
-        quote! {
-            #end_node
-            let #ident = #create_list;
-            #render_on_creation
-        }
-    }
-
-    fn generate_code_for_update_view_fn_as_child_node(
-        &self,
-        view_state_ident: &Ident,
-    ) -> TokenStream {
-        if matches!(&self.stage, Stage::Update).not() {
-            return quote! {};
-        }
-        let ident = &self.spair_ident;
-        let items_iter = &self.item_iterator;
-        let context = &self.context;
-        quote! {
-            #view_state_ident.#ident.update(#items_iter, #context);
-        }
-    }
-}
 
 impl InlinedList {
     fn generate_view_state_struct_fields(&self) -> TokenStream {
         let ident = &self.spair_ident;
-        let component_type_name = &self.component_type_name;
-        let item_type_name = &self.item_type_name;
-        let item_type_name = if item_type_name == "str" {
-            quote! {&'static #item_type_name}
-        } else {
-            quote! {#item_type_name}
-        };
         let view_state_type_name = &self.view_state_type_name;
-        if let Some(key_items) = self.key_items.as_ref() {
+        if let Some(key_items) = self.keyed_list_items.as_ref() {
             let key_type_name = &key_items.key_type_name;
             quote! {#ident: ::spair::KeyedList<
-                    #component_type_name,
-                    #item_type_name,
                     #key_type_name,
                     #view_state_type_name,
                 >,
             }
         } else {
-            quote! {#ident: ::spair::List<
-                    #component_type_name,
-                    #item_type_name,
-                    #view_state_type_name,
-                >,
-            }
+            quote! {#ident: ::spair::List<#view_state_type_name>,}
         }
     }
 
     fn generate_fields_for_view_state_instance(&self) -> TokenStream {
         let ident = &self.spair_ident;
         quote! {#ident,}
+    }
+
+    fn generate_create_view_n_update_view_closures(&self) -> (TokenStream, TokenStream) {
+        let view_state_type_name = &self.view_state_type_name;
+        let ViewClosure {
+            capture,
+            or1_token,
+            inputs,
+            or2_token,
+            let_bindings,
+        } = &self.create_view_closure;
+        let fn_body = self
+            .element
+            .generate_fn_body_for_create_view_fn_of_a_view(view_state_type_name);
+        let create_view_closure = quote! {
+            #capture #or1_token _keyed_view_state_template: &::spair::TemplateElement, #inputs #or2_token {
+                #(#let_bindings)*
+                #fn_body
+            }
+        };
+        let ViewClosure {
+            capture,
+            or1_token,
+            inputs,
+            or2_token,
+            let_bindings,
+        } = &self.update_view_closure;
+        let view_state_ident = Ident::new("_inlined_list_item_view_state_", Span::call_site());
+        let fn_body = self
+            .element
+            .generate_code_for_update_view_fn(&view_state_ident);
+        let update_view_closure = quote! {
+            #capture #or1_token #view_state_ident: &mut #view_state_type_name, #inputs #or2_token {
+                #(#let_bindings)*
+                #fn_body
+            }
+        };
+        (create_view_closure, update_view_closure)
     }
 
     fn generate_code_for_create_view_fn_as_child_node(
@@ -1880,106 +1779,41 @@ impl InlinedList {
         } else {
             quote! {let #marker_ident = None;}
         };
-        let view_state_type_name = &self.view_state_type_name;
         let template_string = self.element.construct_html_string();
-        let ExprClosure {
-            or1_token,
-            inputs,
-            or2_token,
-            output,
-            body: let_bindings,
-            ..
-        } = &self.create_view_closure;
-        let fn_body = if let Some(key_items) = self.key_items.as_ref() {
-            let get_key_ident = &key_items.get_key_closure_ident;
-            let get_key_closure = &key_items.get_key_closure;
-            let key = Ident::new("_inlined_keyed_list_item_key_", Span::call_site());
-            let key_field = quote! {key: #key,};
-
-            let root_element = &self.element.meta.spair_ident;
-            let capacity = self.element.meta.spair_element_capacity;
-            let attribute_setting = self.element.generate_attribute_code_for_create_view_fn();
-            let children = self.element.generate_children_code_for_create_view_fn();
-            let construct_view_state_instance = self
-                .element
-                .generate_view_state_instance_construction_with_extra_field(
-                    view_state_type_name,
-                    key_field,
-                );
-
-            let item_data = match inputs.first() {
-                Some(Pat::Ident(item_data)) => quote! {#item_data},
-                _ => quote! {
-                    compile_error!("There should be an input for keyed list item data")
-                },
-            };
-            quote! {
-                let #get_key_ident = #get_key_closure;
-                let #key = Clone::clone(#get_key_ident(#item_data));
-                let #root_element = _keyed_view_state_template.create_element(#capacity);
-                #attribute_setting
-                #children
-                #construct_view_state_instance
+        let view_state_type_name = &self.view_state_type_name;
+        let items_iter = &self.item_iterator;
+        let context = &self.context;
+        let render_on_creation = if matches!(&self.stage, Stage::Creation) {
+            let (create_view_closure, update_view_closure) =
+                self.generate_create_view_n_update_view_closures();
+            if let Some(key_items) = self.keyed_list_items.as_ref() {
+                let get_key_closure = &key_items.get_key_closure;
+                quote! {
+                    let mut #ident = #ident;
+                    #ident.update(#items_iter, #context, #get_key_closure, #create_view_closure, #update_view_closure, #view_state_type_name::root_element);
+                }
+            } else {
+                quote! {
+                    let mut #ident = #ident;
+                    #ident.update(#items_iter, #context, #create_view_closure, #update_view_closure, #view_state_type_name::root_element);
+                }
             }
         } else {
-            self.element
-                .generate_fn_body_for_create_view_fn_of_a_view(view_state_type_name)
+            quote! {}
         };
-        let create_view_fn = quote! {
-            #or1_token _keyed_view_state_template: &::spair::TemplateElement, #inputs #or2_token #output {
-                #let_bindings
-                #fn_body
-            }
-        };
-        let ExprClosure {
-            or1_token,
-            inputs,
-            or2_token,
-            output,
-            body: let_bindings,
-            ..
-        } = &self.update_view_closure;
-        let view_state_ident = Ident::new("_inlined_list_item_view_state_", Span::call_site());
-        let fn_body = self
-            .element
-            .generate_code_for_update_view_fn(&view_state_ident);
-        let update_view_fn = quote! {
-            #or1_token #view_state_ident: &mut #view_state_type_name, #inputs #or2_token #output {
-                #let_bindings
-                #fn_body
-            }
-        };
-        let create_list = if let Some(key_items) = self.key_items.as_ref() {
-            let get_key_ident = &key_items.get_key_closure_ident;
+        let create_list = if let Some(_key_items) = self.keyed_list_items.as_ref() {
+            // let get_key_ident = &key_items.get_key_closure_ident;
             quote! {::spair::KeyedList::new(
                 &#parent,
                 #marker_ident.clone(),
                 #template_string,
-                #get_key_ident,
-                #view_state_type_name::get_key,
-                #create_view_fn,
-                #update_view_fn,
-                #view_state_type_name::root_element,
             )}
         } else {
             quote! {::spair::List::new(
                 &#parent,
                 #marker_ident.clone(),
                 #template_string,
-                #create_view_fn,
-                #update_view_fn,
-                #view_state_type_name::root_element,
             )}
-        };
-        let items_iter = &self.item_iterator;
-        let context = &self.context;
-        let render_on_creation = if matches!(&self.stage, Stage::Creation) {
-            quote! {
-                let mut #ident = #ident;
-                #ident.update(#items_iter, #context);
-            }
-        } else {
-            quote! {}
         };
         quote! {
             #end_node
@@ -1996,10 +1830,21 @@ impl InlinedList {
             return quote! {};
         }
         let ident = &self.spair_ident;
+        let view_state_type_name = &self.view_state_type_name;
         let items_iter = &self.item_iterator;
         let context = &self.context;
-        quote! {
-            #view_state_ident.#ident.update(#items_iter, #context);
+        let (create_view_closure, update_view_closure) =
+            self.generate_create_view_n_update_view_closures();
+
+        if let Some(key_items) = self.keyed_list_items.as_ref() {
+            let get_key_closure = &key_items.get_key_closure;
+            quote! {
+                #view_state_ident.#ident.update(#items_iter, #context, #get_key_closure, #create_view_closure, #update_view_closure, #view_state_type_name::root_element);
+            }
+        } else {
+            quote! {
+                #view_state_ident.#ident.update(#items_iter, #context, #create_view_closure, #update_view_closure, #view_state_type_name::root_element);
+            }
         }
     }
 
@@ -2007,33 +1852,24 @@ impl InlinedList {
         let view_state_type_name = &self.view_state_type_name;
         let fields = self.element.generate_view_state_struct_fields();
         let root_element = &self.element.meta.spair_ident;
-        if let Some(key_items) = self.key_items.as_ref() {
-            let key_type_name = &key_items.key_type_name;
-            quote! {
-                struct #view_state_type_name {
-                    key: #key_type_name,
-                    #fields
-                }
-                impl #view_state_type_name {
-                    fn get_key(&self) -> &#key_type_name {
-                        &self.key
-                    }
-                    fn root_element(&self) -> &::spair::WsElement {
-                        &self.#root_element
-                    }
+
+        let inlined_list_view_state = quote! {
+            struct #view_state_type_name {
+                #fields
+            }
+            impl #view_state_type_name {
+                fn root_element(&self) -> &::spair::WsElement {
+                    &self.#root_element
                 }
             }
-        } else {
-            quote! {
-                struct #view_state_type_name {
-                    #fields
-                }
-                impl #view_state_type_name {
-                    fn root_element(&self) -> &::spair::WsElement {
-                        &self.#root_element
-                    }
-                }
-            }
+        };
+
+        let view_states_for_items_inside_the_inlined_item = self
+            .element
+            .generate_match_n_inlined_list_view_state_types();
+        quote! {
+            #view_states_for_items_inside_the_inlined_item
+            #inlined_list_view_state
         }
     }
 }

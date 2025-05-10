@@ -189,12 +189,6 @@ impl Match {
             .map(|v| v.generate_code_for_update_view_fn(self, parent, view_state))
             .collect();
 
-        // quote! {
-        //     #match_keyword #expr {
-        //         #match_arm_code
-        //     }
-        // }
-
         let mut out = quote! {#match_keyword #expr};
         self.brace_token
             .surround(&mut out, |inner| inner.append_all([match_arm_code]));
@@ -424,7 +418,6 @@ impl MatchArm {
                         #view_state.#match_view_state.match_arm_view_state = #match_enum_type_name::#arm_variant(#match_arm_view_state);
                     }
                 }
-                Element::List(_list) => unreachable!(),
                 Element::InlinedList(_list) => unreachable!(),
                 Element::Match(_) => unreachable!(),
                 Element::WsElement(wse) => {
@@ -463,7 +456,6 @@ impl MatchArm {
                         quote! {}
                     }
                 }
-                Element::List(_list) => unreachable!(),
                 Element::InlinedList(_list) => unreachable!(),
                 Element::Match(_) => unreachable!(),
                 Element::WsElement(_) => quote! {},
