@@ -1,5 +1,7 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use web_sys::{Element, Event, EventTarget, HtmlElement, HtmlSelectElement};
+use web_sys::{
+    Element, Event, EventTarget, HtmlElement, HtmlInputElement, HtmlSelectElement, InputEvent,
+};
 
 thread_local!(
     pub static WINDOW: web_sys::Window = web_sys::window().expect_throw("No window found");
@@ -17,14 +19,27 @@ pub fn get_element_by_id(element_id: &str) -> Option<Element> {
 }
 
 pub trait ElementFromCurrentEventTarget {
-    fn current_target(&self) -> EventTarget;
+    fn get_current_target(&self) -> EventTarget;
     fn current_target_as_select(&self) -> HtmlSelectElement {
-        self.current_target().unchecked_into()
+        self.get_current_target().unchecked_into()
     }
 }
 
 impl ElementFromCurrentEventTarget for Event {
-    fn current_target(&self) -> EventTarget {
+    fn get_current_target(&self) -> EventTarget {
+        self.current_target().unwrap_throw()
+    }
+}
+
+pub trait InputElementFromCurrentInputEvent {
+    fn get_current_target(&self) -> EventTarget;
+    fn current_target_as_input(&self) -> HtmlInputElement {
+        self.get_current_target().unchecked_into()
+    }
+}
+
+impl InputElementFromCurrentInputEvent for InputEvent {
+    fn get_current_target(&self) -> EventTarget {
         self.current_target().unwrap_throw()
     }
 }

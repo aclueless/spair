@@ -38,7 +38,8 @@ features = [
   "EventTarget",
   "Location",
   "PopStateEvent",
-  # "ClipboardEvent",
+  "ClipboardEvent",
+  "DataTransfer",
   "DomTokenList",
   "Text",
 ]

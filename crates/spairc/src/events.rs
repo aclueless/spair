@@ -18,11 +18,12 @@ macro_rules! impl_event_listener_trait {
 }
 
 impl_event_listener_trait! {
+    ClipboardEvent
     Event
-    MouseEvent
     FocusEvent
     InputEvent
     KeyboardEvent
-    WheelEvent
+    MouseEvent
     PopStateEvent
+    WheelEvent
 }

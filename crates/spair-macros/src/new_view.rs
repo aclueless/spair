@@ -7,7 +7,7 @@ use syn::*;
 use token::Brace;
 
 use crate::element::{Element, HtmlElement};
-use crate::{ItemCounter, MultiErrors};
+use crate::MultiErrors;
 
 pub(crate) struct View {
     pub(crate) view_state_type_name: Ident,
@@ -319,7 +319,7 @@ fn collect_view_element(
         ));
     }
     let message_html_element_only = "Spair view only supports an HTML element as root node";
-    let mut item_counter = ItemCounter::new(match_view_state_prefix);
+    let mut item_counter = crate::item_counter::ItemCounter::new(match_view_state_prefix);
     match block.stmts.remove(0) {
         Stmt::Expr(expr, _) => {
             let span = expr.span();

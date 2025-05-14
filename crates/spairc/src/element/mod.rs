@@ -10,7 +10,12 @@ use web_sys::{
     HtmlTextAreaElement,
 };
 
-use crate::{CallbackArg, events::EventListener, helper, routing::Route};
+use crate::{
+    CallbackArg,
+    events::EventListener,
+    helper::{self, InputElementFromCurrentInputEvent},
+    routing::Route,
+};
 
 mod values;
 
@@ -891,8 +896,9 @@ macro_rules! create_event_methods {
 }
 
 create_event_methods! {
+    ClipboardEvent { copy cut paste }
     Event { change }
-    FocusEvent { focus blur focusin focusout }
+    FocusEvent { blur focus focusin focusout }
     KeyboardEvent { keydown }
     MouseEvent { click dblclick mousedown mouseup mouseenter mouseleave mousemove mouseover }
 }
@@ -910,6 +916,19 @@ impl Element {
                     {
                         callback.call(input_element.value());
                     };
+                },
+            )),
+        );
+    }
+
+    pub fn input_checked(&mut self, index: usize, callback: CallbackArg<bool>) {
+        self.add_event_listener(
+            index,
+            "input",
+            Box::new(Closure::<dyn Fn(web_sys::InputEvent)>::new(
+                move |input_event: web_sys::InputEvent| {
+                    let input = input_event.current_target_as_input();
+                    callback.call(input.checked());
                 },
             )),
         );

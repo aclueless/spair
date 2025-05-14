@@ -12,7 +12,7 @@ use syn::{
 
 use crate::{
     new_view::{check_for_name_conflicting, collect_variable_names_from_pat, expr_has_ref_to},
-    ItemCounter, MultiErrors,
+    MultiErrors,
 };
 
 mod match_expr;
@@ -172,7 +172,7 @@ impl Element {
     // Collecting element stops on the first error. It is a bit difficult to collect all the errors at the same time.
     pub fn with_expr(
         expr: Expr,
-        item_counter: &mut ItemCounter,
+        item_counter: &mut crate::item_counter::ItemCounter,
         update_stage_variables: Option<&[String]>,
     ) -> Result<Vec<Self>> {
         match expr {
@@ -189,7 +189,7 @@ impl Element {
 
     fn with_expr_call(
         expr: ExprCall,
-        item_counter: &mut ItemCounter,
+        item_counter: &mut crate::item_counter::ItemCounter,
         update_stage_variables: Option<&[String]>,
     ) -> Result<Vec<Self>> {
         let span = expr.span();
@@ -221,13 +221,13 @@ impl Element {
         }
         Err(syn::Error::new(
             span,
-            "Expected HTML tags (div, input...), v.ViewName, or c.ComponentName",
+            "Expected HTML tags (div, input...), v.ViewName, or ws.element",
         ))
     }
 
     fn with_expr_method_call(
         expr: ExprMethodCall,
-        item_counter: &mut ItemCounter,
+        item_counter: &mut crate::item_counter::ItemCounter,
         update_stage_variables: Option<&[String]>,
     ) -> Result<Self> {
         let span = expr.span();
@@ -248,7 +248,7 @@ impl Element {
                         update_view_method_name: None,
                         update_view_args: None,
                         spair_ident: item_counter.new_ident_view(),
-                        spair_ident_marker: item_counter.new_ident("_view_marker"),
+                        spair_ident_marker: item_counter.new_ident_marker("view"),
                     }))
                 } else if name == "inlined" {
                     inlined_list(
@@ -278,8 +278,8 @@ impl Element {
                     Ok(Element::WsElement(WsElement {
                         name: name.clone(),
                         ws_element: ws_element.into_value(),
-                        spair_ident: item_counter.new_ident("_ws_element"),
-                        spair_ident_marker: item_counter.new_ident("_ws_element_marker"),
+                        spair_ident: item_counter.new_ident_element("ws"),
+                        spair_ident_marker: item_counter.new_ident_marker("ws"),
                     }))
                 } else {
                     Err(syn::Error::new(name.span(), CHILD_VIEW_LIST_COMP_SYNTAX))
@@ -563,7 +563,7 @@ impl Element {
         first_call: ExprMethodCall,
         second_method_name: Ident,
         second_args: Punctuated<Expr, Comma>,
-        item_counter: &mut ItemCounter,
+        item_counter: &mut crate::item_counter::ItemCounter,
     ) -> Result<Element> {
         let ExprMethodCall {
             receiver,
@@ -591,7 +591,7 @@ impl Element {
                 update_view_method_name: Some(second_method_name),
                 update_view_args: Some(second_args),
                 spair_ident: item_counter.new_ident_view(),
-                spair_ident_marker: item_counter.new_ident("_view_marker"),
+                spair_ident_marker: item_counter.new_ident_marker("view"),
             }))
         } else {
             Err(syn::Error::new(keyword.span(), CHILD_VIEW_LIST_COMP_SYNTAX))
@@ -683,7 +683,7 @@ fn inlined_list(
     keyword_list: Ident,
     args: Punctuated<Expr, Comma>,
     paren: Paren,
-    item_counter: &mut ItemCounter,
+    item_counter: &mut crate::item_counter::ItemCounter,
     update_stage_variables: Option<&[String]>,
 ) -> Result<Element> {
     let mut args = args.into_pairs();
@@ -744,12 +744,12 @@ fn inlined_list(
         keyed_list_items: KeyedListItems::from_get_key_closure(get_key_closure)?,
         context,
         item_iterator: keyed_item_iter,
-        spair_ident: item_counter.new_ident("_ilist"),
-        spair_ident_marker: item_counter.new_ident("_ilist_end_flag"),
+        spair_ident: item_counter.new_ident_ilist(),
+        spair_ident_marker: item_counter.new_ident_marker("ilist"),
         create_view_closure,
         update_view_closure,
         element: html,
-        view_state_type_name: item_counter.new_ident("_InlinedListItemViewState"),
+        view_state_type_name: item_counter.new_type_name_inlined_list(),
     }))
 }
 
@@ -757,7 +757,7 @@ fn text_elements(
     args: Punctuated<Expr, Comma>,
     paren: Paren,
     html_tag: &Ident,
-    item_counter: &mut ItemCounter,
+    item_counter: &mut crate::item_counter::ItemCounter,
     update_stage_variables: Option<&[String]>,
 ) -> Result<Vec<Element>> {
     if args.is_empty() {
@@ -893,7 +893,7 @@ impl HtmlElement {
     fn with_name_n_args(
         name: Ident,
         args: Punctuated<Expr, syn::token::Comma>,
-        item_counter: &mut ItemCounter,
+        item_counter: &mut crate::item_counter::ItemCounter,
         update_stage_variables: Option<&[String]>,
     ) -> Result<HtmlElement> {
         let element_name = name.to_string();
@@ -2050,6 +2050,7 @@ fn check_html_attribute_name(
 fn is_html_event_name(event_name: &str, element_name: &str) -> bool {
     match event_name{
             "input_string" => element_name == "input",
+            "input_checked" => element_name == "input",
             "abort" | // HTMLMediaElement
             "afterprint" | // body
             "animationcancel" | // Element 

@@ -6,8 +6,6 @@ use syn::{
     Arm, Expr, ExprMatch, Ident, Local, Pat, Result, Stmt,
 };
 
-use crate::ItemCounter;
-
 use super::Element;
 
 pub struct Match {
@@ -26,7 +24,7 @@ pub struct Match {
 impl Match {
     pub(crate) fn with_expr_match(
         expr_match: syn::ExprMatch,
-        item_counter: &mut ItemCounter,
+        item_counter: &mut crate::item_counter::ItemCounter,
     ) -> Result<Self> {
         let ExprMatch {
             match_token,
@@ -40,10 +38,10 @@ impl Match {
             expr: *expr,
             brace_token,
             parent_has_only_one_child: false,
-            match_view_state_enum_type_name: item_counter.new_match_view_state(),
-            match_view_state_struct_type_name: item_counter.new_match_view_state(),
-            spair_ident: item_counter.new_ident("_match"),
-            spair_ident_marker: item_counter.new_ident("_match_marker"),
+            match_view_state_enum_type_name: item_counter.new_type_name_match_view_state(),
+            match_view_state_struct_type_name: item_counter.new_type_name_match_view_state(),
+            spair_ident: item_counter.new_ident_match(),
+            spair_ident_marker: item_counter.new_ident_marker("match"),
             arms: Vec::new(),
         };
         for arm in arms {
@@ -89,12 +87,16 @@ impl Match {
     }
 
     pub fn generate_match_n_inlined_list_view_state_types(&self) -> TokenStream {
+        let mut inner_types = Vec::<TokenStream>::new();
         let match_view_state_enum_type_name = &self.match_view_state_enum_type_name;
         let match_view_state_struct_type_name = &self.match_view_state_struct_type_name;
         let variants: TokenStream = self
             .arms
             .iter()
             .map(|arm| {
+                if let Some(arm_element) = arm.element.as_ref() {
+                    inner_types.push(arm_element.generate_match_n_inlined_list_view_state_types());
+                }
                 let variant_name = &arm.match_arm_variant_name;
                 let type_name = &arm.match_arm_struct_type_name;
                 quote! {#variant_name(#type_name),}
@@ -139,6 +141,7 @@ impl Match {
             .map(|v| v.generate_match_view_state_types())
             .collect();
         quote! {
+            #(#inner_types)*
             #match_view_state_types
             #match_arm_types
         }
@@ -208,13 +211,13 @@ pub struct MatchArm {
 }
 
 impl MatchArm {
-    fn with_arm(arm: Arm, item_counter: &mut ItemCounter) -> Result<Self> {
+    fn with_arm(arm: Arm, item_counter: &mut crate::item_counter::ItemCounter) -> Result<Self> {
         let Arm {
             pat, guard, body, ..
         } = arm;
 
-        let match_arm_type_name = item_counter.new_match_view_state();
-        let match_arm_variant_name = item_counter.new_ident("V");
+        let match_arm_type_name = item_counter.new_type_name_match_view_state();
+        let match_arm_variant_name = item_counter.new_type_name_match_arm_variant();
 
         let mut locals = Vec::new();
         let mut first_expr = None;
