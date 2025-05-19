@@ -1,11 +1,12 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{
-    Element, Event, EventTarget, HtmlElement, HtmlInputElement, HtmlSelectElement, InputEvent,
+    Document, Element, Event, EventTarget, HtmlElement, HtmlInputElement, HtmlSelectElement,
+    InputEvent, Window,
 };
 
 thread_local!(
-    pub static WINDOW: web_sys::Window = web_sys::window().expect_throw("No window found");
-    pub static DOCUMENT: web_sys::Document =
+    pub static WINDOW: Window = web_sys::window().expect_throw("No window found");
+    pub static DOCUMENT: Document =
         WINDOW.with(|window| window.document().expect_throw("No document found"));
 );
 

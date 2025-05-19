@@ -20,6 +20,7 @@ mod match_expr;
 const REPLACE_AT_ELEMENT_ID: &str = "replace_at_element_id";
 const HREF_WITH_ROUTING: &str = "href_with_routing";
 const HREF_STR: &str = "href_str";
+const SET_WSREF: &str = "set_wsref";
 
 const VIEW_EXPRESSION_SYNTAX: &str = "div(
     class = \"class names as a string literal\",
@@ -1392,18 +1393,18 @@ impl Attribute {
         )?;
         let key_rust_string = key_rust.to_string();
         let mut is_html_event = false;
-        let (key_html, key_html_string) =
-            if let Some(key_html_string) = key_rust_string.strip_prefix("on_") {
-                is_html_event = is_html_event_name(key_html_string, element_name);
+        let (key_html_attr, key_html_attr_string) =
+            if let Some(key_html_attr_string) = key_rust_string.strip_prefix("on_") {
+                is_html_event = is_html_event_name(key_html_attr_string, element_name);
                 if !is_html_event {
                     return Err(syn::Error::new(
                         key_rust.span(),
-                        format!("Unknown event `{key_html_string}`"),
+                        format!("Unknown event `{key_html_attr_string}`"),
                     ));
                 }
                 (
-                    Some(Ident::new(key_html_string, Span::call_site())),
-                    key_html_string.to_string(),
+                    Some(Ident::new(key_html_attr_string, Span::call_site())),
+                    key_html_attr_string.to_string(),
                 )
             } else if let Some(key) = key_rust_string.strip_prefix("r#") {
                 (None, key.to_string())
@@ -1430,8 +1431,8 @@ impl Attribute {
         let attribute = Attribute {
             stage,
             key_rust,
-            key_html,
-            key_attr_string: key_html_string,
+            key_html: key_html_attr,
+            key_attr_string: key_html_attr_string,
             value: *expr.right,
 
             is_html_event,
@@ -1501,8 +1502,16 @@ impl Attribute {
     ) -> TokenStream {
         let attribute_value = &self.value;
         if self.key_attr_string == REPLACE_AT_ELEMENT_ID {
-            // REPLACE_AT_ELEMENT_ID is a special attribute that always executes in create_view stage to attach the component to DOM
             return quote! {#element.replace_at_element_id(#attribute_value);};
+        }
+        // These special attributes will always be handled in creation stage.
+        match self.key_attr_string.as_str() {
+            REPLACE_AT_ELEMENT_ID => {
+                // put the element at the place of the given element in the DOM
+                return quote! {#element.replace_at_element_id(#attribute_value);};
+            }
+            SET_WSREF => return quote! {#attribute_value.set(&#element);},
+            _ => {}
         }
         let is_in_create_mode = matches!(&self.stage, Stage::Creation);
         if is_in_create_mode.not() {
@@ -1516,7 +1525,7 @@ impl Attribute {
             return self.generate_attribute_code_for_event_listener(&quote! {#element});
         }
         match self.key_attr_string.as_str() {
-            REPLACE_AT_ELEMENT_ID => {
+            REPLACE_AT_ELEMENT_ID | SET_WSREF => {
                 unreachable!("Already handle this case before checking for creation mode")
             }
             HREF_STR => quote! {#element.set_str_attribute("href",#attribute_value);},
@@ -1575,6 +1584,9 @@ impl Attribute {
         }
         match self.key_attr_string.as_str() {
             REPLACE_AT_ELEMENT_ID => quote! {},
+            HREF_STR => {
+                quote! {#element.set_str_attribute_with_index(#index, "href", #attribute_value);}
+            }
             HREF_WITH_ROUTING => {
                 quote! {#element.href_with_routing_with_index(#index,#attribute_value);}
             }
@@ -1765,19 +1777,22 @@ impl InlinedList {
     ) -> TokenStream {
         let ident = &self.spair_ident;
         let marker_ident = &self.spair_ident_marker;
+        let temp_marker_ident = Ident::new(&format!("_temp_{}", marker_ident), Span::call_site());
         let end_node = if self.partial_list {
             match previous {
                 Some(previous) => quote! {
-                    let #marker_ident = #previous.ws_node_ref().next_ws_node();
-                    let #parent = #parent.clone();
+                    let #marker_ident = #previous.ws_node_ref().next_sibling_ws_node();
+                    // let #parent = #parent.clone();
+                    let #temp_marker_ident = Some(#marker_ident.clone());
                 },
                 None => quote! {
                     let #marker_ident = #parent.ws_node_ref().first_ws_node();
-                    let #parent = #parent.clone();
+                    // let #parent = #parent.clone();
+                    let #temp_marker_ident = Some(#marker_ident.clone());
                 },
             }
         } else {
-            quote! {let #marker_ident = None;}
+            quote! {let #temp_marker_ident = None;}
         };
         let template_string = self.element.construct_html_string();
         let view_state_type_name = &self.view_state_type_name;
@@ -1805,13 +1820,13 @@ impl InlinedList {
             // let get_key_ident = &key_items.get_key_closure_ident;
             quote! {::spair::KeyedList::new(
                 &#parent,
-                #marker_ident.clone(),
+                #temp_marker_ident,
                 #template_string,
             )}
         } else {
             quote! {::spair::List::new(
                 &#parent,
-                #marker_ident.clone(),
+                #temp_marker_ident,
                 #template_string,
             )}
         };
@@ -1890,7 +1905,12 @@ fn check_html_attribute_name(
     errors: &mut MultiErrors,
 ) {
     let elements: &[&str] = match attribute_name {
-        REPLACE_AT_ELEMENT_ID => return, // spair attribute: there is an element (element A) given in html document (which has `id` given by this attribute). Spair will put this element (created in spair component) in place of the element A.
+        // spair attribute: there must be an element (element A) given in the html document
+        // (usually named `index.html`). The element A must have an id which is the value of
+        // this attribute). Spair will replace this element (created in spair component) in
+        // the place of the element A.
+        REPLACE_AT_ELEMENT_ID => return,
+        SET_WSREF => return,
         "accept" => &["form", "input"],
         "accept_charset" => &["form"],
         "accesskey" => return, // global attribute

@@ -283,11 +283,22 @@ where
     }
 }
 
-pub trait SpairSpawnLocal<T: 'static>: std::future::Future<Output = T> + Sized
+pub trait SpairSpawnLocal: std::future::Future<Output = ()> + Sized
 where
     Self: 'static,
 {
-    fn spawn_local(self, callback: CallbackArg<T>) {
+    fn spawn_local(self) {
+        wasm_bindgen_futures::spawn_local(self);
+    }
+}
+
+impl<F> SpairSpawnLocal for F where F: 'static + std::future::Future<Output = ()> {}
+
+pub trait SpairSpawnLocalWithCallback<T: 'static>: std::future::Future<Output = T> + Sized
+where
+    Self: 'static,
+{
+    fn spawn_local_with_callback(self, callback: CallbackArg<T>) {
         let f = async move {
             let rs = self.await;
             callback.call(rs);
@@ -296,7 +307,7 @@ where
     }
 }
 
-impl<T, F> SpairSpawnLocal<T> for F
+impl<T, F> SpairSpawnLocalWithCallback<T> for F
 where
     T: 'static,
     F: 'static + std::future::Future<Output = T>,
