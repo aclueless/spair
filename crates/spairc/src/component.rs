@@ -125,11 +125,11 @@ impl<C: Component + 'static> RcComp<C> {
         Comp(Rc::downgrade(&self.0))
     }
 
-    pub fn new(new_state: impl FnOnce(&Comp<C>) -> C) -> Self {
+    pub fn new(new_state: impl FnOnce(Comp<C>) -> C) -> Self {
         let comp_data = CompData(None);
         let rc_comp = RcComp(Rc::new(RefCell::new(comp_data)));
         let comp = rc_comp.comp();
-        finalize_rc_comp(rc_comp, new_state(&comp))
+        finalize_rc_comp(rc_comp, new_state(comp))
     }
 
     pub fn root_element(&self) -> WsElement {

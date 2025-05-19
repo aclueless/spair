@@ -55,7 +55,7 @@ impl State {
                 Ok(branch) => state.set_data(branch),
                 Err(err) => state.fetch_error(err),
             });
-        fetch_repo_metadata().spawn_local(callback);
+        fetch_repo_metadata().spawn_local_with_callback(callback);
     }
 
     fn fetch_error(&mut self, e: gloo_net::Error) {
