@@ -443,7 +443,7 @@ impl Element {
             Element::WsElement(cr) => {
                 let ws_element = &cr.spair_ident;
                 quote! {
-                    parent.remove_child(&view_state.#ws_element);
+                    parent.remove_child(&#view_state.#ws_element);
                 }
             }
         }
