@@ -198,6 +198,13 @@ pub trait CallbackArgTrait<A> {
 }
 
 pub type CallbackArg<A> = Box<dyn CallbackArgTrait<A>>;
+pub struct Callback(Box<dyn CallbackArgTrait<()>>);
+
+impl Callback {
+    pub fn call(&self) {
+        self.0.call(());
+    }
+}
 
 impl<C: Component, A> CallbackArgTrait<A> for CallbackFnArg<C, A>
 where
@@ -223,14 +230,15 @@ where
         Context { comp: self, state }
     }
 
-    pub fn callback<S>(&self, callback_fn: impl Fn(&mut C) -> S + 'static) -> CallbackFnArg<C, ()>
+    pub fn callback<S>(&self, callback_fn: impl Fn(&mut C) -> S + 'static) -> Callback
     where
         S: Into<ShouldRender>,
     {
-        CallbackFnArg {
+        let cba = CallbackFnArg {
             comp: self.clone(),
             callback: Rc::new(move |state, _| callback_fn(state).into()),
-        }
+        };
+        Callback(Box::new(cba))
     }
 
     pub fn callback_arg<S, A>(

@@ -19,7 +19,9 @@ use wasm_bindgen::JsCast;
 pub use web_sys;
 
 pub use crate::helper::WINDOW;
-pub use component::{CallbackArg, Comp, Component, Context, start_app, start_app_with_routing};
+pub use component::{
+    Callback, CallbackArg, Comp, Component, Context, start_app, start_app_with_routing,
+};
 pub use element::{Element, TemplateElement, Text, WsElement, WsNode, WsText};
 pub use keyed_list::KeyedList;
 pub use list::List;
@@ -27,7 +29,7 @@ pub use routing::Route;
 
 pub mod prelude {
     pub use crate::component::{
-        CallbackArg, Comp, Context, RcComp, ShouldRender, SpairSpawnLocal,
+        Callback, CallbackArg, Comp, Context, RcComp, ShouldRender, SpairSpawnLocal,
         SpairSpawnLocalWithCallback,
     };
     pub use crate::element::RenderOptionWithDefault;
@@ -56,9 +58,7 @@ impl<T: wasm_bindgen::JsCast> WsRef<T> {
         *self.0.borrow_mut() = Some(e);
     }
 
-    pub fn execute(&self, f: impl FnOnce(&T)) {
-        if let Some(t) = self.get().as_ref() {
-            f(t);
-        }
+    pub fn execute<O>(&self, f: impl FnOnce(&T) -> O) -> Option<O> {
+        self.get().as_ref().map(f)
     }
 }
