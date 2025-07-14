@@ -404,10 +404,10 @@ impl WsElement {
     pub fn set_bool_attribute(&self, name: &str, value: bool) {
         let name = wasm_bindgen::intern(name);
         if value {
-            if let Err(e) = self.0.remove_attribute(name) {
+            if let Err(e) = self.0.set_attribute(name, "") {
                 log::error!("Error on setting a boolean attribute ``{name}`: {e:?}`");
             }
-        } else if let Err(e) = self.0.set_attribute(name, "") {
+        } else if let Err(e) = self.0.remove_attribute(name) {
             log::error!("Error on removing a boolean attribute ``{name}`: {e:?}`");
         }
     }
@@ -745,6 +745,21 @@ impl Element {
         }
     }
 
+    pub fn class_or_with_index(
+        &mut self,
+        index: usize,
+        condition: bool,
+        first_class_name: &str,
+        second_class_name: &str,
+    ) {
+        if self.is_new_bool_value(index, condition) {
+            self.element
+                .add_or_remove_class(condition, first_class_name);
+            self.element
+                .add_or_remove_class(!condition, second_class_name);
+        }
+    }
+
     pub fn href_with_routing_with_index(&mut self, index: usize, route: &impl Route) {
         self.set_string_attribute_with_index(index, "href", route.url());
     }
@@ -768,35 +783,43 @@ impl Element {
     }
 
     fn set_str_as_select_value_with_index(&mut self, index: usize, value: Option<&str>) {
-        if self.is_new_option_str_value(index, value) {
-            self.element.set_select_option_value(value);
-        }
+        // if self.is_new_option_str_value(index, value) {
+        //     self.element.set_select_option_value(value);
+        // }
+        //
+        // An html select element always select the first option,
+        // but I do not want it.
+        // This is a hack to workaround it now.
+        let _ = self.is_new_option_str_value(index, None);
+        self.element.set_select_option_value(value);
     }
 
     fn set_string_as_select_value_with_index(&mut self, index: usize, new_value: Option<String>) {
-        match self.attributes.get_mut(index) {
-            Some(Attribute::OptionString(current_value)) => {
-                if *current_value != new_value {
-                    *current_value = new_value;
-                    self.element
-                        .set_select_option_value(current_value.as_deref());
-                }
-            }
-            None => {
-                if self.attributes.len() == index {
-                    self.element.set_select_option_value(new_value.as_deref());
-                    self.attributes.push(Attribute::OptionString(new_value));
-                } else {
-                    log::error!(
-                        "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
-                        self.attributes.len()
-                    );
-                }
-            }
-            _ => {
-                log::error!("Internal error: Attribute at index = {index} is not an OptionString");
-            }
-        }
+        let _ = self.is_new_option_str_value(index, None);
+        self.element.set_select_option_value(new_value.as_deref());
+        // match self.attributes.get_mut(index) {
+        //     Some(Attribute::OptionString(current_value)) => {
+        //         if *current_value != new_value {
+        //             *current_value = new_value;
+        //             self.element
+        //                 .set_select_option_value(current_value.as_deref());
+        //         }
+        //     }
+        //     None => {
+        //         if self.attributes.len() == index {
+        //             self.element.set_select_option_value(new_value.as_deref());
+        //             self.attributes.push(Attribute::OptionString(new_value));
+        //         } else {
+        //             log::error!(
+        //                 "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+        //                 self.attributes.len()
+        //             );
+        //         }
+        //     }
+        //     _ => {
+        //         log::error!("Internal error: Attribute at index = {index} is not an OptionString");
+        //     }
+        // }
     }
 
     pub fn set_select_value_with_index(&mut self, index: usize, value: impl SelectElementValue) {

@@ -28,7 +28,10 @@ pub(crate) fn create_component<C: Component + 'static, R: Route>(
     set_route: fn(&mut C, R),
     setup_routing: impl FnOnce(fn(&mut C, R), Comp<C>),
 ) -> RcComp<C> {
-    let comp_data = CompData(None);
+    let comp_data = CompData {
+        mounted: false,
+        data: None,
+    };
     let rc_comp = RcComp(Rc::new(RefCell::new(comp_data)));
     let mut state = new_state(rc_comp.comp());
 
@@ -47,7 +50,7 @@ fn finalize_rc_comp<C: Component + 'static>(rc_comp: RcComp<C>, state: C) -> RcC
 
     match rc_comp.0.try_borrow_mut() {
         Ok(mut rc_comp) => {
-            rc_comp.0 = Some(CompDataInner {
+            rc_comp.data = Some(CompDataInner {
                 root,
                 state,
                 view_state,
@@ -89,7 +92,10 @@ fn execute_update_queue() {
     UPDATE_QUEUE_IS_IN_EXECUTING.with(|executing| executing.set(false));
 }
 
-struct CompData<C: Component>(Option<CompDataInner<C>>);
+struct CompData<C: Component> {
+    mounted: bool,
+    data: Option<CompDataInner<C>>,
+}
 
 struct CompDataInner<C: Component> {
     root: WsElement,
@@ -126,7 +132,10 @@ impl<C: Component + 'static> RcComp<C> {
     }
 
     pub fn new(new_state: impl FnOnce(Comp<C>) -> C) -> Self {
-        let comp_data = CompData(None);
+        let comp_data = CompData {
+            mounted: false,
+            data: None,
+        };
         let rc_comp = RcComp(Rc::new(RefCell::new(comp_data)));
         let comp = rc_comp.comp();
         finalize_rc_comp(rc_comp, new_state(comp))
@@ -136,11 +145,25 @@ impl<C: Component + 'static> RcComp<C> {
         self.0
             .try_borrow()
             .expect_throw("Error on borrowing RcComp content to get the component's root element")
-            .0
+            .data
             .as_ref()
             .expect_throw("RcComp CompData is empty")
             .root
             .clone()
+    }
+
+    pub fn set_mounted(&self, value: bool) {
+        self.0
+            .try_borrow_mut()
+            .expect_throw("Error on borrowing RcComp content to set mounted")
+            .mounted = value;
+    }
+
+    pub fn is_mounted(&self) -> bool {
+        self.0
+            .try_borrow()
+            .expect_throw("Error on borrowing RcComp content to get mounted status")
+            .mounted
     }
 }
 
@@ -279,7 +302,7 @@ where
             cb_fn.queue(arg);
             return;
         };
-        let Some(comp_data) = comp_data.0.as_mut() else {
+        let Some(comp_data) = comp_data.data.as_mut() else {
             log::error!("Error: No state, no updaters");
             cb_fn.queue(arg);
             return;

@@ -47,7 +47,30 @@ pub(crate) enum Element {
     InlinedList(InlinedList),
     Match(Match),
     #[allow(clippy::enum_variant_names)]
+    // Clippy just does not know that these are different types of Elements.
+    // The variant should have the word `Element` in its name to show that
+    // it is an element from web-sys
     WsElement(WsElement),
+    RcComp(RcComp),
+}
+
+pub(crate) struct RcComp {
+    pub(crate) name: Ident,
+    rc_comp: Expr,
+
+    spair_ident: Ident,
+    spair_ident_marker: Ident,
+}
+
+impl RcComp {
+    fn generate_view_state_struct_fields(&self) -> TokenStream {
+        let spair_ident = &self.spair_ident;
+        let spair_ident_marker = &self.spair_ident_marker;
+        quote! {
+            #spair_ident: ::spair::WsElement,
+            #spair_ident_marker: ::spair::WsNode,
+        }
+    }
 }
 
 pub(crate) struct InlinedList {
@@ -126,6 +149,7 @@ struct HtmlElementMeta {
 pub(crate) struct HtmlElement {
     name: Ident,
     attributes: Vec<Attribute>,
+    select_value: Option<Attribute>,
     children: Vec<Element>,
     pub(crate) root_element: bool,
     has_match_element: bool,
@@ -282,6 +306,28 @@ impl Element {
                         spair_ident: item_counter.new_ident_element("ws"),
                         spair_ident_marker: item_counter.new_ident_marker("ws"),
                     }))
+                } else if name == "child" {
+                    if method != "comp" {
+                        return Err(syn::Error::new(
+                            method.span(),
+                            "Expected `comp` after a `child.`",
+                        ));
+                    }
+                    let Some(comp) = args.pop() else {
+                        return Err(syn::Error::new(method.span(), "Expected a ref to a RcComp"));
+                    };
+                    if args.is_empty().not() {
+                        return Err(syn::Error::new(
+                            args.iter().nth(1).unwrap_or(comp.value()).span(),
+                            "Expected exactly one arg for the child.comp. This is the second arg.",
+                        ));
+                    }
+                    Ok(Element::RcComp(RcComp {
+                        name: name.clone(),
+                        rc_comp: comp.into_value(),
+                        spair_ident: item_counter.new_ident_element("cr"),
+                        spair_ident_marker: item_counter.new_ident_marker("cr"),
+                    }))
                 } else {
                     Err(syn::Error::new(name.span(), CHILD_VIEW_LIST_COMP_SYNTAX))
                 }
@@ -303,7 +349,8 @@ impl Element {
             Element::View(view) => view.name.span(),
             Element::InlinedList(list) => list.name.span(),
             Element::Match(m) => m.match_keyword.span(),
-            Element::WsElement(component) => component.name.span(),
+            Element::WsElement(ws_element) => ws_element.name.span(),
+            Element::RcComp(cr) => cr.name.span(),
         }
     }
 
@@ -314,7 +361,8 @@ impl Element {
             Element::View(_view) => {}
             Element::InlinedList(list) => list.element.check_html_multi_errors(errors),
             Element::Match(m) => m.check_html_multi_errors(errors),
-            Element::WsElement(_child_comp) => {}
+            Element::WsElement(_ws_element) => {}
+            Element::RcComp(_cr) => {}
         }
     }
 
@@ -341,7 +389,8 @@ impl Element {
                     html_string.push_str("<!--mi-->")
                 }
             }
-            Element::WsElement(_child_comp) => html_string.push_str("<!--wse-->"),
+            Element::WsElement(_ws_element) => html_string.push_str("<!--wse-->"),
+            Element::RcComp(_cr) => html_string.push_str("<!--cr-->"),
         }
     }
 
@@ -356,6 +405,7 @@ impl Element {
             }
             Element::Match(m) => m.prepare_items_for_generating_code(parent_has_only_one_child),
             Element::WsElement(_) => {}
+            Element::RcComp(_) => {}
         }
     }
 
@@ -366,7 +416,8 @@ impl Element {
             Element::View(view) => view.generate_view_state_struct_fields(),
             Element::InlinedList(list) => list.generate_view_state_struct_fields(),
             Element::Match(m) => m.generate_view_state_struct_fields(),
-            Element::WsElement(cr) => cr.generate_view_state_struct_fields(),
+            Element::WsElement(wse) => wse.generate_view_state_struct_fields(),
+            Element::RcComp(cr) => cr.generate_view_state_struct_fields(),
         }
     }
 
@@ -382,7 +433,8 @@ impl Element {
             Element::View(view) => view.generate_view_state_struct_fields(),
             Element::InlinedList(list) => list.generate_view_state_struct_fields(),
             Element::Match(m) => m.generate_match_view_state_types_n_struct_fields(inner_types),
-            Element::WsElement(cr) => cr.generate_view_state_struct_fields(),
+            Element::WsElement(wse) => wse.generate_view_state_struct_fields(),
+            Element::RcComp(cr) => cr.generate_view_state_struct_fields(),
         }
     }
 
@@ -404,7 +456,13 @@ impl Element {
                     #view_state.#ident.root_element()
                 }
             }
-            Element::WsElement(cr) => {
+            Element::WsElement(wse) => {
+                let ws_element = &wse.spair_ident;
+                quote! {
+                    Some(&#view_state.#ws_element)
+                }
+            }
+            Element::RcComp(cr) => {
                 let ws_element = &cr.spair_ident;
                 quote! {
                     Some(&#view_state.#ws_element)
@@ -440,7 +498,13 @@ impl Element {
                     }
                 }
             }
-            Element::WsElement(cr) => {
+            Element::WsElement(wse) => {
+                let ws_element = &wse.spair_ident;
+                quote! {
+                    parent.remove_child(&#view_state.#ws_element);
+                }
+            }
+            Element::RcComp(cr) => {
                 let ws_element = &cr.spair_ident;
                 quote! {
                     parent.remove_child(&#view_state.#ws_element);
@@ -461,6 +525,11 @@ impl Element {
             Element::WsElement(cr) => {
                 let ident = &cr.spair_ident;
                 quote! {#ident,}
+            }
+            Element::RcComp(cr) => {
+                let ident = &cr.spair_ident;
+                let ident_marker = &cr.spair_ident_marker;
+                quote! {#ident, #ident_marker,}
             }
         }
     }
@@ -484,7 +553,22 @@ impl Element {
                 list.generate_code_for_create_view_fn_as_child_node(parent, previous)
             }
             Element::Match(m) => m.generate_code_for_create_view_fn_as_child_node(parent, previous),
-            Element::WsElement(cr) => {
+            Element::WsElement(wse) => {
+                let ident = &wse.spair_ident;
+                let marker = &wse.spair_ident_marker;
+                let get_marker = if let Some(previous) = previous {
+                    quote! {let #marker = #previous.ws_node_ref().next_sibling_ws_node();}
+                } else {
+                    quote! {let #marker = #parent.ws_node_ref().first_ws_node();}
+                };
+                let ws_element = &wse.ws_element;
+                quote! {
+                    #get_marker
+                    let #ident: ::spair::WsElement = #ws_element;
+                    #parent.insert_new_node_before_a_node(&#ident, Some(&#marker));
+                }
+            }
+            Element::RcComp(cr) => {
                 let ident = &cr.spair_ident;
                 let marker = &cr.spair_ident_marker;
                 let get_marker = if let Some(previous) = previous {
@@ -492,11 +576,12 @@ impl Element {
                 } else {
                     quote! {let #marker = #parent.ws_node_ref().first_ws_node();}
                 };
-                let ws_element = &cr.ws_element;
+                let rc_comp = &cr.rc_comp;
                 quote! {
                     #get_marker
-                    let #ident: ::spair::WsElement = #ws_element;
+                    let #ident: ::spair::WsElement = #rc_comp.root_element();
                     #parent.insert_new_node_before_a_node(&#ident, Some(&#marker));
+                    #rc_comp.set_mounted(true);
                 }
             }
         }
@@ -509,7 +594,8 @@ impl Element {
             Element::View(view) => &view.spair_ident_marker,
             Element::InlinedList(list) => &list.spair_ident_marker,
             Element::Match(m) => &m.spair_ident_marker,
-            Element::WsElement(cr) => &cr.spair_ident_marker,
+            Element::WsElement(wse) => &wse.spair_ident_marker,
+            Element::RcComp(rc) => &rc.spair_ident_marker,
         }
     }
 
@@ -535,6 +621,20 @@ impl Element {
                 m.generate_code_for_update_view_fn_as_child_node(parent, view_state_ident)
             }
             Element::WsElement(_) => quote! {},
+            Element::RcComp(rcc) => {
+                let ident = &rcc.spair_ident;
+                let marker = &rcc.spair_ident_marker;
+                let rc_comp = &rcc.rc_comp;
+                quote! {
+                    if #rc_comp.is_mounted() == false {
+                        #view_state_ident.#parent.remove_child(&#view_state_ident.#ident);
+                        let #ident: ::spair::WsElement = #rc_comp.root_element();
+                        #view_state_ident.#parent.insert_new_node_before_a_node(&#ident, Some(&#view_state_ident.#marker));
+                        #rc_comp.set_mounted(true);
+                        #view_state_ident.#ident = #ident;
+                    }
+                }
+            }
         }
     }
 
@@ -546,6 +646,7 @@ impl Element {
             Element::InlinedList(list) => list.name.span(),
             Element::Match(m) => m.match_keyword.span,
             Element::WsElement(cr) => cr.name.span(),
+            Element::RcComp(rcc) => rcc.name.span(),
         }
     }
 
@@ -901,6 +1002,7 @@ impl HtmlElement {
         let spair_ident = item_counter.new_ident_element(&element_name);
         let mut attributes = Vec::new();
         let mut children: Vec<Element> = Vec::new();
+        let mut select_value = None;
         for expr in args.into_iter() {
             match expr {
                 Expr::Assign(expr_assign) => {
@@ -917,6 +1019,8 @@ impl HtmlElement {
                     )?;
                     if attribute.is_html_event && attribute.stage == Stage::Creation {
                         attributes.insert(0, attribute);
+                    } else if element_name == "select" && attribute.key_attr_string == "value" {
+                        select_value = Some(attribute);
                     } else {
                         attributes.push(attribute);
                     }
@@ -958,6 +1062,7 @@ impl HtmlElement {
         Ok(HtmlElement {
             name,
             attributes,
+            select_value,
             children,
             root_element: false,
             has_match_element: false,
@@ -970,9 +1075,14 @@ impl HtmlElement {
 
     fn count_spair_element_capacity(&mut self) {
         let mut store_index = 0;
-        for attribute in self.attributes.iter_mut().filter(|attribute| {
-            attribute.is_html_event || matches!(&attribute.stage, Stage::Update)
-        }) {
+        for attribute in self
+            .attributes
+            .iter_mut()
+            .chain(self.select_value.iter_mut())
+            .filter(|attribute| {
+                attribute.is_html_event || matches!(&attribute.stage, Stage::Update)
+            })
+        {
             attribute.spair_store_index = store_index;
             store_index += 1;
         }
@@ -988,7 +1098,7 @@ impl HtmlElement {
 
     fn check_html_multi_errors(&self, errors: &mut MultiErrors) {
         self.check_html_tag(errors);
-        for attribute in self.attributes.iter() {
+        for attribute in self.attributes.iter().chain(self.select_value.iter()) {
             attribute.check_html(&self.name.to_string(), errors);
         }
         for child in self.children.iter() {
@@ -1136,7 +1246,7 @@ impl HtmlElement {
     }
 
     fn append_html_string_attributes(&self, html_string: &mut String) {
-        for attribute in self.attributes.iter() {
+        for attribute in self.attributes.iter().chain(self.select_value.iter()) {
             attribute.construct_html_string(html_string);
         }
     }
@@ -1270,11 +1380,18 @@ impl HtmlElement {
         let html_string = self.construct_html_string();
         let root_element = &self.meta.spair_ident;
         let capacity = self.meta.spair_element_capacity;
-        let attribute_setting = self.generate_attribute_code_for_create_view_fn();
-        let children = self.generate_children_code_for_create_view_fn();
+        let code = self.generate_code_for_creating_attributes_and_child_nodes();
         quote! {
             const HTML_STRING: &str = #html_string;
             let mut #root_element = ::spair::Element::with_html(HTML_STRING, #capacity);
+            #code
+        }
+    }
+
+    fn generate_code_for_creating_attributes_and_child_nodes(&self) -> TokenStream {
+        let attribute_setting = self.generate_attribute_code_for_create_view_fn();
+        let children = self.generate_children_code_for_create_view_fn();
+        quote! {
             #attribute_setting
             #children
         }
@@ -1286,6 +1403,7 @@ impl HtmlElement {
 
         self.attributes
             .iter()
+            .chain(self.select_value.iter())
             .map(|v| v.generate_attribute_code_for_create_view_fn(&element_name, element))
             .collect()
     }
@@ -1324,22 +1442,22 @@ impl HtmlElement {
         } else {
             get_ws_element
         };
-        let set_attributes = self.generate_attribute_code_for_create_view_fn();
-        let children = self.generate_children_code_for_create_view_fn();
+        let code = self.generate_code_for_creating_attributes_and_child_nodes();
 
         quote! {
             #get_element
-            #set_attributes
-            #children
+            #code
         }
     }
 
     pub(crate) fn generate_code_for_update_view_fn(&self, view_state_ident: &Ident) -> TokenStream {
         let attribute_setting = self.generate_attribute_code_for_update_view_fn(view_state_ident);
+        let setting_select_value = self.generate_select_value_for_select_element(view_state_ident);
         let children = self.generate_children_code_for_update_view_fn(view_state_ident);
         quote! {
             #attribute_setting
             #children
+            #setting_select_value
         }
     }
 
@@ -1349,6 +1467,17 @@ impl HtmlElement {
         let element = quote! {#view_state_ident.#element};
         let element_name = self.name.to_string();
         self.attributes
+            .iter()
+            .map(|v| v.generate_attribute_code_for_update_view_fn(&element_name, &element))
+            .collect()
+    }
+
+    fn generate_select_value_for_select_element(&self, view_state_ident: &Ident) -> TokenStream {
+        let element = &self.meta.spair_ident;
+
+        let element = quote! {#view_state_ident.#element};
+        let element_name = self.name.to_string();
+        self.select_value
             .iter()
             .map(|v| v.generate_attribute_code_for_update_view_fn(&element_name, &element))
             .collect()
@@ -1365,12 +1494,13 @@ impl HtmlElement {
         &self,
         view_state_ident: &Ident,
     ) -> TokenStream {
-        let set_attributes = self.generate_attribute_code_for_update_view_fn(view_state_ident);
-        let children = self.generate_children_code_for_update_view_fn(view_state_ident);
-        quote! {
-            #set_attributes
-            #children
-        }
+        self.generate_code_for_update_view_fn(view_state_ident)
+        // let set_attributes = self.generate_attribute_code_for_update_view_fn(view_state_ident);
+        // let children = self.generate_children_code_for_update_view_fn(view_state_ident);
+        // quote! {
+        //     #set_attributes
+        //     #children
+        // }
     }
 
     pub(crate) fn generate_match_n_inlined_list_view_state_types(&self) -> TokenStream {
@@ -1466,6 +1596,20 @@ impl Attribute {
                     other => errors.add(other.span(), message),
                 }
             }
+            "class_or" => {
+                let message = "`class_or` requires a tuple of 3 expressions as `(boolean_expr, some_class_name, other_class_name)`";
+                match &self.value {
+                    Expr::Tuple(expr) => {
+                        if expr.elems.len() < 3 {
+                            errors.add(expr.span(), message);
+                        }
+                        if let Some(forth) = expr.elems.get(3) {
+                            errors.add(forth.span(), "`class_or` requires exactly 3 expressions");
+                        }
+                    }
+                    other => errors.add(other.span(), message),
+                }
+            }
             _ => {
                 check_html_attribute_name(
                     &self.key_rust,
@@ -1501,9 +1645,6 @@ impl Attribute {
         element: &Ident,
     ) -> TokenStream {
         let attribute_value = &self.value;
-        if self.key_attr_string == REPLACE_AT_ELEMENT_ID {
-            return quote! {#element.replace_at_element_id(#attribute_value);};
-        }
         // These special attributes will always be handled in creation stage.
         match self.key_attr_string.as_str() {
             REPLACE_AT_ELEMENT_ID => {
@@ -1573,12 +1714,12 @@ impl Attribute {
         element_name: &str,
         element: &TokenStream,
     ) -> TokenStream {
+        let attribute_value = &self.value;
         let is_in_update_mode = matches!(&self.stage, Stage::Update);
         if is_in_update_mode.not() {
             return quote! {};
         }
         let index = self.spair_store_index;
-        let attribute_value = &self.value;
         if self.is_html_event {
             return self.generate_attribute_code_for_event_listener(element);
         }
@@ -1602,11 +1743,23 @@ impl Attribute {
                     quote! {}
                 }
             }
+            "class_or" => {
+                if let Expr::Tuple(expr) = attribute_value {
+                    let condition_expr = &expr.elems[0];
+                    let first_class_name = &expr.elems[1];
+                    let second_class_name = &expr.elems[2];
+                    quote! {
+                        #element.class_or_with_index(#index, #condition_expr, #first_class_name, #second_class_name);
+                    }
+                } else {
+                    quote! {}
+                }
+            }
             "disabled" => {
                 quote! {#element.set_bool_attribute_with_index(#index, "disabled", #attribute_value);}
             }
             "enabled" => {
-                quote! {#element.set_bool_attribute_with_index(#index, "disabled", !#attribute_value);}
+                quote! {#element.set_bool_attribute_with_index(#index, "disabled", !(#attribute_value));}
             }
             "value" => match element_name {
                 "input" => quote! {#element.set_input_value_with_index(#index, #attribute_value);},
@@ -1777,7 +1930,7 @@ impl InlinedList {
     ) -> TokenStream {
         let ident = &self.spair_ident;
         let marker_ident = &self.spair_ident_marker;
-        let temp_marker_ident = Ident::new(&format!("_temp_{}", marker_ident), Span::call_site());
+        let temp_marker_ident = Ident::new(&format!("_temp{}", marker_ident), Span::call_site());
         let end_node = if self.partial_list {
             match previous {
                 Some(previous) => quote! {

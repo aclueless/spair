@@ -423,6 +423,7 @@ impl MatchArm {
                 }
                 Element::InlinedList(_list) => unreachable!(),
                 Element::Match(_) => unreachable!(),
+                Element::RcComp(_) => unreachable!(),
                 Element::WsElement(wse) => {
                     let ident = &wse.spair_ident;
                     let ws_element = &wse.ws_element;
@@ -461,6 +462,7 @@ impl MatchArm {
                 }
                 Element::InlinedList(_list) => unreachable!(),
                 Element::Match(_) => unreachable!(),
+                Element::RcComp(_) => unreachable!(),
                 Element::WsElement(_) => quote! {},
             },
         }
