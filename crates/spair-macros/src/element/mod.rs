@@ -21,6 +21,7 @@ const REPLACE_AT_ELEMENT_ID: &str = "replace_at_element_id";
 const HREF_WITH_ROUTING: &str = "href_with_routing";
 const HREF_STR: &str = "href_str";
 const SET_WSREF: &str = "set_wsref";
+const INNER_HTML: &str = "set_inner_html_is_not_safe";
 
 const VIEW_EXPRESSION_SYNTAX: &str = "div(
     class = \"class names as a string literal\",
@@ -1098,6 +1099,18 @@ impl HtmlElement {
 
     fn check_html_multi_errors(&self, errors: &mut MultiErrors) {
         self.check_html_tag(errors);
+        if self
+            .attributes
+            .iter()
+            .any(|v| v.key_attr_string.as_str() == INNER_HTML)
+        {
+            if self.children.is_empty().not() {
+                errors.add(
+                    self.name.span(),
+                    "Setting inner HTML while having children?",
+                );
+            }
+        }
         for attribute in self.attributes.iter().chain(self.select_value.iter()) {
             attribute.check_html(&self.name.to_string(), errors);
         }
@@ -1624,6 +1637,9 @@ impl Attribute {
     fn construct_html_string(&self, html_string: &mut String) {
         match self.key_attr_string.as_str() {
             REPLACE_AT_ELEMENT_ID | HREF_WITH_ROUTING => {}
+            INNER_HTML => {
+                // Not expect an inner HTML at static stage
+            }
             other_attribute => {
                 if let Stage::HtmlString(value) = &self.stage {
                     html_string.push(' ');
@@ -1674,8 +1690,22 @@ impl Attribute {
                 #element.href_with_routing(#attribute_value);
                 #element.add_click_event_to_handle_routing();
             },
+            INNER_HTML => quote! {#element.set_inner_html_is_not_safe(#attribute_value);},
             "id" => quote! {#element.set_id(#attribute_value);},
-            "class" => quote! {#element.class(#attribute_value);},
+            "class" => quote! {#element.add_class(#attribute_value);},
+            "class_if" => {
+                if let Expr::Tuple(expr) = attribute_value {
+                    let condition_expr = &expr.elems[0];
+                    let class_name = &expr.elems[1];
+                    quote! {
+                        if #condition_expr{
+                            #element.add_class(#class_name);
+                        }
+                    }
+                } else {
+                    quote! {}
+                }
+            }
             "disabled" => quote! {#element.set_bool_attribute("disabled", #attribute_value);},
             "enabled" => quote! {#element.set_bool_attribute("disabled", !(#attribute_value));},
             "value" => match element_name {
@@ -1731,7 +1761,12 @@ impl Attribute {
             HREF_WITH_ROUTING => {
                 quote! {#element.href_with_routing_with_index(#index,#attribute_value);}
             }
-            "class" => quote! {},
+            INNER_HTML => {
+                return quote! {#element.set_inner_html_is_not_safe_with_index(#index,#attribute_value);}
+            }
+            "class" => quote! {
+                #element.update_class(#index, #attribute_value);
+            },
             "class_if" => {
                 if let Expr::Tuple(expr) = attribute_value {
                     let condition_expr = &expr.elems[0];
@@ -2136,6 +2171,14 @@ fn check_html_attribute_name(
         "hreflang" => &["a", "link"],
         "http-equiv" => &["meta"],
         "id" => return, // global
+        "innerHTML" => {
+            errors.add(
+                ident.span(),
+                &format!("Explicitly use `{INNER_HTML}` instead of just `innerHTML`"),
+            );
+            return;
+        }
+        INNER_HTML => return,
         "integrity" => &["link", "script"],
         "inputmode" => &["textarea", "contenteditable"],
         "ismap" => &["img"],

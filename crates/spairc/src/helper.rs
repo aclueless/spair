@@ -1,7 +1,7 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{
     Document, Element, Event, EventTarget, HtmlElement, HtmlInputElement, HtmlSelectElement,
-    InputEvent, Window,
+    HtmlTextAreaElement, InputEvent, Window,
 };
 
 thread_local!(
@@ -22,6 +22,10 @@ pub fn get_element_by_id(element_id: &str) -> Option<Element> {
 pub trait ElementFromCurrentEventTarget {
     fn get_current_target(&self) -> EventTarget;
     fn current_target_as_select(&self) -> HtmlSelectElement {
+        self.get_current_target().unchecked_into()
+    }
+
+    fn current_target_as_textarea(&self) -> HtmlTextAreaElement {
         self.get_current_target().unchecked_into()
     }
 }

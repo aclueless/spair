@@ -449,6 +449,18 @@ impl WsElement {
         }
     }
 
+    pub fn add_class(&self, class_name: &str) {
+        if let Err(e) = self.0.class_list().add_1(class_name) {
+            log::error!("Error on adding a class name: {e:?}");
+        }
+    }
+
+    fn remove_class(&self, class_name: &str) {
+        if let Err(e) = self.0.class_list().remove_1(class_name) {
+            log::error!("Error on removing a class named `{class_name}`: {e:?}");
+        }
+    }
+
     pub fn create_element_with_capacity(self, capacity: usize) -> Element {
         Element {
             element: self,
@@ -459,12 +471,6 @@ impl WsElement {
     pub fn remove_child(&self, child: &web_sys::Node) {
         if let Err(e) = self.0.remove_child(child) {
             log::error!("Error on removing child node: {e:?}");
-        }
-    }
-
-    pub fn class(&self, class_name: &str) {
-        if let Err(e) = self.0.class_list().add_1(class_name) {
-            log::error!("Error on adding a class name: {e:?}");
         }
     }
 
@@ -480,16 +486,17 @@ impl WsElement {
         self.0.unchecked_ref::<HtmlSelectElement>().set_value(value);
     }
 
-    fn set_select_selected_index(&self, index: i32) {
-        self.0
-            .unchecked_ref::<HtmlSelectElement>()
-            .set_selected_index(index);
-    }
+    // fn set_select_selected_index(&self, index: i32) {
+    //     self.0
+    //         .unchecked_ref::<HtmlSelectElement>()
+    //         .set_selected_index(index);
+    // }
 
     fn set_select_option_value(&self, value: Option<&str>) {
         match value {
             Some(value) => self.set_select_value_str(value),
-            None => self.set_select_selected_index(-1),
+            // None => self.set_select_selected_index(-1),
+            None => self.set_select_value_str(""),
         }
     }
 
@@ -513,6 +520,10 @@ impl WsElement {
 
     pub fn set_option_value(&self, value: &str) {
         self.0.unchecked_ref::<HtmlOptionElement>().set_value(value);
+    }
+
+    pub fn set_inner_html_is_not_safe(&self, value: &str) {
+        self.0.set_inner_html(value);
     }
 }
 
@@ -541,6 +552,12 @@ enum Attribute {
     Str(String),
     OptionString(Option<String>),
     EventListener(Box<dyn EventListener>),
+}
+
+enum StringChange {
+    FirstTime,
+    OldValue(String),
+    NoChange,
 }
 
 impl Element {
@@ -643,6 +660,36 @@ impl Element {
         }
     }
 
+    fn swap_new_str_value(&mut self, index: usize, new_value: &str) -> StringChange {
+        match self.attributes.get_mut(index) {
+            Some(Attribute::Str(current_value)) => {
+                if *current_value != new_value {
+                    let mut temp_value = new_value.to_string();
+                    std::mem::swap(current_value, &mut temp_value);
+                    StringChange::OldValue(temp_value)
+                } else {
+                    StringChange::NoChange
+                }
+            }
+            None => {
+                if self.attributes.len() == index {
+                    self.attributes.push(Attribute::Str(new_value.to_string()));
+                    StringChange::FirstTime
+                } else {
+                    log::error!(
+                        "Internal error: A new attribute expected being added at the end of the list (index = {}), but the given index = {index}",
+                        self.attributes.len()
+                    );
+                    StringChange::NoChange
+                }
+            }
+            _ => {
+                log::error!("Internal error: Attribute at index = {index} is not a String");
+                StringChange::NoChange
+            }
+        }
+    }
+
     fn is_new_option_str_value(&mut self, index: usize, new_value: Option<&str>) -> bool {
         match self.attributes.get_mut(index) {
             Some(Attribute::OptionString(current_value)) => {
@@ -739,6 +786,17 @@ impl Element {
         &self.element
     }
 
+    pub fn update_class(&mut self, index: usize, class_name: &str) {
+        match self.swap_new_str_value(index, class_name) {
+            StringChange::FirstTime => self.element.add_class(class_name),
+            StringChange::OldValue(old_class) => {
+                self.element.remove_class(old_class.as_str());
+                self.element.add_class(class_name);
+            }
+            StringChange::NoChange => {}
+        }
+    }
+
     pub fn class_if_with_index(&mut self, index: usize, condition: bool, class_name: &str) {
         if self.is_new_bool_value(index, condition) {
             self.element.add_or_remove_class(condition, class_name);
@@ -831,6 +889,12 @@ impl Element {
             self.set_option_value(value);
         }
     }
+
+    pub fn set_inner_html_is_not_safe_with_index(&mut self, index: usize, value: &str) {
+        if self.is_new_str_value(index, value) {
+            self.element.set_inner_html_is_not_safe(value);
+        }
+    }
 }
 
 pub trait SelectElementValue {
@@ -920,6 +984,7 @@ macro_rules! create_event_methods {
 
 create_event_methods! {
     ClipboardEvent { copy cut paste }
+    InputEvent { beforeinput input }
     Event { change }
     FocusEvent { blur focus focusin focusout }
     KeyboardEvent { keydown }
