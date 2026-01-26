@@ -1,0 +1,13 @@
+[package]
+name = "fetch2"
+version = "0.1.0"
+authors = ["aclueless <61309385+aclueless@users.noreply.github.com>"]
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gloo-net = { version = "0.6", default-features = false, features = ["http", "json"] }
+serde = { version = "1.0", features = ["derive"] }
+spair = { path = "../../spair", package = "spair2" }
+#wasm-bindgen = "0.2"

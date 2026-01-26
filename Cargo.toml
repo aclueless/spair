@@ -25,7 +25,11 @@ nightly-text-render = []
 members = [
     "examples/*",
     "crates/spairc",
-    "crates/examples/*", "crates/spair-macros",
+    "crates/spair-macros",
+    "crates/examples/*",
+    "next/spair-macros",
+    "next/spair",
+    "next/examples/*",
 ]
 
 [dev-dependencies]
