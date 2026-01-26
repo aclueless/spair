@@ -391,7 +391,6 @@ where
 
             self.end_flag_for_the_next_rendered_item_bottom_up =
                 Some(view_state.root_element().get_ws_node_ref().clone());
-            // let key = Clone::clone((self.get_key_fn)(&item_data));
             *self
                 .new_list
                 .next_back()
