@@ -39,7 +39,6 @@ where
         item_data: impl Iterator<Item = &'a I>,
         create_view_fn: impl Fn(DocumentFragment, &'a I) -> VS,
         update_view_fn: impl Fn(&mut VS, &'a I),
-        // get_view_state_root_element_fn: fn(&VS) -> &WsElement,
     ) where
         I: 'a,
     {
@@ -69,10 +68,129 @@ where
             self.items.clear();
         } else {
             for item in self.items.drain(index..) {
-                self.parent_element.remove_child(
-                    item.root_element(), // (get_view_state_root_element_fn)(&item)
-                );
+                self.parent_element.remove_child(item.root_element());
             }
         }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[cfg(test)]
+mod tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
+    use crate::{Text, WsElement, WsNodeFns};
+    #[wasm_bindgen_test]
+    fn test_list() {
+        struct TestElement(WsElement);
+        impl TestElement {
+            fn texts(&self) -> Vec<String> {
+                let mut texts = Vec::new();
+                let mut node = match self.0.get_ws_node_ref().first_child() {
+                    Some(node) => node,
+                    None => return Vec::new(),
+                };
+                texts.push(node.get_ws_node_ref().text_content().unwrap());
+                while let Some(next) = node.next_sibling() {
+                    texts.push(next.text_content().unwrap());
+                    node = next;
+                }
+                texts
+            }
+        }
+        trait RefStr {
+            fn to_ref(&self) -> Vec<&str>;
+        }
+        impl RefStr for Vec<String> {
+            fn to_ref(&self) -> Vec<&str> {
+                self.iter().map(|v| v.as_str()).collect()
+            }
+        }
+        struct ViewState {
+            element: WsElement,
+            text: Text,
+        }
+        impl super::ItemViewState for ViewState {
+            fn root_element(&self) -> &WsElement {
+                &self.element
+            }
+        }
+        let element = TestElement(WsElement::create_element("div"));
+        let mut list = super::List::new(&element.0, None, "<span>?</span>");
+
+        let empty: [&str; 0] = [];
+        assert_eq!(&empty[..], &element.texts().to_ref());
+
+        let create_view = |df: web_sys::DocumentFragment, _cd| {
+            let element = df.first_ws_element();
+            let text = element.first_text();
+            ViewState { element, text }
+        };
+        let update_view = |vs: &mut ViewState, ud: &&str| {
+            vs.text.update(*ud);
+        };
+
+        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Random shuffle + addition
+        let data = vec!["f", "b", "d", "l", "g", "i", "m", "j", "a", "h", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Empty the list
+        list.update(empty.iter(), create_view, update_view);
+        assert_eq!(&empty[..], &element.texts().to_ref());
+
+        // Add back
+        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Forward
+        let data = vec!["a", "i", "b", "c", "d", "e", "f", "g", "h", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Backward
+        let data = vec!["a", "i", "c", "d", "e", "f", "g", "h", "b", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Swap
+        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Remove middle
+        let data = vec!["a", "b", "c", "d", "i", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Insert middle
+        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Remove start
+        let data = vec!["d", "e", "f", "g", "h", "i", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Insert start
+        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Remove end
+        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
+
+        // Append end
+        let data = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"];
+        list.update(data.iter(), create_view, update_view);
+        assert_eq!(&data, &element.texts().to_ref());
     }
 }

@@ -19,6 +19,12 @@ pub fn get_element_by_id(element_id: &str) -> Option<Element> {
     DOCUMENT.with(|document| document.get_element_by_id(element_id))
 }
 
+pub fn create_element(tag: &str) -> web_sys::Element {
+    DOCUMENT
+        .with(|document| document.create_element(tag))
+        .expect_throw("create_element")
+}
+
 pub trait ElementFromCurrentEventTarget {
     fn get_current_target(&self) -> EventTarget;
     fn current_target_as_select(&self) -> HtmlSelectElement {

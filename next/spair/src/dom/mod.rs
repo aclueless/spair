@@ -164,6 +164,10 @@ enum Attribute {
 }
 
 impl WsElement {
+    pub fn create_element(tag: &str) -> Self {
+        Self(helper::create_element(tag))
+    }
+
     pub fn create_element_with_capacity(self, capacity: usize) -> Element {
         Element {
             element: self,
