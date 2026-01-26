@@ -172,14 +172,12 @@ impl Component {
         self.element.generate_html_string(&mut html_static_string);
 
         let template_fragment = Ident::new("_spair_view_document_fragment_", Span::call_site());
-        let mut last_node = LastNode {
+        let last_node = LastNode {
             parent: template_fragment.clone(),
             previous: None,
         };
 
-        let create_elements = self
-            .element
-            .generate_fn_create(&self.sub_mod, &mut last_node);
+        let create_elements = self.element.generate_fn_create(&self.sub_mod, &last_node);
         let view_state_instance = self.generate_fn_create_return_value();
         let create_fn_code = quote! {{
             const HTML_STRING: &str = #html_static_string;

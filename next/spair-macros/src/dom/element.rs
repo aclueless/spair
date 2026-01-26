@@ -138,10 +138,10 @@ impl Attribute {
         element: &Ident,
     ) -> TokenStream {
         let must_handle_in_create_fn = self.stage == Stage::Creation
-            || match self.attribute_name_in_string.as_str() {
-                REPLACE_AT_ELEMENT_ID | HREF_WITH_ROUTING => true,
-                _ => false,
-            };
+            || matches!(
+                self.attribute_name_in_string.as_str(),
+                REPLACE_AT_ELEMENT_ID | HREF_WITH_ROUTING
+            );
         if must_handle_in_create_fn.not() {
             return quote! {};
         }
@@ -220,7 +220,7 @@ impl Attribute {
                 quote! {#element.href_with_routing_at_index(#index,#attribute_value);}
             }
             INNER_HTML => {
-                return quote! {#element.set_inner_html_is_not_safe_at_index(#index,#attribute_value);};
+                quote! {#element.set_inner_html_is_not_safe_at_index(#index,#attribute_value);}
             }
             "class" => quote! {
                 #element.update_class(#index, #attribute_value);
@@ -527,7 +527,7 @@ impl Element {
                     );
                 }
                 None => {
-                    self.collect_attribute(&html_tag_in_string, expr_assign, stage_picker, errors);
+                    self.collect_attribute(html_tag_in_string, expr_assign, stage_picker, errors);
                 }
             },
             other_expr => {
@@ -584,7 +584,7 @@ impl Element {
             };
         let stage = match &*expr_assign.right {
             Expr::Lit(expr_lit) => {
-                if let Some(text_value) = get_static_string(&expr_lit, errors) {
+                if let Some(text_value) = get_static_string(expr_lit, errors) {
                     if is_event_attribute {
                         errors.error_at(
                             expr_lit.span(),
@@ -624,14 +624,14 @@ impl Element {
             .attributes
             .iter()
             .any(|v| v.attribute_name_in_string.as_str() == INNER_HTML)
+            && self.children.items.is_empty().not()
         {
-            if self.children.items.is_empty().not() {
-                errors.error_at(
-                    self.html_tag_ident.span(),
-                    "Setting inner HTML on element that has children is not supported",
-                );
-            }
+            errors.error_at(
+                self.html_tag_ident.span(),
+                "Setting inner HTML on element that has children is not supported",
+            );
         }
+
         for attribute in self
             .attributes
             .iter()
@@ -899,7 +899,7 @@ impl Element {
             .items
             .iter()
             .map(|v| {
-                let code = v.generate_fn_create(sub_mod, &mut last_node);
+                let code = v.generate_fn_create(sub_mod, &last_node);
                 previous = Some(v.spair_ident_to_get_next_node());
                 last_node.previous = previous.cloned();
                 code
