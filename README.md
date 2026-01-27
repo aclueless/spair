@@ -12,39 +12,26 @@ This project is in its *early stage*, things are still missing.
 
 * Routing is just at the minimum level. You have to implement it manually.
 * No support for SSR.
-* No event delegation (*)
-* No RSX (*).
-   * Spair is verbose.
-* No community
-
-(*) You can see these as PROS. If these features will ever get implemented, they will be put behind feature-flags.
+* No event delegation.
+* No RSX.
+    * Spair uses Rust syntax to describe the HTML fragments, then use Rust attribute-macros to transform it to spair's views or components. This is a kind of abusing Rust, and can be broke by a change in Rust in the future.
+* The library is still a WIP.
+* No community.
 
 ## Why using Spair?
 
 * Both [small] and [fast].
-* Both vDOM-like and reactive-like, in the same framework.
-    * Incremtental render (vDOM-like, but Spair doesn't re-create a new vDOM in every run.)
-    * Queue render (reactive-like, but not using any kind of signals), just queue relevant pieces of code to render change on data change. (The current version of queue render may not very efficient because each fine-grained-render need to borrow the component state separately by it own.)
-* Component state is automatically available in every piece of the render code.
-* (Almost) no macro is required for constructing DOM.
-    * But Spair is quite verbose because of this.
+    * This was correct for previous versions. The current version (the main branch) is a complete redesign. No benchmarks for the new design yet.
+* No vDOM.
+    * Spair use procedure macro to find the exact nodes that need to be updated at compile time. Then in updating, it just updates the nodes directly. Items in lists still need to be located by their keys before doing updates.
+* Plan to addl: reactive-like update.
+    * Queue render (reactive-like, but not using any kind of signals), just queue relevant pieces of code to render change on data change. (Old versions had this, but not available in new design in main branch. It is planned to be added back)
+* Rust-like syntax
+    * Auto format by rustfmt.
+    * (But can be broke by a change in Rust in the future)
 * Routing (but just basic support).
-* svg
 * Missing things here and there...
     * Errr, this is definitely a _why not_, obviously. I just put this here to remind potential users not to surprise about missing things :D.
-    * For example, Spair currently just implements a handful number of events. 
-
-## Cargo features
-You can enabled a feature in your Cargo.toml like this:
-`spair = { version="x.y.z", features = ["feature-name"] }`
-
-| feature-name       | desciption                   |
-| ------------------ | ---------------------------- |
-|`keyed-list`        | Support `keyed-list` for incremental mode |
-|`svg`               | Support svg element       |
-|`queue-render`      | Support fined-grained render (*)|
-
-(*) Lists render by queue-render are always keyed.
 
 ## Run examples
 
@@ -69,129 +56,44 @@ Not yet. `/examples/*` is the best place to start now.
 
 Sections below provide first looks into Spair.
 
-## Static-mode and update-mode
+## First look
 
-Spair works by iterating through every elements and attributes/properties in
-the current DOM, which is empty before the first render, creating new items
-or modifying existing items, it's the update-mode. But there are elements or
-attributes that will never change. You can tell Spair to just create them but
-ignore them when iterating over them later by turn on the static-mode.
-
-| items                    | update-mode                  | static-mode            | notes                                                                      |
-| ------------------------ | ---------------------------- | ---------------------- | -------------------------------------------------------------------------- |
-| attributes / properties  | *default*                    | `.static_attributes()` | call `.static_attributes()` after you are done with update-mode-attributes |
-| elements                 | *default*, `.update_nodes()` | `.static_nodes()`      | only apply to elements, *not* apply to texts |
-| texts                    | `.update_text(value)`        | `.static_text(value)`  | not affected by mode introduced by `.update_nodes()` or `.static_nodes()`  |
-
-* `.update_nodes()` and `.static_nodes()` can be switched back and forth as
-many times as you want.
-
+### Views
+The following code create a new view name `UpdownButton`. It will never be updated.
 ```rust
-element
-    // default to update-mode attributes
-    .value(&some_value) // will be checked and updated if changed
-    .class_if("class-name", bool_value)
-    .static_attributes() // we are done with update-mode attributes!
-    .class("class-name") // class="class-name" is added on creation, but ignored on subsequence renders
-    // just add child-elements, default to update mode.
-    .p(|p| {}) // create and update a <p>
-    .update_text(value) // create and update a text
-    .static_text(value) // a create-only text - not affected by update-mode (default).
-    .static_nodes()
-    .div(|d| {}) // a create-only <div> (because creating in static-mode)
-    .update_text(value) // an updatable text - not affected by `.static_nodes()`
-    .static_text(value) // a create-only text - because of `static_text`, not cause by `static_nodes`
-
-```
-* **Important note**: when an element is creating in static mode, all its
-content will be ignored (not update) after the first render.
-
-```rust
-element
-    .static_nodes() // Elements append after this will be in static-mode
-    .p(|p| {
-        // This closure only execute once on the creation of <p>.
-        // In the future update, this closure will be IGNORED,
-        // therefore, all child-nodes of <p> will NOT be updated despite
-        // being created in update-mode.
-        p.span(|s| {})
-            .update_text(value); // NEW VALUE OF `value` WILL NEVER BE RENDERED.
-    });
-```
-
-## Example
-*Look in `/examples` for full examples*
-
-This is the `render` method of `examples/counter`:
-```rust
-impl spair::Component for State {
-    type Routes = ();
-    fn render(&self, element: spair::Element<Self>) {
-        let comp = element.comp();
-        element
-            .static_nodes()
-            .p(|p| {
-                p.static_nodes()
-                    .static_text("The initial value is ")
-                    .static_text(self.value);
-            })
-            .rfn(|nodes| button("-", comp.handler(State::decrement), nodes))
-            .update_text(self.value)
-            .rfn(|nodes| button("+", comp.handler(State::increment), nodes));
+#[create_view]
+impl UpdownButton {
+    fn create(handler: CallbackArg<MouseEvent>, text: &str) {}
+    fn update() {}
+    fn view() {
+        button(on_click = handler, text(text))
     }
 }
 ```
-
-## Access to the component state.
-
-You can split your code into small functions. In those functions, you
-may want to access the state of your component:
-
+### Components
+The following code `impl` Spair's `Component` trait for `AppState`. Values get from `ucontext` will be updated.
+struct AppState {
+    value: i32,
+}
 ```rust
-fn some_render_fn(self, nodes: spair::Nodes<ComponentState>) {
-    // type of `state` is `&ComponentState`
-    let state = nodes.state();
-    // render a value from the state
-    nodes.update_text(state.value);
+#[impl_component]
+impl AppState {
+    fn create(ccontext: &Context<Self>) {}
+    fn update(ucontext: &Context<Self>) {}
+    fn view() {
+        div(
+            replace_at_element_id = "root",
+            UpdownButton(ccontext.comp.callback_arg(|state, _| state.value -= 1), "-"),
+            ucontext.state.value,
+            UpdownButton(ccontext.comp.callback_arg(|state, _| state.value += 1), "+"),
+        )
+    }
+}
+// Start the app
+fn main() {
+    spair::start_app(|_| AppState { value: 42 });
 }
 ```
-
-## Reconciliation? - No, you must use [`.match_if()`]
-
-Spair does not do reconciliation, users must do it by themselves. When an
-expected element is not found, Spair create it, but if Spair found an
-element at the expected index, Spair just assume it is the expected element.
-Therefore, when you want to render different elements base on a condition,
-you must tell Spair to do that via [`.match_if()`].
-
-The following code is extracted from `examples/fetch/src/lib.rs`:
-```rust
-element
-    .match_if(|mi| match self.branch.as_ref() {
-        Some(branch) => spair::set_arm!(mi) // `spair::set_arm!()` uses a unique identifier internally to set `render_on_arm_index()`
-            // Render the content of `Some(branch)`
-            .rfn(|nodes| render_branch(branch, nodes))
-            // some code removed
-            .done(),
-        None => spair::set_arm!(mi)
-            // There is no value: `None`? Then just render a button
-            .button(|b| {/* some code removed */})
-            .done(),
-    })
-```
-
-**DON'T DO THIS, IT DOES NOT WORK**
-```rust
-if some_condition {
-    element.div(|d| {})
-} else {
-    element.p(|p| {})
-}
-```
-## Child components
-
-Example: `examples/components`
-
 ## Notes
 
 ### Names conflict with Rust keywords
@@ -199,60 +101,8 @@ HTML's tags and attributes are implemented as methods in Spair. Names that
 are conflicted with Rust's keywords are implemented using raw identifers
 such as `r#type`, `r#for`...
 
-### Element and attribute/property with the same name.
-There are elements named `<span>`, `<label>`... there are also attributes
-named `span`, `label`... and Spair implement all of them as methods. It's
-obviously not able to implement them on the same object. (Actually, Spair
-use traits for these, but conflicts are still there).
-
-Therefore, to immediately add elements witch such names, call
-`.update_nodes()` or `.static_nodes()`.
-
-To set attributes/properties with such names, you have to call
-`.attributes_only()` or `.static_attributes_only()` first. After setting
-attributes/properties, you have to explicitly switch to nodes-mode using
-`.update_nodes()` or `.static_nodes()`.
-
-### Attributes/properties with the same name.
-Both `<button>` and `<input>` have an attribute named `type`. The methods
-are prefixed with their element name: `button_type`, `input_type`. This is also
-applied for all other conflicted attribute/property names.
-
-Example:
-```rust
-element.span(); // => Error (an attribute or an element?)
-
-element
-    .update_nodes() // => Only have methods for elements, no methods for attributes
-    .span(); // Element <span>  
-
-element
-    .attributes_only() // => Only have methods for attributes, no methods for elements 
-    .span() // attribute
-    .update_nodes()
-    .span(); // Element <span>  
-```
-
-## Common errors
-Using Spair, you may encounter common mistakes listed in this section.
-They are really annoying. How these problems can be avoided?
-### `static_attributes()`, `static_nodes()`
-If you set attributes or add nodes in static-mode it will never be updated. It is
-easy to misplace an update-mode item under static-mode. For example, you have
-an app and have already converted all things that are you considered static to
-static-mode. Now, after a while, You decide to add something that you want it
-to be updated on change. But you placed it under a branch of the DOM tree without
-noticing that the branch is under static-mode. Finally, you give the new version
-of the app a test, at first, you may scratch head and check back and forth many
-times because it is rendered, but its value never gets updated.
-
 [Rust]: https://www.rust-lang.org/
 [Trunk]: https://trunkrs.dev/
-
-[`Render`]: https://docs.rs/spair/latest/spair/trait.Render.html
-[`StaticRender`]: https://docs.rs/spair/latest/spair/trait.StaticRender.html
-[`ElementRender`]: https://docs.rs/spair/latest/spair/trait.ElementRender.html
-[`.match_if()`]: https://docs.rs/spair/latest/spair/render/html/nodes/trait.HemsHandMade.html#method.match_if
 
 [small]: https://github.com/aclueless/rust-frontend-framework-comparision/tree/main/todomvc
 [fast]: https://github.com/krausest/js-framework-benchmark
