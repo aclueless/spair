@@ -633,7 +633,7 @@ impl Element {
         value.update(index, self);
     }
 
-    pub fn set_option_value_with_index(&mut self, index: usize, value: &str) {
+    pub fn set_option_value_at_index(&mut self, index: usize, value: &str) {
         if self.is_new_str_value(index, value) {
             self.set_option_value(value);
         }

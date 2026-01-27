@@ -13,7 +13,6 @@ const REPLACE_AT_ELEMENT_ID: &str = "replace_at_element_id";
 const HREF_WITH_ROUTING: &str = "href_with_routing";
 const HREF_STR: &str = "href_str";
 const INNER_HTML: &str = "unsafely_set_inner_html";
-
 const SET_NODE_REF_TO: &str = "set_node_ref_to";
 
 #[derive(Debug)]
@@ -134,7 +133,7 @@ impl Attribute {
 
     fn generate_fn_create_element_creation_code(
         &self,
-        _element_name: &str,
+        element_name: &str,
         element: &Ident,
     ) -> TokenStream {
         let must_handle_in_create_fn = self.stage == Stage::Creation
@@ -165,6 +164,7 @@ impl Attribute {
                     }
                 }
             }
+            SET_NODE_REF_TO => return quote! {#attribute_value.set(&#element);},
             HREF_STR => quote! {#element.set_str_attribute("href",#attribute_value);},
             INNER_HTML => quote! {#element.unsafely_set_inner_html(#attribute_value);},
             "id" => quote! {#element.set_id(#attribute_value);},
@@ -182,6 +182,18 @@ impl Attribute {
             }
             "disabled" => quote! {#element.set_bool_attribute("disabled", #attribute_value);},
             "enabled" => quote! {#element.set_bool_attribute("disabled", !(#attribute_value));},
+            "value" => match element_name {
+                "select" => quote! {#element.set_select_value(#attribute_value);},
+                "input" => quote! {#element.set_input_value(#attribute_value);},
+                "textarea" => quote! {#element.set_textarea_value(#attribute_value);},
+                "option" => quote! {#element.set_option_value(#attribute_value);},
+                _ => {
+                    let message = format!(
+                        "`value` attribute/property for `{element_name}` is not implemented for creation stage yet."
+                    );
+                    quote! {comple_error(#message);}
+                }
+            },
             other_attribute_name => {
                 let message = format!(
                     "`{other_attribute_name}` attribute is not implemented for creation stage yet.",

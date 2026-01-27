@@ -8,6 +8,7 @@ mod helper;
 mod keyed_list;
 mod list;
 mod routing;
+mod ws_node_ref;
 
 pub use web_sys;
 
@@ -23,6 +24,7 @@ pub use keyed_list::{ItemViewState, KeyedList};
 pub use list::List;
 pub use routing::Route;
 pub use web_sys::DocumentFragment;
+pub use ws_node_ref::WsRef;
 
 pub mod prelude {
     pub use crate::component::{
