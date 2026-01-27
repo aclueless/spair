@@ -86,7 +86,7 @@ impl View {
         let create_view_fn_name = &self.create_call.fn_name;
 
         let create_view_fn_args = &self.create_call.fn_args;
-        let paren = self.create_call.paren_token.clone();
+        let paren = self.create_call.paren_token;
         let mut ts = quote! {};
         paren.surround(&mut ts, |inner| {
             inner.extend(
@@ -117,7 +117,7 @@ impl View {
         if let Some(update_call) = self.update_call.as_ref() {
             let update_view_fn_name = &update_call.fn_name;
             let update_view_fn_args = &update_call.fn_args;
-            let paren = update_call.paren_token.clone();
+            let paren = update_call.paren_token;
             let mut ts = quote! {};
             paren.surround(&mut ts, |inner| {
                 inner.extend(quote! {&#parent_view_state.#parent, #update_view_fn_args});

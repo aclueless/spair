@@ -41,7 +41,7 @@ pub enum Item {
     Text(Text),
     Element(Element),
     View(View),
-    List(List),
+    List(Box<List>),
     Match(Match),
     CompRef(CompRef),
 }
@@ -303,29 +303,22 @@ impl Items {
                 )));
             }
             Expr::MethodCall(mcall) => {
-                if mcall.method == "update" {
-                    if let Expr::Call(expr_call) = mcall.receiver.as_ref() {
-                        if let Expr::Path(path) = &expr_call.func.as_ref() {
-                            if let Some(view_name) = path.path.get_ident() {
-                                if is_first_letter_uppercase(&view_name.to_string()) {
-                                    let update_call = ViewFnCall::new(
-                                        mcall.method,
-                                        mcall.paren_token,
-                                        mcall.args,
-                                    );
-                                    self.collect_view_call(
-                                        view_name,
-                                        expr_call.args.clone(),
-                                        expr_call.paren_token.clone(),
-                                        Some(update_call),
-                                        item_counter,
-                                        errors,
-                                    );
-                                    return;
-                                }
-                            }
-                        }
-                    }
+                if mcall.method == "update"
+                    && let Expr::Call(expr_call) = mcall.receiver.as_ref()
+                    && let Expr::Path(path) = &expr_call.func.as_ref()
+                    && let Some(view_name) = path.path.get_ident()
+                    && is_first_letter_uppercase(&view_name.to_string())
+                {
+                    let update_call = ViewFnCall::new(mcall.method, mcall.paren_token, mcall.args);
+                    self.collect_view_call(
+                        view_name,
+                        expr_call.args.clone(),
+                        expr_call.paren_token,
+                        Some(update_call),
+                        item_counter,
+                        errors,
+                    );
+                    return;
                 }
                 self.collect_text_node(None, stage_picker, item_counter, Expr::MethodCall(mcall));
             }
@@ -424,6 +417,7 @@ impl Items {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn collect_list(
         &mut self,
         at_root: bool,
@@ -443,7 +437,7 @@ impl Items {
             item_counter,
             errors,
         ) {
-            self.items.push(Item::List(list));
+            self.items.push(Item::List(Box::new(list)));
         };
     }
 
@@ -599,9 +593,8 @@ impl Items {
     }
 }
 
-fn is_first_letter_uppercase(ident_in_string: &String) -> bool {
-    ident_in_string
-        .chars()
+fn is_first_letter_uppercase(name: &str) -> bool {
+    name.chars()
         .next()
         .map(|v| v.is_uppercase())
         .unwrap_or(false)
@@ -745,10 +738,10 @@ impl ItemCounter {
 }
 
 fn expr_as_ident(expr: Expr, message: &str) -> Result<Ident> {
-    if let Expr::Path(expr_path) = &expr {
-        if let Ok(ident) = expr_path.path.require_ident() {
-            return Ok(ident.clone());
-        }
+    if let Expr::Path(expr_path) = &expr
+        && let Ok(ident) = expr_path.path.require_ident()
+    {
+        return Ok(ident.clone());
     }
     Err(syn::Error::new(
         expr.span(),

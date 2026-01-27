@@ -118,15 +118,15 @@ pub(crate) fn expr_has_ref_to(expr: &Expr, variable_names: &[String]) -> bool {
             false
         }
         Expr::Range(expr_range) => {
-            if let Some(expr) = expr_range.start.as_ref() {
-                if expr_has_ref_to(expr, variable_names) {
-                    return true;
-                }
+            if let Some(expr) = expr_range.start.as_ref()
+                && expr_has_ref_to(expr, variable_names)
+            {
+                return true;
             }
-            if let Some(expr) = expr_range.end.as_ref() {
-                if expr_has_ref_to(expr, variable_names) {
-                    return true;
-                }
+            if let Some(expr) = expr_range.end.as_ref()
+                && expr_has_ref_to(expr, variable_names)
+            {
+                return true;
             }
             false
         }
@@ -174,10 +174,10 @@ pub(crate) fn expr_has_ref_to(expr: &Expr, variable_names: &[String]) -> bool {
 
 fn block_has_ref_to(block: &Block, update_stage_variables: &[String]) -> bool {
     for stmt in block.stmts.iter() {
-        if let Stmt::Expr(expr, _) = stmt {
-            if expr_has_ref_to(expr, update_stage_variables) {
-                return true;
-            }
+        if let Stmt::Expr(expr, _) = stmt
+            && expr_has_ref_to(expr, update_stage_variables)
+        {
+            return true;
         }
     }
     false

@@ -164,7 +164,7 @@ impl Attribute {
                     }
                 }
             }
-            SET_NODE_REF_TO => return quote! {#attribute_value.set(&#element);},
+            SET_NODE_REF_TO => quote! {#attribute_value.set(&#element);},
             HREF_STR => quote! {#element.set_str_attribute("href",#attribute_value);},
             INNER_HTML => quote! {#element.unsafely_set_inner_html(#attribute_value);},
             "id" => quote! {#element.set_id(#attribute_value);},

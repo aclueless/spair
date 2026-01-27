@@ -1,11 +1,11 @@
 [workspace]
+resolver = "2"
 members = [
     "spair-macros",
     "spair",
     "examples/*",
 ]
 
-resolver = "2"
 
 [profile.dev]
 opt-level = 3

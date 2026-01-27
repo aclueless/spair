@@ -230,6 +230,8 @@ impl Match {
                 let #marker = &#match_view_state.marker;
             }
         };
+
+        #[allow(clippy::needless_return)]
         initial_view_for_match_item
     }
 
@@ -246,11 +248,11 @@ impl Match {
             }};
             let arm_code: syn::Block =
                 syn::parse(arm_code.into()).expect("fn create match arm code");
-            arm.body = Box::new(Expr::Block(syn::ExprBlock {
+            *arm.body = Expr::Block(syn::ExprBlock {
                 attrs: Vec::new(),
                 label: None,
                 block: arm_code,
-            }));
+            });
         }
         expr_match
     }
@@ -285,11 +287,11 @@ impl Match {
             );
             let arm_code: syn::Block =
                 syn::parse(arm_code.into()).expect("fn update match arm code");
-            arm.body = Box::new(Expr::Block(syn::ExprBlock {
+            *arm.body = Expr::Block(syn::ExprBlock {
                 attrs: Vec::new(),
                 label: None,
                 block: arm_code,
-            }));
+            });
         }
         quote! {
             let #parent = &#view_state.#parent;
@@ -325,34 +327,29 @@ impl ArmView {
                 let mut new_stage_picker = None;
                 if let Some(syn::Stmt::Expr(Expr::Call(expr_call), _)) =
                     expr_block.block.stmts.first()
+                    && let Expr::Path(path) = expr_call.func.as_ref()
+                    && let Ok(single_ident) = path.path.require_ident()
+                    && single_ident == "fn_create"
                 {
-                    if let Expr::Path(path) = expr_call.func.as_ref() {
-                        if let Ok(single_ident) = path.path.require_ident() {
-                            if single_ident == "fn_create" {
-                                if *stage_picker == StagePicker::DefaultToCreation {
-                                    errors.error_at(
-                                        single_ident.span(),
-                                        "The `match` item is already in creation mode",
-                                    );
-                                }
-                                let creation_variables = collect_variable_name_from_expr_call_args(
-                                    &expr_call.args,
-                                    errors,
-                                );
-                                arm_view.args.extend(expr_call.args.iter().cloned());
-                                new_stage_picker = Some(StagePicker::CheckWithCreationVariables(
-                                    creation_variables,
-                                ));
-                            }
-                        }
+                    if *stage_picker == StagePicker::DefaultToCreation {
+                        errors.error_at(
+                            single_ident.span(),
+                            "The `match` item is already in creation mode",
+                        );
                     }
+                    let creation_variables =
+                        collect_variable_name_from_expr_call_args(&expr_call.args, errors);
+                    arm_view.args.extend(expr_call.args.iter().cloned());
+                    new_stage_picker =
+                        Some(StagePicker::CheckWithCreationVariables(creation_variables));
                 }
+
                 let stage_picker = match new_stage_picker.as_ref() {
                     Some(new_stage_picker) => {
                         let _f = expr_block.block.stmts.remove(0);
                         new_stage_picker
                     }
-                    None => &stage_picker,
+                    None => stage_picker,
                 };
                 arm_view.items.collect_from_block(
                     expr_block.block,

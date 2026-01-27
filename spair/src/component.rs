@@ -246,13 +246,16 @@ trait CallbackArgTrait<A> {
 }
 
 pub struct CallbackArg<A>(Rc<dyn CallbackArgTrait<A>>);
+#[derive(Clone)]
 pub struct Callback(CallbackArg<()>);
 
-impl<A: 'static> CallbackArg<A> {
-    pub fn clone(&self) -> Self {
-        Self(self.0.clone())
+impl<A> Clone for CallbackArg<A> {
+    fn clone(&self) -> Self {
+        Self(Clone::clone(&self.0))
     }
+}
 
+impl<A: 'static> CallbackArg<A> {
     pub fn call(&self, arg: A) {
         if is_update_queue_executing() {
             self.queue(arg);
@@ -262,16 +265,12 @@ impl<A: 'static> CallbackArg<A> {
     }
 
     fn queue(&self, arg: A) {
-        let clone = self.clone();
+        let clone = Clone::clone(self);
         put_callback_on_update_queue(move || clone.0.execute(arg));
     }
 }
 
 impl Callback {
-    pub fn clone(&self) -> Self {
-        Self(self.0.clone())
-    }
-
     pub fn call(&self) {
         if is_update_queue_executing() {
             self.0.queue(());

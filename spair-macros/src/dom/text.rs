@@ -81,7 +81,7 @@ impl Text {
         if let Stage::HtmlString(text_value) = &self.stage {
             html_string.push_str(text_value);
         } else {
-            html_string.push_str("\u{202F}");
+            html_string.push('\u{202F}');
         }
     }
 
