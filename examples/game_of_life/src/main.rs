@@ -1,7 +1,12 @@
-use cell::Cellule;
-use gloo::timers::callback::Interval;
+use gloo_timers::callback::Interval;
 use rand::Rng;
-use spair::prelude::*;
+use spair::{
+    CallbackArg, Context,
+    prelude::{create_view, impl_component},
+    web_sys::MouseEvent,
+};
+
+use crate::cell::Cellule;
 
 mod cell;
 
@@ -16,7 +21,7 @@ pub struct App {
 impl App {
     pub fn random_mutate(&mut self) {
         for cellule in self.cellules.iter_mut() {
-            if rand::thread_rng().gen() {
+            if rand::rng().random() {
                 cellule.set_alive();
             } else {
                 cellule.set_dead();
@@ -111,84 +116,6 @@ impl App {
         }
     }
 }
-impl spair::Component for App {
-    type Routes = ();
-
-    fn render(&self, element: spair::Element<Self>) {
-        let comp = element.comp();
-        element.div(|d| {
-            d.section(|s| {
-                s.class("game-container")
-                    .header(|h| {
-                        h.class("app-header")
-                            .img(|i| {
-                                i.alt("The app logo").src("favicon.ico").class("app-logo");
-                            })
-                            .h1(|h| {
-                                h.class("app-title").static_text("Game of Life");
-                            });
-                    })
-                    .section(|s| {
-                        s.class("game-area")
-                            .div(|d| {
-                                d.class("game-of-life").keyed_list_clone(
-                                    self.cellules.chunks(self.cellules_width).enumerate(),
-                                    |row| &row.0,
-                                    render_row,
-                                );
-                            })
-                            .div(|d| {
-                                d.class("game-buttons")
-                                    .rfn(|ns| button(ns, "Random", comp.handler_mut(App::random)))
-                                    .rfn(|ns| button(ns, "Step", comp.handler_mut(App::step)))
-                                    .rfn(|ns| button(ns, "Start", comp.handler_mut(App::start)))
-                                    .rfn(|ns| button(ns, "Stop", comp.handler_mut(App::stop)))
-                                    .rfn(|ns| button(ns, "Reset", comp.handler_mut(App::reset)));
-                            });
-                    });
-            })
-            .footer(|f| {
-                f.class("app-footer")
-                    .strong(|s| {
-                        s.class("footer-text")
-                            .static_text("Game of Life - a port from Yew's implementation");
-                    })
-                    .a(|a| {
-                        a.href_str("https://github.com/yewstack/yew")
-                            .target(spair::Target::_Blank)
-                            .static_text("source");
-                    });
-            });
-        });
-    }
-}
-
-fn button(nodes: spair::Nodes<App>, name: &str, h: impl spair::Click) {
-    nodes.button(|b| {
-        b.class("game-button").on_click(h).update_text(name);
-    });
-}
-
-fn render_row((index, row): (usize, &[Cellule]), mut nodes: spair::Nodes<App>) {
-    let comp = nodes.comp();
-    let offset = index * nodes.state().cellules_width;
-    nodes
-        .single_element("div")
-        .class("game-row")
-        .keyed_list_clone(
-            row.iter().enumerate(),
-            |(index, _)| index,
-            |(index, cellule), mut nodes| {
-                let index = offset + index;
-                nodes
-                    .single_element("div")
-                    .class("game-cellule")
-                    .class_or(cellule.is_alive(), "cellule-live", "cellule-dead")
-                    .static_attributes()
-                    .on_click(comp.handler_mut(move |state| state.toggle_cellule(index)));
-            },
-        );
-}
 
 fn wrap(coord: isize, range: isize) -> usize {
     let result = if coord < 0 {
@@ -201,25 +128,122 @@ fn wrap(coord: isize, range: isize) -> usize {
     result as usize
 }
 
-impl spair::Application for App {
-    fn init(comp: &spair::Comp<Self>) -> Self {
-        let callback = comp.callback_mut(App::tick);
-        let interval = Interval::new(200, move || callback.call_or_queue());
+#[impl_component]
+impl App {
+    fn create(cc: &Context<Self>) {}
+    fn update(uc: &Context<Self>) {}
+    fn view() {
+        div(
+            replace_at_element_id = "root",
+            section(
+                class = "game-container",
+                header(
+                    class = "app-header",
+                    img(
+                        class = "app-logo",
+                        alt = "Game of Life logo",
+                        src = "favicon.ico",
+                    ),
+                    h1(class = "app-title", "Game of Life"),
+                ),
+                section(class = "game-area", GameBoard().update(uc), Buttons(cc)),
+            ),
+            footer(
+                class = "app-footer",
+                strong(
+                    class = "footer-text",
+                    "Game of Life - a port from Yew's implementation",
+                ),
+                ", ",
+                a(href_str = "https://github.com/aclueless/spair", "Source"),
+                ", ",
+                a(
+                    href_str = "https://github.com/yewstack/yew",
+                    "Original source",
+                ),
+            ),
+        )
+    }
+}
+
+#[create_view]
+impl GameBoard {
+    fn create() {}
+    fn update(uc: &Context<App>) {}
+    fn view() {
+        div(
+            class = "game-of-life",
+            spair_list(
+                uc.state
+                    .cellules
+                    .chunks(uc.state.cellules_width)
+                    .enumerate(),
+                |row| -> &usize { &row.0 },
+                |_crow| {},
+                |(index, urow)| {
+                    let offset = index * uc.state.cellules_width;
+                },
+                div(
+                    class = "game-row",
+                    spair_list(
+                        urow.iter().enumerate(),
+                        |cell| -> &usize { &cell.0 },
+                        |(index, _ccell)| {
+                            let cc = uc;
+                            let index = offset + index;
+                        },
+                        |ucell| {},
+                        div(
+                            class = "game-cellule",
+                            class_or = (ucell.1.is_alive(), "cellule-live", "cellule-dead"),
+                            on_click = cc
+                                .comp
+                                .callback_arg(move |state, _| state.toggle_cellule(index)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    }
+}
+
+#[create_view]
+impl Buttons {
+    fn create(cc: &Context<App>) {}
+    fn update() {}
+    fn view() {
+        div(
+            class = "game-buttons",
+            Button("Random", cc.comp.callback_arg(|state, _| state.random())),
+            Button("Step", cc.comp.callback_arg(|state, _| state.step())),
+            Button("Start", cc.comp.callback_arg(|state, _| state.start())),
+            Button("Stop", cc.comp.callback_arg(|state, _| state.stop())),
+            Button("Reset", cc.comp.callback_arg(|state, _| state.reset())),
+        )
+    }
+}
+
+#[create_view]
+impl Button {
+    fn create(name: &str, callback: CallbackArg<MouseEvent>) {}
+    fn update() {}
+    fn view() {
+        button(class = "game-button", on_click = callback, name)
+    }
+}
+
+fn main() {
+    spair::start_app(|comp| {
+        let callback = comp.callback(App::tick);
+        let interval = Interval::new(200, move || callback.call());
 
         let (cellules_width, cellules_height) = (53, 40);
-
-        Self {
+        App {
             active: false,
             cellules: vec![Cellule::new_dead(); cellules_width * cellules_height],
             cellules_width,
             cellules_height,
             _interval: interval,
         }
-    }
-}
-
-fn main() {
-    wasm_logger::init(wasm_logger::Config::default());
-    log::trace!("Initializing spair...");
-    App::mount_to_body();
+    });
 }

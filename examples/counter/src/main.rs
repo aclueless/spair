@@ -1,53 +1,43 @@
 use spair::prelude::*;
+use spair::{CallbackArg, web_sys::MouseEvent};
 
-struct State {
+struct AppState {
     value: i32,
 }
 
-impl State {
-    fn increment(&mut self) {
+#[create_view]
+impl UpdownButton {
+    fn create(handler: CallbackArg<MouseEvent>, text: &str) {}
+    fn update() {}
+    fn view() {
+        button(on_click = handler, text(text))
+    }
+}
+
+impl AppState {
+    fn increase(&mut self) {
         self.value += 1;
     }
 
-    fn decrement(&mut self) {
+    fn decrease(&mut self) {
         self.value -= 1;
     }
 }
-
-impl spair::Component for State {
-    type Routes = ();
-    fn render(&self, element: spair::Element<Self>) {
-        let comp = element.comp();
-        element
-            .static_nodes()
-            .p(|p| {
-                p.static_nodes()
-                    .static_text("The initial value is ")
-                    .static_text(self.value);
-            })
-            .update_nodes()
-            .rfn(|nodes| render_button("-", comp.handler_mut(State::decrement), nodes))
-            .update_text(self.value)
-            .rfn(|nodes| render_button("+", comp.handler_mut(State::increment), nodes));
+#[impl_component]
+impl AppState {
+    fn create(ccontext: &Context<Self>) {}
+    fn update(ucontext: &Context<Self>) {}
+    fn view() {
+        div(
+            replace_at_element_id = "root",
+            UpdownButton(ccontext.comp.callback_arg(|state, _| state.decrease()), "-"),
+            ucontext.state.value,
+            UpdownButton(ccontext.comp.callback_arg(|state, _| state.increase()), "+"),
+        )
     }
 }
 
-fn render_button<H: spair::Click>(label: &str, handler: H, nodes: spair::Nodes<State>) {
-    nodes.static_nodes().button(|b| {
-        b.static_attributes()
-            .on_click(handler)
-            .static_nodes()
-            .static_text(label);
-    });
-}
-
-impl spair::Application for State {
-    fn init(_: &spair::Comp<Self>) -> Self {
-        Self { value: 42 }
-    }
-}
-
-pub fn main() {
+fn main() {
     // wasm_logger::init(wasm_logger::Config::default());
-    State::mount_to_element_id("root");
+    spair::start_app(|_| AppState { value: 42 });
 }

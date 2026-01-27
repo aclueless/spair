@@ -1,19 +1,16 @@
 use spair::prelude::*;
 
-pub struct ChildState {
-    props: ChildProps,
+pub struct Child {
     value: i32,
+    callback_arg: CallbackArg<i32>,
 }
 
-pub struct ChildProps {
-    pub title: &'static str,
-    pub description: &'static str,
-    pub callback_arg: spair::CallbackArg<i32>,
-}
-
-impl ChildState {
-    pub fn new(props: ChildProps) -> Self {
-        Self { props, value: 42 }
+impl Child {
+    pub fn new(callback_arg: CallbackArg<i32>) -> Self {
+        Self {
+            value: 42,
+            callback_arg,
+        }
     }
 
     pub fn set_value(&mut self, value: i32) {
@@ -22,54 +19,37 @@ impl ChildState {
 
     fn increment(&mut self) {
         self.value += 1;
-        self.update_parent_component()
+        self.call_to_parent()
     }
 
     fn decrement(&mut self) {
         self.value -= 1;
-        self.update_parent_component()
+        self.call_to_parent()
     }
 
-    fn update_parent_component(&self) {
+    fn call_to_parent(&self) {
         if self.value % 5 == 0 {
-            self.props.callback_arg.call_or_queue(self.value);
+            self.callback_arg.call(self.value);
         }
     }
 }
 
-impl spair::Component for ChildState {
-    type Routes = ();
-
-    fn debug(&self) -> &str {
-        self.props.title
-    }
-
-    fn render(&self, element: spair::Element<Self>) {
-        let comp = element.comp();
-        element
-            .static_nodes()
-            .div(|d| d.static_text(self.props.title).done())
-            .line_break()
-            .static_text(
-                "This counter is in a child-component, \
-                the parent component will be notified every \
-                time the value is divisible by five.",
-            )
-            .line_break()
-            .update_nodes()
-            .rfn(|nodes| super::render_button("-", comp.handler_mut(ChildState::decrement), nodes))
-            .update_text(self.value)
-            .rfn(|nodes| super::render_button("+", comp.handler_mut(ChildState::increment), nodes))
-            .line_break()
-            .line_break()
-            .static_text(self.props.description);
-    }
-}
-
-impl spair::AsChildComp for ChildState {
-    const ROOT_ELEMENT_TAG: spair::TagName = spair::TagName::Html(spair::HtmlTag("div"));
-    type Properties = ChildProps;
-    fn init(_comp: &spair::Comp<Self>, props: Self::Properties) -> Self {
-        Self::new(props)
+#[impl_component]
+impl Child {
+    fn create(cc: &Context<Self>) {}
+    fn update(uc: &Context<Self>) {}
+    fn view() {
+        div(
+            text("In child component: "),
+            button(
+                on_click = cc.comp.callback_arg(|state, _| state.decrement()),
+                text("-"),
+            ),
+            text(uc.state.value),
+            button(
+                on_click = cc.comp.callback_arg(|state, _| state.increment()),
+                text("+"),
+            ),
+        )
     }
 }
