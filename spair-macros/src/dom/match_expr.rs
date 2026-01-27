@@ -231,7 +231,7 @@ impl Match {
             }
         };
 
-        #[allow(clippy::needless_return)]
+        #[allow(clippy::let_and_return)]
         initial_view_for_match_item
     }
 
