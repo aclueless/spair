@@ -42,7 +42,7 @@ impl CompRef {
 
     pub fn generate_view_state_struct_fields(&self) -> TokenStream {
         let ident = &self.spair_ident;
-        quote! {#ident: ::spair::CompNode,}
+        quote! {pub #ident: ::spair::CompNode,}
     }
 
     pub fn generate_html_string(&self, html_string: &mut String) {

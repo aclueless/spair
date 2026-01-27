@@ -192,9 +192,9 @@ impl List {
         let view_state_struct_name = sub_mod.generate(&self.view_state_struct_name);
         if let Some(key_items) = self.keyed_list_items.as_ref() {
             let key_type_name = &key_items.key_type_name;
-            quote! {#ident: ::spair::KeyedList<#key_type_name,#view_state_struct_name>,}
+            quote! {pub #ident: ::spair::KeyedList<#key_type_name,#view_state_struct_name>,}
         } else {
-            quote! {#ident: ::spair::List<#view_state_struct_name>,}
+            quote! {pub #ident: ::spair::List<#view_state_struct_name>,}
         }
     }
 

@@ -24,9 +24,6 @@ nightly-text-render = []
 [workspace]
 members = [
     "examples/*",
-    "crates/spairc",
-    "crates/spair-macros",
-    "crates/examples/*",
     "next/spair-macros",
     "next/spair",
     "next/examples/*",

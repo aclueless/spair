@@ -7,6 +7,7 @@ mod events;
 mod helper;
 mod keyed_list;
 mod list;
+mod name_hints;
 mod routing;
 mod ws_node_ref;
 
@@ -14,7 +15,7 @@ pub use web_sys;
 
 pub use component::{
     Callback, CallbackArg, Comp, CompNode, Component, ComponentViewState, Context, RcComp,
-    start_app, start_app_with_routing,
+    ShouldRender, start_app, start_app_with_routing,
 };
 pub use dom::{
     Element, TemplateElement, WsElement, WsNode, WsNodeFns,
@@ -31,5 +32,6 @@ pub mod prelude {
         Callback, CallbackArg, Comp, Context, RcComp, SpairSpawnLocal, SpairSpawnLocalWithCallback,
     };
     pub use crate::helper::{ElementFromCurrentEventTarget, InputElementFromCurrentInputEvent};
+    pub use crate::name_hints::*;
     pub use spair_macros::{create_view, impl_component};
 }
