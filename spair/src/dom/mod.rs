@@ -252,7 +252,8 @@ impl WsElement {
     }
 
     pub fn href_with_routing(&self, route: &impl Route) {
-        self.set_str_attribute("href", &route.url());
+        let name = wasm_bindgen::intern("href");
+        self.set_str_attribute(name, &route.url());
     }
 
     pub fn add_click_event_to_handle_routing(&self) {
@@ -264,12 +265,14 @@ impl WsElement {
     }
 
     pub fn add_class(&self, class_name: &str) {
+        let class_name = wasm_bindgen::intern(class_name);
         if let Err(e) = self.0.class_list().add_1(class_name) {
             log::error!("Error on adding a class name: {e:?}");
         }
     }
 
     fn remove_class(&self, class_name: &str) {
+        let class_name = wasm_bindgen::intern(class_name);
         if let Err(e) = self.0.class_list().remove_1(class_name) {
             log::error!("Error on removing a class named `{class_name}`: {e:?}");
         }
@@ -277,11 +280,13 @@ impl WsElement {
 
     pub fn class_if(&self, condition: bool, class_name: &str) {
         if condition {
+            let class_name = wasm_bindgen::intern(class_name);
             self.add_class(class_name);
         }
     }
 
     fn add_or_remove_class(&self, condition: bool, class_name: &str) {
+        let class_name = wasm_bindgen::intern(class_name);
         if condition {
             self.add_class(class_name);
         } else {
