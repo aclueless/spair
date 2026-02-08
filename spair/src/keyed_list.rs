@@ -162,6 +162,7 @@ where
 {
     fn update(&mut self, item_data: Vec<I>) {
         let mut item_data = item_data.into_iter().peekable_double_ended();
+        let mut total_count = 0;
         loop {
             let mut count = self.update_same_items_from_start(&mut item_data);
             count += self.update_same_items_from_end(&mut item_data);
@@ -170,8 +171,9 @@ where
             if count == 0 {
                 break;
             }
+            total_count += count;
         }
-        self.update_items_in_the_middle(&mut item_data);
+        self.update_items_in_the_middle(&mut item_data, total_count == 0);
     }
 
     fn update_same_items_from_start(
@@ -340,12 +342,15 @@ where
     fn update_items_in_the_middle(
         &mut self,
         item_data: &mut PeekableDoubleEndedIterator<std::vec::IntoIter<I>>,
+        no_items_render_yet: bool,
     ) {
+        // No more items, remove all old items
         if item_data.peek().is_none() {
             self.remove_items_still_in_old_list();
             return;
         }
 
+        // No more old items, all available items are new
         if self.old_list.peek().is_none() {
             self.insert_new_items_in_the_middle(item_data);
             return;
@@ -355,16 +360,22 @@ where
 
         // Using longest_increasing_subsequence to find which elements should be moved around in the browser's DOM
         // and which should be stay still
+        let mut items_has_old_view_state = 0;
         let mut item_data_with_lis: Vec<_> = item_data
             .map(|item_data| {
                 let key = (self.get_key_fn)(&item_data);
                 let old_view_state = self.old_items_map.remove(key);
+                if old_view_state.is_some() {
+                    items_has_old_view_state += 1;
+                }
                 ItemWithLis::new(key.clone(), item_data, old_view_state)
             })
             .collect();
         longest_increasing_subsequence(&mut item_data_with_lis);
 
-        self.remove_old_items_that_still_in_old_items_map();
+        self.remove_old_items_that_still_in_old_items_map(
+            no_items_render_yet && items_has_old_view_state == 0,
+        );
 
         for iwl in item_data_with_lis.into_iter().rev() {
             let ItemWithLis {
@@ -403,12 +414,11 @@ where
     }
 
     fn remove_items_still_in_old_list(&mut self) {
-        let parent = self.parent_element;
         for (_, old_view_state) in self.old_list.by_ref() {
             let item = old_view_state
                 .take()
                 .expect_throw("keyed_list::KeyedListUpdater::remove_items_still_in_old_list");
-            parent.remove_child(item.vs.root_element());
+            self.parent_element.remove_child(item.vs.root_element());
         }
     }
 
@@ -460,11 +470,16 @@ where
         }
     }
 
-    fn remove_old_items_that_still_in_old_items_map(&mut self) {
-        let parent = self.parent_element;
-        self.old_items_map.drain().for_each(|(_, item)| {
-            parent.remove_child(item.view_state.root_element());
-        })
+    fn remove_old_items_that_still_in_old_items_map(&mut self, all_items_are_new: bool) {
+        if all_items_are_new && self.end_flag_for_the_next_rendered_item_bottom_up.is_none() {
+            self.parent_element.clear_text_content();
+            self.old_items_map.clear();
+        } else {
+            for (_, item) in self.old_items_map.drain() {
+                self.parent_element
+                    .remove_child(item.view_state.root_element());
+            }
+        }
     }
 }
 
