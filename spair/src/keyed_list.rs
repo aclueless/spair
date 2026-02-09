@@ -376,7 +376,25 @@ where
 
         let all_items_are_new = no_items_render_yet && items_has_old_view_state == 0;
         self.remove_old_items_that_still_in_old_items_map(all_items_are_new);
+        if all_items_are_new {
+            self.just_update_items_from_start_to_end(item_data_with_lis);
+        } else {
+            self.update_items_with_lis(item_data_with_lis);
+        }
+    }
 
+    fn just_update_items_from_start_to_end(
+        &mut self,
+        item_data_with_lis: Vec<ItemWithLis<K, I, VS>>,
+    ) {
+        for item_data_with_lis in item_data_with_lis {
+            let key = item_data_with_lis.key;
+            let view_state = self.render_new_item(item_data_with_lis.item_data);
+            self.store_item_view_state(key, view_state);
+        }
+    }
+
+    fn update_items_with_lis(&mut self, item_data_with_lis: Vec<ItemWithLis<K, I, VS>>) {
         for iwl in item_data_with_lis.into_iter().rev() {
             let ItemWithLis {
                 key,
