@@ -1,6 +1,7 @@
 use std::{hash::Hash, iter::Enumerate, marker::PhantomData, slice::IterMut};
 
-use rustc_hash::FxHashMap as HashMap;
+// use rustc_hash::FxHashMap as HashMap;
+use std::collections::HashMap;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::DocumentFragment;
 
@@ -373,9 +374,8 @@ where
             .collect();
         longest_increasing_subsequence(&mut item_data_with_lis);
 
-        self.remove_old_items_that_still_in_old_items_map(
-            no_items_render_yet && items_has_old_view_state == 0,
-        );
+        let all_items_are_new = no_items_render_yet && items_has_old_view_state == 0;
+        self.remove_old_items_that_still_in_old_items_map(all_items_are_new);
 
         for iwl in item_data_with_lis.into_iter().rev() {
             let ItemWithLis {

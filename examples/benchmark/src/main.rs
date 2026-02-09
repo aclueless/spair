@@ -42,7 +42,6 @@ impl AppState {
 
     fn clear(&mut self) {
         self.rows.clear();
-        self.next_id = 1;
     }
 
     fn create(&mut self, count: usize) {
